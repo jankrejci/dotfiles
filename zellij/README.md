@@ -1,5 +1,5 @@
 # Installation
 ```shell
-cargo install --locked zellij
+cargo install zellij
 sudo apt install fonts-powerline
 ```
