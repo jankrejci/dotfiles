@@ -1,6 +1,13 @@
-# Instalation
+# Description
 
-Installation script installs the Helix editor, language servers and links all the configuration files.
+Installation script installs the Helix editor,
+language servers and links all the configuration files.
+
+# Prerequisities
+* cargo
+* npm
+
+# Installation
 
 ```shell
 chmod +x install.sh
