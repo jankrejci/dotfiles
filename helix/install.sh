@@ -7,18 +7,20 @@ INSTALL_FOLDER=`pwd`
 
 # Helix instalation from the source, more info in documentation
 # https://docs.helix-editor.com/install.html
-echo "Cloning Helix repository"
+echo "Cloning Helix repository to /tmp/helix"
 cd /tmp
 rm -rf helix
 git clone --quiet https://github.com/helix-editor/helix
 
-echo "Installing Helix editor"
+echo "Installing Helix editor from source, it will take a while"
 cd helix
 cargo install --quiet --locked --path helix-term
 
 echo "Copying Helix runtimes"
 # Copy runtime files
 rsync -a runtime $CONFIG_FOLDER/
+cd ..
+rm -rf helix
 
 # Install language servers
 echo "Installing language servers"
@@ -35,7 +37,8 @@ cargo install --quiet taplo-cli --locked --features lsp
 echo "  • Bash (bash-language-server)"
 npm install --silent -g bash-language-server
 
-# Marksdown
+# Markdown
+echo "  • Markdown (marksman)"
 MARKSMAN_BINARY="https://github.com/artempyanykh/marksman/releases/download/2022-12-28/marksman-linux"
 BIN_FOLDER="$HOME/.local/bin"
 BINARY_NAME="marksman"
