@@ -1,7 +1,11 @@
 #!/bin/bash
 
+# Workaround to enter sudo password at the beginning of the script
+sudo echo
+
 echo "Installing dotfiles"
 BASE_FOLDER=`pwd`
+
 
 echo "    • installing Rustup"
 RUSTUP_INIT="/tmp/rustup-init.sh"
