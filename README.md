@@ -1,5 +1,10 @@
+# Description
+
+Batch installation of all dotfiles includig requirements.
+
 # Instalation
 
 ```shell
-git clone https://gitlab.com/jankrejci-group/dotfiles.git ~/.dotfiles
+chmod +x install.sh
+./install.sh
 ```
