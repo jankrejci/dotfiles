@@ -1,5 +1,6 @@
 #!/bin/bash
 
+echo "Helix installation"
 # This is the default path, where the configuration is stored
 CONFIG_FOLDER="$HOME/.config/helix"
 INSTALL_FOLDER=`pwd`
@@ -7,38 +8,38 @@ INSTALL_FOLDER=`pwd`
 
 # Helix instalation from the source, more info in documentation
 # https://docs.helix-editor.com/install.html
-echo "Cloning Helix repository to /tmp/helix"
+echo "    • cloning repository to /tmp/helix"
 cd /tmp
 rm -rf helix
 git clone --quiet https://github.com/helix-editor/helix
 
-echo "Installing Helix editor from source, it will take a while"
+echo "    • installing from source, it may take a while"
 cd helix
 cargo install --quiet --locked --path helix-term
 
-echo "Copying Helix runtimes"
+echo "    • copying runtimes"
 # Copy runtime files
 rsync -a runtime $CONFIG_FOLDER/
 cd ..
 rm -rf helix
 
 # Install language servers
-echo "Installing language servers"
+echo "    • Installing language servers"
 
 # Rust
-echo "  • Rust (rust-analyzer)"
-rustup -q component add rust-analyzer
+echo "        • Rust (rust-analyzer)"
+rustup -q component add rust-analyzer &> /dev/null
 
 # TOML
-echo "  • TOML (taplo-cli)"
+echo "        • TOML (taplo-cli)"
 cargo install --quiet taplo-cli --locked --features lsp
 
 # Bash
-echo "  • Bash (bash-language-server)"
+echo "        • Bash (bash-language-server)"
 npm install --silent -g bash-language-server
 
 # Markdown
-echo "  • Markdown (marksman)"
+echo "        • Markdown (marksman)"
 MARKSMAN_BINARY="https://github.com/artempyanykh/marksman/releases/download/2022-12-28/marksman-linux"
 BIN_FOLDER="$HOME/.local/bin"
 BINARY_NAME="marksman"
@@ -51,7 +52,7 @@ cd $INSTALL_FOLDER
 # Create configuration directory , it creates also the parent
 # directory if it is not exists already. If the configuration
 # directory already exist it changes nothing.
-echo "Linking configuration files"
+echo "    • linking configuration files"
 mkdir --parents $CONFIG_FOLDER
 
 # Create relative links to configuration files. If the file
