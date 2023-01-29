@@ -60,7 +60,11 @@ rustup -q component add rust-analyzer &> /dev/null
 
 # TOML
 echo "        • TOML (taplo-cli)"
-cargo install --quiet taplo-cli --locked --features lsp
+if [ "$INSTALL_FROM_SOURCE" = true ]; then
+  cargo install --quiet taplo-cli --locked --features lsp
+else
+  cargo-binstall -y taplo-cli &> /dev/null
+fi
 
 # Bash
 echo "        • Bash (bash-language-server)"
