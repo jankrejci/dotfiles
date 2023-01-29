@@ -23,6 +23,6 @@ echo "    • compiling from source, it may take a while"
 cargo install --quiet alacritty
 
 echo "    • linking configuration files"
-sudo ln -srf alacritty-simple.svg /usr/share/pixmaps/Alacritty.svg
-sudo ln -srf Alacritty.desktop /usr/share/applications/
+sudo ln -sf $PWD/alacritty-simple.svg /usr/share/pixmaps/Alacritty.svg
+sudo ln -sf $PWD/Alacritty.desktop /usr/share/applications/
 sudo update-desktop-database

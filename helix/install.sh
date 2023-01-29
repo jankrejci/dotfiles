@@ -57,6 +57,6 @@ mkdir --parents $CONFIG_FOLDER
 
 # Create relative links to configuration files. If the file
 # exists already, it wil overwrites it.
-ln -srf config.toml $CONFIG_FOLDER
-ln -srf languages.toml $CONFIG_FOLDER
-ln -srf themes $CONFIG_FOLDER
+ln -sf $PWD/config.toml $CONFIG_FOLDER
+ln -sf $PWD/languages.toml $CONFIG_FOLDER
+ln -sf $PWD/themes $CONFIG_FOLDER
