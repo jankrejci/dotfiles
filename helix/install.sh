@@ -1,21 +1,49 @@
 #!/bin/bash
 
+HELIX_VERSION="22.12"
+INSTALL_FROM_SOURCE=false
+
 echo "Helix installation"
+
+
 # This is the default path, where the configuration is stored
 CONFIG_FOLDER="$HOME/.config/helix"
 INSTALL_FOLDER=`pwd`
 
 
-# Helix instalation from the source, more info in documentation
-# https://docs.helix-editor.com/install.html
-echo "    • cloning repository to /tmp/helix"
-cd /tmp
-rm -rf helix
-git clone --quiet https://github.com/helix-editor/helix
+if [ -z "$CARGO_BIN" ]; then
+  CARGO_BIN="$HOME/.cargo/bin"
+fi
 
-echo "    • installing from source, it may take a while"
-cd helix
-cargo install --quiet --locked --path helix-term
+if [ -z "$DETECTED_PLATFORM" ]; then
+  DETECTED_PLATFORM=`uname -m`
+fi
+echo "    • detected platform $DETECTED_PLATFORM"
+
+# Remove temporary installation foder if it exists
+TMP_FOLDER="/tmp/helix"
+rm -rf $TMP_FOLDER
+
+if [ "$INSTALL_FROM_SOURCE" = true ]; then
+  # Helix instalation from the source, more info in documentation
+  # https://docs.helix-editor.com/install.html
+  echo "    • cloning repository to $TMP_FOLDER"
+  git clone --quiet https://github.com/helix-editor/helix $TMP_FOLDER
+
+  echo "    • installing from source, it may take a while"
+  cd $TMP_FOLDER
+  cargo install --quiet --locked --path helix-term
+else
+  echo "    • installing version $HELIX_VERSION from binary"
+  HELIX_BINARY="https://github.com/helix-editor/helix/releases/download/$HELIX_VERSION/helix-$HELIX_VERSION-$DETECTED_PLATFORM-linux.tar.xz"
+  mkdir $TMP_FOLDER
+  cd $TMP_FOLDER
+  wget -q $HELIX_BINARY
+  tar xf *.tar.xz
+  rm *.tar.xz
+  cd "helix-$HELIX_VERSION-$DETECTED_PLATFORM-linux"
+  mv "hx" "$CARGO_BIN"
+fi
 
 echo "    • copying runtimes"
 # Copy runtime files
