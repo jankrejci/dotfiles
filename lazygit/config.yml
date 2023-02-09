@@ -1,0 +1,4 @@
+os:
+  editCommand: 'hx'
+gui:
+  showIcons: true
