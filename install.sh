@@ -8,11 +8,7 @@ BASE_FOLDER=`pwd`
 CARGO_BIN="$HOME/.cargo/bin"
 
 echo "    • installing Ubuntu packages"
-sudo apt -y install \
-git \
-npm \
-&> /dev/null
-
+sudo apt -y install npm &> /dev/null
 
 echo "    • installing Rustup"
 RUSTUP_INIT="/tmp/rustup-init.sh"
@@ -49,6 +45,7 @@ cd $BASE_FOLDER
 rm -rf $TMP_DIR
 
 
+cd $BASE_FOLDER/git && ./install.sh
 cd $BASE_FOLDER/nerdfonts && ./install.sh
 cd $BASE_FOLDER/alacritty && ./install.sh
 cd $BASE_FOLDER/zellij && ./install.sh
