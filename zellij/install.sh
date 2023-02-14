@@ -8,6 +8,10 @@ print_help() {
 }
 
 process_args() {
+	VALID_ARGS=$(getopt -o sh --long source,help -- "$@")
+	if [[ $? -ne 0 ]]; then
+		exit 1
+	fi
 	eval set -- "$VALID_ARGS"
 	while [ : ]; do
 		case "$1" in
@@ -42,12 +46,7 @@ install_from_source() {
 	cargo install --quiet --locked zellij
 }
 
-VALID_ARGS=$(getopt -o sh --long source,help -- "$@")
-if [[ $? -ne 0 ]]; then
-	exit 1
-fi
-
-process_args
+process_args "$@"
 
 echo "Zellij installation"
 
@@ -60,9 +59,9 @@ else
 fi
 
 echo "    • linking configuration files"
-mkdir --parents $CONFIG_FOLDER
-ln -sf $PWD/config.kdl $CONFIG_FOLDER
+mkdir --parents "$CONFIG_FOLDER"
+ln -sf "$PWD/config.kdl" "$CONFIG_FOLDER"
 rm -rf "$CONFIG_FOLDER/themes"
-ln -sf $PWD/themes $CONFIG_FOLDER
+ln -sf "$PWD/themes" "$CONFIG_FOLDER"
 rm -rf "$CONFIG_FOLDER/layouts"
-ln -sf $PWD/layouts $CONFIG_FOLDER
+ln -sf "$PWD/layouts" "$CONFIG_FOLDER"
