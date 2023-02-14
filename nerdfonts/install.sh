@@ -18,4 +18,4 @@ wget -q "$GITHUB_RELEASE" -P "/tmp"
 unzip -o -q "/tmp/$FONT_NAME.zip" -d "$FONT_FOLDER"
 rm "/tmp/$FONT_NAME.zip"
 
-fc-cache -fv &> /dev/null
+fc-cache -fv &>/dev/null

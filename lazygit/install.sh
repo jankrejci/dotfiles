@@ -13,13 +13,13 @@ echo "Lazygit installation"
 # Detect the latest version
 VERSION=$(curl -s "$GITHUB_API" | grep -Po '"tag_name": "v\K[^"]*')
 if [ -n "${VERSION}" ]; then
-  echo "    • version $VERSION"
+	echo "    • version $VERSION"
 else
-  # Red text color
-  echo -en "\033[0;31m"
-  echo "    • failed to detect latest version"
-  echo -en "\033[0m"
-  exit 1
+	# Red text color
+	echo -en "\033[0;31m"
+	echo "    • failed to detect latest version"
+	echo -en "\033[0m"
+	exit 1
 fi
 
 GITHUB_RELEASE="https://github.com/$GITHUB_REPO/releases/download/v$VERSION"
@@ -34,4 +34,4 @@ sudo install "$TMP_FOLDER/lazygit" /usr/local/bin
 
 echo "    • linking configuration files"
 mkdir --parents $CONFIG_FOLDER
-ln -sf  $PWD/config.yml $CONFIG_FOLDER
+ln -sf $PWD/config.yml $CONFIG_FOLDER

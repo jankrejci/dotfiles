@@ -5,18 +5,16 @@ INSTALL_FROM_SOURCE=false
 
 echo "Helix installation"
 
-
 # This is the default path, where the configuration is stored
 CONFIG_FOLDER="$HOME/.config/helix"
-INSTALL_FOLDER=`pwd`
-
+INSTALL_FOLDER=$(pwd)
 
 if [ -z "$CARGO_BIN" ]; then
-  CARGO_BIN="$HOME/.cargo/bin"
+	CARGO_BIN="$HOME/.cargo/bin"
 fi
 
 if [ -z "$DETECTED_PLATFORM" ]; then
-  DETECTED_PLATFORM=`uname -m`
+	DETECTED_PLATFORM=$(uname -m)
 fi
 echo "    • detected platform $DETECTED_PLATFORM"
 
@@ -25,24 +23,24 @@ TMP_FOLDER="/tmp/helix"
 rm -rf $TMP_FOLDER
 
 if [ "$INSTALL_FROM_SOURCE" = true ]; then
-  # Helix instalation from the source, more info in documentation
-  # https://docs.helix-editor.com/install.html
-  echo "    • cloning repository to $TMP_FOLDER"
-  git clone --quiet https://github.com/helix-editor/helix $TMP_FOLDER
+	# Helix instalation from the source, more info in documentation
+	# https://docs.helix-editor.com/install.html
+	echo "    • cloning repository to $TMP_FOLDER"
+	git clone --quiet https://github.com/helix-editor/helix $TMP_FOLDER
 
-  echo "    • installing from source, it may take a while"
-  cd $TMP_FOLDER
-  cargo install --quiet --locked --path helix-term
+	echo "    • installing from source, it may take a while"
+	cd $TMP_FOLDER
+	cargo install --quiet --locked --path helix-term
 else
-  echo "    • installing version $HELIX_VERSION from binary"
-  HELIX_BINARY="https://github.com/helix-editor/helix/releases/download/$HELIX_VERSION/helix-$HELIX_VERSION-$DETECTED_PLATFORM-linux.tar.xz"
-  mkdir $TMP_FOLDER
-  cd $TMP_FOLDER
-  wget -q $HELIX_BINARY
-  tar xf *.tar.xz
-  rm *.tar.xz
-  cd "helix-$HELIX_VERSION-$DETECTED_PLATFORM-linux"
-  mv "hx" "$CARGO_BIN"
+	echo "    • installing version $HELIX_VERSION from binary"
+	HELIX_BINARY="https://github.com/helix-editor/helix/releases/download/$HELIX_VERSION/helix-$HELIX_VERSION-$DETECTED_PLATFORM-linux.tar.xz"
+	mkdir $TMP_FOLDER
+	cd $TMP_FOLDER
+	wget -q $HELIX_BINARY
+	tar xf *.tar.xz
+	rm *.tar.xz
+	cd "helix-$HELIX_VERSION-$DETECTED_PLATFORM-linux"
+	mv "hx" "$CARGO_BIN"
 fi
 
 echo "    • copying runtimes"
@@ -56,14 +54,14 @@ echo "    • Installing language servers"
 
 # Rust
 echo "        • Rust (rust-analyzer)"
-rustup -q component add rust-analyzer &> /dev/null
+rustup -q component add rust-analyzer &>/dev/null
 
 # TOML
 echo "        • TOML (taplo-cli)"
 if [ "$INSTALL_FROM_SOURCE" = true ]; then
-  cargo install --quiet taplo-cli --locked --features lsp
+	cargo install --quiet taplo-cli --locked --features lsp
 else
-  cargo-binstall -y taplo-cli &> /dev/null
+	cargo-binstall -y taplo-cli &>/dev/null
 fi
 
 # Bash
