@@ -66,7 +66,7 @@ setup_colors
 
 msg "${BOLD}Installing dotfiles${NOFORMAT}"
 
-install_folders=("git" "rust" "nerdfonts" "alacritty" "zellij" "helix" "lazygit")
+install_folders=("git" "rust" "nerdfonts" "alacritty" "zellij" "helix" "starship" "lazygit")
 for folder in "${install_folders[@]}"; do
 	cd "$script_dir/$folder" && ./install.sh "$@"
 done
