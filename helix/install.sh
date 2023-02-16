@@ -1,92 +1,213 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-HELIX_VERSION="22.12"
-INSTALL_FROM_SOURCE=false
+set -Eeuo pipefail
 
-echo "Helix installation"
+trap cleanup SIGINT SIGTERM ERR EXIT
 
-# This is the default path, where the configuration is stored
-CONFIG_FOLDER="$HOME/.config/helix"
-INSTALL_FOLDER=$(pwd)
+cleanup() {
+	trap - SIGINT SIGTERM ERR EXIT
+	tput cnorm
+	# Script cleanup here
+	rm -rf "$TMP_DIR"
+}
 
-if [ -z "$CARGO_BIN" ]; then
-	CARGO_BIN="$HOME/.cargo/bin"
-fi
+script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 
-if [ -z "$DETECTED_PLATFORM" ]; then
-	DETECTED_PLATFORM=$(uname -m)
-fi
-echo "    • detected platform $DETECTED_PLATFORM"
+die() {
+	local msg=$1
+	local code=${2-1}
+	msg "${RED}$msg${NOFORMAT}"
+	exit "$code"
+}
 
-# Remove temporary installation foder if it exists
-TMP_FOLDER="/tmp/helix"
-rm -rf $TMP_FOLDER
+setup_colors() {
+	if [[ -t 2 ]] && [[ -z "${NO_COLOR-}" ]] && [[ "${TERM-}" != "dumb" ]]; then
+		NOFORMAT='\033[0m'
+		RED='\033[0;31m'
+		BOLD='\033[1m'
+	else
+		NOFORMAT='' RED='' BOLD=''
+	fi
+}
 
-if [ "$INSTALL_FROM_SOURCE" = true ]; then
+spinner() {
+	local LC_CTYPE=C
+	local pid=$!
+
+	local spin='⣾⣽⣻⢿⡿⣟⣯⣷'
+	local char_width=3
+
+	local i=0
+	tput civis;	msg -n " ";
+	while kill -0 "$pid" 2>/dev/null; do
+		local i=$(((i + char_width) % ${#spin}))
+		printf "%s" "${spin:$i:$char_width}"
+		echo -en "\033[1D"
+		sleep .1
+	done
+	tput cnorm;	msg " ";
+	wait "$pid"
+	return $?
+}
+
+msg() {
+	echo >&2 -e "$@"
+}
+
+usage() {
+	cat <<EOF
+Usage: $(basename "${BASH_SOURCE[0]}") [-s]
+
+Installs and configures Helix editor.
+
+Available options:
+
+-s, --source    Build Helix from source
+-h, --help      Print this help and exit
+    --debug     Print script debug info
+    --no-color  Print without colors
+EOF
+	exit
+}
+
+parse_params() {
+	build_from_source=false
+	config_folder="$HOME/.config/helix"
+	cargo_bin="$HOME/.cargo/bin"
+	helix_version="22.12"
+
+	while :; do
+		case "${1-}" in
+		-s | --source) build_from_source=true ;;
+		-h | --help) usage ;;
+		--debug) set -x ;;
+		--no-color) NO_COLOR=1 ;;
+		-?*) die "Unknown option: $1" ;;
+		*) break ;;
+		esac
+		shift
+	done
+	return 0
+}
+
+install_dependencies() {
+	read -r -a packages <<<"$@"
+	for package in "${packages[@]}"; do
+		if ! dpkg -s "$package" &>/dev/null; then
+			not_installed_packages+=("$package")
+		fi
+	done
+
+	if [ -n "${not_installed_packages-}" ]; then
+		msg -n "    • installing Ubuntu packages" "${not_installed_packages[@]}"
+		sudo apt -y install "${not_installed_packages[@]}" &>/dev/null &
+		spinner
+	fi
+}
+
+sudo echo -n
+setup_colors
+parse_params "$@"
+
+install_from_binary(){
+	BASE_ADDRESS="https://github.com/helix-editor/helix/releases/download"
+	package_name="helix-$helix_version-$detected_platform-linux"
+	package_file="$package_name.tar.xz"
+	package_link="$BASE_ADDRESS/$helix_version/$package_file"
+
+	curl -LJsSf "$package_link" >"$TMP_DIR/$package_file"
+	tar xf "$TMP_DIR/$package_file" --directory "$TMP_DIR"
+
+	mv "$TMP_DIR/$package_name/hx" "$cargo_bin"
+}
+
+install_from_source(){
 	# Helix instalation from the source, more info in documentation
 	# https://docs.helix-editor.com/install.html
-	echo "    • cloning repository to $TMP_FOLDER"
-	git clone --quiet https://github.com/helix-editor/helix $TMP_FOLDER
+	msg -n "    • cloning Helix repository"
+	REPO_LINK="https://github.com/helix-editor/helix"
+	git clone --quiet "$REPO_LINK" "$TMP_DIR/helix" &
+	spinner
+	
+	msg -n "    • installing from source, it may take a while"
+	cd "$TMP_DIR/helix"
+	cargo install --quiet --locked --path helix-term &>/dev/null &
+	spinner
+}
 
-	echo "    • installing from source, it may take a while"
-	cd $TMP_FOLDER
-	cargo install --quiet --locked --path helix-term
+install_marksman() {
+	BASE_ADDRESS="https://github.com/artempyanykh/marksman/releases/download/2022-12-28"
+	PACKAGE_FILE="marksman-linux"
+	package_link="$BASE_ADDRESS/$PACKAGE_FILE"
+
+	BIN_FOLDER="$HOME/.local/bin"
+	BINARY_NAME="marksman"
+
+	curl --proto "=https" --tlsv1.2 -LJsSf "$package_link" >"$TMP_DIR/$BINARY_NAME"
+	chmod +x "$TMP_DIR/$BINARY_NAME"
+	mv "$TMP_DIR/$BINARY_NAME" "$BIN_FOLDER"
+}
+
+msg "${BOLD}Helix installation${NOFORMAT}"
+
+TMP_DIR="/tmp/dotfiles"
+mkdir --parents "$TMP_DIR"
+
+install_dependencies "npm"
+
+detected_platform=$(uname -m)
+msg "    • detected platform $detected_platform"
+
+if [ "$build_from_source" == true ]; then
+	install_from_source
 else
-	echo "    • installing version $HELIX_VERSION from binary"
-	HELIX_BINARY="https://github.com/helix-editor/helix/releases/download/$HELIX_VERSION/helix-$HELIX_VERSION-$DETECTED_PLATFORM-linux.tar.xz"
-	mkdir $TMP_FOLDER
-	cd $TMP_FOLDER
-	wget -q $HELIX_BINARY
-	tar xf *.tar.xz
-	rm *.tar.xz
-	cd "helix-$HELIX_VERSION-$DETECTED_PLATFORM-linux"
-	mv "hx" "$CARGO_BIN"
+	msg -n "    • installing version $helix_version from binary"
+	install_from_binary &
+	spinner
 fi
 
-echo "    • copying runtimes"
+
 # Copy runtime files
-rsync -a runtime $CONFIG_FOLDER/
-cd ..
-rm -rf helix
+echo "    • copying runtimes"
+runtime_folder="$TMP_DIR/helix-$helix_version-$detected_platform-linux/runtime"
+if [ "$build_from_source" == true ]; then
+	runtime_folder="$TMP_DIR/helix/runtime"
+fi
+rsync -a "$runtime_folder" "$config_folder/"
 
 # Install language servers
 echo "    • Installing language servers"
+cd "$script_dir"
 
 # Rust
-echo "        • Rust (rust-analyzer)"
-rustup -q component add rust-analyzer &>/dev/null
+echo -n "        • Rust (rust-analyzer)"
+rustup -q component add rust-analyzer &>/dev/null &
+spinner
 
 # TOML
-echo "        • TOML (taplo-cli)"
-if [ "$INSTALL_FROM_SOURCE" = true ]; then
-	cargo install --quiet taplo-cli --locked --features lsp
+echo -n "        • TOML (taplo-cli)"
+if [ "$build_from_source" == true ]; then
+	cargo install --quiet taplo-cli --locked --features lsp &
+	spinner
 else
-	cargo-binstall -y taplo-cli &>/dev/null
+	cargo-binstall -y taplo-cli &>/dev/null &
+	spinner
 fi
 
 # Bash
-echo "        • Bash (bash-language-server)"
-npm install --silent -g bash-language-server
+echo -n "        • Bash (bash-language-server)"
+npm install --silent -g bash-language-server &>/dev/null &
+spinner
 
 # Markdown
-echo "        • Markdown (marksman)"
-MARKSMAN_BINARY="https://github.com/artempyanykh/marksman/releases/download/2022-12-28/marksman-linux"
-BIN_FOLDER="$HOME/.local/bin"
-BINARY_NAME="marksman"
-wget -q $MARKSMAN_BINARY
-mv marksman-linux $BINARY_NAME
-chmod +x $BINARY_NAME
-mv $BINARY_NAME $BIN_FOLDER
+echo -n "        • Markdown (marksman)"
+install_marksman &
+spinner
 
-cd $INSTALL_FOLDER
-# Create configuration directory , it creates also the parent
-# directory if it is not exists already. If the configuration
-# directory already exist it changes nothing.
 echo "    • linking configuration files"
-mkdir --parents $CONFIG_FOLDER
-
-# Create relative links to configuration files. If the file
-# exists already, it wil overwrites it.
-ln -sf $PWD/config.toml $CONFIG_FOLDER
-ln -sf $PWD/languages.toml $CONFIG_FOLDER
-ln -sf $PWD/themes $CONFIG_FOLDER
+mkdir --parents "$config_folder"
+# Create relative links to configuration files.
+CONFIG_LINKS=("config.toml" "languages.toml" "themes")
+for link in "${CONFIG_LINKS[@]}"; do
+	ln -sf "$script_dir/$link" "$config_folder"
+done
