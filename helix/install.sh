@@ -7,7 +7,6 @@ trap cleanup SIGINT SIGTERM ERR EXIT
 cleanup() {
 	trap - SIGINT SIGTERM ERR EXIT
 	tput cnorm
-	# Script cleanup here
 	rm -rf "$TMP_DIR"
 }
 
@@ -22,9 +21,7 @@ die() {
 
 setup_colors() {
 	if [[ -t 2 ]] && [[ -z "${NO_COLOR-}" ]] && [[ "${TERM-}" != "dumb" ]]; then
-		NOFORMAT='\033[0m'
-		RED='\033[0;31m'
-		BOLD='\033[1m'
+		NOFORMAT='\033[0m' RED='\033[0;31m' BOLD='\033[1m'
 	else
 		NOFORMAT='' RED='' BOLD=''
 	fi
@@ -100,8 +97,7 @@ install_dependencies() {
 
 	if [ -n "${not_installed_packages-}" ]; then
 		msg -n "    • installing Ubuntu packages" "${not_installed_packages[@]}"
-		sudo apt -y install "${not_installed_packages[@]}" &>/dev/null &
-		spinner
+		sudo apt -y install "${not_installed_packages[@]}" &>/dev/null & spinner
 	fi
 }
 
@@ -126,13 +122,11 @@ install_from_source(){
 	# https://docs.helix-editor.com/install.html
 	msg -n "    • cloning Helix repository"
 	REPO_LINK="https://github.com/helix-editor/helix"
-	git clone --quiet "$REPO_LINK" "$TMP_DIR/helix" &
-	spinner
+	git clone --quiet "$REPO_LINK" "$TMP_DIR/helix" & spinner
 	
 	msg -n "    • installing from source, it may take a while"
 	cd "$TMP_DIR/helix"
-	cargo install --quiet --locked --path helix-term &>/dev/null &
-	spinner
+	cargo install --quiet --locked --path helix-term &>/dev/null & spinner
 }
 
 install_marksman() {
@@ -153,7 +147,7 @@ msg "${BOLD}Helix installation${NOFORMAT}"
 TMP_DIR="/tmp/dotfiles"
 mkdir --parents "$TMP_DIR"
 
-install_dependencies "npm"
+install_dependencies "npm shellcheck shfmt"
 
 detected_platform=$(uname -m)
 msg "    • detected platform $detected_platform"
@@ -162,8 +156,7 @@ if [ "$build_from_source" == true ]; then
 	install_from_source
 else
 	msg -n "    • installing version $helix_version from binary"
-	install_from_binary &
-	spinner
+	install_from_binary & spinner
 fi
 
 
@@ -181,28 +174,23 @@ cd "$script_dir"
 
 # Rust
 echo -n "        • Rust (rust-analyzer)"
-rustup -q component add rust-analyzer &>/dev/null &
-spinner
+rustup -q component add rust-analyzer &>/dev/null & spinner
 
 # TOML
 echo -n "        • TOML (taplo-cli)"
 if [ "$build_from_source" == true ]; then
-	cargo install --quiet taplo-cli --locked --features lsp &
-	spinner
+	cargo install --quiet taplo-cli --locked --features lsp & spinner
 else
-	cargo-binstall -y taplo-cli &>/dev/null &
-	spinner
+	cargo-binstall -y taplo-cli &>/dev/null & spinner
 fi
 
 # Bash
 echo -n "        • Bash (bash-language-server)"
-npm install --silent -g bash-language-server &>/dev/null &
-spinner
+npm install --silent -g bash-language-server &>/dev/null & spinner
 
 # Markdown
 echo -n "        • Markdown (marksman)"
-install_marksman &
-spinner
+install_marksman & spinner
 
 echo "    • linking configuration files"
 mkdir --parents "$config_folder"
