@@ -127,7 +127,7 @@ spinner
 msg "    • adding init sequence to zshrc"
 ZSHRC_FILE="$HOME/.zshrc"
 if ! grep "starship" < "$ZSHRC_FILE" &>/dev/null; then
-	echo 'eval "$(starship init zsh)' >>"$ZSHRC_FILE" 
+	echo 'eval "$(starship init zsh)"' >>"$ZSHRC_FILE" 
 fi
 
 msg "    • linking configuration file"
