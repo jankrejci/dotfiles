@@ -37,6 +37,8 @@ C-h = "goto_previous_buffer"
 
 esc = ["collapse_selection", "keep_primary_selection"]
 
+g = { o = "jump_backward", O = "jump_forward" }
+
 [keys.insert]
 up = "no_op"
 down = "no_op"
