@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 TryExec=alacritty
-Exec=env -u WAYLAND_DISPLAY alacritty -e zellij
+Exec=env -u WAYLAND_DISPLAY alacritty -e zellij --layout compact
 Icon=Alacritty
 Terminal=false
 Categories=System;TerminalEmulator;
