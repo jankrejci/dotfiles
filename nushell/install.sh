@@ -67,6 +67,7 @@ EOF
 }
 
 parse_params() {
+    config_folder="$HOME/.config/nushell"
 
 	while :; do
 		case "${1-}" in
