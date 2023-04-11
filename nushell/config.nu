@@ -38,6 +38,7 @@ $env.config = {
 }
 
 source ~/.cache/starship/init.nu
+source ~/.cache/zoxide/zoxide.nu
 use ~/.config/nushell/git-completions.nu *
 
 alias g = git
