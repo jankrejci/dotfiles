@@ -2,9 +2,6 @@
 name = "rust"
 auto-format = true
 
-[language.config]
-checkOnSave = { command = "clippy" }
-
 [language.config.check]
 command = "clippy"
 

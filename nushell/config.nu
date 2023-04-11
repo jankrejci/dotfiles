@@ -39,3 +39,8 @@ $env.config = {
 
 source ~/.cache/starship/init.nu
 use ~/.config/nushell/git-completions.nu *
+
+alias g = git
+alias ll = ls -la
+alias lt = exa -T -L2
+alias cd = z
