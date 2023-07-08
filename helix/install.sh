@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
 # Get the script location as it can be run from different place.
-script_dir=$(dirname $(realpath "$0"))
+script_dir=$(dirname "$(realpath "$0")")
 
 dotfiles_dir=$(dirname "$script_dir")
+# shellcheck disable=SC1091
 source "$dotfiles_dir/common.sh"
 
 build_from_source=false
@@ -31,7 +32,7 @@ install_from_source(){
 	git clone --quiet "$REPO_LINK" "$TMP_DIR/helix" & spinner
 	
 	msg -n "    • installing from source, it may take a while"
-	cd "$TMP_DIR/helix"
+	cd "$TMP_DIR/helix" || exit
 	cargo install --quiet --locked --path helix-term &>/dev/null & spinner
 }
 
@@ -79,7 +80,7 @@ rsync -a "$runtime_folder" "$config_folder/"
 
 # Install language servers
 echo "    • installing language servers"
-cd "$script_dir"
+cd "$script_dir" || exit
 
 # Rust
 echo -n "        • Rust (rust-analyzer)"

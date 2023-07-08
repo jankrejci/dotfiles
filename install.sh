@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
 # Get the script location as it can be run from different place.
-script_dir=$(dirname $(realpath "$0"))
+script_dir=$(dirname "$(realpath "$0")")
+
+# shellcheck disable=SC1091
 source "common.sh"
 
 msg "${BOLD}Installing dotfiles\n${NOFORMAT}"
