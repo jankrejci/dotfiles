@@ -147,7 +147,10 @@ msg "${BOLD}Helix installation${NOFORMAT}"
 TMP_DIR="/tmp/dotfiles"
 mkdir --parents "$TMP_DIR"
 
-install_dependencies "npm shellcheck shfmt"
+install_dependencies "npm shellcheck"
+
+msg -n "    • Installing shfmt"
+curl -sS https://webi.sh/shfmt | sh &>/dev/null & spinner
 
 detected_platform=$(uname -m)
 msg "    • detected platform $detected_platform"
