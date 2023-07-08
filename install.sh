@@ -64,7 +64,7 @@ sudo echo -n
 parse_params "$@"
 setup_colors
 
-msg "${BOLD}Installing dotfiles${NOFORMAT}"
+msg "${BOLD}Installing dotfiles\n${NOFORMAT}"
 
 install_folders=("git" "rust" "nerdfonts" "alacritty" "zellij" "nushell" "helix" "starship")
 for folder in "${install_folders[@]}"; do
