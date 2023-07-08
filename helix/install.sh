@@ -71,7 +71,7 @@ parse_params() {
 	build_from_source=false
 	config_folder="$HOME/.config/helix"
 	cargo_bin="$HOME/.cargo/bin"
-	helix_version="22.12"
+	helix_version="23.05"
 
 	while :; do
 		case "${1-}" in
