@@ -113,6 +113,19 @@ apt_install() {
 	fi
 }
 
+download_from_github() {
+	repository="$1"
+	target="$2"
+
+	platform=$(uname -m)
+	api="https://api.github.com/repos/$repository/releases/latest"
+	version=$(curl -s "$api" | grep -Po "\"tag_name\": \"\K[^\"]*")
+	package=$(curl -s "$api" | grep -Po "\"browser_download_url\":.*\"\K.*$platform.*linux.*tar.*(?=\")")
+
+	msg "    • downloading version $version from github"
+	curl -LJOsSf "$package" --output-dir "$target"
+}
+
 # Workaround to ask for sudo password at the beginning of the script,
 # but not to run all commands as root
 sudo echo -n
