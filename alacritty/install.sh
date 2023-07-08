@@ -24,7 +24,7 @@ if [[ -f /usr/bin/rpi-update ]]; then
 	exit
 fi
 
-install_dependencies \
+apt_install \
 	"cmake \
 	pkg-config \
     libfreetype6-dev \

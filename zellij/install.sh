@@ -24,7 +24,7 @@ install_from_source() {
 
 msg "${BOLD}Zellij installation${NOFORMAT}"
 
-install_dependencies "fonts-powerline"
+apt_install "fonts-powerline"
 
 if [ "$build_from_source" == true ]; then
 	install_from_source
