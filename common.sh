@@ -100,6 +100,7 @@ Usage: $(basename "${BASH_SOURCE[0]}")
 
 Available options:
 
+-s, --source    Build Helix from source
 -h, --help      Print this help and exit
     --debug     Print script debug info
     --no-color  Print without colors
@@ -110,6 +111,7 @@ EOF
 parse_params() {
 	while :; do
 		case "${1-}" in
+		-s | --source) build_from_source=true ;;
 		-h | --help) usage ;;
 		--debug) set -x ;;
 		--no-color) NO_COLOR=1 ;;
