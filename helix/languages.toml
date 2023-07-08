@@ -5,6 +5,9 @@ auto-format = true
 [language.config]
 checkOnSave = { command = "clippy" }
 
+[language.config.check]
+command = "clippy"
+
 [[language]]
 name = "bash"
 auto-format = true
