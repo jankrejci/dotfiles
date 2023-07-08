@@ -40,10 +40,6 @@ cleanup() {
 	# Script cleanup here
 }
 
-# Get the script location as it can be run from different place.
-# https://stackoverflow.com/questions/59895/how-do-i-get-the-directory-where-a-bash-script-is-located-from-within-the-script/246128#246128
-script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
-
 die() {
 	local msg=$1
 	# Default exit status 1
