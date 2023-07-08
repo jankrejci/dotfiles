@@ -5,5 +5,9 @@
 		ria = rebase --interactive --autosquash
 		ra = rebase --abort
 		rc = rebase --continue
+		ap = add -p
+		cf = commit --fixup
+		cfh = commit --fixup=HEAD
+		c = commit
 [core]
         editor = hx
