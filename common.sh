@@ -132,3 +132,6 @@ sudo echo -n
 parse_params "$@"
 setup_colors
 
+TMP_DIR="/tmp/dotfiles"
+rm -rf "$TMP_DIR"
+mkdir --parents "$TMP_DIR"
