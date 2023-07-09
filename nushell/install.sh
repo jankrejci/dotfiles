@@ -17,12 +17,10 @@ install_from_binary() {
 
 	package_name=$(basename "$package_path")
 	msg "    • downloaded package $package_name"
-
 	tar -xf "$package_path" -C "$TMP_DIR"
-	# mv "$TMP_DIR/nu" "$cargo_bin"
-	# tar xf "$TMP_DIR/$package_file" --directory "$TMP_DIR"
 
-	# mv "$TMP_DIR/$package_name/nu" "$cargo_bin"
+	nu_folder=$(find "$TMP_DIR" -name 'nu*' -type d)
+	mv "$nu_folder/nu" "$cargo_bin"
 	msg "    • installed into $cargo_bin"
 }
 
