@@ -72,7 +72,7 @@ Usage: $(basename "${BASH_SOURCE[0]}")
 
 Available options:
 
--s, --source    Build Helix from source
+-l, --local     Install binaries into user's home
 -h, --help      Print this help and exit
     --debug     Print script debug info
     --no-color  Print without colors
@@ -84,7 +84,7 @@ EOF
 parse_params() {
 	while :; do
 		case "${1-}" in
-		-s | --source) build_from_source=true ;;
+		-l | --local) BIN_FOLDER="$HOME/.local/bin" ;;
 		-h | --help) usage ;;
 		--debug) set -x ;;
 		--no-color) NO_COLOR=1 ;;
@@ -139,12 +139,20 @@ download_from_github() {
 	curl -LJOsSf "$package" --output-dir "$TMP_DIR"
 }
 
-# Workaround to ask for sudo password at the beginning of the script,
-# but not to run all commands as root
-sudo echo -n
+
 parse_params "$@"
 setup_colors
+
+if [ -z "${BIN_FOLDER+x}" ]; then
+	# Workaround to ask for sudo password at the beginning of the script,
+	# but not to run all commands as root
+	sudo echo -n
+	BIN_FOLDER="/usr/local/bin/"
+else
+	mkdir --parents "$BIN_FOLDER"
+fi
 
 TMP_DIR="/tmp/dotfiles"
 rm -rf "$TMP_DIR"
 mkdir --parents "$TMP_DIR"
+
