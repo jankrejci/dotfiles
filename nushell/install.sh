@@ -7,12 +7,11 @@ dotfiles_dir=$(dirname "$script_dir")
 # shellcheck disable=SC1091
 source "$dotfiles_dir/common.sh"
 
-github_repo="nushell/nushell"
-cargo_bin="$HOME/.cargo/bin"
-config_folder="$HOME/.config/nushell"
+GITHUB_REPO="nushell/nushell"
+CONFIG_FOLDER="$HOME/.config/nushell"
 
 install_from_binary() {
-	download_from_github "$github_repo"
+	download_from_github "$GITHUB_REPO"
 	package_path=$(find "$TMP_DIR" -name 'nu*')
 
 	package_name=$(basename "$package_path")
@@ -27,9 +26,9 @@ install_from_binary() {
 link_configuration_files() {
 	msg "    • linking configuration files"
 	read -r -a configs <<<"$@"
-	mkdir --parents "$config_folder"
+	mkdir --parents "$CONFIG_FOLDER"
 	for config_file in "${configs[@]}"; do
-		ln -sf "$script_dir/$config_file" "$config_folder"
+		ln -sf "$script_dir/$config_file" "$CONFIG_FOLDER"
 	done
 }
 
