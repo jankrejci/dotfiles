@@ -7,10 +7,24 @@ dotfiles_dir=$(dirname "$script_dir")
 # shellcheck disable=SC1091
 source "$dotfiles_dir/common.sh"
 
-build_from_source=false
+github_repo="nushell/nushell"
 cargo_bin="$HOME/.cargo/bin"
 config_folder="$HOME/.config/nushell"
-nushell_version="0.82.0"
+
+install_from_binary() {
+	download_from_github "$github_repo"
+	package_path=$(find "$TMP_DIR" -name 'nu*')
+
+	package_name=$(basename "$package_path")
+	msg "    • downloaded package $package_name"
+
+	tar -xf "$package_path" -C "$TMP_DIR"
+	# mv "$TMP_DIR/nu" "$cargo_bin"
+	# tar xf "$TMP_DIR/$package_file" --directory "$TMP_DIR"
+
+	# mv "$TMP_DIR/$package_name/nu" "$cargo_bin"
+	msg "    • installed into $cargo_bin"
+}
 
 link_configuration_files() {
 	msg "    • linking configuration files"
@@ -21,39 +35,7 @@ link_configuration_files() {
 	done
 }
 
-cargo_install () {
-	msg -n "    • installing through cargo, it may take a while"
-	cargo install nu --features=dataframe &>/dev/null &	spinner
-}
-
-install_from_binary(){
-	BASE_ADDRESS="https://github.com/nushell/nushell/releases/download"
-	package_name="nu-$nushell_version-$detected_platform-unknown-linux-gnu"
-	package_file="$package_name.tar.gz"
-	package_link="$BASE_ADDRESS/$nushell_version/$package_file"
-
-	msg "    • installing version $nushell_version from binary"
-
-	curl -LJsSf "$package_link" >"$TMP_DIR/$package_file"
-	tar xf "$TMP_DIR/$package_file" --directory "$TMP_DIR"
-
-	mv "$TMP_DIR/$package_name/nu" "$cargo_bin"
-}
-
 msg "${BOLD}NuShell installation${NOFORMAT}"
-
-TMP_DIR="/tmp/dotfiles"
-mkdir --parents "$TMP_DIR"
-
 apt_install "pkg-config libssl-dev"
-
-detected_platform=$(uname -m)
-msg "    • detected platform $detected_platform"
-
-if [ "$build_from_source" == true ]; then
-	cargo_install
-else
-	install_from_binary
-fi
-
+install_from_binary
 link_configuration_files "env.nu config.nu"
