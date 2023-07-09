@@ -9,6 +9,7 @@ source "$dotfiles_dir/common.sh"
 
 FONT_NAME="DejaVuSansMono"
 FONT_FOLDER="$HOME/.local/share/fonts"
+mkdir --parents "$FONT_FOLDER"
 
 GITHUB_REPO="ryanoasis/nerd-fonts"
 GITHUB_API="https://api.github.com/repos/$GITHUB_REPO/releases/latest"
