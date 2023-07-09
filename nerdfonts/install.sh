@@ -20,6 +20,8 @@ GITHUB_RELEASE="https://github.com/$GITHUB_REPO/releases/download/v$VERSION/$FON
 
 msg "${BOLD}Nerd font installation${NOFORMAT}"
 
+apt_install "fontconfig"
+
 msg "    • current version $VERSION"
 msg "    • installing $FONT_NAME"
 wget -q "$GITHUB_RELEASE" -P "/tmp"
