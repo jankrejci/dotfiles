@@ -7,31 +7,30 @@ dotfiles_dir=$(dirname "$script_dir")
 # shellcheck disable=SC1091
 source "$dotfiles_dir/common.sh"
 
-github_repo="zellij-org/zellij"
-config_folder="$HOME/.config/zellij"
-cargo_bin="$HOME/.cargo/bin"
+GITHUB_REPO="zellij-org/zellij"
+CONFIG_FOLDER="$HOME/.config/zellij"
 
 install_from_binary() {
 	msg "    • downloading precompiled binary"
-	download_from_github "$github_repo"
+	download_from_github "$GITHUB_REPO"
 	package_path=$(find "$TMP_DIR" -name 'zellij*')
 
 	package_name=$(basename "$package_path")
 	msg "    • downloaded package $package_name"
 
 	tar -xf "$package_path" -C "$TMP_DIR"
-	mv "$TMP_DIR/zellij" "$cargo_bin"
-	msg "    • installed into $cargo_bin"
+	install_binary "$TMP_DIR/zellij"
+	msg "    • installed into $BIN_FOLDER"
 }
 
 link_configuration_files() {
 	msg "    • linking configuration files"
-	mkdir --parents "$config_folder"
-	ln -sf "$script_dir/config.kdl" "$config_folder"
-	rm -rf "$config_folder/themes"
-	ln -sf "$script_dir/themes" "$config_folder"
-	rm -rf "$config_folder/layouts"
-	ln -sf "$script_dir/layouts" "$config_folder"
+	mkdir --parents "$CONFIG_FOLDER"
+	ln -sf "$script_dir/config.kdl" "$CONFIG_FOLDER"
+	rm -rf "$CONFIG_FOLDER/themes"
+	ln -sf "$script_dir/themes" "$CONFIG_FOLDER"
+	rm -rf "$CONFIG_FOLDER/layouts"
+	ln -sf "$script_dir/layouts" "$CONFIG_FOLDER"
 }
 
 msg "${BOLD}Zellij installation${NOFORMAT}"
