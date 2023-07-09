@@ -35,12 +35,7 @@ install_marksman() {
 
 msg "${BOLD}Helix installation${NOFORMAT}"
 
-TMP_DIR="/tmp/dotfiles"
-rm -rf "$TMP_DIR"
-mkdir --parents "$TMP_DIR"
-
 apt_install "npm shellcheck"
-
 
 detected_platform=$(uname -m)
 msg "    • detected platform $detected_platform"
