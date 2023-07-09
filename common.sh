@@ -123,7 +123,7 @@ download_from_github() {
 	package=$(curl -s "$api" | grep -Po "\"browser_download_url\":.*\"\K.*$platform.*linux.*tar.*(?=\")")
 
 	msg "    • downloading version $version from github"
-	curl -LJOsSf "$package" --output-dir "$target"
+	curl -LJOsSf "$package" --output-dir "$TMP_DIR"
 }
 
 # Workaround to ask for sudo password at the beginning of the script,
