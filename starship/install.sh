@@ -26,3 +26,5 @@ fi
 
 msg "    • linking configuration file"
 ln -sf "$script_dir/startship.toml" "$HOME/.config/"
+
+msg "${GREEN}    • instalation done${NOFORMAT}"

@@ -53,3 +53,5 @@ install_rustup
 
 msg "    • installing cargo-binstall from binary"
 install_cargo_binstall
+
+msg "${GREEN}    • instalation done${NOFORMAT}"

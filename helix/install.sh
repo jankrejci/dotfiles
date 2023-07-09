@@ -78,3 +78,5 @@ CONFIG_LINKS=("config.toml" "languages.toml" "themes")
 for link in "${CONFIG_LINKS[@]}"; do
 	ln -sf "$script_dir/$link" "$config_folder"
 done
+
+msg "${GREEN}    • instalation done${NOFORMAT}"
