@@ -82,9 +82,11 @@ EOF
 
 # shellcheck disable=SC2034
 parse_params() {
+	LOCAL_INSTALL=false
+	
 	while :; do
 		case "${1-}" in
-		-l | --local) BIN_FOLDER="$HOME/.local/bin" ;;
+		-l | --local) LOCAL_INSTALL=true ;;
 		-h | --help) usage ;;
 		--debug) set -x ;;
 		--no-color) NO_COLOR=1 ;;
@@ -139,17 +141,30 @@ download_from_github() {
 	curl -LJOsSf "$package" --output-dir "$TMP_DIR"
 }
 
+install_binary() {
+	binary_file="$1"
+
+	if [ "$LOCAL_INSTALL" = true ]; then
+		BIN_FOLDER="/usr/local/bin/"
+		chmod +x "$binary_file"
+		mkdir --parents "$BIN_FOLDER"
+		sudo mv "$binary_file" "$BIN_FOLDER"
+	else
+		BIN_FOLDER="/usr/local/bin/"
+		sudo chown "root:root" "$binary_file"
+		sudo chmod 755 "$binary_file"
+		sudo mv "$binary_file" "$BIN_FOLDER"
+	fi
+}
+
 
 parse_params "$@"
 setup_colors
 
-if [ -z "${BIN_FOLDER+x}" ]; then
-	# Workaround to ask for sudo password at the beginning of the script,
-	# but not to run all commands as root
+# Workaround to ask for sudo password at the beginning of the script,
+# but not to run all commands as root
+if [ "$LOCAL_INSTALL" = false ]; then
 	sudo echo -n
-	BIN_FOLDER="/usr/local/bin/"
-else
-	mkdir --parents "$BIN_FOLDER"
 fi
 
 TMP_DIR="/tmp/dotfiles"
