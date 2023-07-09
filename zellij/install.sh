@@ -12,10 +12,16 @@ config_folder="$HOME/.config/zellij"
 cargo_bin="$HOME/.cargo/bin"
 
 install_from_binary() {
+	msg "    • downloading precompiled binary"
 	download_from_github "$github_repo"
 	package_path=$(find "$TMP_DIR" -name 'zellij*')
+
+	package_name=$(basename "$package_path")
+	msg "    • downloaded package $package_name"
+
 	tar -xf "$package_path" -C "$TMP_DIR"
 	mv "$TMP_DIR/zellij" "$cargo_bin"
+	msg "    • installed into $cargo_bin"
 }
 
 msg "${BOLD}Zellij installation${NOFORMAT}"
