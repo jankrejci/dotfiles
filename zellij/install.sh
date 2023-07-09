@@ -7,12 +7,16 @@ dotfiles_dir=$(dirname "$script_dir")
 # shellcheck disable=SC1091
 source "$dotfiles_dir/common.sh"
 
+github_repo="zellij-org/zellij"
 config_folder="$HOME/.config/zellij"
+cargo_bin="$HOME/.cargo/bin"
 
 install_from_binary() {
-	msg -n "    • installing from precompiled binary"
-	cargo binstall -y zellij &>/dev/null &
-	spinner
+	msg "    • installing from precompiled binary"
+	download_from_github "$github_repo" "$TMP_DIR"
+	package_path=$(find "$TMP_DIR" -name 'zellij*')
+	tar -xf "$package_path" -C "$TMP_DIR"
+	mv "$TMP_DIR/zellij" "$cargo_bin"
 }
 
 msg "${BOLD}Zellij installation${NOFORMAT}"
