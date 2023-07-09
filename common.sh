@@ -127,11 +127,14 @@ download_from_github() {
 	# Download github api json for the specified repository
 	package=$(curl -s "$api")
 	# Filter out only package download links, each link on separate line
-	package=$(grep -Po "\"browser_download_url\":.*\"\K.*(?=\")" <<< "$package" | tr " " "\n")
+	package=$(grep -Po "\"browser_download_url\":.*\"\K.*(?=\")" <<<"$package" | tr " " "\n")
 	# Filter only packages relevant for the platform
 	package=$(echo "$package" | grep "$platform" | grep "linux" | grep "tar")
-	# If there is multiple packages remaining filter out musl version
-	package=$(grep -Ev "musl" <<< "$package")
+	
+	# If there is multiple packages remaining filter out gnu version
+	if (( $(grep -c . <<<"$package") > 1 )); then
+		package=$(grep "gnu" <<< "$package")
+	fi
 
 	curl -LJOsSf "$package" --output-dir "$TMP_DIR"
 }
