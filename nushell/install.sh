@@ -35,5 +35,5 @@ link_configuration_files() {
 msg "${BOLD}NuShell installation${NOFORMAT}"
 apt_install "pkg-config libssl-dev zoxide fzf"
 install_from_binary
-link_configuration_files "env.nu config.nu"
+link_configuration_files "env.nu config.nu git-completions.nu"
 msg "${GREEN}    • instalation done${NOFORMAT}"
