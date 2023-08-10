@@ -77,7 +77,7 @@ install_additional_components() {
 	cargo-binstall -y taplo-cli > /dev/null & spinner
 
 	msg -n "        • Bash LSP (bash-language-server)"
-	npm install --silent -g bash-language-server &>/dev/null & spinner
+	sudo npm install --silent -g bash-language-server &>/dev/null & spinner
 
 	msg "        • Markdown LSP (marksman)"
 	install_marksman
