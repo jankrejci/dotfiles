@@ -9,13 +9,13 @@ source "$dotfiles_dir/common.sh"
 
 CONFIG_FOLDER="$HOME/.config/git"
 
-msg "${BOLD}Git installation${NOFORMAT}"
+info "Installation started"
 
-msg "    • installing from Ubuntu package"
+debug "Installing from Ubuntu package"
 sudo apt -y install git &>/dev/null
 
-msg "    • linking configuration files"
+debug "Linking configuration files"
 mkdir --parents "$CONFIG_FOLDER"
 ln -sf "$script_dir/config" "$CONFIG_FOLDER"
 
-msg "${GREEN}    • instalation done${NOFORMAT}"
+debug "Installation done"

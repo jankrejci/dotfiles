@@ -12,58 +12,20 @@ cleanup() {
 }
 
 die() {
-	local msg=$1
 	# Default exit status 1
 	local code=${2-1}
-	msg "$msg"
+	error "$*"
 	exit "$code"
 }
 
 # shellcheck disable=SC2034
 setup_colors() {
-	if [[ -t 2 ]] && [[ -z "${NO_COLOR-}" ]] && [[ "${TERM-}" != "dumb" ]]; then
-		NOFORMAT='\033[0m'
-		RED='\033[0;31m'
-		GREEN='\033[0;32m'
-		ORANGE='\033[0;33m'
-		BLUE='\033[0;34m'
-		PURPLE='\033[0;35m'
-		CYAN='\033[0;36m'
-		YELLOW='\033[1;33m'
-		BOLD='\033[1m'
-	else
-		NOFORMAT='' RED='' GREEN='' ORANGE='' BLUE='' PURPLE='' CYAN='' YELLOW='' BOLD=''
-	fi
-}
-
-spinner() {
-	# Make sure we use non-unicode character type locale
-	local LC_CTYPE=C
-	# Process Id of the previous running command
-	local pid=$!
-
-	local spin='⣾⣽⣻⢿⡿⣟⣯⣷'
-	local char_width=3
-
-	local i=0
-	# cursor invisible
-	tput civis;	msg -n " ";
-	while kill -0 "$pid" 2>/dev/null; do
-		local i=$(((i + char_width) % ${#spin}))
-		printf "%s" "${spin:$i:$char_width}"
-		# Move cursor back
-		echo -en "\033[1D"
-		sleep .1
-	done
-	# Erase spinner and print new line. It is expected that the spinner
-	# is shown at the end of message
-	tput cnorm;	msg " ";
-	wait "$pid"
-	return $?
-}
-
-msg() {
-	echo >&2 -e "$@"
+	GREY="$(tput setaf 245 2>/dev/null || printf '')"
+	RED="$(tput setaf 1 2>/dev/null || printf '')"
+	GREEN="$(tput setaf 2 2>/dev/null || printf '')"
+	YELLOW="$(tput setaf 3 2>/dev/null || printf '')"
+	CYAN="$(tput setaf 6 2>/dev/null || printf '')"
+	NO_COLOR="$(tput sgr0 2>/dev/null || printf '')"
 }
 
 message() {
@@ -106,7 +68,6 @@ Available options:
 -l, --local     Install binaries into user's home
 -h, --help      Print this help and exit
     --debug     Print script debug info
-    --no-color  Print without colors
 EOF
 	exit
 }
@@ -120,7 +81,6 @@ parse_params() {
 		-l | --local) LOCAL_INSTALL=true ;;
 		-h | --help) usage ;;
 		--debug) set -x ;;
-		--no-color) NO_COLOR=1 ;;
 		-?*) die "Unknown option: $1" ;;
 		*) break ;;
 		esac
@@ -140,22 +100,21 @@ apt_install() {
 	done
 
 	if [ -n "${not_installed_packages-}" ]; then
-		msg -n "    • installing packages through apt" "${not_installed_packages[@]}"
-		sudo apt -y install "${not_installed_packages[@]}" &>/dev/null &
-		spinner
+		debug "Installing packages through apt" "${not_installed_packages[@]}"
+		sudo apt -y install "${not_installed_packages[@]}" &>/dev/null
 	fi
 }
 
 download_from_github() {
 	repository="$1"
-	msg "    • downloading precompiled package from github repository $repository"
+	debug "Downloading precompiled package from github repository $repository"
 
 	platform=$(uname -m)
-	msg "    • detected platform $platform"
+	debug "Detected platform $platform"
 
 	api="https://api.github.com/repos/$repository/releases/latest"
 	version=$(curl -s "$api" | grep -Po "\"tag_name\": \"\K[^\"]*")
-	msg "    • found latest version $version"
+	debug "Found latest version $version"
 
 	# Download github api json for the specified repository
 	package=$(curl -s "$api")
@@ -201,4 +160,3 @@ fi
 TMP_DIR="/tmp/dotfiles"
 rm -rf "$TMP_DIR"
 mkdir --parents "$TMP_DIR"
-

@@ -10,18 +10,17 @@ source "$dotfiles_dir/common.sh"
 CARGO_BIN="$HOME/.cargo/bin"
 
 install_rustup() {
-	msg "    • installing Rustup"
+	debug "Installing Rustup"
 	rustup_init="$TMP_DIR/rustup-init.sh"
 	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs >"$rustup_init"
 	chmod +x "$rustup_init"
 
-	msg -n "    • installing Rust"
-	"$rustup_init" -y &>/dev/null &
-	spinner
+	debug "Installing Rust"
+	"$rustup_init" -y &>/dev/null
 
 	PATH="$PATH:$CARGO_BIN"
 }
 
-msg "${BOLD}Installing Rust${NOFORMAT}"
+info "Installation started"
 install_rustup
-msg "${GREEN}    • instalation done${NOFORMAT}"
+debug "Installation done"
