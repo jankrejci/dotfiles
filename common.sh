@@ -103,7 +103,7 @@ apt_install() {
 
 download_from_github() {
 	repository="$1"
-	debug "Downloading precompiled package from github repository $repository"
+	debug "Downloading from github repository $repository"
 
 	platform=$(uname -m)
 	debug "Detected platform $platform"
