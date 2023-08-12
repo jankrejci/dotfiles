@@ -1,11 +1,11 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 # Get the script location as it can be run from different place.
 script_dir=$(dirname "$(realpath "$0")")
 
 dotfiles_dir=$(dirname "$script_dir")
 # shellcheck disable=SC1091
-source "$dotfiles_dir/common.sh"
+. "$dotfiles_dir/common.sh"
 
 GITHUB_REPO="helix-editor/helix"
 CONFIG_FOLDER="$HOME/.config/helix"
@@ -54,7 +54,7 @@ install_marksman() {
 	# Download github api json for the specified repository
 	package=$(curl -s "$api")
 	# Filter out only package download links, each link on separate line
-	package=$(grep -Po "\"browser_download_url\":.*\"\K.*(?=\")" <<<"$package" | tr " " "\n")
+	package=$(echo "$package" | grep -Po "\"browser_download_url\":.*\"\K.*(?=\")" | tr " " "\n")
 	# Filter only packages relevant for the platform
 	package=$(echo "$package" | grep "$platform" | grep "linux")
 	
@@ -71,31 +71,31 @@ install_additional_components() {
 	debug "Installing additional components"
 
 	debug "Installing Rust LSP (rust-analyzer)"
-	rustup -q component add rust-analyzer &>/dev/null
+	rustup -q component add rust-analyzer >/dev/null 2>&1
 
 	debug "Installing TOML LSP (taplo-cli)"
 	cargo-binstall -y taplo-cli > /dev/null
 
 	debug "Installing Bash LSP (bash-language-server)"
 	# TODO install npm 16 first
-	sudo npm install --silent -g bash-language-server &>/dev/null
+	sudo npm install --silent -g bash-language-server >/dev/null 2>&1
 
 	debug "Installing Markdown LSP (marksman)"
 	install_marksman
 
 	debug "Installing Python LSP"
-	pip install python-lsp-server &>/dev/null
+	pip install python-lsp-server >/dev/null 2>&1
 
 	debug "Installing Shfmt"
-	curl -sS https://webi.sh/shfmt | sh &>/dev/null
+	curl -sS https://webi.sh/shfmt | sh >/dev/null 2>&1
 
 }
 
 link_configuration_files() {
 	debug "Linking configuration files"
 	# Create relative links to configuration files.
-	CONFIG_LINKS=("config.toml" "languages.toml" "themes")
-	for link in "${CONFIG_LINKS[@]}"; do
+	CONFIG_LINKS="config.toml languages.toml themes"
+	for link in $CONFIG_LINKS; do
 		ln -sf "$script_dir/$link" "$CONFIG_FOLDER"
 	done
 
