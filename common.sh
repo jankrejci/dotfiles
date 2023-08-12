@@ -65,7 +65,6 @@ Usage: $(basename "${BASH_SOURCE[0]}")
 
 Available options:
 
--l, --local     Install binaries into user's home
 -h, --help      Print this help and exit
     --debug     Print script debug info
 EOF
@@ -74,11 +73,8 @@ EOF
 
 # shellcheck disable=SC2034
 parse_params() {
-	LOCAL_INSTALL=false
-	
 	while :; do
 		case "${1-}" in
-		-l | --local) LOCAL_INSTALL=true ;;
 		-h | --help) usage ;;
 		--debug) set -x ;;
 		-?*) die "Unknown option: $1" ;;
@@ -130,17 +126,10 @@ download_from_github() {
 install_binary() {
 	binary_file="$1"
 
-	if [ "$LOCAL_INSTALL" = true ]; then
-		BIN_FOLDER="/usr/local/bin/"
-		chmod +x "$binary_file"
-		mkdir --parents "$BIN_FOLDER"
-		sudo mv "$binary_file" "$BIN_FOLDER"
-	else
-		BIN_FOLDER="/usr/local/bin/"
-		sudo chown "root:root" "$binary_file"
-		sudo chmod 755 "$binary_file"
-		sudo mv "$binary_file" "$BIN_FOLDER"
-	fi
+	BIN_FOLDER="/usr/local/bin/"
+	chmod +x "$binary_file"
+	mkdir --parents "$BIN_FOLDER"
+	sudo mv "$binary_file" "$BIN_FOLDER"
 }
 
 
@@ -149,9 +138,7 @@ setup_colors
 
 # Workaround to ask for sudo password at the beginning of the script,
 # but not to run all commands as root
-if [ "$LOCAL_INSTALL" = false ]; then
-	sudo echo -n
-fi
+sudo echo -n
 
 TMP_DIR="/tmp/dotfiles"
 rm -rf "$TMP_DIR"
