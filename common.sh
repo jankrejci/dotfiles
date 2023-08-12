@@ -66,6 +66,37 @@ msg() {
 	echo >&2 -e "$@"
 }
 
+message() {
+	color=$1
+	level=$2
+	text=$3
+
+	dir_name=$(dirname "$(realpath "$0")")
+	module=$(basename "$dir_name")
+	date=$(date '+%Y-%m-%dT%H:%M:%S')
+	printf '%s%s %s%-7s %s%-10s %s%s\n' \
+		"${GREY}" "${date}" \
+		"${color}" "${level}" \
+		"${GREY}" "${module}" \
+		"${NO_COLOR}" "${text}"
+}
+
+info() {
+	message "${GREEN}" "[INFO]" "$*"
+}
+
+debug() {
+	message "${CYAN}" "[DEBUG]" "$*"
+}
+
+warn() {
+	message "${YELLOW}" "[WARN]" "$*"
+}
+
+error() {
+	message "${RED}" "[ERROR]" "$*"
+}
+
 usage() {
 	cat <<EOF
 Usage: $(basename "${BASH_SOURCE[0]}")
