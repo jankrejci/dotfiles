@@ -11,21 +11,13 @@ GITHUB_REPO="helix-editor/helix"
 CONFIG_FOLDER="$HOME/.config/helix"
 
 install_from_binary(){
-	debug "Installing from precompiled binary"
-	download_from_github "$GITHUB_REPO"
-	package_path=$(find "$TMP_DIR" -name 'helix*')
-	tar -xf "$package_path" -C "$TMP_DIR"
-
-	package_name=$(basename "$package_path")
-	debug "Downloaded package $package_name"
-
-	helix_folder=$(find "$TMP_DIR" -name 'helix*' -type d)
-	install_binary "$helix_folder/hx"
-	debug "Installed into $BIN_FOLDER"
+	package_path=$(download_from_github "$GITHUB_REPO")
+	extracted_package=$(extract_package "$package_path")
+	install_binary "$extracted_package/hx"
 	
 	debug "Copying helix runtimes"
 	mkdir --parents "$CONFIG_FOLDER"
-	rsync -a "$helix_folder/runtime" "$CONFIG_FOLDER/"
+	rsync -a "$extracted_package/runtime" "$CONFIG_FOLDER/"
 }
 
 install_marksman() {
@@ -101,7 +93,6 @@ link_configuration_files() {
 
 }
 
-info "Installation started"
 apt_install "shellcheck"
 install_from_binary
 install_additional_components
