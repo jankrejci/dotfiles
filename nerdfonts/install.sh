@@ -10,9 +10,6 @@ dotfiles_dir=$(dirname "$script_dir")
 FONT_NAME="DejaVuSansMono"
 
 FONT_FOLDER="/usr/share/fonts/$FONT_NAME"
-if [ "$LOCAL_INSTALL" = true ]; then
-    FONT_FOLDER="$HOME/.local/share/fonts/$FONT_NAME"
-fi
 sudo mkdir --parents "$FONT_FOLDER"
 
 GITHUB_REPO="ryanoasis/nerd-fonts"
