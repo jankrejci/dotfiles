@@ -37,7 +37,8 @@ message() {
 		"${GREY}" "${date}" \
 		"${color}" "${level}" \
 		"${GREY}" "${module}" \
-		"${NO_COLOR}" "${text}"
+		"${NO_COLOR}" "${text}" \
+	>&2
 }
 
 info() {
