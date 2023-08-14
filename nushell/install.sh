@@ -20,7 +20,7 @@ install_from_binary() {
 
 	nu_folder=$(find "$TMP_DIR" -name 'nu*' -type d)
 	install_binary "$nu_folder/nu"
-	debug "Installed into $BIN_FOLDER"
+	debug "Installed into $BIN_DIR"
 }
 
 link_configuration_files() {

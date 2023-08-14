@@ -30,13 +30,11 @@ message() {
 	level=$2
 	text=$3
 
-	dir_name=$(dirname "$(realpath "$0")")
-	module=$(basename "$dir_name")
 	date=$(date '+%Y-%m-%dT%H:%M:%S')
 	printf '%s%s %s%-7s %s%-10s %s%s\n' \
 		"${GREY}" "${date}" \
 		"${color}" "${level}" \
-		"${GREY}" "${module}" \
+		"${GREY}" "${MODULE_NAME}" \
 		"${NO_COLOR}" "${text}" \
 	>&2
 }
@@ -195,3 +193,11 @@ rm -rf "$TMP_DIR"
 mkdir --parents "$TMP_DIR"
 
 apt_install "curl" "jq"
+
+BIN_DIR="/usr/local/bin"
+CONFIG_DIR="$HOME/.config"
+
+SCRIPT_DIR=$(dirname "$(realpath "$0")")
+MODULE_NAME=$(basename "$SCRIPT_DIR")
+info "Installing $MODULE_NAME"
+
