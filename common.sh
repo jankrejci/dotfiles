@@ -82,12 +82,11 @@ parse_params() {
 }
 
 # Install Ubuntu packages, but check if it is not already installed first.
-# It possibly allows to run the script even without sudo privileges.
 apt_install() {
-	packages="$1"
+	packages="$*"
 	for package in $packages; do
 		if ! dpkg -s "$package" >/dev/null 2>&1; then
-			debug "Installing packages through apt" "$package"
+			debug "Installing \"$package\" through apt" 
 			sudo apt -y install "$package" >/dev/null 2>&1
 		fi
 	done
@@ -143,3 +142,5 @@ sudo echo -n
 TMP_DIR="/tmp/dotfiles"
 rm -rf "$TMP_DIR"
 mkdir --parents "$TMP_DIR"
+
+apt_install "curl" "jq"
