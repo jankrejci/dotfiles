@@ -186,12 +186,19 @@ extract_package() {
 }
 
 install_binary() {
-	binary_file="$1"
+	binary_path="$1"
 
-	BIN_FOLDER="/usr/local/bin/"
-	chmod +x "$binary_file"
-	mkdir --parents "$BIN_FOLDER"
-	sudo mv "$binary_file" "$BIN_FOLDER"
+	binary_file=$(basename "$binary_path")
+	binary_target="$BIN_DIR/$binary_file"
+	if [ -e "$binary_target" ]; then
+		warn "Binary file already exists, creating backup"
+		sudo mv "$binary_target" "$binary_target.backup"
+	fi
+
+	debug "Installing to $binary_target"
+	chmod +x "$binary_path"
+	mkdir --parents "$BIN_DIR"
+	sudo mv "$binary_path" "$BIN_DIR"
 }
 
 
