@@ -38,4 +38,6 @@ let-env config = {
 }
 
 source ~/.cache/starship/init.nu
-use ~/.config/nushell/completions/git-completions.nu *
+use ~/.config/nushell/git-completions.nu *
+use ~/.config/nushell/zellij-completions.nu *
+use ~/.config/nushell/cargo-completions.nu *
