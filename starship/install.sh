@@ -1,5 +1,4 @@
-#!/usr/bin/env sh
-# shellcheck disable=SC2016
+#!/usr/bin/env bash
 
 # Get the script location as it can be run from different place.
 script_dir=$(dirname "$(realpath "$0")")
