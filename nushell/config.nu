@@ -12,7 +12,7 @@ def __dotfiles_find_up [filename: string, dir] {
     }
 }
 
-let-env config = {
+$env.config = {
     completions: {
         algorithm: 'fuzzy',
     },
