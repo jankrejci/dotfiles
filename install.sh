@@ -15,6 +15,7 @@ install_folders="
 	nushell
 	zoxide
 	fzf
+	fd
 	bat
 	helix
 	marksman
