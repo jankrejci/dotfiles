@@ -9,17 +9,14 @@ source "$dotfiles_dir/common.sh"
 
 CARGO_BIN="$HOME/.cargo/bin"
 
-install_rustup() {
-	debug "Installing Rustup"
-	rustup_init="$TMP_DIR/rustup-init.sh"
-	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs >"$rustup_init"
-	chmod +x "$rustup_init"
+debug "Installing Rustup"
+rustup_init="$TMP_DIR/rustup-init.sh"
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs >"$rustup_init"
+chmod +x "$rustup_init"
 
-	debug "Installing Rust"
-	"$rustup_init" -y &>/dev/null
+debug "Installing Rust"
+"$rustup_init" -y &>/dev/null
 
-	PATH="$PATH:$CARGO_BIN"
-}
+PATH="$PATH:$CARGO_BIN"
 
-install_rustup
 info "Installation done"
