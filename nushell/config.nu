@@ -39,6 +39,8 @@ $env.config = {
 }
 
 source ~/.cache/starship/init.nu
+source ~/.cache/zoxide/init.nu
+
 use ~/.config/nushell/git-completions.nu *
 use ~/.config/nushell/zellij-completions.nu *
 use ~/.config/nushell/cargo-completions.nu *
