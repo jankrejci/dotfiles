@@ -203,6 +203,24 @@ install_binary() {
 }
 
 
+link_configuration_files() {
+	config_files="$*"
+	module_config_dir="$CONFIG_DIR/$MODULE_NAME"
+
+	debug "Linking configuration files"
+	mkdir --parents "$module_config_dir"
+
+	for config_file in $config_files; do
+		target_file="$module_config_dir/$config_file"
+		if [ -e "$target_file" ]; then
+			warn "File $config_file already exists, creating backup"
+			mv "$target_file" "$target_file.backup"		
+		fi
+		debug "Linking $config_file"
+		ln -sf "$SCRIPT_DIR/$config_file" "$module_config_dir"
+	done 
+}
+
 parse_params "$@"
 setup_colors
 
