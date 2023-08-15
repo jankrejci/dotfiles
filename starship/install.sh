@@ -6,10 +6,11 @@ dotfiles_dir=$(dirname "$script_dir")
 . "$dotfiles_dir/common.sh"
 
 GITHUB_REPO="starship/starship"
+BINARY_NAME="starship"
 
 package_path=$(download_from_github "$GITHUB_REPO")
 extracted_package=$(extract_package "$package_path")
-install_binary "$extracted_package"
+install_binary "$extracted_package" "$BINARY_NAME"
 
 debug "Linking configuration file"
 ln -sf "$script_dir/startship.toml" "$HOME/.config/"

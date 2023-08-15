@@ -9,11 +9,12 @@ dotfiles_dir=$(dirname "$script_dir")
 
 GITHUB_REPO="helix-editor/helix"
 CONFIG_FOLDER="$HOME/.config/helix"
+BINARY_NAME="hx"
 
 install_from_binary(){
 	package_path=$(download_from_github "$GITHUB_REPO")
 	extracted_package=$(extract_package "$package_path")
-	install_binary "$extracted_package/hx"
+	install_binary "$extracted_package" "$BINARY_NAME"
 	
 	debug "Copying helix runtimes"
 	mkdir --parents "$CONFIG_FOLDER"
@@ -55,7 +56,7 @@ install_marksman() {
 
 	package_path=$(find "$TMP_DIR" -name 'marksman*')
 	mv "$package_path" "$TMP_DIR/marksman"
-	install_binary "$TMP_DIR/marksman"
+	install_binary "$TMP_DIR" "marksman"
 	debug "Installed into $BIN_DIR"
 }
 
