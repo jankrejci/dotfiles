@@ -7,7 +7,10 @@ script_dir=$(dirname "$(realpath "$0")")
 dotfiles_dir=$(dirname "$script_dir")
 . "$dotfiles_dir/common.sh"
 
+GITHUB_REPO="starship/starship"
+
 info "Installation started"
+download_from_github "$GITHUB_REPO"
 
 debug "Installing through install script"
 
