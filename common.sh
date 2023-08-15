@@ -178,8 +178,7 @@ extract_package() {
 	package_path="$1"
 
 	# Try to list the contents of the archive without extracting
-	tar tf "$package_path" &> /dev/null
-	if [ $? -ne 0 ]; then
+	if ! tar tf "$package_path" &> /dev/null; then
 	    die "BUG: Downloaded package is not tar archive"
 	fi
 
