@@ -14,6 +14,7 @@ install_folders="
 	zellij
 	nushell
 	zoxide
+	fzf
 	helix
 	marksman
 	starship
