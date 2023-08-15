@@ -176,9 +176,17 @@ download_from_github() {
 
 extract_package() {
 	package_path="$1"
-	tar -xf "$package_path" -C "$TMP_DIR"
 
-	extracted_package=$(tar -tf "$package_path" | head -1)
+	extracted_package=$(basename "$package_path")
+	# Try to list the contents of the archive without extracting
+	tar tf "$package_path" &> /dev/null
+	if [ $? -eq 0 ]; then
+		tar -xf "$package_path" -C "$TMP_DIR"
+		extracted_package=$(tar -tf "$package_path" | head -1)
+	else
+	    warn "Downloaded package is not tar archive"
+	fi
+
 	extracted_path=$TMP_DIR/$extracted_package
 	extracted_path="${extracted_path%/}"
 
