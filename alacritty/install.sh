@@ -41,4 +41,4 @@ ln -sf "$script_dir/alacritty.yml" "$config_folder"
 sudo ln -sf "$script_dir/alacritty-simple.svg" "/usr/share/pixmaps/Alacritty.svg"
 sudo ln -sf "$script_dir/Alacritty.desktop" "/usr/share/applications/"
 sudo update-desktop-database
-debug "Installation done"
+info "Installation done"

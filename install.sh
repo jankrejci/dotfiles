@@ -11,3 +11,5 @@ install_folders="git rust nerdfonts alacritty zellij nushell helix starship"
 for folder in $install_folders; do
 	cd "$script_dir/$folder" && ./install.sh "$@"
 done
+
+info "All packages installed succesfully"
