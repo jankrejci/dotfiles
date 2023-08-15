@@ -8,14 +8,11 @@ trap cleanup INT TERM EXIT
 cleanup() {
 	trap - INT TERM EXIT
 	tput cnorm
-	# Script cleanup here
 }
 
 die() {
-	# Default exit status 1
-	code="${2-1}"
-	error "$*"
-	exit "$code"
+	error "$1"
+	exit 1
 }
 
 # shellcheck disable=SC2034
