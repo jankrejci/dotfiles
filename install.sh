@@ -6,7 +6,18 @@ script_dir=$(dirname "$(realpath "$0")")
 # shellcheck disable=SC1091
 . "./common.sh"
 
-install_folders="git rust nerdfonts alacritty zellij nushell helix marksman starship"
+install_folders=" 
+	git
+	rust
+	nerdfonts
+	alacritty
+	zellij
+	nushell
+	zoxide
+	helix
+	marksman
+	starship
+"
 
 for folder in $install_folders; do
 	cd "$script_dir/$folder" && ./install.sh "$@"
