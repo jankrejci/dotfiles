@@ -6,8 +6,6 @@ script_dir=$(dirname "$(realpath "$0")")
 # shellcheck disable=SC1091
 . "./common.sh"
 
-info "Installing dotfiles"
-
 install_folders="git rust nerdfonts alacritty zellij nushell helix starship"
 
 for folder in $install_folders; do

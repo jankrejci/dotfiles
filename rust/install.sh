@@ -21,6 +21,5 @@ install_rustup() {
 	PATH="$PATH:$CARGO_BIN"
 }
 
-info "Installation started"
 install_rustup
 debug "Installation done"

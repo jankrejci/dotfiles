@@ -17,7 +17,6 @@ GITHUB_API="https://api.github.com/repos/$GITHUB_REPO/releases/latest"
 VERSION=$(curl -s "$GITHUB_API" | grep -Po '"tag_name": "v\K[^"]*')
 GITHUB_RELEASE="https://github.com/$GITHUB_REPO/releases/download/v$VERSION/$FONT_NAME.zip"
 
-info "Installation started"
 apt_install "fontconfig"
 
 debug "Current version $VERSION"

@@ -21,7 +21,6 @@ install_from_binary() {
 	debug "Installed into $BIN_DIR"
 }
 
-debug "Installation started"
 apt_install "fonts-powerline"
 install_from_binary
 link_configuration_files \
