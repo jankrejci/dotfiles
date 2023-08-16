@@ -8,7 +8,6 @@ dotfiles_dir=$(dirname "$script_dir")
 . "$dotfiles_dir/common.sh"
 
 GITHUB_REPO="nushell/nushell"
-CONFIG_FOLDER="$HOME/.config/nushell"
 
 install_from_binary() {
 	download_from_github "$GITHUB_REPO"
@@ -21,15 +20,6 @@ install_from_binary() {
 	nu_folder=$(find "$TMP_DIR" -name 'nu*' -type d)
 	install_binary "$nu_folder/nu"
 	debug "Installed into $BIN_DIR"
-}
-
-link_configuration_files() {
-	debug "Linking configuration files"
-	configs="$*"
-	mkdir --parents "$CONFIG_FOLDER"
-	for config_file in $configs; do
-		ln -sf "$script_dir/$config_file" "$CONFIG_FOLDER"
-	done
 }
 
 info "Installation started"
