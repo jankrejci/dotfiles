@@ -19,6 +19,7 @@ die() {
 	exit "$code"
 }
 
+# shellcheck disable=SC2034
 setup_colors() {
 	if [[ -t 2 ]] && [[ -z "${NO_COLOR-}" ]] && [[ "${TERM-}" != "dumb" ]]; then
 		NOFORMAT='\033[0m'
@@ -79,6 +80,7 @@ EOF
 	exit
 }
 
+# shellcheck disable=SC2034
 parse_params() {
 	while :; do
 		case "${1-}" in
