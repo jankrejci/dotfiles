@@ -1,0 +1,8 @@
+[alias]
+		# Prints log with one commit per line
+        ll = log --pretty=format:'%Cred%h% %Cgreen(%ad) %C(bold blue)<%<(18)%an>%Creset %s' --abbrev-commit --date=format:'%Y-%m-%d'
+		ri = rebase --interactive --autosquash
+		ra = rebase --abort
+		rc = rebase --continue
+[core]
+        editor = hx
