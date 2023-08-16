@@ -244,7 +244,7 @@ link_configuration_files() {
 			warn "File $config_file already exists, creating backup"
 			mv "$target_file" "$target_file.backup"		
 		fi
-		debug "Linking $config_file"
+		debug "Linking \"$config_file\""
 
 		config_path="$SCRIPT_DIR/$config_file"
 		ln -sf "$config_path" "$target_file"
