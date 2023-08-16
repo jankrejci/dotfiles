@@ -83,18 +83,11 @@ install_additional_components() {
 
 }
 
-link_configuration_files() {
-	debug "Linking configuration files"
-	# Create relative links to configuration files.
-	CONFIG_LINKS="config.toml languages.toml themes"
-	for link in $CONFIG_LINKS; do
-		ln -sf "$script_dir/$link" "$CONFIG_FOLDER"
-	done
-
-}
-
 apt_install "shellcheck"
 install_from_binary
 install_additional_components
-link_configuration_files
+link_configuration_files \
+	"config.toml" \
+	"languages.toml" \
+	"themes"
 info "Installation done"
