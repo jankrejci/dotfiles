@@ -1,15 +1,14 @@
+# Description
+
+Installs the Zellij with all additional packages
+and links configuration files
+
+# Prerequisities
+
+* cargo
+
 # Installation
 ```shell
-cargo install zellij
-sudo apt install fonts-powerline
-```
-
-# Create configuration folders
-```shell
-mkdir ~/.config/zellij
-```
-
-# Copy configuration files
-```shell
-cp -r * ~/.config/zellij
+chmod +x install.sh
+./install.sh
 ```
