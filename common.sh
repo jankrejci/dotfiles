@@ -100,16 +100,10 @@ msg() {
 
 usage() {
 	cat <<EOF
-Usage: $(
-		basename "${BASH_SOURCE[0]}"
-	) [-f] -p param_value arg1 [arg2...]
-
-Script description here.
+Usage: $(basename "${BASH_SOURCE[0]}")
 
 Available options:
 
--f, --flag      Some flag description
--p, --param     Some param description
 -h, --help      Print this help and exit
     --debug     Print script debug info
     --no-color  Print without colors
@@ -118,19 +112,8 @@ EOF
 }
 
 parse_params() {
-	# Default values of variables set from params
-	flag=0
-	param=''
-
 	while :; do
 		case "${1-}" in
-		# Example flag
-		-f | --flag) flag=1 ;;
-		# Example named parameter
-		-p | --param)
-			param="${2-}"
-			shift
-			;;
 		-h | --help) usage ;;
 		--debug) set -x ;;
 		--no-color) NO_COLOR=1 ;;
@@ -139,12 +122,6 @@ parse_params() {
 		esac
 		shift
 	done
-
-	args=("$@")
-	# Check required params and arguments
-	[[ -z "${param-}" ]] && die "Missing required parameter: param"
-	[[ ${#args[@]} -eq 0 ]] && die "Missing script arguments"
-
 	return 0
 }
 
@@ -171,27 +148,3 @@ sudo echo -n
 parse_params "$@"
 setup_colors
 
-# Script logic here
-
-msg "Read parameters:"
-msg "- flag: ${flag}"
-msg "- param: ${param}"
-msg "- arguments: ${args[*]-}"
-
-msg "${RED}Red${NOFORMAT}"
-msg "${GREEN}Green${NOFORMAT}"
-msg "${ORANGE}Orange${NOFORMAT}"
-msg "${BLUE}Blue${NOFORMAT}"
-msg "${PURPLE}Purple${NOFORMAT}"
-msg "${CYAN}Cyan${NOFORMAT}"
-msg "${YELLOW}Yellow${NOFORMAT}"
-msg "${BOLD}Bold${NOFORMAT}"
-msg "${BOLD}${RED}Bold red${NOFORMAT}"
-
-msg "Script folder $script_dir"
-
-msg -n "Sleeping 3 s with spinner "
-sleep 3 &
-spinner
-
-msg "Done"
