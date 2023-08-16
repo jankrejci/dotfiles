@@ -1,109 +1,15 @@
 #!/usr/bin/env bash
 
-set -Eeuo pipefail
+# Get the script location as it can be run from different place.
+script_dir=$(dirname $(realpath "$0"))
 
-trap cleanup SIGINT SIGTERM ERR EXIT
+dotfiles_dir=$(dirname "$script_dir")
+source "$dotfiles_dir/common.sh"
 
-cleanup() {
-	trap - SIGINT SIGTERM ERR EXIT
-	tput cnorm
-	rm -rf "$TMP_DIR"
-}
-
-script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
-
-die() {
-	local msg=$1
-	local code=${2-1}
-	msg "${RED}$msg${NOFORMAT}"
-	exit "$code"
-}
-
-setup_colors() {
-	if [[ -t 2 ]] && [[ -z "${NO_COLOR-}" ]] && [[ "${TERM-}" != "dumb" ]]; then
-		NOFORMAT='\033[0m' RED='\033[0;31m' BOLD='\033[1m'
-	else
-		NOFORMAT='' RED='' BOLD=''
-	fi
-}
-
-spinner() {
-	local LC_CTYPE=C
-	local pid=$!
-
-	local spin='⣾⣽⣻⢿⡿⣟⣯⣷'
-	local char_width=3
-
-	local i=0
-	tput civis;	msg -n " ";
-	while kill -0 "$pid" 2>/dev/null; do
-		local i=$(((i + char_width) % ${#spin}))
-		printf "%s" "${spin:$i:$char_width}"
-		echo -en "\033[1D"
-		sleep .1
-	done
-	tput cnorm;	msg " ";
-	wait "$pid"
-	return $?
-}
-
-msg() {
-	echo >&2 -e "$@"
-}
-
-usage() {
-	cat <<EOF
-Usage: $(basename "${BASH_SOURCE[0]}") [-s]
-
-Installs and configures Helix editor.
-
-Available options:
-
--s, --source    Build Helix from source
--h, --help      Print this help and exit
-    --debug     Print script debug info
-    --no-color  Print without colors
-EOF
-	exit
-}
-
-parse_params() {
-	build_from_source=false
-	config_folder="$HOME/.config/helix"
-	cargo_bin="$HOME/.cargo/bin"
-	helix_version="23.05"
-
-	while :; do
-		case "${1-}" in
-		-s | --source) build_from_source=true ;;
-		-h | --help) usage ;;
-		--debug) set -x ;;
-		--no-color) NO_COLOR=1 ;;
-		-?*) die "Unknown option: $1" ;;
-		*) break ;;
-		esac
-		shift
-	done
-	return 0
-}
-
-install_dependencies() {
-	read -r -a packages <<<"$@"
-	for package in "${packages[@]}"; do
-		if ! dpkg -s "$package" &>/dev/null; then
-			not_installed_packages+=("$package")
-		fi
-	done
-
-	if [ -n "${not_installed_packages-}" ]; then
-		msg -n "    • installing Ubuntu packages" "${not_installed_packages[@]}"
-		sudo apt -y install "${not_installed_packages[@]}" &>/dev/null & spinner
-	fi
-}
-
-sudo echo -n
-setup_colors
-parse_params "$@"
+build_from_source=false
+config_folder="$HOME/.config/helix"
+cargo_bin="$HOME/.cargo/bin"
+helix_version="23.05"
 
 install_from_binary(){
 	BASE_ADDRESS="https://github.com/helix-editor/helix/releases/download"
