@@ -8,7 +8,6 @@ dotfiles_dir=$(dirname "$script_dir")
 source "$dotfiles_dir/common.sh"
 
 config_folder="$HOME/.config/zellij"
-build_from_source=false
 
 install_from_binary() {
 	msg -n "    • installing from precompiled binary"
@@ -16,21 +15,11 @@ install_from_binary() {
 	spinner
 }
 
-install_from_source() {
-	msg -n "    • compiling from source, it may take a while"
-	cargo install --quiet --locked zellij &>/dev/null &
-	spinner
-}
-
 msg "${BOLD}Zellij installation${NOFORMAT}"
 
 apt_install "fonts-powerline"
 
-if [ "$build_from_source" == true ]; then
-	install_from_source
-else
-	install_from_binary
-fi
+install_from_binary
 
 msg "    • linking configuration files"
 mkdir --parents "$config_folder"
