@@ -5,24 +5,6 @@ trap cleanup SIGINT SIGTERM ERR EXIT
 
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 
-usage() {
-	cat <<EOF
-Usage: $(
-		basename "${BASH_SOURCE[0]}"
-	) [-f] -p param_value arg1 [arg2...]
-
-Script description here.
-
-Available options:
-
--f, --flag      Some flag description
--p, --param     Some param description
--h, --help      Print this help and exit
-    --debug     Print script debug info
-    --no-color  Print without colors
-EOF
-	exit
-}
 
 cleanup() {
 	trap - SIGINT SIGTERM ERR EXIT
@@ -32,7 +14,6 @@ cleanup() {
 
 die() {
 	local msg=$1
-
 	# Default exit status 1
 	local code=${2-1}
 	msg "$msg"
@@ -58,7 +39,6 @@ setup_colors() {
 function spinner() {
 	# Make sure we use non-unicode character type locale
 	local LC_CTYPE=C
-
 	# Process Id of the previous running command
 	local pid=$!
 
@@ -67,27 +47,42 @@ function spinner() {
 
 	local i=0
 	# cursor invisible
-	tput civis
+	tput civis; msg -n " "
 	while kill -0 "$pid" 2>/dev/null; do
 		local i=$(((i + char_width) % ${#spin}))
 		printf "%s" "${spin:$i:$char_width}"
-
 		# Move cursor back
 		echo -en "\033[1D"
 		sleep .1
 	done
-	tput cnorm
 	# Erase spinner and print new line. It is expected that the spinner
 	# is shown at the end of message
-	echo " "
-
-	# Capture exit code
+	tput cnorm; msg " "; 
 	wait "$pid"
 	return $?
 }
 
 msg() {
 	echo >&2 -e "$@"
+}
+
+usage() {
+	cat <<EOF
+Usage: $(
+		basename "${BASH_SOURCE[0]}"
+	) [-f] -p param_value arg1 [arg2...]
+
+Script description here.
+
+Available options:
+
+-f, --flag      Some flag description
+-p, --param     Some param description
+-h, --help      Print this help and exit
+    --debug     Print script debug info
+    --no-color  Print without colors
+EOF
+	exit
 }
 
 parse_params() {
@@ -97,18 +92,16 @@ parse_params() {
 
 	while :; do
 		case "${1-}" in
-		-h | --help) usage ;;
-		--debug) set -x ;;
-		--no-color) NO_COLOR=1 ;;
-
-			# Example flag
+		# Example flag
 		-f | --flag) flag=1 ;;
-
-			# Example named parameter
+		# Example named parameter
 		-p | --param)
 			param="${2-}"
 			shift
 			;;
+		-h | --help) usage ;;
+		--debug) set -x ;;
+		--no-color) NO_COLOR=1 ;;
 		-?*) die "Unknown option: $1" ;;
 		*) break ;;
 		esac
@@ -116,7 +109,6 @@ parse_params() {
 	done
 
 	args=("$@")
-
 	# Check required params and arguments
 	[[ -z "${param-}" ]] && die "Missing required parameter: param"
 	[[ ${#args[@]} -eq 0 ]] && die "Missing script arguments"
