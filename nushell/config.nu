@@ -44,3 +44,9 @@ source ~/.cache/zoxide/init.nu
 use ~/.config/nushell/git-completions.nu *
 use ~/.config/nushell/zellij-completions.nu *
 use ~/.config/nushell/cargo-completions.nu *
+
+alias ll = ls -l
+alias lt = exa -T -L2
+alias g = git
+alias cd = z
+
