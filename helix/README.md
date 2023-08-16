@@ -1,4 +1,8 @@
+# Instalation
+
+Installation script installs the Helix editor, language servers and links all the configuration files.
+
 ```shell
-mkdir ~/.config/helix
-cp config.toml ~/.config/helix/
+chmod +x install.sh
+./install.sh
 ```
