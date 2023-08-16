@@ -92,34 +92,85 @@ apt_install() {
 	done
 }
 
-download_from_github() {
-	repository="$1"
-	debug "Downloading from github repository $repository"
-
-	platform=$(uname -m)
-	debug "Detected platform $platform"
-
-	api="https://api.github.com/repos/$repository/releases/latest"
-	api_json=$(curl -s "$api")
-	[ -z "$api_json" ] && die "Failed to get github api json"
-
-	assets=$(printf "%s" "$api_json" | jq '.assets[].browser_download_url')
-	[ -z "$assets" ] && die "Failed to get assets"
-
-	version=$(printf "%s" "$api_json" | jq '.tag_name')
-	debug "Found latest version $version"
-
-	for filter in $platform "linux" "tar"; do
-		assets=$(printf "%s" "$assets" |jq ". | select(contains(\"$filter\"))")
-		echo $assets "\n"
-	done
-	
-	# If there is multiple packages remaining filter out gnu version
-	if [ "$(echo "$package" | grep -c .)" -gt 1 ]; then
-		package=$(echo "$package" | grep "gnu")
+github_release_link() {
+	github_repo=$1
+	if [ -z "$github_repo" ]; then
+	    die "BUG: Github repo missing"
 	fi
 
-	curl -LJOsSf "$package" --output-dir "$TMP_DIR"
+	platform=$(detect_platform)
+	arch=$(detect_architecture)
+	assets=$(curl -s "https://api.github.com/repos/$github_repo/releases/latest")
+
+	download_url=$(echo "$assets" | \
+		jq -r --arg platform "$platform" --arg arch "$arch" \
+			'[.assets[].browser_download_url
+			| select(
+				contains($platform)
+				and contains($arch)
+				and contains("tar")
+				# Filter out the checksum files
+				and(contains(".sha256") | not)
+			)]
+			# Prefere musl versions
+			| sort_by(contains("musl") | not)
+			# If there is still more candidates, pick the first one
+			| .[0]' \
+	)
+
+	if [ -n "$download_url" ]; then
+	    filename=$(basename "$download_url")
+		debug "Found release file \"$filename\""
+	    echo "$download_url"
+	else
+	    die "BUG: Failed to find release file"
+	fi
+}
+
+detect_platform() {
+	platform=$(uname | tr '[:upper:]' '[:lower:]')
+	if [ -z "$platform" ]; then
+	    die "BUG: Failed to detect platform"
+	else
+		debug "Detected platform \"$platform\""
+	fi
+	
+	echo "$platform"
+}
+
+detect_architecture() {
+	arch=$(uname -m)
+	if [ -z "$arch" ]; then
+	    die "BUG: Failed to detect architecture"
+	else
+		debug "Detected architecture \"$arch\""
+	fi
+	
+	echo "$arch"
+}
+
+download() {
+	download_url=$1
+	debug "Downloading file"
+	curl -LJOsSf "$download_url" --output-dir "$TMP_DIR"	
+
+    path=$TMP_DIR/$(basename "$download_url")
+	if [ -f "$path" ]; then
+		debug "Download was succesfull"
+	else
+		die "Failed to download the file"
+	fi
+
+	echo "$path"
+}
+
+download_from_github() {
+	github_repo="$1"
+	debug "Downloading from github repository $github_repo"
+
+	link=$(github_release_link "$github_repo")
+	path=$(download "$link")
+	echo "$path"
 }
 
 install_binary() {
