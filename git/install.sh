@@ -6,13 +6,10 @@ dotfiles_dir=$(dirname "$script_dir")
 # shellcheck disable=SC1091
 source "$dotfiles_dir/common.sh"
 
-CONFIG_FOLDER="$HOME/.config/git"
-
 debug "Installing from Ubuntu package"
 sudo apt -y install git &>/dev/null
 
-debug "Linking configuration files"
-mkdir --parents "$CONFIG_FOLDER"
-ln -sf "$script_dir/config" "$CONFIG_FOLDER"
+link_configuration_files \
+	"config" \
 
 info "Installation done"
