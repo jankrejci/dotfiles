@@ -18,7 +18,8 @@ $env.config = {
     },
     history: {
         file_format: 'sqlite',
-        sync_on_enter: false, # prefer concurrent sessions to not share history
+        sync_on_enter: true,
+        isolation: true,
     },
     hooks: {
         env_change: {
