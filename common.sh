@@ -115,14 +115,24 @@ apt_install() {
 
 download_from_github() {
 	repository="$1"
-	target="$2"
+	msg "    • downloading precompiled package from github repository $repository"
 
 	platform=$(uname -m)
+	msg "    • detected platform $platform"
+
 	api="https://api.github.com/repos/$repository/releases/latest"
 	version=$(curl -s "$api" | grep -Po "\"tag_name\": \"\K[^\"]*")
-	package=$(curl -s "$api" | grep -Po "\"browser_download_url\":.*\"\K.*$platform.*linux.*tar.*(?=\")")
+	msg "    • found latest version $version"
 
-	msg "    • downloading version $version from github"
+	# Download github api json for the specified repository
+	package=$(curl -s "$api")
+	# Filter out only package download links, each link on separate line
+	package=$(grep -Po "\"browser_download_url\":.*\"\K.*(?=\")" <<< "$package" | tr " " "\n")
+	# Filter only packages relevant for the platform
+	package=$(echo "$package" | grep "$platform" | grep "linux" | grep "tar")
+	# If there is multiple packages remaining filter out musl version
+	package=$(grep -Ev "musl" <<< "$package")
+
 	curl -LJOsSf "$package" --output-dir "$TMP_DIR"
 }
 
