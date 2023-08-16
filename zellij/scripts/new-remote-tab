@@ -1,0 +1,86 @@
+#!/bin/bash
+
+print_help () {
+    echo "Opens new tab in Zellij with \"Remote Tab\" layout"
+    echo "Options:"
+    echo " -n, --name  device name"
+    echo " -u, --user  user name"
+    echo " -a, --addr  device address"
+    echo " -h, --help  prints this help"
+}
+
+SHORT_OPT="n:,u:,a:,h"
+LONG_OPT="name:,user:,addr:,help"
+VALID_ARGS=$(getopt --alternative --options $SHORT_OPT --long $LONG_OPT -- "$@")
+if [[ $? -ne 0 ]]; then
+    echo "Failed to get arguments"
+    exit 1;
+fi
+
+eval set -- "$VALID_ARGS"
+while :
+ do
+  case "$1" in
+    -n | --name)
+        echo "Processing 'name' option. Input argument is '$2'"
+        DEVICE_NAME="$2"
+        shift 2
+        ;;
+    -u | --user)
+        echo "Processing 'user' option. Input argument is '$2'"
+        USER_NAME="$2"
+        shift 2
+        ;;
+    -a | --addr)
+        echo "Processing 'target' option. Input argument is '$2'"
+        DEVICE_ADDR="$2"
+        shift 2
+        ;;
+    -h | --help)
+        print_help
+        shift
+        exit 0;
+        break
+        ;;
+    --) shift; 
+        break 
+        ;;
+  esac
+done
+
+LAYOUT_FOLDER="$HOME/.config/zellij/layouts"
+LAYOUT_FILE="remote-tab.template"
+TEMP_FOLDER="/tmp"
+
+SOURCE_LAYOUT="$LAYOUT_FOLDER/$LAYOUT_FILE"
+if ! [ -d $PROJECT_FOLDER ]; then
+    echo "Layout $SOURCE_LAYOUT file does not exist"
+    exit 1;
+fi
+
+TARGET_LAYOUT="$TEMP_FOLDER/$LAYOUT_FILE"
+cp $SOURCE_LAYOUT $TARGET_LAYOUT
+if [[ $? -ne 0 ]]; then
+    echo "Failed to create temporary file"
+    exit 1;
+fi
+
+TAB_NAME="$DEVICE_NAME $DEVICE_ADDR"
+
+sed -i "s/\$TAB_NAME/$TAB_NAME/g" $TARGET_LAYOUT
+sed -i "s/\$USER_NAME/$USER_NAME/g" $TARGET_LAYOUT
+sed -i "s/\$DEVICE_ADDR/$DEVICE_ADDR/g" $TARGET_LAYOUT
+
+PROJECT_FOLDER="$HOME/Projects/braiins/bos-main/bosminer-plus/bosminer-plus-tuner"
+if ! [ -d $PROJECT_FOLDER ]; then
+    echo "Project folder does not exist"
+    exit 1;
+fi
+
+BUILD_TARGET="aarch64-unknown-linux-musl"
+
+sed -i "s|\$HOME|$HOME|g" $TARGET_LAYOUT
+sed -i "s|\$PROJECT_FOLDER|$PROJECT_FOLDER|g" $TARGET_LAYOUT
+sed -i "s/\$BUILD_TARGET/$BUILD_TARGET/g" $TARGET_LAYOUT
+
+zellij action new-tab --layout $TARGET_LAYOUT

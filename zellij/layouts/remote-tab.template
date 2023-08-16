@@ -1,0 +1,26 @@
+layout {
+    tab name="$TAB_NAME" {
+        pane split_direction="vertical" {
+            pane cwd="$PROJECT_FOLDER" 
+            pane split_direction="horizontal" {
+                pane {
+                    command "cargo"
+                    args "build" "--release" "--target" "$BUILD_TARGET"
+                    cwd "$PROJECT_FOLDER" 
+                    start_suspended true
+                }
+                pane {
+                    command "ssh"
+                    args "$USER_NAME@$DEVICE_ADDR"
+                    start_suspended true
+                }
+                pane {
+                    cwd "$HOME"
+                }
+            }
+        }
+        pane size=1 borderless=true {
+            plugin location="zellij:compact-bar"
+        }
+    }
+}
