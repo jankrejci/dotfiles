@@ -14,6 +14,11 @@ chmod +x $RUSTUP_INIT
 $RUSTUP_INIT -y &> /dev/null
 rm $RUSTUP_INIT
 
+echo "    • installing Ubuntu packages"
+sudo apt -y install \
+git \
+npm \
+&> /dev/null
 
 cd $BASE_FOLDER/alacritty && ./install.sh
 cd $BASE_FOLDER/zellij && ./install.sh
