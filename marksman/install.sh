@@ -16,6 +16,9 @@ case "$ARCH" in
 esac
 debug "Architecture overriden to $ARCH"
 
-install_from_github "$GITHUB_REPO" "$BINARY_NAME"
+package_path=$(download_from_github "$GITHUB_REPO")
+binary_path="$TMP_DIR/$BINARY_NAME"
+mv "$package_path" "$binary_path"
+install_binary "$binary_path" "$BINARY_NAME"
 
 info "Installation done"
