@@ -64,7 +64,7 @@ install_marksman() {
 	package_path=$(find "$TMP_DIR" -name 'marksman*')
 	mv "$package_path" "$TMP_DIR/marksman"
 	install_binary "$TMP_DIR/marksman"
-	debug "Installed into $BIN_FOLDER"
+	debug "Installed into $BIN_DIR"
 }
 
 install_additional_components() {

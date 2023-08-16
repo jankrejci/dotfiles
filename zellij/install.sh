@@ -20,7 +20,7 @@ install_from_binary() {
 
 	tar -xf "$package_path" -C "$TMP_DIR"
 	install_binary "$TMP_DIR/zellij"
-	debug "Installed into $BIN_FOLDER"
+	debug "Installed into $BIN_DIR"
 }
 
 link_configuration_files() {
