@@ -1,11 +1,11 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 # Get the script location as it can be run from different place.
 script_dir=$(dirname "$(realpath "$0")")
 
 dotfiles_dir=$(dirname "$script_dir")
 # shellcheck disable=SC1091
-source "$dotfiles_dir/common.sh"
+. "$dotfiles_dir/common.sh"
 
 GITHUB_REPO="zellij-org/zellij"
 CONFIG_FOLDER="$HOME/.config/zellij"
