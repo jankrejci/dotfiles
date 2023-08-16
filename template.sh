@@ -1,16 +1,48 @@
 #!/usr/bin/env bash
+# Bash executable doesn't have to be always in /bin folder, this command searches PATH for bash
+# https://stackoverflow.com/questions/21612980/why-is-usr-bin-env-bash-superior-to-bin-bash
 
+# This template aims to give solid foundation of the shell script.
+# Origin of the script is here https://betterdev.blog/minimal-safe-bash-script-template/
+# * Be correct.
+#     - any script based on this template should be able to pass `shellcheck`
+#     - clenaup of resources is done even in failure condition
+# * Fail fast, fail safe.
+#     - to be correct you neeed to find bugs
+#     - if there is some problem say it
+# * Run in most environments.
+#     - Do not rely on particular environment like Ubuntu
+#     - Target architectures are x86_64 and aarch64
+#	  - Target plaform is linux, target distros are debian based
+#     - It should run on desktop, server and raspberry pi
+# * Be standalone.
+#     - Do not rely on external dependencies like eg. Python
+#     - Reasonable assumption is that the environment is Unix based with bash
+# * Show usefull help.
+#     - Show how to use the script
+#     - If there is problem, describe it
+# * Be short.
+#     - Target is to be under 300 lines
+# * Be fancy.
+#     - Show colors to distinguish the message importance
+#     - Let the user know something happens there, use spinners
+
+# Fail fast. If command fails, also the script should fail to discover bugs soon.
+# https://vaneyckt.io/posts/safer_bash_scripts_with_set_euxo_pipefail/
 set -Eeuo pipefail
+
+# Cleanup all temporary resources.
 trap cleanup SIGINT SIGTERM ERR EXIT
-
-script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
-
 
 cleanup() {
 	trap - SIGINT SIGTERM ERR EXIT
 	tput cnorm
 	# Script cleanup here
 }
+
+# Get the script location as it can be run from different place.
+# https://stackoverflow.com/questions/59895/how-do-i-get-the-directory-where-a-bash-script-is-located-from-within-the-script/246128#246128
+script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 
 die() {
 	local msg=$1
@@ -36,7 +68,7 @@ setup_colors() {
 	fi
 }
 
-function spinner() {
+spinner() {
 	# Make sure we use non-unicode character type locale
 	local LC_CTYPE=C
 	# Process Id of the previous running command
@@ -47,7 +79,8 @@ function spinner() {
 
 	local i=0
 	# cursor invisible
-	tput civis; msg -n " "
+	tput civis
+	msg -n " "
 	while kill -0 "$pid" 2>/dev/null; do
 		local i=$(((i + char_width) % ${#spin}))
 		printf "%s" "${spin:$i:$char_width}"
@@ -57,7 +90,8 @@ function spinner() {
 	done
 	# Erase spinner and print new line. It is expected that the spinner
 	# is shown at the end of message
-	tput cnorm; msg " "; 
+	tput cnorm
+	msg " "
 	wait "$pid"
 	return $?
 }
