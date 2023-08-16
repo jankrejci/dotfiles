@@ -1,5 +1,7 @@
 #!/bin/bash
 
+CONFIG_FOLDER="$HOME/.config/alacritty"
+
 echo "Alacritty installation"
 # Workaround to detect rpi platform
 if [[ -f /usr/bin/rpi-update ]]; then
@@ -23,6 +25,8 @@ echo "    • compiling from source, it may take a while"
 cargo install --quiet alacritty
 
 echo "    • linking configuration files"
+mkdir --parents $CONFIG_FOLDER
+ln -sf $PWD/alacritty.yml $CONFIG_FOLDER
 sudo ln -sf $PWD/alacritty-simple.svg /usr/share/pixmaps/Alacritty.svg
 sudo ln -sf $PWD/Alacritty.desktop /usr/share/applications/
 sudo update-desktop-database
