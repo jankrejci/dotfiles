@@ -49,6 +49,8 @@ cd $BASE_FOLDER
 rm -rf $TMP_DIR
 
 
+cd $BASE_FOLDER/nerdfonts && ./install.sh
 cd $BASE_FOLDER/alacritty && ./install.sh
 cd $BASE_FOLDER/zellij && ./install.sh
 cd $BASE_FOLDER/helix && ./install.sh
+cd $BASE_FOLDER/lazygit && ./install.sh
