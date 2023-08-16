@@ -8,20 +8,18 @@ dotfiles_dir=$(dirname "$script_dir")
 source "$dotfiles_dir/common.sh"
 
 build_from_source=false
+github_repo="helix-editor/helix"
 config_folder="$HOME/.config/helix"
 cargo_bin="$HOME/.cargo/bin"
 helix_version="23.05"
 
 install_from_binary(){
-	BASE_ADDRESS="https://github.com/helix-editor/helix/releases/download"
-	package_name="helix-$helix_version-$detected_platform-linux"
-	package_file="$package_name.tar.xz"
-	package_link="$BASE_ADDRESS/$helix_version/$package_file"
-
-	curl -LJsSf "$package_link" >"$TMP_DIR/$package_file"
-	tar xf "$TMP_DIR/$package_file" --directory "$TMP_DIR"
-
-	mv "$TMP_DIR/$package_name/hx" "$cargo_bin"
+	msg "    • installing from precompiled binary"
+	download_from_github "$github_repo" "$TMP_DIR"
+	package_path=$(find "$TMP_DIR" -name 'helix*')
+	tar -xf "$package_path" -C "$TMP_DIR"
+	helix_folder=$(find "$TMP_DIR" -name 'helix*' -type d)
+	mv "$helix_folder/hx" "$cargo_bin"
 }
 
 install_from_source(){
@@ -52,12 +50,11 @@ install_marksman() {
 msg "${BOLD}Helix installation${NOFORMAT}"
 
 TMP_DIR="/tmp/dotfiles"
+rm -rf "$TMP_DIR"
 mkdir --parents "$TMP_DIR"
 
 apt_install "npm shellcheck"
 
-msg -n "    • installing shfmt"
-curl -sS https://webi.sh/shfmt | sh &>/dev/null & spinner
 
 detected_platform=$(uname -m)
 msg "    • detected platform $detected_platform"
@@ -65,8 +62,7 @@ msg "    • detected platform $detected_platform"
 if [ "$build_from_source" == true ]; then
 	install_from_source
 else
-	msg -n "    • installing version $helix_version from binary"
-	install_from_binary & spinner
+	install_from_binary
 fi
 
 
@@ -77,6 +73,9 @@ if [ "$build_from_source" == true ]; then
 	runtime_folder="$TMP_DIR/helix/runtime"
 fi
 rsync -a "$runtime_folder" "$config_folder/"
+
+msg -n "    • installing shfmt"
+curl -sS https://webi.sh/shfmt | sh &>/dev/null & spinner
 
 # Install language servers
 echo "    • installing language servers"
