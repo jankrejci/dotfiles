@@ -1,6 +1,13 @@
 #!/bin/bash
 
 echo "Alacritty installation"
+# Workaround to detect rpi platform
+if [[ -f /usr/bin/rpi-update ]]; then
+    echo "    • Raspberry Pi platform detected"
+    echo "    • skipping install"
+    exit;
+fi
+
 echo "    • installing dependencies"
 sudo apt -y install \
 cmake \
