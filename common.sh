@@ -1,19 +1,19 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
-set -Eeuo pipefail
+set -eu
 
 # Cleanup all temporary resources.
-trap cleanup SIGINT SIGTERM ERR EXIT
+trap cleanup INT TERM EXIT
 
 cleanup() {
-	trap - SIGINT SIGTERM ERR EXIT
+	trap - INT TERM EXIT
 	tput cnorm
 	# Script cleanup here
 }
 
 die() {
 	# Default exit status 1
-	local code=${2-1}
+	code="${2-1}"
 	error "$*"
 	exit "$code"
 }
@@ -92,17 +92,13 @@ parse_params() {
 # Install Ubuntu packages, but check if it is not already installed first.
 # It possibly allows to run the script even without sudo privileges.
 apt_install() {
-	read -r -a packages <<<"$@"
-	for package in "${packages[@]}"; do
-		if ! dpkg -s "$package" &>/dev/null; then
-			not_installed_packages+=("$package")
+	packages="$1"
+	for package in $packages; do
+		if ! dpkg -s "$package" >/dev/null 2>&1; then
+			debug "Installing packages through apt" "$package"
+			sudo apt -y install "$package" >/dev/null 2>&1
 		fi
 	done
-
-	if [ -n "${not_installed_packages-}" ]; then
-		debug "Installing packages through apt" "${not_installed_packages[@]}"
-		sudo apt -y install "${not_installed_packages[@]}" &>/dev/null
-	fi
 }
 
 download_from_github() {
@@ -119,13 +115,13 @@ download_from_github() {
 	# Download github api json for the specified repository
 	package=$(curl -s "$api")
 	# Filter out only package download links, each link on separate line
-	package=$(grep -Po "\"browser_download_url\":.*\"\K.*(?=\")" <<<"$package" | tr " " "\n")
+	package=$(echo "$package" | grep -Po "\"browser_download_url\":.*\"\K.*(?=\")" | tr " " "\n")
 	# Filter only packages relevant for the platform
 	package=$(echo "$package" | grep "$platform" | grep "linux" | grep "tar")
 	
 	# If there is multiple packages remaining filter out gnu version
-	if (( $(grep -c . <<<"$package") > 1 )); then
-		package=$(grep "gnu" <<< "$package")
+	if [ "$(echo "$package" | grep -c .)" -gt 1 ]; then
+		package=$(echo "$package" | grep "gnu")
 	fi
 
 	curl -LJOsSf "$package" --output-dir "$TMP_DIR"
