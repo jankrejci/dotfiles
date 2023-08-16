@@ -95,6 +95,15 @@ install_dependencies() {
 	fi
 }
 
+link_configuration_files() {
+	msg "    • linking configuration files"
+	read -r -a configs <<<"$@"
+	mkdir --parents "$config_folder"
+	for config_file in "${configs[@]}"; do
+		ln -sf "$script_dir/$config_file" "$config_folder"
+	done
+}
+
 cargo_install () {
 	msg -n "    • installing through cargo, it may take a while"
 	cargo install nu --features=dataframe &>/dev/null &	spinner
@@ -108,3 +117,4 @@ msg "${BOLD}NuShell installation${NOFORMAT}"
 
 install_dependencies "pkg-config libssl-dev"
 cargo_install
+link_configuration_files "env.nu config.nu"
