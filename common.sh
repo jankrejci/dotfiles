@@ -72,7 +72,7 @@ Usage: $(basename "${BASH_SOURCE[0]}")
 
 Available options:
 
--s, --source    Build Helix from source
+-l, --local     Install binaries into user's home
 -h, --help      Print this help and exit
     --debug     Print script debug info
     --no-color  Print without colors
@@ -82,9 +82,11 @@ EOF
 
 # shellcheck disable=SC2034
 parse_params() {
+	LOCAL_INSTALL=false
+	
 	while :; do
 		case "${1-}" in
-		-s | --source) build_from_source=true ;;
+		-l | --local) LOCAL_INSTALL=true ;;
 		-h | --help) usage ;;
 		--debug) set -x ;;
 		--no-color) NO_COLOR=1 ;;
@@ -139,12 +141,33 @@ download_from_github() {
 	curl -LJOsSf "$package" --output-dir "$TMP_DIR"
 }
 
-# Workaround to ask for sudo password at the beginning of the script,
-# but not to run all commands as root
-sudo echo -n
+install_binary() {
+	binary_file="$1"
+
+	if [ "$LOCAL_INSTALL" = true ]; then
+		BIN_FOLDER="/usr/local/bin/"
+		chmod +x "$binary_file"
+		mkdir --parents "$BIN_FOLDER"
+		sudo mv "$binary_file" "$BIN_FOLDER"
+	else
+		BIN_FOLDER="/usr/local/bin/"
+		sudo chown "root:root" "$binary_file"
+		sudo chmod 755 "$binary_file"
+		sudo mv "$binary_file" "$BIN_FOLDER"
+	fi
+}
+
+
 parse_params "$@"
 setup_colors
+
+# Workaround to ask for sudo password at the beginning of the script,
+# but not to run all commands as root
+if [ "$LOCAL_INSTALL" = false ]; then
+	sudo echo -n
+fi
 
 TMP_DIR="/tmp/dotfiles"
 rm -rf "$TMP_DIR"
 mkdir --parents "$TMP_DIR"
+
