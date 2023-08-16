@@ -12,9 +12,7 @@ CONFIG_FOLDER="$HOME/.config/helix"
 BINARY_NAME="hx"
 
 install_from_binary(){
-	package_path=$(download_from_github "$GITHUB_REPO")
-	extracted_package=$(extract_package "$package_path")
-	install_binary "$extracted_package" "$BINARY_NAME"
+	install_from_github "$GITHUB_REPO" "$BINARY_NAME"
 	
 	debug "Copying helix runtimes"
 	mkdir --parents "$CONFIG_FOLDER"

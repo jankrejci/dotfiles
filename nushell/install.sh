@@ -13,9 +13,7 @@ BINARY_NAME="nu"
 # TODO install zoxide and fzf as separate tools
 apt_install "zoxide fzf"
 
-package_path=$(download_from_github "$GITHUB_REPO")
-extracted_package=$(extract_package "$package_path")
-install_binary "$extracted_package" "$BINARY_NAME"
+install_from_github "$GITHUB_REPO" "$BINARY_NAME"
 
 link_configuration_files \
 	"env.nu" \
