@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
 # Get the script location as it can be run from different place.
-script_dir=$(dirname $(realpath "$0"))
+script_dir=$(dirname "$(realpath "$0")")
 
 dotfiles_dir=$(dirname "$script_dir")
+# shellcheck disable=SC1091
 source "$dotfiles_dir/common.sh"
 
 build_from_source=false
@@ -37,8 +38,8 @@ if [ "$build_from_source" == true ]; then
 fi
 
 msg "    • linking configuration files"
-mkdir --parents $config_folder
-ln -sf $script_dir/alacritty.yml $config_folder
-sudo ln -sf $script_dir/alacritty-simple.svg /usr/share/pixmaps/Alacritty.svg
-sudo ln -sf $script_dir/Alacritty.desktop /usr/share/applications/
+mkdir --parents "$config_folder"
+ln -sf "$script_dir/alacritty.yml" "$config_folder"
+sudo ln -sf "$script_dir/alacritty-simple.svg" "/usr/share/pixmaps/Alacritty.svg"
+sudo ln -sf "$script_dir/Alacritty.desktop" "/usr/share/applications/"
 sudo update-desktop-database

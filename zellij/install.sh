@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
 # Get the script location as it can be run from different place.
-script_dir=$(dirname $(realpath "$0"))
+script_dir=$(dirname "$(realpath "$0")")
 
 dotfiles_dir=$(dirname "$script_dir")
+# shellcheck disable=SC1091
 source "$dotfiles_dir/common.sh"
 
 config_folder="$HOME/.config/zellij"
