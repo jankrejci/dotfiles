@@ -7,76 +7,98 @@ dotfiles_dir=$(dirname "$script_dir")
 # shellcheck disable=SC1091
 source "$dotfiles_dir/common.sh"
 
-github_repo="helix-editor/helix"
-config_folder="$HOME/.config/helix"
-cargo_bin="$HOME/.cargo/bin"
+GITHUB_REPO="helix-editor/helix"
+CONFIG_FOLDER="$HOME/.config/helix"
 
 install_from_binary(){
 	msg "    • installing from precompiled binary"
-	download_from_github "$github_repo"
+	download_from_github "$GITHUB_REPO"
 	package_path=$(find "$TMP_DIR" -name 'helix*')
 	tar -xf "$package_path" -C "$TMP_DIR"
+
+	package_name=$(basename "$package_path")
+	msg "    • downloaded package $package_name"
+
 	helix_folder=$(find "$TMP_DIR" -name 'helix*' -type d)
-	mv "$helix_folder/hx" "$cargo_bin"
+	install_binary "$helix_folder/hx"
+	msg "    • installed into $BIN_FOLDER"
+	
+	echo "    • copying helix runtimes"
+	mkdir --parents "$CONFIG_FOLDER"
+	rsync -a "$helix_folder/runtime" "$CONFIG_FOLDER/"
 }
 
 install_marksman() {
-	BASE_ADDRESS="https://github.com/artempyanykh/marksman/releases/download/2022-12-28"
-	PACKAGE_FILE="marksman-linux"
-	package_link="$BASE_ADDRESS/$PACKAGE_FILE"
+	MARKSMAN_GITHUB_REPO="artempyanykh/marksman"
 
-	BIN_FOLDER="$HOME/.local/bin"
-	BINARY_NAME="marksman"
+	msg "            • downloading from github repository $MARKSMAN_GITHUB_REPO"
 
-	curl --proto "=https" --tlsv1.2 -LJsSf "$package_link" >"$TMP_DIR/$BINARY_NAME"
-	chmod +x "$TMP_DIR/$BINARY_NAME"
-	mv "$TMP_DIR/$BINARY_NAME" "$BIN_FOLDER"
+	platform=$(uname -m)
+	msg "            • detected platform $platform"
+	case "$platform" in
+	  "x86_64")
+	    platform="x64"
+	    ;;
+	  "aarch64")
+	    platform="arm64"
+	    ;;
+	  *)
+	    die "Platform is not supported"
+	    ;;
+	esac
+
+	api="https://api.github.com/repos/$MARKSMAN_GITHUB_REPO/releases/latest"
+	version=$(curl -s "$api" | grep -Po "\"tag_name\": \"\K[^\"]*")
+	msg "            • found latest version $version"
+
+	# Download github api json for the specified repository
+	package=$(curl -s "$api")
+	# Filter out only package download links, each link on separate line
+	package=$(grep -Po "\"browser_download_url\":.*\"\K.*(?=\")" <<<"$package" | tr " " "\n")
+	# Filter only packages relevant for the platform
+	package=$(echo "$package" | grep "$platform" | grep "linux")
+	
+	# If there is multiple packages remaining filter out gnu ve
+	curl -LJOsSf "$package" --output-dir "$TMP_DIR"
+
+	package_path=$(find "$TMP_DIR" -name 'marksman*')
+	mv "$package_path" "$TMP_DIR/marksman"
+	install_binary "$TMP_DIR/marksman"
+	msg "            • installed into $BIN_FOLDER"
+}
+
+install_additional_components() {
+	msg "    • installing additional components"
+
+	msg -n "        • Rust LSP (rust-analyzer)"
+	rustup -q component add rust-analyzer &>/dev/null & spinner
+
+	msg "        • skipping TOML LSP (taplo-cli)"
+	# cargo-binstall -y taplo-cli &>/dev/null & spinner
+
+	msg "        • skipping Bash LSP (bash-language-server)"
+	# npm install --silent -g bash-language-server &>/dev/null
+
+	msg "        • Markdown LSP (marksman)"
+	install_marksman
+
+	msg -n "        • Shfmt"
+	curl -sS https://webi.sh/shfmt | sh &>/dev/null & spinner
+}
+
+link_configuration_files() {
+	echo "    • linking configuration files"
+	# Create relative links to configuration files.
+	CONFIG_LINKS=("config.toml" "languages.toml" "themes")
+	for link in "${CONFIG_LINKS[@]}"; do
+		ln -sf "$script_dir/$link" "$CONFIG_FOLDER"
+	done
+
 }
 
 msg "${BOLD}Helix installation${NOFORMAT}"
-
 apt_install "npm shellcheck"
-
-detected_platform=$(uname -m)
-msg "    • detected platform $detected_platform"
-
 install_from_binary
-
-# Copy runtime files
-echo "    • copying runtimes"
-helix_folder=$(find "$TMP_DIR" -name 'helix*' -type d)
-runtime_folder="$helix_folder/runtime"
-rsync -a "$runtime_folder" "$config_folder/"
-
-msg -n "    • installing shfmt"
-curl -sS https://webi.sh/shfmt | sh &>/dev/null & spinner
-
-# Install language servers
-echo "    • installing language servers"
-cd "$script_dir" || exit
-
-# Rust
-echo -n "        • Rust (rust-analyzer)"
-rustup -q component add rust-analyzer &>/dev/null & spinner
-
-# TOML
-echo -n "        • TOML (taplo-cli)"
-cargo-binstall -y taplo-cli &>/dev/null & spinner
-
-# Bash
-# echo -n "        • Bash (bash-language-server)"
-# npm install --silent -g bash-language-server &>/dev/null & spinner
-
-# Markdown
-echo -n "        • Markdown (marksman)"
-install_marksman & spinner
-
-echo "    • linking configuration files"
-mkdir --parents "$config_folder"
-# Create relative links to configuration files.
-CONFIG_LINKS=("config.toml" "languages.toml" "themes")
-for link in "${CONFIG_LINKS[@]}"; do
-	ln -sf "$script_dir/$link" "$config_folder"
-done
-
+install_additional_components
+link_configuration_files
 msg "${GREEN}    • instalation done${NOFORMAT}"
