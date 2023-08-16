@@ -147,7 +147,7 @@ msg "${BOLD}Helix installation${NOFORMAT}"
 TMP_DIR="/tmp/dotfiles"
 mkdir --parents "$TMP_DIR"
 
-install_dependencies "npm"
+install_dependencies "npm shellcheck shfmt"
 
 detected_platform=$(uname -m)
 msg "    • detected platform $detected_platform"
