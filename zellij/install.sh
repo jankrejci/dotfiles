@@ -2,14 +2,16 @@
 
 CONFIG_FOLDER="$HOME/.config/zellij"
 
-echo "Installing Zellij from source, it may take a while"
+echo "Zellij installation"
+echo "    • compiling from source, it may take a while"
 cargo install --quiet --locked zellij
 
+echo "    • installing dependencies for Ubuntu"
+sudo apt -y install \
+fonts-powerline \
+&> /dev/null
 
-echo "Installing Zellij requirements"
-sudo apt install fonts-powerline
-
-echo "Linking configuration files"
+echo "    • linking configuration files"
 mkdir --parents $CONFIG_FOLDER
 ln -srf  config.kdl $CONFIG_FOLDER
 rm -rf "$CONFIG_FOLDER/themes"
