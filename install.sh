@@ -13,6 +13,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > $RUSTUP_INIT
 chmod +x $RUSTUP_INIT
 $RUSTUP_INIT -y &> /dev/null
 rm $RUSTUP_INIT
+PATH=$PATH:$HOME/.cargo/bin/
 
 echo "    • installing Ubuntu packages"
 sudo apt -y install \
