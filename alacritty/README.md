@@ -1,9 +1,14 @@
-# Installation
-`cargo install alacritty`
+# Desription
 
-# Desktop entry
+Script installs the Alacritty terminal and create links
+to configuration files. It also adds the desktop entry.
+
+# Prerequisities
+
+* cargo
+
+# Installation
 ```shell
-sudo cp alacritty-simple.svg /usr/share/pixmaps/Alacritty.svg
-sudo desktop-file-install Alacritty.desktop
-sudo update-desktop-database
+chmod +x install.sh
+./install.sh
 ```
