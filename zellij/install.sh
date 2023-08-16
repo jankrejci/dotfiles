@@ -5,22 +5,6 @@ trap cleanup SIGINT SIGTERM ERR EXIT
 
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 
-usage() {
-	cat <<EOF
-Usage: $(basename "${BASH_SOURCE[0]}") [-s]
-
-Install and configures Zellij.
-	
-Available options:
-
--s, --source    Install Zellij from source files
--h, --help      Print this help and exit
-    --debug     Print script debug info
-    --no-color  Print without colors
-EOF
-	exit
-}
-
 cleanup() {
 	trap - SIGINT SIGTERM ERR EXIT
 	tput cnorm
@@ -41,7 +25,7 @@ setup_colors() {
 	fi
 }
 
-function spinner() {
+spinner() {
 	local LC_CTYPE=C
 	local pid=$!
 
@@ -49,8 +33,8 @@ function spinner() {
 	local char_width=3
 
 	local i=0
-	msg -n " "
 	tput civis
+	msg -n " "
 	while kill -0 "$pid" 2>/dev/null; do
 		local i=$(((i + char_width) % ${#spin}))
 		printf "%s" "${spin:$i:$char_width}"
@@ -59,13 +43,28 @@ function spinner() {
 	done
 	tput cnorm
 	msg " "
-
 	wait "$pid"
 	return $?
 }
 
 msg() {
 	echo >&2 -e "$@"
+}
+
+usage() {
+	cat <<EOF
+Usage: $(basename "${BASH_SOURCE[0]}") [-s]
+
+Install and configures Zellij.
+	
+Available options:
+
+-s, --source    Install Zellij from source files
+-h, --help      Print this help and exit
+    --debug     Print script debug info
+    --no-color  Print without colors
+EOF
+	exit
 }
 
 parse_params() {
