@@ -211,6 +211,14 @@ install_binary() {
 	sudo mv "$binary_path" "$BIN_DIR"
 }
 
+install_from_github() {
+	github_repo="$1"
+	binary_name="$2"
+
+	package_path=$(download_from_github "$github_repo")
+	extracted_package=$(extract_package "$package_path")
+	install_binary "$extracted_package" "$binary_name"
+}
 
 link_configuration_files() {
 	config_files="$*"
