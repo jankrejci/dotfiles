@@ -100,15 +100,19 @@ download_from_github() {
 	debug "Detected platform $platform"
 
 	api="https://api.github.com/repos/$repository/releases/latest"
-	version=$(curl -s "$api" | grep -Po "\"tag_name\": \"\K[^\"]*")
+	api_json=$(curl -s "$api")
+	[ -z "$api_json" ] && die "Failed to get github api json"
+
+	assets=$(printf "%s" "$api_json" | jq '.assets[].browser_download_url')
+	[ -z "$assets" ] && die "Failed to get assets"
+
+	version=$(printf "%s" "$api_json" | jq '.tag_name')
 	debug "Found latest version $version"
 
-	# Download github api json for the specified repository
-	package=$(curl -s "$api")
-	# Filter out only package download links, each link on separate line
-	package=$(echo "$package" | grep -Po "\"browser_download_url\":.*\"\K.*(?=\")" | tr " " "\n")
-	# Filter only packages relevant for the platform
-	package=$(echo "$package" | grep "$platform" | grep "linux" | grep "tar")
+	for filter in $platform "linux" "tar"; do
+		assets=$(printf "%s" "$assets" |jq ". | select(contains(\"$filter\"))")
+		echo $assets "\n"
+	done
 	
 	# If there is multiple packages remaining filter out gnu version
 	if [ "$(echo "$package" | grep -c .)" -gt 1 ]; then
