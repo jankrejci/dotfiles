@@ -55,7 +55,7 @@ mkdir --parents "$TMP_DIR"
 
 install_dependencies "npm shellcheck"
 
-msg -n "    • Installing shfmt"
+msg -n "    • installing shfmt"
 curl -sS https://webi.sh/shfmt | sh &>/dev/null & spinner
 
 detected_platform=$(uname -m)
@@ -78,7 +78,7 @@ fi
 rsync -a "$runtime_folder" "$config_folder/"
 
 # Install language servers
-echo "    • Installing language servers"
+echo "    • installing language servers"
 cd "$script_dir"
 
 # Rust
