@@ -10,9 +10,6 @@ source "$dotfiles_dir/common.sh"
 
 msg "${BOLD}Starship installation${NOFORMAT}"
 
-TMP_DIR="/tmp/dotfiles"
-mkdir --parent "$TMP_DIR"
-
 msg -n "    • installing through install script"
 
 SCRIPT_NAME="starship_install.sh"
