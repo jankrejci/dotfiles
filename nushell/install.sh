@@ -1,11 +1,11 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 # Get the script location as it can be run from different place.
 script_dir=$(dirname "$(realpath "$0")")
 
 dotfiles_dir=$(dirname "$script_dir")
 # shellcheck disable=SC1091
-source "$dotfiles_dir/common.sh"
+. "$dotfiles_dir/common.sh"
 
 GITHUB_REPO="nushell/nushell"
 CONFIG_FOLDER="$HOME/.config/nushell"
@@ -25,9 +25,9 @@ install_from_binary() {
 
 link_configuration_files() {
 	debug "Linking configuration files"
-	read -r -a configs <<<"$@"
+	configs="$1"
 	mkdir --parents "$CONFIG_FOLDER"
-	for config_file in "${configs[@]}"; do
+	for config_file in $configs; do
 		ln -sf "$script_dir/$config_file" "$CONFIG_FOLDER"
 	done
 }
