@@ -7,23 +7,22 @@ script_dir=$(dirname "$(realpath "$0")")
 dotfiles_dir=$(dirname "$script_dir")
 . "$dotfiles_dir/common.sh"
 
-msg "${BOLD}Starship installation${NOFORMAT}"
+info "Installation started"
 
-msg -n "    • installing through install script"
+debug "Installing through install script"
 
 SCRIPT_NAME="starship_install.sh"
 curl -sS "https://starship.rs/install.sh" >"$TMP_DIR/$SCRIPT_NAME"
 chmod +x "$TMP_DIR/$SCRIPT_NAME"
-sudo "$TMP_DIR/$SCRIPT_NAME" -y >/dev/null 2>&1 &
-spinner
+sudo "$TMP_DIR/$SCRIPT_NAME" -y >/dev/null 2>&1
 
-msg "    • adding init sequence to zshrc"
+debug "Adding init sequence to zshrc"
 ZSHRC_FILE="$HOME/.zshrc"
 if ! grep "starship" <"$ZSHRC_FILE" >/dev/null 2>&1; then
 	echo 'eval "$(starship init zsh)"' >>"$ZSHRC_FILE"
 fi
 
-msg "    • linking configuration file"
+debug "Linking configuration file"
 ln -sf "$script_dir/startship.toml" "$HOME/.config/"
 
-msg "${GREEN}    • instalation done${NOFORMAT}"
+debug "Installation done"

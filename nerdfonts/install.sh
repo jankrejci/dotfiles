@@ -20,14 +20,14 @@ GITHUB_API="https://api.github.com/repos/$GITHUB_REPO/releases/latest"
 VERSION=$(curl -s "$GITHUB_API" | grep -Po '"tag_name": "v\K[^"]*')
 GITHUB_RELEASE="https://github.com/$GITHUB_REPO/releases/download/v$VERSION/$FONT_NAME.zip"
 
-msg "${BOLD}Nerd font installation${NOFORMAT}"
+info "Installation started"
 apt_install "fontconfig"
 
-msg "    • current version $VERSION"
-msg "    • installing $FONT_NAME"
+debug "Current version $VERSION"
+debug "Installing $FONT_NAME"
 wget -q "$GITHUB_RELEASE" -P "/tmp"
 sudo unzip -o -q "/tmp/$FONT_NAME.zip" -d "$FONT_FOLDER"
 
 fc-cache -fv &>/dev/null
-msg "${GREEN}    • instalation done${NOFORMAT}"
+debug "Installation done"
 

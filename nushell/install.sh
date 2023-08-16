@@ -15,16 +15,16 @@ install_from_binary() {
 	package_path=$(find "$TMP_DIR" -name 'nu*')
 
 	package_name=$(basename "$package_path")
-	msg "    • downloaded package $package_name"
+	debug "Downloaded package $package_name"
 	tar -xf "$package_path" -C "$TMP_DIR"
 
 	nu_folder=$(find "$TMP_DIR" -name 'nu*' -type d)
 	install_binary "$nu_folder/nu"
-	msg "    • installed into $BIN_FOLDER"
+	debug "Installed into $BIN_FOLDER"
 }
 
 link_configuration_files() {
-	msg "    • linking configuration files"
+	debug "Linking configuration files"
 	read -r -a configs <<<"$@"
 	mkdir --parents "$CONFIG_FOLDER"
 	for config_file in "${configs[@]}"; do
@@ -32,8 +32,8 @@ link_configuration_files() {
 	done
 }
 
-msg "${BOLD}NuShell installation${NOFORMAT}"
+info "Installation started"
 apt_install "pkg-config libssl-dev zoxide fzf"
 install_from_binary
 link_configuration_files "env.nu config.nu"
-msg "${GREEN}    • instalation done${NOFORMAT}"
+debug "Installation done"
