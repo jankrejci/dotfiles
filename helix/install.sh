@@ -73,17 +73,21 @@ install_additional_components() {
 	msg -n "        • Rust LSP (rust-analyzer)"
 	rustup -q component add rust-analyzer &>/dev/null & spinner
 
-	msg "        • skipping TOML LSP (taplo-cli)"
-	# cargo-binstall -y taplo-cli &>/dev/null & spinner
+	msg -n "        • TOML LSP (taplo-cli)"
+	cargo-binstall -y taplo-cli > /dev/null & spinner
 
-	msg "        • skipping Bash LSP (bash-language-server)"
-	# npm install --silent -g bash-language-server &>/dev/null
+	msg -n "        • Bash LSP (bash-language-server)"
+	npm install --silent -g bash-language-server &>/dev/null & spinner
 
 	msg "        • Markdown LSP (marksman)"
 	install_marksman
 
+	msg -n "        • Python LSP"
+	pip install python-lsp-server &>/dev/null & spinner
+
 	msg -n "        • Shfmt"
 	curl -sS https://webi.sh/shfmt | sh &>/dev/null & spinner
+
 }
 
 link_configuration_files() {
