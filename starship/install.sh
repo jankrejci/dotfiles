@@ -124,7 +124,11 @@ chmod +x "$TMP_DIR/$SCRIPT_NAME"
 sudo "$TMP_DIR/$SCRIPT_NAME" -y &>/dev/null &
 spinner
 
+msg -n "    • adding init sequence to zshrc"
 ZSHRC_FILE="$HOME/.zshrc"
 if ! grep "starship" < "$ZSHRC_FILE" &>/dev/null; then
 	echo 'eval "$(starship init zsh)' >>"$ZSHRC_FILE" 
 fi
+
+msg -n "    • linking configuration file"
+ln -sf "$script_dir/startship.toml" "$HOME/.config/"
