@@ -25,7 +25,7 @@ install_from_binary() {
 
 link_configuration_files() {
 	debug "Linking configuration files"
-	configs="$1"
+	configs="$*"
 	mkdir --parents "$CONFIG_FOLDER"
 	for config_file in $configs; do
 		ln -sf "$script_dir/$config_file" "$CONFIG_FOLDER"
@@ -33,7 +33,13 @@ link_configuration_files() {
 }
 
 info "Installation started"
-apt_install "pkg-config libssl-dev zoxide fzf"
+# TODO install zoxide and fzf as separate tools
+apt_install "zoxide fzf"
 install_from_binary
-link_configuration_files "env.nu config.nu"
+link_configuration_files \
+	"env.nu" \
+    "config.nu" \
+	"git-completions.nu" \
+	"zellij-completions.nu" \
+	"cargo-completions.nu"
 debug "Installation done"
