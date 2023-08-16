@@ -96,12 +96,18 @@ github_release_link() {
 	    die "BUG: Github repo missing"
 	fi
 
-	platform=$(detect_platform)
-	arch=$(detect_architecture)
+	if [ -z "$PLATFORM" ]; then
+		die "BUG: Failed to get platform"
+	fi
+
+	if [ -z "$ARCH" ]; then
+		die "BUG: Failed to get architecture"
+	fi
+	
 	assets=$(curl -s "https://api.github.com/repos/$github_repo/releases/latest")
 
 	download_url=$(echo "$assets" | \
-		jq -r --arg platform "$platform" --arg arch "$arch" \
+		jq -r --arg platform "$PLATFORM" --arg arch "$ARCH" \
 			'[.assets[].browser_download_url
 			| select(
 				contains($platform)
@@ -258,5 +264,9 @@ CONFIG_DIR="$HOME/.config"
 
 SCRIPT_DIR=$(dirname "$(realpath "$0")")
 MODULE_NAME=$(basename "$SCRIPT_DIR")
+
+ARCH=$(detect_architecture)
+PLATFORM=$(detect_platform)
+
 info "Installing $MODULE_NAME"
 
