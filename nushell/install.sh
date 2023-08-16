@@ -20,8 +20,8 @@ install_from_binary() {
 	tar -xf "$package_path" -C "$TMP_DIR"
 
 	nu_folder=$(find "$TMP_DIR" -name 'nu*' -type d)
-	mv "$nu_folder/nu" "$cargo_bin"
-	msg "    • installed into $cargo_bin"
+	install_binary "$nu_folder/nu"
+	msg "    • installed into $BIN_FOLDER"
 }
 
 link_configuration_files() {
