@@ -24,16 +24,18 @@ install_from_binary() {
 	msg "    • installed into $cargo_bin"
 }
 
+link_configuration_files() {
+	msg "    • linking configuration files"
+	mkdir --parents "$config_folder"
+	ln -sf "$script_dir/config.kdl" "$config_folder"
+	rm -rf "$config_folder/themes"
+	ln -sf "$script_dir/themes" "$config_folder"
+	rm -rf "$config_folder/layouts"
+	ln -sf "$script_dir/layouts" "$config_folder"
+}
+
 msg "${BOLD}Zellij installation${NOFORMAT}"
-
 apt_install "fonts-powerline"
-
 install_from_binary
-
-msg "    • linking configuration files"
-mkdir --parents "$config_folder"
-ln -sf "$script_dir/config.kdl" "$config_folder"
-rm -rf "$config_folder/themes"
-ln -sf "$script_dir/themes" "$config_folder"
-rm -rf "$config_folder/layouts"
-ln -sf "$script_dir/layouts" "$config_folder"
+link_configuration_files
+msg "${GREEN}    • instalation done${NOFORMAT}"
