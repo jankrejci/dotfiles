@@ -45,7 +45,7 @@ msg "${BOLD}NuShell installation${NOFORMAT}"
 TMP_DIR="/tmp/dotfiles"
 mkdir --parents "$TMP_DIR"
 
-install_dependencies "pkg-config libssl-dev"
+apt_install "pkg-config libssl-dev"
 
 detected_platform=$(uname -m)
 msg "    • detected platform $detected_platform"

@@ -54,7 +54,7 @@ msg "${BOLD}Helix installation${NOFORMAT}"
 TMP_DIR="/tmp/dotfiles"
 mkdir --parents "$TMP_DIR"
 
-install_dependencies "npm shellcheck"
+apt_install "npm shellcheck"
 
 msg -n "    • installing shfmt"
 curl -sS https://webi.sh/shfmt | sh &>/dev/null & spinner

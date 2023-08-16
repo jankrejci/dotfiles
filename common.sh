@@ -98,7 +98,7 @@ parse_params() {
 
 # Install Ubuntu packages, but check if it is not already installed first.
 # It possibly allows to run the script even without sudo privileges.
-install_dependencies() {
+apt_install() {
 	read -r -a packages <<<"$@"
 	for package in "${packages[@]}"; do
 		if ! dpkg -s "$package" &>/dev/null; then
@@ -107,7 +107,7 @@ install_dependencies() {
 	done
 
 	if [ -n "${not_installed_packages-}" ]; then
-		msg -n "    • installing Ubuntu packages" "${not_installed_packages[@]}"
+		msg -n "    • installing packages through apt" "${not_installed_packages[@]}"
 		sudo apt -y install "${not_installed_packages[@]}" &>/dev/null &
 		spinner
 	fi
