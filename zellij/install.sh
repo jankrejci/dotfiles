@@ -17,8 +17,8 @@ cargo binstall -y zellij &> /dev/null
 
 echo "    • linking configuration files"
 mkdir --parents $CONFIG_FOLDER
-ln -srf  config.kdl $CONFIG_FOLDER
+ln -sf  $PWD/config.kdl $CONFIG_FOLDER
 rm -rf "$CONFIG_FOLDER/themes"
-ln -srf  themes $CONFIG_FOLDER
+ln -sf  $PWD/themes $CONFIG_FOLDER
 rm -rf "$CONFIG_FOLDER/layouts"
-ln -srf  layouts $CONFIG_FOLDER
+ln -sf  $PWD/layouts $CONFIG_FOLDER
