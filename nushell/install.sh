@@ -37,3 +37,4 @@ msg "${BOLD}NuShell installation${NOFORMAT}"
 apt_install "pkg-config libssl-dev"
 install_from_binary
 link_configuration_files "env.nu config.nu"
+msg "${GREEN}    • instalation done${NOFORMAT}"

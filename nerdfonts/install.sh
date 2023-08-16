@@ -26,3 +26,5 @@ unzip -o -q "/tmp/$FONT_NAME.zip" -d "$FONT_FOLDER"
 rm "/tmp/$FONT_NAME.zip"
 
 fc-cache -fv &>/dev/null
+msg "${GREEN}    • instalation done${NOFORMAT}"
+

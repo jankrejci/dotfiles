@@ -17,3 +17,5 @@ sudo apt -y install git &>/dev/null
 msg "    • linking configuration files"
 mkdir --parents "$CONFIG_FOLDER"
 ln -sf "$script_dir/config" "$CONFIG_FOLDER"
+
+msg "${GREEN}    • instalation done${NOFORMAT}"
