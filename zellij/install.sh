@@ -85,10 +85,6 @@ parse_params() {
 	return 0
 }
 
-sudo echo -n
-parse_params "$@"
-setup_colors
-
 install_dependencies() {
 	read -r -a packages <<<"$@"
 	for package in "${packages[@]}"; do
@@ -103,6 +99,11 @@ install_dependencies() {
 		spinner
 	fi
 }
+
+sudo echo -n
+parse_params "$@"
+setup_colors
+
 
 install_from_binary() {
 	msg -n "    • installing from precompiled binary"
