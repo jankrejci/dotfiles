@@ -94,8 +94,8 @@ else
 fi
 
 # Bash
-echo -n "        • Bash (bash-language-server)"
-npm install --silent -g bash-language-server &>/dev/null & spinner
+# echo -n "        • Bash (bash-language-server)"
+# npm install --silent -g bash-language-server &>/dev/null & spinner
 
 # Markdown
 echo -n "        • Markdown (marksman)"
