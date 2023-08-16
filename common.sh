@@ -112,13 +112,10 @@ github_release_link() {
 			| select(
 				contains($platform)
 				and contains($arch)
-				and contains("tar")
-				# Filter out the checksum files
 				and(contains(".sha256") | not)
 			)]
-			# Prefere musl versions
-			| sort_by(contains("musl") | not)
-			# If there is still more candidates, pick the first one
+			| if . | any(contains("tar")) then [.[] | select(contains("tar"))] else . end
+			| if . | any(contains("musl")) then [.[] | select(contains("musl"))] else . end
 			| .[0]' \
 	)
 
