@@ -7,11 +7,9 @@ dotfiles_dir=$(dirname "$script_dir")
 # shellcheck disable=SC1091
 source "$dotfiles_dir/common.sh"
 
-build_from_source=false
 github_repo="helix-editor/helix"
 config_folder="$HOME/.config/helix"
 cargo_bin="$HOME/.cargo/bin"
-helix_version="23.05"
 
 install_from_binary(){
 	msg "    • installing from precompiled binary"
@@ -20,18 +18,6 @@ install_from_binary(){
 	tar -xf "$package_path" -C "$TMP_DIR"
 	helix_folder=$(find "$TMP_DIR" -name 'helix*' -type d)
 	mv "$helix_folder/hx" "$cargo_bin"
-}
-
-install_from_source(){
-	# Helix instalation from the source, more info in documentation
-	# https://docs.helix-editor.com/install.html
-	msg -n "    • cloning Helix repository"
-	REPO_LINK="https://github.com/helix-editor/helix"
-	git clone --quiet "$REPO_LINK" "$TMP_DIR/helix" & spinner
-	
-	msg -n "    • installing from source, it may take a while"
-	cd "$TMP_DIR/helix" || exit
-	cargo install --quiet --locked --path helix-term &>/dev/null & spinner
 }
 
 install_marksman() {
@@ -59,20 +45,12 @@ apt_install "npm shellcheck"
 detected_platform=$(uname -m)
 msg "    • detected platform $detected_platform"
 
-if [ "$build_from_source" == true ]; then
-	install_from_source
-else
-	install_from_binary
-fi
-
+install_from_binary
 
 # Copy runtime files
 echo "    • copying runtimes"
 helix_folder=$(find "$TMP_DIR" -name 'helix*' -type d)
 runtime_folder="$helix_folder/runtime"
-if [ "$build_from_source" == true ]; then
-	runtime_folder="$TMP_DIR/helix/runtime"
-fi
 rsync -a "$runtime_folder" "$config_folder/"
 
 msg -n "    • installing shfmt"
@@ -88,11 +66,7 @@ rustup -q component add rust-analyzer &>/dev/null & spinner
 
 # TOML
 echo -n "        • TOML (taplo-cli)"
-if [ "$build_from_source" == true ]; then
-	cargo install --quiet taplo-cli --locked --features lsp & spinner
-else
-	cargo-binstall -y taplo-cli &>/dev/null & spinner
-fi
+cargo-binstall -y taplo-cli &>/dev/null & spinner
 
 # Bash
 # echo -n "        • Bash (bash-language-server)"
