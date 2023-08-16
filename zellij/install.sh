@@ -1,67 +1,136 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-CONFIG_FOLDER="$HOME/.config/zellij"
-BUILD_FROM_SOURCE=false
+set -Eeuo pipefail
+trap cleanup SIGINT SIGTERM ERR EXIT
 
-print_help() {
-	echo "Nothing to be seen here"
+script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
+
+usage() {
+	cat <<EOF
+Usage: $(basename "${BASH_SOURCE[0]}") [-s]
+
+Install and configures Zellij.
+	
+Available options:
+
+-s, --source    Install Zellij from source files
+-h, --help      Print this help and exit
+    --debug     Print script debug info
+    --no-color  Print without colors
+EOF
+	exit
 }
 
-process_args() {
-	VALID_ARGS=$(getopt -o sh --long source,help -- "$@")
-	if [[ $? -ne 0 ]]; then
-		exit 1
+cleanup() {
+	trap - SIGINT SIGTERM ERR EXIT
+	tput cnorm
+}
+
+die() {
+	local msg=$1
+	local code=${2-1}
+	msg "$msg"
+	exit "$code"
+}
+
+setup_colors() {
+	if [[ -t 2 ]] && [[ -z "${NO_COLOR-}" ]] && [[ "${TERM-}" != "dumb" ]]; then
+		NOFORMAT='\033[0m' BOLD='\033[1m'
+	else
+		NOFORMAT='' BOLD=''
 	fi
-	eval set -- "$VALID_ARGS"
-	while [ : ]; do
-		case "$1" in
-		-s | --source)
-			BUILD_FROM_SOURCE=true
-			shift
-			;;
-		-h | --help)
-			print_help
-			shift
-			;;
-		--)
-			shift
-			break
-			;;
-		esac
-	done
 }
+
+function spinner() {
+	local LC_CTYPE=C
+	local pid=$!
+
+	local spin='⣾⣽⣻⢿⡿⣟⣯⣷'
+	local char_width=3
+
+	local i=0
+	msg -n " "
+	tput civis
+	while kill -0 "$pid" 2>/dev/null; do
+		local i=$(((i + char_width) % ${#spin}))
+		printf "%s" "${spin:$i:$char_width}"
+		echo -en "\033[1D"
+		sleep .1
+	done
+	tput cnorm
+	msg " "
+
+	wait "$pid"
+	return $?
+}
+
+msg() {
+	echo >&2 -e "$@"
+}
+
+parse_params() {
+	config_folder="$HOME/.config/zellij"
+	build_from_source=false
+
+	while :; do
+		case "${1-}" in
+		-s | --source) build_from_source=true ;;
+		-h | --help) usage ;;
+		--debug) set -x ;;
+		--no-color) NO_COLOR=1 ;;
+		-?*) die "Unknown option: $1" ;;
+		*) break ;;
+		esac
+		shift
+	done
+	return 0
+}
+
+sudo echo -n
+parse_params "$@"
+setup_colors
 
 install_dependencies() {
-	echo "    • installing Ubuntu dependencies"
-	sudo apt -y install fonts-powerline &>/dev/null
+	read -r -a packages <<<"$@"
+	for package in "${packages[@]}"; do
+		if ! dpkg -s "$package" &>/dev/null; then
+			not_installed_packages+=("$package")
+		fi
+	done
+
+	if [ -n "${not_installed_packages-}" ]; then
+		msg -n "    • installing Ubuntu packages" "${not_installed_packages[@]}"
+		sudo apt -y install "${not_installed_packages[@]}" &>/dev/null &
+		spinner
+	fi
 }
 
 install_from_binary() {
-	echo "    • installing from precompiled binary"
-	cargo binstall -y zellij &>/dev/null
+	msg -n "    • installing from precompiled binary"
+	cargo binstall -y zellij &>/dev/null &
+	spinner
 }
 
 install_from_source() {
-	echo "    • compiling from source, it may take a while"
-	cargo install --quiet --locked zellij
+	msg -n "    • compiling from source, it may take a while"
+	cargo install --quiet --locked zellij &>/dev/null &
+	spinner
 }
 
-process_args "$@"
+msg "${BOLD}Zellij installation${NOFORMAT}"
 
-echo "Zellij installation"
+install_dependencies "fonts-powerline"
 
-install_dependencies
-
-if [ $BUILD_FROM_SOURCE == true ]; then
+if [ "$build_from_source" == true ]; then
 	install_from_source
 else
 	install_from_binary
 fi
 
-echo "    • linking configuration files"
-mkdir --parents "$CONFIG_FOLDER"
-ln -sf "$PWD/config.kdl" "$CONFIG_FOLDER"
-rm -rf "$CONFIG_FOLDER/themes"
-ln -sf "$PWD/themes" "$CONFIG_FOLDER"
-rm -rf "$CONFIG_FOLDER/layouts"
-ln -sf "$PWD/layouts" "$CONFIG_FOLDER"
+msg "    • linking configuration files"
+mkdir --parents "$config_folder"
+ln -sf "$script_dir/config.kdl" "$config_folder"
+rm -rf "$config_folder/themes"
+ln -sf "$script_dir/themes" "$config_folder"
+rm -rf "$config_folder/layouts"
+ln -sf "$script_dir/layouts" "$config_folder"
