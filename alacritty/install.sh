@@ -15,8 +15,6 @@ install_from_source(){
 	cargo install --quiet alacritty >/dev/null 2>&1
 }
 
-info "Installation started"
-
 # Workaround to detect rpi platform
 if [ -f /usr/bin/rpi-update ]; then
 	debug "Raspberry Pi platform detected"

@@ -22,7 +22,6 @@ install_from_binary() {
 	debug "Installed into $BIN_DIR"
 }
 
-info "Installation started"
 # TODO install zoxide and fzf as separate tools
 apt_install "zoxide fzf"
 install_from_binary
