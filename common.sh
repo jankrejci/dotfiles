@@ -177,6 +177,7 @@ extract_package() {
 
 	extracted_package=$(tar -tf "$package_path" | head -1)
 	extracted_path=$TMP_DIR/$extracted_package
+	extracted_path="${extracted_path%/}"
 
 	if [ ! -e "$extracted_path" ]; then
 	    die "BUG: Failed to extract package"
