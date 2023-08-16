@@ -27,4 +27,4 @@ link_configuration_files \
 	"config.kdl" \
 	"themes" \
 	"layouts"
-debug "Installation done"
+info "Installation done"

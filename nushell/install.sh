@@ -31,4 +31,4 @@ link_configuration_files \
 	"git-completions.nu" \
 	"zellij-completions.nu" \
 	"cargo-completions.nu"
-debug "Installation done"
+info "Installation done"

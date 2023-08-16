@@ -25,5 +25,5 @@ wget -q "$GITHUB_RELEASE" -P "/tmp"
 sudo unzip -o -q "/tmp/$FONT_NAME.zip" -d "$FONT_FOLDER"
 
 fc-cache -fv >/dev/null 2>&1
-debug "Installation done"
+info "Installation done"
 

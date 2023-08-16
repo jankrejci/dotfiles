@@ -97,4 +97,4 @@ apt_install "shellcheck"
 install_from_binary
 install_additional_components
 link_configuration_files
-debug "Installation done"
+info "Installation done"

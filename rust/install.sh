@@ -22,4 +22,4 @@ install_rustup() {
 }
 
 install_rustup
-debug "Installation done"
+info "Installation done"

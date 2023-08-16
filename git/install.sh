@@ -15,4 +15,4 @@ debug "Linking configuration files"
 mkdir --parents "$CONFIG_FOLDER"
 ln -sf "$script_dir/config" "$CONFIG_FOLDER"
 
-debug "Installation done"
+info "Installation done"
