@@ -11,9 +11,9 @@ CONFIG_FOLDER="$HOME/.config/git"
 
 msg "${BOLD}Git installation${NOFORMAT}"
 
-echo "    • installing from Ubuntu package"
+msg "    • installing from Ubuntu package"
 sudo apt -y install git &>/dev/null
 
-echo "    • linking configuration files"
+msg "    • linking configuration files"
 mkdir --parents "$CONFIG_FOLDER"
 ln -sf "$script_dir/config" "$CONFIG_FOLDER"
