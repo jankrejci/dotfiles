@@ -1,11 +1,11 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 # Get the script location as it can be run from different place.
 script_dir=$(dirname "$(realpath "$0")")
 
 dotfiles_dir=$(dirname "$script_dir")
 # shellcheck disable=SC1091
-source "$dotfiles_dir/common.sh"
+. "$dotfiles_dir/common.sh"
 
 FONT_NAME="DejaVuSansMono"
 
@@ -28,6 +28,6 @@ debug "Installing $FONT_NAME"
 wget -q "$GITHUB_RELEASE" -P "/tmp"
 sudo unzip -o -q "/tmp/$FONT_NAME.zip" -d "$FONT_FOLDER"
 
-fc-cache -fv &>/dev/null
+fc-cache -fv >/dev/null 2>&1
 debug "Installation done"
 
