@@ -1,51 +1,72 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Workaround to enter sudo password at the beginning of the script
-sudo echo
+set -Eeuo pipefail
 
-echo "Installing dotfiles"
-BASE_FOLDER=$(pwd)
-CARGO_BIN="$HOME/.cargo/bin"
+trap cleanup SIGINT SIGTERM ERR EXIT
 
-echo "    • installing Ubuntu packages"
-sudo apt -y install npm &>/dev/null
+cleanup() {
+	trap - SIGINT SIGTERM ERR EXIT
+	tput cnorm
+	# Script cleanup here
+}
 
-echo "    • installing Rustup"
-RUSTUP_INIT="/tmp/rustup-init.sh"
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs >$RUSTUP_INIT
-chmod +x $RUSTUP_INIT
-$RUSTUP_INIT -y &>/dev/null
-rm $RUSTUP_INIT
-PATH=$PATH:$HOME/.cargo/bin/
+script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 
-DETECTED_PLATFORM=$(uname -m)
-case ${DETECTED_PLATFORM} in
-"x86_64")
-	CARGO_BINSTALL="https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-musl.tgz"
-	;;
-"aarch64")
-	CARGO_BINSTALL="https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-aarch64-unknown-linux-musl.tgz"
-	;;
-*)
-	echo "    • unknown platform"
+die() {
+	local msg=$1
+	local code=${2-1}
+	msg "$msg"
+	exit "$code"
+}
+
+setup_colors() {
+	if [[ -t 2 ]] && [[ -z "${NO_COLOR-}" ]] && [[ "${TERM-}" != "dumb" ]]; then
+		NOFORMAT='\033[0m' BOLD='\033[1m'
+	else
+		NOFORMAT='' BOLD=''
+	fi
+}
+
+msg() {
+	echo >&2 -e "$@"
+}
+
+usage() {
+	cat <<EOF
+Usage: $(basename "${BASH_SOURCE[0]}")
+
+Batch install oo the environment.
+
+Available options:
+
+-h, --help      Print this help and exit
+    --debug     Print script debug info
+    --no-color  Print without colors
+EOF
 	exit
-	;;
-esac
-echo "    • detected platform $DETECTED_PLATFORM"
+}
 
-echo "    • installing cargo-binstall from binary"
-TMP_DIR="/tmp/cargo-binstall"
-mkdir $TMP_DIR
-cd $TMP_DIR
-wget -q $CARGO_BINSTALL
-tar zxf *
-mv cargo-binstall $CARGO_BIN
-cd $BASE_FOLDER
-rm -rf $TMP_DIR
+parse_params() {
+	while :; do
+		case "${1-}" in
+		-h | --help) usage ;;
+		--debug) set -x ;;
+		--no-color) NO_COLOR=1 ;;
+		-?*) die "Unknown option: $1" ;;
+		*) break ;;
+		esac
+		shift
+	done
+	return 0
+}
 
-cd $BASE_FOLDER/git && ./install.sh
-cd $BASE_FOLDER/nerdfonts && ./install.sh
-cd $BASE_FOLDER/alacritty && ./install.sh
-cd $BASE_FOLDER/zellij && ./install.sh
-cd $BASE_FOLDER/helix && ./install.sh
-cd $BASE_FOLDER/lazygit && ./install.sh
+sudo echo -n
+parse_params "$@"
+setup_colors
+
+msg "${BOLD}Installing dotfiles${NOFORMAT}"
+
+install_folders=("git" "rust" "nerdfonts" "alacritty" "zellij" "helix" "lazygit")
+for folder in "${install_folders[@]}"; do
+	cd "$script_dir/$folder" && ./install.sh "$@"
+done
