@@ -68,7 +68,8 @@ fi
 
 # Copy runtime files
 echo "    • copying runtimes"
-runtime_folder="$TMP_DIR/helix-$helix_version-$detected_platform-linux/runtime"
+helix_folder=$(find "$TMP_DIR" -name 'helix*' -type d)
+runtime_folder="$helix_folder/runtime"
 if [ "$build_from_source" == true ]; then
 	runtime_folder="$TMP_DIR/helix/runtime"
 fi
