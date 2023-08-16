@@ -61,8 +61,6 @@ error() {
 
 usage() {
 	cat <<EOF
-Usage: $(basename "${BASH_SOURCE[0]}")
-
 Available options:
 
 -h, --help      Print this help and exit
