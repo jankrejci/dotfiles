@@ -171,6 +171,20 @@ download_from_github() {
 	echo "$path"
 }
 
+extract_package() {
+	package_path="$1"
+	tar -xf "$package_path" -C "$TMP_DIR"
+
+	extracted_package=$(tar -tf "$package_path" | head -1)
+	extracted_path=$TMP_DIR/$extracted_package
+
+	if [ ! -e "$extracted_path" ]; then
+	    die "BUG: Failed to extract package"
+	fi
+	
+	echo "$extracted_path"
+}
+
 install_binary() {
 	binary_file="$1"
 
