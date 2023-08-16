@@ -187,12 +187,21 @@ extract_package() {
 }
 
 install_binary() {
-	binary_path="$1"
+	package_path="$1"
+	binary_name="$2"
 
-	binary_file=$(basename "$binary_path")
-	binary_target="$BIN_DIR/$binary_file"
+	binary_path="$package_path/$binary_name"
+	if [ ! -d "$package_path" ]; then
+		binary_path="$package_path"
+	fi
+
+	if [ ! -f "$binary_path" ]; then
+		die "BUG: File $binary_path does not exist"
+	fi
+
+	binary_target="$BIN_DIR/$binary_name"
 	if [ -e "$binary_target" ]; then
-		warn "Binary file already exists, creating backup"
+		warn "File $binary_target already exists, creating backup"
 		sudo mv "$binary_target" "$binary_target.backup"
 	fi
 
