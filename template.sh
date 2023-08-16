@@ -79,8 +79,7 @@ spinner() {
 
 	local i=0
 	# cursor invisible
-	tput civis
-	msg -n " "
+	tput civis;	msg -n " ";
 	while kill -0 "$pid" 2>/dev/null; do
 		local i=$(((i + char_width) % ${#spin}))
 		printf "%s" "${spin:$i:$char_width}"
@@ -90,8 +89,7 @@ spinner() {
 	done
 	# Erase spinner and print new line. It is expected that the spinner
 	# is shown at the end of message
-	tput cnorm
-	msg " "
+	tput cnorm;	msg " ";
 	wait "$pid"
 	return $?
 }
@@ -150,6 +148,26 @@ parse_params() {
 	return 0
 }
 
+# Install Ubuntu packages, but check if it is not already installed first.
+# It possibly allows to run the script even without sudo privileges.
+install_dependencies() {
+	read -r -a packages <<<"$@"
+	for package in "${packages[@]}"; do
+		if ! dpkg -s "$package" &>/dev/null; then
+			not_installed_packages+=("$package")
+		fi
+	done
+
+	if [ -n "${not_installed_packages-}" ]; then
+		msg -n "    • installing Ubuntu packages" "${not_installed_packages[@]}"
+		sudo apt -y install "${not_installed_packages[@]}" &>/dev/null &
+		spinner
+	fi
+}
+
+# Workaround to ask for sudo password at the beginning of the script,
+# but not to run all commands as root
+sudo echo -n
 parse_params "$@"
 setup_colors
 
