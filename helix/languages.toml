@@ -11,4 +11,9 @@ command = "clippy"
 [[language]]
 name = "bash"
 auto-format = true
-indent = { tab-width = 4, unit = "  " }
+indent = { tab-width = 4, unit = " " }
+
+[[language]]
+name = "nu"
+auto-format = true
+indent = { tab-width = 4, unit = " " }
