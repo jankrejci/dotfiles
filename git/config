@@ -4,10 +4,14 @@
 		ri = rebase --interactive
 		ria = rebase --interactive --autosquash
 		ra = rebase --abort
+		riam = rebase --interactive --autosquash origin/master
+		ram = rebase --abort origin/master
 		rc = rebase --continue
 		ap = add -p
 		cf = commit --fixup
 		cfh = commit --fixup=HEAD
 		c = commit
+		fm = "!git fetch; git checkout origin/master"
+		f = fetch
 [core]
         editor = hx
