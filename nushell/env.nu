@@ -26,7 +26,7 @@ def create_left_prompt [] {
 
 def create_right_prompt [] {
     let time_segment = ([
-        (date now | date format '%m/%d/%Y %r')
+        (date now | format date '%m/%d/%Y %r')
     ] | str join)
 
     $time_segment
@@ -75,4 +75,4 @@ $env.NU_PLUGIN_DIRS = [
 mkdir ~/.cache/starship
 starship init nu | save -f ~/.cache/starship/init.nu
 mkdir ~/.cache/zoxide
-zoxide init nushell | save -f ~/.cache/zoxide/init.nu
+zoxide init nushell | sed 's/def-env/def --env/g' | save -f ~/.cache/zoxide/init.nu

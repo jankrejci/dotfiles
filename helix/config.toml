@@ -1,8 +1,8 @@
-theme = "sonokai"
+theme = "sonokai_no_underline"
 
 [editor]
 mouse = false
-shell = ["zsh", "-c"]
+shell = ["nu", "-c"]
 cursorline = true
 idle-timeout = 5
 true-color = true
