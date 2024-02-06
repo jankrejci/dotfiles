@@ -9,6 +9,10 @@
   # release notes.
   home.stateVersion = "23.11";
 
+  imports = [
+    ./apps/alacritty.nix
+  ];
+
   nixpkgs.config.allowUnfree = true;
   home.packages = with pkgs; [
     hexyl
