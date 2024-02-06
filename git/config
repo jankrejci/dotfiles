@@ -13,5 +13,8 @@
 		c = commit
 		fm = "!git fetch; git checkout origin/master"
 		f = fetch
+		st = status
+		co = checkout
+		cob = ceckout -b
 [core]
         editor = hx
