@@ -24,6 +24,7 @@
     (pkgs.nerdfonts.override { fonts = [ "DejaVuSansMono" ]; })
     prusa-slicer
     saleae-logic-2
+    nixgl.nixGLIntel
   ];
 
   # Home Manager is pretty good at managing dotfiles. The primary way to manage
