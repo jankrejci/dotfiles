@@ -3,6 +3,7 @@
         enable = true;
     		settings = {
             font.normal.family = "DejaVuSansMono NF";
+            window.decorations = "None";
     		};
     };
 
