@@ -21,6 +21,7 @@
     fd
     fzf
     zoxide
+    marksman
     (pkgs.nerdfonts.override { fonts = [ "DejaVuSansMono" ]; })
     prusa-slicer
     saleae-logic-2
