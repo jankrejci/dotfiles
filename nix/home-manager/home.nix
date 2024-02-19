@@ -23,6 +23,7 @@
     zoxide
     marksman
     nil
+    rustup
     (pkgs.nerdfonts.override { fonts = [ "DejaVuSansMono" ]; })
     prusa-slicer
     saleae-logic
