@@ -25,6 +25,7 @@
     nil
     (pkgs.nerdfonts.override { fonts = [ "DejaVuSansMono" ]; })
     prusa-slicer
+    saleae-logic
     saleae-logic-2
     nixgl.nixGLIntel
   ];
