@@ -27,6 +27,9 @@
     fzf
     zoxide
     marksman
+    gitui
+    tokei
+    ripgrep
     nil
     rustup
     delta
