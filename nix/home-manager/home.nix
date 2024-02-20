@@ -34,6 +34,7 @@
     nixpkgs-fmt
     nodePackages.bash-language-server
     python311Packages.python-lsp-server
+    powerline-fonts
     (pkgs.nerdfonts.override { fonts = [ "DejaVuSansMono" ]; })
     prusa-slicer
     saleae-logic
