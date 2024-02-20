@@ -15,6 +15,7 @@
     ./apps/git.nix
     ./apps/helix.nix
     ./apps/zellij.nix
+    ./apps/nushell.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
@@ -32,6 +33,7 @@
     taplo
     shfmt
     nixpkgs-fmt
+    nu_scripts
     nodePackages.bash-language-server
     python311Packages.python-lsp-server
     powerline-fonts
