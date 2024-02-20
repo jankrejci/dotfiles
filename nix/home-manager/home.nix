@@ -13,6 +13,7 @@
     ./apps/alacritty.nix
     ./apps/starship.nix
     ./apps/git.nix
+    ./apps/helix.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
@@ -27,6 +28,10 @@
     nil
     rustup
     delta
+    taplo
+    shfmt
+    nodePackages.bash-language-server
+    python311Packages.python-lsp-server
     (pkgs.nerdfonts.override { fonts = [ "DejaVuSansMono" ]; })
     prusa-slicer
     saleae-logic
