@@ -88,6 +88,15 @@
                         unit = " ";
                     };
                 }
+                {
+                    name = "nix";
+                    auto-format = true;
+                    indent = {
+                        tab-width = 4;
+                        unit = " ";
+                    };
+                    formatter.command = "nixpkgs-fmt";
+                }
             ];
         };
         themes = {

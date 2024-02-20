@@ -30,6 +30,7 @@
     delta
     taplo
     shfmt
+    nixpkgs-fmt
     nodePackages.bash-language-server
     python311Packages.python-lsp-server
     (pkgs.nerdfonts.override { fonts = [ "DejaVuSansMono" ]; })
