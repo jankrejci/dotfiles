@@ -28,6 +28,7 @@
     zoxide
     marksman
     gitui
+    firefox
     tokei
     ripgrep
     tealdeer
