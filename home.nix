@@ -30,6 +30,8 @@
     gitui
     tokei
     ripgrep
+    tealdeer
+    shell_gpt
     nil
     rustup
     delta
