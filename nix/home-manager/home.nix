@@ -12,6 +12,7 @@
   imports = [
     ./apps/alacritty.nix
     ./apps/starship.nix
+    ./apps/git.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
@@ -25,6 +26,7 @@
     marksman
     nil
     rustup
+    delta
     (pkgs.nerdfonts.override { fonts = [ "DejaVuSansMono" ]; })
     prusa-slicer
     saleae-logic
