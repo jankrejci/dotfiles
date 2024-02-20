@@ -11,6 +11,7 @@
 
   imports = [
     ./apps/alacritty.nix
+    ./apps/starship.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
