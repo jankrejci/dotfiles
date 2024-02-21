@@ -2,6 +2,45 @@
 
 Working environment defined with Nix and home-manager
 
+# Installation
+
+Install nix prefarably through the [nix-installer](https://github.com/DeterminateSystems/nix-installer)
+```shell
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+```
+Install home manager and create flake.nix and home.nix under ~/.config/home-manager
+```shell
+nix run home-manager/master -- init --switch
+```
+Copy configuration to home-manager folder
+```shell
+cp -r ~/.dotfiles/* ~/.config/home-manager
+```
+Switch to the new configuration
+```shell
+home-manager switch
+```
+
+# Update packages
+Update package versions in flake.lock
+```shell
+cd ~/.config/home-manager; nix flake update
+```
+Install updated packages
+```shell
+home-manager switch
+```
+Remove old generations
+```shell
+ home-manager expire-generations "-30 days"
+```
+Cleanup unused packages from nix store
+```shell
+nix-store --gc
+```
+
+# Packages
+
 ## Core tools
 * [Rust](https://www.rust-lang.org/tools/install) A language empowering everyone to build reliable and efficient software.
 * [Zellij](https://github.com/zellij-org/zellij) A terminal workspace with batteries included.
