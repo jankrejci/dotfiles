@@ -32,4 +32,4 @@ $env.NU_PLUGIN_DIRS = [
 mkdir ~/.cache/starship
 starship init nu | save -f ~/.cache/starship/init.nu
 mkdir ~/.cache/zoxide
-zoxide init nushell | sed 's/def-env/def --env/g' | str replace "$env.PWD -- $rest" "$env.PWD -- ...$rest" --all | save -f ~/.cache/zoxide/init.nu
+zoxide init nushell | save -f ~/.cache/zoxide/init.nu
