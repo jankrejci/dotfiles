@@ -17,13 +17,16 @@
   outputs = { nixpkgs, home-manager, nixgl, ... }:
     let
       system = "x86_64-linux";
+
       pkgs = import nixpkgs {
-        system = "x86_64-linux";
+        inherit system;
         overlays = [ nixgl.overlay ];
       };
+
+      secrets = import ./secrets.nix;
     in
     {
-      homeConfigurations."jkr" = home-manager.lib.homeManagerConfiguration {
+      homeConfigurations.${secrets.username} = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
 
         # Specify your home configuration modules here, for example,
