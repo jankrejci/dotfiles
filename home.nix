@@ -1,8 +1,12 @@
-{ config, pkgs, ... }:
+let
+  secrets = import ./secrets.nix;
+in
+
+{ pkgs, ... }:
 
 {
-  home.username = "jkr";
-  home.homeDirectory = "/home/jkr";
+  home.username = (secrets.username);
+  home.homeDirectory = (secrets.homeDirectory);
 
   # You should not change this value, even if you update Home Manager. If you do
   # want to update the value, then make sure to first check the Home Manager
