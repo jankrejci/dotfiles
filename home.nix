@@ -14,44 +14,44 @@ in
   home.stateVersion = "23.11";
 
   imports = [
-    ./apps/alacritty.nix
-    ./apps/starship.nix
-    ./apps/git.nix
-    ./apps/helix.nix
-    ./apps/zellij.nix
-    ./apps/nushell.nix
-    ./apps/firefox.nix
+    ./apps/alacritty.nix # accelerated terminal emulator
+    ./apps/starship.nix # customizable prompt
+    ./apps/git.nix # the git
+    ./apps/helix.nix # modal editor
+    ./apps/zellij.nix # terminal multiplexer
+    ./apps/nushell.nix # new type of shell
+    ./apps/firefox.nix # web browser
   ];
 
   nixpkgs.config.allowUnfree = true;
   home.packages = with pkgs; [
-    hexyl
-    bat
-    eza
-    fd
-    fzf
-    zoxide
-    marksman
-    gitui
-    tokei
-    ripgrep
-    tealdeer
-    shell_gpt
-    nil
-    rustup
-    delta
-    taplo
-    shfmt
-    nixpkgs-fmt
-    nu_scripts
-    nodePackages.bash-language-server
-    python311Packages.python-lsp-server
-    powerline-fonts
-    (pkgs.nerdfonts.override { fonts = [ "DejaVuSansMono" ]; })
-    prusa-slicer
-    saleae-logic
-    saleae-logic-2
-    nixgl.nixGLIntel
+    hexyl # cli hex viewer
+    bat # cat clone with wings
+    eza # ls replacement
+    fd # find relplacement
+    fzf # cli fuzzy finder
+    zoxide # smarter cd command
+    marksman # markdown LSP server
+    gitui # terminal-ui for git
+    tokei # code statistics tool
+    ripgrep # search tool 
+    tealdeer # tldr help tool
+    shell_gpt # cli gpt prompt
+    nil # nix LSP server
+    rustup # rust install tool
+    delta # syntax highlighting diff
+    taplo # toml toolkit
+    shfmt # bash file formatter
+    nixpkgs-fmt # nix file formatter
+    nu_scripts # handy scripts for nushell
+    nodePackages.bash-language-server # bash LSP server
+    python311Packages.python-lsp-server # python LSP server
+    powerline-fonts # patched fonts used for zellij
+    (pkgs.nerdfonts.override { fonts = [ "DejaVuSansMono" ]; }) # iconic fonts
+    prusa-slicer # slicer for 3D printing
+    saleae-logic # logic analyzer software old-version
+    saleae-logic-2 # logic analyzer software
+    nixgl.nixGLIntel # opengl wrapper for non-nixos distro
   ];
 
   fonts.fontconfig.enable = true;
