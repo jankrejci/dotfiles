@@ -20,6 +20,7 @@ in
     ./apps/helix.nix
     ./apps/zellij.nix
     ./apps/nushell.nix
+    ./apps/firefox.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
@@ -32,7 +33,6 @@ in
     zoxide
     marksman
     gitui
-    firefox
     tokei
     ripgrep
     tealdeer
