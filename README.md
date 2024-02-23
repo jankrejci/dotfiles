@@ -12,9 +12,9 @@ Install home manager and create flake.nix and home.nix under ~/.config/home-mana
 ```shell
 nix run home-manager/master -- init --switch
 ```
-Copy configuration to home-manager folder
+Clone configuration to home-manager folder
 ```shell
-cp -r ~/.dotfiles/* ~/.config/home-manager
+git clone https://github.com/jankrejci/dotfiles.git ~/.config/home-manager
 ```
 Switch to the new configuration
 ```shell
