@@ -52,6 +52,7 @@ in
     saleae-logic # logic analyzer software old-version
     saleae-logic-2 # logic analyzer software
     nixgl.nixGLIntel # opengl wrapper for non-nixos distro
+    slint-lsp # slint LSP server, rust GUI framework
   ];
 
   fonts.fontconfig.enable = true;
