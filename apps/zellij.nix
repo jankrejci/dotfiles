@@ -18,4 +18,14 @@
     default_layout "compact"
     scrollback_editor "hx"
   '';
+
+  xdg.desktopEntries."Zellij" = {
+    name = "Zellij";
+    comment = "Terminal multiplexer";
+    icon = "Zellij";
+    exec = "nixGL alacritty -e zellij";
+    categories = [ "TerminalEmulator" ];
+    terminal = false;
+    mimeType = [ "text/plain" ];
+  };
 }
