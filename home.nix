@@ -51,7 +51,10 @@ in
     prusa-slicer # slicer for 3D printing
     saleae-logic # logic analyzer software old-version
     saleae-logic-2 # logic analyzer software
-    nixgl.nixGLIntel # opengl wrapper for non-nixos distro
+    libarchive # contains bsdtar tool needed to install nvidia driver
+    # it's needed to change `bsdtar xvf -` to `xz -d | tar xvf` in builder.sh
+    nixgl.auto.nixGLDefault # opengl wrapper for non-nixos distro
+    slint-lsp # slint LSP server, rust GUI framework
   ];
 
   fonts.fontconfig.enable = true;
