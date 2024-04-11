@@ -25,6 +25,7 @@ in
 
   nixpkgs.config.allowUnfree = true;
   home.packages = with pkgs; [
+    broot # a better way to navigate directories
     hexyl # cli hex viewer
     bat # cat clone with wings
     eza # ls replacement
