@@ -21,11 +21,11 @@ in
     ./apps/zellij.nix # terminal multiplexer
     ./apps/nushell.nix # new type of shell
     ./apps/firefox.nix # web browser
+    ./apps/broot.nix # a better way to navigate directories
   ];
 
   nixpkgs.config.allowUnfree = true;
   home.packages = with pkgs; [
-    broot # a better way to navigate directories
     hexyl # cli hex viewer
     bat # cat clone with wings
     eza # ls replacement
