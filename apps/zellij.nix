@@ -23,7 +23,7 @@
     name = "Zellij";
     comment = "Terminal multiplexer";
     icon = "Zellij";
-    exec = "nixGL alacritty -e zellij";
+    exec = "nixGL alacritty -e zellij -l welcome";
     categories = [ "TerminalEmulator" ];
     terminal = false;
     mimeType = [ "text/plain" ];
