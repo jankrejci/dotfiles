@@ -22,10 +22,9 @@
   xdg.desktopEntries."Zellij" = {
     name = "Zellij";
     comment = "Terminal multiplexer";
-    icon = "Zellij";
     exec = "nixGL alacritty -e zellij -l welcome";
-    categories = [ "TerminalEmulator" ];
+    icon = "/home/jankrejci/.config/home-manager/apps/zellij/logo.png";
+    categories = [ "System" "TerminalEmulator" ];
     terminal = false;
-    mimeType = [ "text/plain" ];
   };
 }
