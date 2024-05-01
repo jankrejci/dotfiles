@@ -20,7 +20,6 @@ in
     ./apps/helix.nix # modal editor
     ./apps/zellij.nix # terminal multiplexer
     ./apps/nushell.nix # new type of shell
-    ./apps/firefox.nix # web browser
     ./apps/broot.nix # a better way to navigate directories
   ];
 
