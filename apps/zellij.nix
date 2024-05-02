@@ -1,3 +1,6 @@
+let
+  secrets = import ../secrets.nix;
+in
 {
   programs.zellij = {
     enable = true;
@@ -23,7 +26,7 @@
     name = "Zellij";
     comment = "Terminal multiplexer";
     exec = "nixGL alacritty -e zellij -l welcome";
-    icon = "/home/jankrejci/.config/home-manager/apps/zellij/logo.png";
+    icon = "${secrets.homeDirectory}/.config/home-manager/apps/zellij/logo.png";
     categories = [ "System" "TerminalEmulator" ];
     terminal = false;
   };
