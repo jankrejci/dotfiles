@@ -119,10 +119,10 @@
           bg = "bg1";
         };
         diagnostic = {
-          error = { };
-          warning = { };
-          info = { };
-          hint = { };
+          error.underline.style = { };
+          warning.underline.style = { };
+          info.underline.style = { };
+          hint.underline.style = { };
         };
       };
     };
