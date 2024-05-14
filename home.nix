@@ -36,7 +36,7 @@ in
     tokei # code statistics tool
     ripgrep # search tool 
     tealdeer # tldr help tool
-    shell_gpt # cli gpt prompt
+    shell-gpt # cli gpt prompt
     nil # nix LSP server
     rustup # rust install tool
     delta # syntax highlighting diff
