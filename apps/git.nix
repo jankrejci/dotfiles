@@ -1,7 +1,12 @@
 {
   programs.git = {
     enable = true;
-    delta.enable = true;
+    delta = {
+      enable = true;
+      options = {
+        dark = true;
+      };
+    };
     extraConfig.core.editor = "hx";
     aliases = {
       ll = "log --pretty=format:'%Cred%h %Cgreen(%ad) %C(bold blue)<%an>%Creset %s %C(yellow)%d%Creset' --abbrev-commit --date=format:'%Y-%m-%d'";
