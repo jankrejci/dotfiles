@@ -3,7 +3,6 @@
 {
   programs.nushell = {
     enable = true;
-    package = pkgs.nushellFull;
     configFile.source = ./nushell/config.nu;
     envFile.source = ./nushell/env.nu;
     shellAliases = {
