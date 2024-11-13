@@ -12,10 +12,10 @@
       cd = "z";
     };
 
-    extraConfig = ''
-      source ${pkgs.nu_scripts}/share/nu_scripts/custom-completions/git/git-completions.nu
-      source ${pkgs.nu_scripts}/share/nu_scripts/custom-completions/cargo/cargo-completions.nu
-      source ${pkgs.nu_scripts}/share/nu_scripts/custom-completions/zellij/zellij-completions.nu
-    '';
+    # extraConfig = ''
+    #   source ${pkgs.nu_scripts}/share/nu_scripts/custom-completions/git/git-completions.nu
+    #   source ${pkgs.nu_scripts}/share/nu_scripts/custom-completions/cargo/cargo-completions.nu
+    #   source ${pkgs.nu_scripts}/share/nu_scripts/custom-completions/zellij/zellij-completions.nu
+    # '';
   };
 }
