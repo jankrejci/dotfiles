@@ -44,6 +44,7 @@ in
     shfmt # bash file formatter
     nixpkgs-fmt # nix file formatter
     nu_scripts # handy scripts for nushell
+    carapace # terminal command auto complete
     nodePackages.bash-language-server # bash LSP server
     python311Packages.python-lsp-server # python LSP server
     powerline-fonts # patched fonts used for zellij
