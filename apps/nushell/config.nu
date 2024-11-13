@@ -10,6 +10,15 @@ $env.config = {
         isolation: true,
     },
     show_banner: false,
+    keybindings: [
+      {
+        name: open_editor
+        modifier: control
+        keycode: char_e
+        mode: [vi_normal vi_insert emacs]
+        event: { send: OpenEditor}
+      }
+    ]
 }
 
 source ~/.cache/starship/init.nu
