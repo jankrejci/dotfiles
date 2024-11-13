@@ -29,6 +29,8 @@ $env.NU_PLUGIN_DIRS = [
     ($nu.config-path | path dirname | path join 'plugins')
 ]
 
+$env.EDITOR = "hx"
+
 mkdir ~/.cache/starship
 starship init nu | save -f ~/.cache/starship/init.nu
 
