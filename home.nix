@@ -21,6 +21,7 @@ in
     ./apps/zellij.nix # terminal multiplexer
     ./apps/nushell.nix # new type of shell
     ./apps/broot.nix # a better way to navigate directories
+    ./apps/hyprland.nix # tiling window manager
   ];
 
   nixpkgs.config.allowUnfree = true;
