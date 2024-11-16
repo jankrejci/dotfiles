@@ -2,8 +2,11 @@
   programs.alacritty = {
     enable = true;
     settings = {
-      font.normal.family = "DejaVuSansMono NF";
-      window.decorations = "None";
+      font.normal.family = "DejaVuSansMono";
+      window = {
+        decorations = "None";
+        startup_mode = "Maximized";
+      };
     };
   };
 
