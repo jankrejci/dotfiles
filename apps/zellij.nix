@@ -27,7 +27,7 @@ in
   xdg.desktopEntries."Zellij" = {
     name = "Zellij";
     comment = "Terminal multiplexer";
-    exec = "nixGL alacritty -e zellij -l welcome";
+    exec = "alacritty -e zellij -l welcome";
     icon = "${secrets.homeDirectory}/.config/home-manager/apps/zellij/logo.png";
     categories = [ "System" "TerminalEmulator" ];
     terminal = false;
