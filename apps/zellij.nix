@@ -1,9 +1,11 @@
+{ pkgs, ... }:
 let
   secrets = import ../secrets.nix;
 in
 {
   programs.zellij = {
     enable = true;
+    package = pkgs.unstable.zellij;
   };
   home.file.".config/zellij/config.kdl".text = ''
     keybinds {

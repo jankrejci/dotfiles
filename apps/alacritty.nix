@@ -1,6 +1,9 @@
+{ pkgs, ... }:
+
 {
   programs.alacritty = {
     enable = true;
+    package = pkgs.unstable.alacritty;
     settings = {
       font.normal.family = "DejaVuSansMono NF";
       window.decorations = "None";

@@ -36,20 +36,20 @@ in
     tokei # code statistics tool
     ripgrep # search tool 
     tealdeer # tldr help tool
-    shell-gpt # cli gpt prompt
-    nil # nix LSP server
-    rustup # rust install tool
+    unstable.shell-gpt # cli gpt prompt
+    unstable.nil # nix LSP server
+    unstable.rustup # rust install tool
+    git-absorb # absorb git hunks within existing commits
     delta # syntax highlighting diff
     taplo # toml toolkit
     shfmt # bash file formatter
     nixpkgs-fmt # nix file formatter
-    nu_scripts # handy scripts for nushell
-    carapace # terminal command auto complete
+    unstable.carapace # terminal command auto complete
     nodePackages.bash-language-server # bash LSP server
     python311Packages.python-lsp-server # python LSP server
     powerline-fonts # patched fonts used for zellij
     (pkgs.nerdfonts.override { fonts = [ "DejaVuSansMono" ]; }) # iconic fonts
-    prusa-slicer # slicer for 3D printing
+    unstable.prusa-slicer # slicer for 3D printing
     saleae-logic # logic analyzer software old-version
     saleae-logic-2 # logic analyzer software
     libarchive # contains bsdtar tool needed to install nvidia driver
