@@ -68,11 +68,17 @@
       };
     };
     languages = {
+      language-server = {
+        rust-analyzer = {
+          check = { commmand = "clippy"; targets = "x86_64-unknown-linux-gnu"; };
+          cargo = { targetDir = true; buildScripts.enable = true; };
+          procMacro.enable = true;
+        };
+      };
       language = [
         {
           name = "rust";
           auto-format = true;
-          # checkOnSave.command = "clippy";
         }
         {
           name = "bash";
