@@ -3,9 +3,11 @@
 
   inputs = {
     # Specify the source of Home Manager and Nixpkgs.
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
+    nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
+
     home-manager = {
-      url = "github:nix-community/home-manager";
+      url = "github:nix-community/home-manager/release-24.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # nixgl is needed for alacritty outside of nixOS
@@ -14,13 +16,20 @@
     nixgl.url = "github:guibou/nixGL";
   };
 
-  outputs = { nixpkgs, home-manager, nixgl, ... }:
+  outputs = { nixpkgs, nixpkgs-unstable, home-manager, nixgl, ... }:
     let
       system = "x86_64-linux";
 
+      unstable-packages = final: _prev: {
+        unstable = import nixpkgs-unstable {
+          system = final.system;
+          config.allowUnfree = true;
+        };
+      };
+
       pkgs = import nixpkgs {
         inherit system;
-        overlays = [ nixgl.overlay ];
+        overlays = [ nixgl.overlay unstable-packages ];
       };
 
       secrets = import ./secrets.nix;
