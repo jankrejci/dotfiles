@@ -1,6 +1,9 @@
+{ pkgs, ... }:
+
 {
   programs.helix = {
     enable = true;
+    package = pkgs.unstable.helix;
     settings = {
       theme = "sonokai_no_underline";
       editor = {
