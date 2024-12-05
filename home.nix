@@ -25,6 +25,7 @@ in
 
   nixpkgs.config.allowUnfree = true;
   home.packages = with pkgs; [
+    rshell
     hexyl # cli hex viewer
     bat # cat clone with wings
     eza # ls replacement
@@ -41,6 +42,7 @@ in
     git-absorb # absorb git hunks within existing commits
     delta # syntax highlighting diff
     taplo # toml toolkit
+    unstable.espflash
     unstable.carapace # terminal command auto complete
     python311Packages.python-lsp-server # python LSP server
     powerline-fonts # patched fonts used for zellij
