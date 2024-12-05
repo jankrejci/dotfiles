@@ -85,11 +85,50 @@
           cargo = { targetDir = true; buildScripts.enable = false; };
           procMacro.enable = true;
         };
+        typos = {
+          command = "typos-lsp";
+          environment.RUST_LOG = "info";
+          config.diagnosticSeverity = "Help";
+        };
+        ltex-ls = {
+          config = {
+            ltex.enabled = [ "markdown" "rust" "python" "restructuredtext" "context" "html" "git-commit" "git-rebase" ];
+            ltex.disabledRules = {
+              en-US = [ "PROFANITY" ];
+            };
+            ltex.dictionary = {
+              en-US = [
+                "builtin"
+                "TODO"
+                "enum"
+                "Braiins"
+                "BOSI"
+                "hashrate"
+                "midstates"
+                "nonce"
+                "nonces"
+                "params"
+                "Bitmain"
+                "Antminer"
+                "PSU"
+                "PSUs"
+                "eeprom"
+                "hashchain"
+                "hashchains"
+                "hashboard"
+                "hashboards"
+                "baudrate"
+                "hw"
+              ];
+            };
+          };
+        };
       };
       language = [
         {
           name = "rust";
           auto-format = true;
+          language-servers = [ "rust-analyzer" "typos" "ltex-ls" ];
         }
         {
           name = "bash";
