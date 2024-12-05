@@ -82,7 +82,7 @@
       language-server = {
         rust-analyzer = {
           check = { commmand = "clippy"; targets = "x86_64-unknown-linux-gnu"; };
-          cargo = { targetDir = true; buildScripts.enable = true; };
+          cargo = { targetDir = true; buildScripts.enable = false; };
           procMacro.enable = true;
         };
       };
