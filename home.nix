@@ -31,7 +31,6 @@ in
     fd # find relplacement
     fzf # cli fuzzy finder
     zoxide # smarter cd command
-    marksman # markdown LSP server
     gitui # terminal-ui for git
     tokei # code statistics tool
     ripgrep # search tool 
@@ -42,10 +41,7 @@ in
     git-absorb # absorb git hunks within existing commits
     delta # syntax highlighting diff
     taplo # toml toolkit
-    shfmt # bash file formatter
-    nixpkgs-fmt # nix file formatter
     unstable.carapace # terminal command auto complete
-    nodePackages.bash-language-server # bash LSP server
     python311Packages.python-lsp-server # python LSP server
     powerline-fonts # patched fonts used for zellij
     (pkgs.nerdfonts.override { fonts = [ "DejaVuSansMono" ]; }) # iconic fonts
@@ -55,7 +51,6 @@ in
     libarchive # contains bsdtar tool needed to install nvidia driver
     # it's needed to change `bsdtar xvf -` to `xz -d | tar xvf` in builder.sh
     nixgl.auto.nixGLDefault # opengl wrapper for non-nixos distro
-    slint-lsp # slint LSP server, rust GUI framework
   ];
 
   fonts.fontconfig.enable = true;
