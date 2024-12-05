@@ -1,6 +1,17 @@
 { pkgs, ... }:
 
 {
+  home.packages = with pkgs; [
+    ltex-ls # spell check language server
+    nodePackages.bash-language-server # bash language server
+    slint-lsp # slint language server
+    shfmt # bash file formatter
+    marksman # markdown language server
+    nixpkgs-fmt # nix file formatter
+    typos # spell checker
+    typos-lsp # typos language server api
+  ];
+
   programs.helix = {
     enable = true;
     package = pkgs.unstable.helix;
