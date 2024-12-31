@@ -9,12 +9,13 @@
       };
       directory = {
         truncation_length = 1;
-        read_only = " ";
+        read_only = "🔒";
       };
       git_branch = {
         symbol = " ";
       };
       os.symbols = {
+        NixOS = "❄️ ";
         Arch = " ";
         Debian = " ";
         Linux = " ";
@@ -22,10 +23,10 @@
         Raspbian = " ";
         Ubuntu = " ";
         Unknown = " ";
-        Windows = " ";
+        Windows = "🪟 ";
       };
       package = {
-        symbol = " ";
+        symbol = "📦 ";
         disabled = true;
       };
       python = {
