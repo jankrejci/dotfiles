@@ -73,5 +73,14 @@
     EDITOR = "hx";
   };
 
+  dconf.settings = {
+    "org/gnome/desktop/interface" = {
+      color-scheme = "prefer-dark";
+    };
+    "org/gnome/desktop/sound" = {
+      allow-volume-above-100-percent = true;
+    };
+  };
+
   programs.home-manager.enable = true;
 }
