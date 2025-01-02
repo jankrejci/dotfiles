@@ -6,6 +6,7 @@
     ./hardware-configuration.nix
     ../../modules/displaylink.nix
     ../../modules/audio.nix
+    ../../modules/nvidia.nix
   ];
 
   # Bootloader.
