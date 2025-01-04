@@ -69,6 +69,7 @@
         fzf # cli fuzzy finder
         zoxide # smarter cd command
         ripgrep # search tool 
+        tealdeer # tldr help tool
         nmap
       ];
 
