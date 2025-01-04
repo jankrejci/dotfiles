@@ -30,6 +30,7 @@
       pkgs = import nixpkgs {
         inherit system;
         config.allowUnfree = true;
+        config.nvidia.acceptLicense = true;
         overlays = [ nixgl.overlay unstable-packages ];
       };
 
@@ -37,9 +38,13 @@
 
       # Common system packages
       commonPackages = with pkgs; [
-        alacritty
+        unstable.alacritty
+        unstable.zellij
+        unstable.helix
+        unstable.nushell
+        unstable.broot
+        starship
         curl
-        rofi
         bash
         cups
         home-manager
@@ -56,19 +61,31 @@
         usbutils
         pciutils
         lshw
-        rofi-wayland
         brightnessctl
-        eww
+        bat # cat clone with wings
+        eza # ls replacement
+        fd # find relplacement
+        fzf # cli fuzzy finder
+        zoxide # smarter cd command
+        ripgrep # search tool 
       ];
 
       # Optiplex-specific packages
       optiplexPackages = with pkgs; [
         # Add packages specific to optiplex here
+        solaar
+        rofi
+        rofi-wayland
+        eww
       ];
 
       # Thinkpad-specific packages
       thinkpadPackages = with pkgs; [
         # Add more thinkpad-specific packages here
+        solaar
+        rofi
+        rofi-wayland
+        eww
         powertop
         tlp
       ];

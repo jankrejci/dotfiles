@@ -24,14 +24,8 @@
   home.packages = with pkgs; [
     rshell
     hexyl # cli hex viewer
-    bat # cat clone with wings
-    eza # ls replacement
-    fd # find relplacement
-    fzf # cli fuzzy finder
-    zoxide # smarter cd command
     gitui # terminal-ui for git
     tokei # code statistics tool
-    ripgrep # search tool 
     tealdeer # tldr help tool
     unstable.shell-gpt # cli gpt prompt
     unstable.nil # nix LSP server
@@ -50,6 +44,9 @@
     libarchive # contains bsdtar tool needed to install nvidia driver
     # nixgl.auto.nixGLDefault # opengl wrapper for non-nixos distro
     slint-lsp # slint LSP server, rust GUI framework
+    gnomeExtensions.vitals
+    gnomeExtensions.dash-to-panel
+    kicad
   ];
 
   fonts.fontconfig.enable = true;
@@ -80,7 +77,17 @@
     "org/gnome/desktop/sound" = {
       allow-volume-above-100-percent = true;
     };
+    "org/gnome/shell" = {
+      disable-user-extensions = false;
+
+      # `gnome-extensions list` for a list
+      enabled-extensions = [
+        "Vitals@CoreCoding.com"
+        "dash-to-panel@jderose9.github.com"
+      ];
+    };
   };
+
 
   programs.home-manager.enable = true;
 }

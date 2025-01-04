@@ -6,7 +6,6 @@
     ./hardware-configuration.nix
     ../../modules/displaylink.nix
     ../../modules/audio.nix
-    ../../modules/nvidia.nix
   ];
 
   # Bootloader.
@@ -14,8 +13,8 @@
   boot.loader.efi.canTouchEfiVariables = true;
 
   boot.initrd.luks.devices."luks-4146767d-b4f4-4a2e-be33-f12e11165724".device = "/dev/disk/by-uuid/4146767d-b4f4-4a2e-be33-f12e11165724";
-  networking.hostName = "optiplex"; # Define your hostname.
-  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
+
+  networking.hostName = "optiplex";
 
   # Enable networking
   networking.networkmanager.enable = true;
@@ -58,6 +57,11 @@
 
   # Install firefox.
   programs.firefox.enable = true;
+
+  programs.hyprland = {
+    enable = true;
+    xwayland.enable = true;
+  };
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
