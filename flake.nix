@@ -44,12 +44,13 @@
         unstable.nushell
         unstable.broot
         starship
+        powerline-fonts # patched fonts used for zellij
+        (pkgs.nerdfonts.override { fonts = [ "DejaVuSansMono" ]; }) # iconic fonts
         curl
         bash
         cups
         home-manager
         unzip
-        vlc
         wget
         coreutils
         rclone
@@ -73,6 +74,7 @@
       # Optiplex-specific packages
       optiplexPackages = with pkgs; [
         # Add packages specific to optiplex here
+        vlc
         solaar
         rofi
         rofi-wayland
@@ -82,6 +84,7 @@
       # Thinkpad-specific packages
       thinkpadPackages = with pkgs; [
         # Add more thinkpad-specific packages here
+        vlc
         solaar
         rofi
         rofi-wayland
