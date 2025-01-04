@@ -13,7 +13,7 @@
     ../../alacritty.nix # accelerated terminal emulator
     ../../starship.nix # customizable prompt
     ../../git.nix # the git
-    ../../helix.nix # modal editor
+    ../../helix-simple.nix # modal editor
     ../../zellij.nix # terminal multiplexer
     ../../nushell.nix # new type of shell
     ../../broot.nix # a better way to navigate directories
@@ -21,16 +21,8 @@
 
   nixpkgs.config.allowUnfree = true;
   home.packages = with pkgs; [
-    rshell
     hexyl # cli hex viewer
-    gitui # terminal-ui for git
-    tokei # code statistics tool
-    tealdeer # tldr help tool
-    unstable.shell-gpt # cli gpt prompt
     unstable.rustup # rust install tool
-    git-absorb # absorb git hunks within existing commits
-    delta # syntax highlighting diff
-    unstable.espflash
     unstable.carapace # terminal command auto complete
   ];
 
