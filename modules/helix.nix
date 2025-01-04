@@ -4,12 +4,15 @@
   home.packages = with pkgs; [
     ltex-ls # spell check language server
     nodePackages.bash-language-server # bash language server
+    python311Packages.python-lsp-server # python LSP server
     slint-lsp # slint language server
     shfmt # bash file formatter
     marksman # markdown language server
     nixpkgs-fmt # nix file formatter
     typos # spell checker
     typos-lsp # typos language server api
+    unstable.nil # nix LSP server
+    taplo # toml toolkit
   ];
 
   programs.helix = {
