@@ -28,22 +28,14 @@
     tokei # code statistics tool
     tealdeer # tldr help tool
     unstable.shell-gpt # cli gpt prompt
-    unstable.nil # nix LSP server
     unstable.rustup # rust install tool
     git-absorb # absorb git hunks within existing commits
     delta # syntax highlighting diff
-    taplo # toml toolkit
     unstable.espflash
     unstable.carapace # terminal command auto complete
-    python311Packages.python-lsp-server # python LSP server
-    powerline-fonts # patched fonts used for zellij
-    (pkgs.nerdfonts.override { fonts = [ "DejaVuSansMono" ]; }) # iconic fonts
     unstable.prusa-slicer # slicer for 3D printing
-    saleae-logic # logic analyzer software old-version
     saleae-logic-2 # logic analyzer software
-    libarchive # contains bsdtar tool needed to install nvidia driver
     # nixgl.auto.nixGLDefault # opengl wrapper for non-nixos distro
-    slint-lsp # slint LSP server, rust GUI framework
     gnomeExtensions.vitals
     gnomeExtensions.dash-to-panel
     kicad
