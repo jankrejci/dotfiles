@@ -69,9 +69,10 @@
         fzf # cli fuzzy finder
         zoxide # smarter cd command
         ripgrep # search tool 
+        nmap
       ];
 
-      # Optiplex-specific packages
+      # Optiplex specific packages
       optiplexPackages = with pkgs; [
         # Add packages specific to optiplex here
         vlc
@@ -81,7 +82,7 @@
         eww
       ];
 
-      # Thinkpad-specific packages
+      # Thinkpad specific packages
       thinkpadPackages = with pkgs; [
         # Add more thinkpad-specific packages here
         vlc
@@ -91,6 +92,11 @@
         eww
         powertop
         tlp
+      ];
+
+      # Raspberry Pi specific packages
+      raspberryPackages = with pkgs; [
+        # Add more thinkpad-specific packages here
       ];
 
     in
@@ -151,6 +157,32 @@
               };
               nixpkgs.config.allowUnfree = true;
               environment.systemPackages = commonPackages ++ thinkpadPackages;
+            }
+          ];
+        };
+
+        rpi4 = nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = { inherit inputs lib pkgs; };
+          modules = [
+            # Make overlay available system-wide
+            { nixpkgs.overlays = [ unstable-packages ]; }
+            ./hosts/rpi4/configuration.nix
+            ./hosts/rpi4/hardware-configuration.nix
+            ./modules/users/single-user.nix
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                users = {
+                  jkr = { ... }: {
+                    imports = [ ./modules/users/jkr/home-rpi.nix ];
+                  };
+                };
+              };
+              nixpkgs.config.allowUnfree = true;
+              environment.systemPackages = commonPackages ++ raspberryPackages;
             }
           ];
         };
