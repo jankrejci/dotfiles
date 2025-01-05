@@ -10,7 +10,6 @@
   home.stateVersion = "24.05";
 
   imports = [
-    ../../alacritty.nix # accelerated terminal emulator
     ../../starship.nix # customizable prompt
     ../../git.nix # the git
     ../../helix-simple.nix # modal editor

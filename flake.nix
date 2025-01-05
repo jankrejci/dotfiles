@@ -38,7 +38,6 @@
 
       # Common system packages
       commonPackages = with pkgs; [
-        unstable.alacritty
         unstable.zellij
         unstable.helix
         unstable.nushell
@@ -48,7 +47,6 @@
         (pkgs.nerdfonts.override { fonts = [ "DejaVuSansMono" ]; }) # iconic fonts
         curl
         bash
-        cups
         home-manager
         unzip
         wget
@@ -71,11 +69,12 @@
         ripgrep # search tool 
         tealdeer # tldr help tool
         nmap
+        htop
       ];
 
-      # Optiplex specific packages
-      optiplexPackages = with pkgs; [
-        # Add packages specific to optiplex here
+      desktopPackages = with pkgs; [
+        unstable.alacritty
+        cups
         vlc
         solaar
         rofi
@@ -83,21 +82,9 @@
         eww
       ];
 
-      # Thinkpad specific packages
-      thinkpadPackages = with pkgs; [
-        # Add more thinkpad-specific packages here
-        vlc
-        solaar
-        rofi
-        rofi-wayland
-        eww
+      notebookPackages = with pkgs; [
         powertop
         tlp
-      ];
-
-      # Raspberry Pi specific packages
-      raspberryPackages = with pkgs; [
-        # Add more thinkpad-specific packages here
       ];
 
     in
@@ -127,8 +114,7 @@
                   };
                 };
               };
-              nixpkgs.config.allowUnfree = true;
-              environment.systemPackages = commonPackages ++ optiplexPackages;
+              environment.systemPackages = commonPackages ++ desktopPackages;
             }
           ];
         };
@@ -156,8 +142,7 @@
                   };
                 };
               };
-              nixpkgs.config.allowUnfree = true;
-              environment.systemPackages = commonPackages ++ thinkpadPackages;
+              environment.systemPackages = commonPackages ++ desktopPackages ++ notebookPackages;
             }
           ];
         };
@@ -182,8 +167,31 @@
                   };
                 };
               };
-              nixpkgs.config.allowUnfree = true;
-              environment.systemPackages = commonPackages ++ raspberryPackages;
+              environment.systemPackages = commonPackages;
+            }
+          ];
+        };
+
+        vpsfree = nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = { inherit inputs lib pkgs; };
+          modules = [
+            # Make overlay available system-wide
+            { nixpkgs.overlays = [ unstable-packages ]; }
+            ./hosts/vpsfree/configuration.nix
+            ./modules/users/single-user.nix
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                users = {
+                  jkr = { ... }: {
+                    imports = [ ./modules/users/jkr/home-rpi.nix ];
+                  };
+                };
+              };
+              environment.systemPackages = commonPackages;
             }
           ];
         };
