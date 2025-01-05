@@ -70,6 +70,7 @@
         tealdeer # tldr help tool
         nmap
         htop
+        wireguard-tools
       ];
 
       desktopPackages = with pkgs; [
