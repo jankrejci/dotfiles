@@ -3,6 +3,7 @@
 
 {
   users.users = {
+    root.hashedPassword = "!";
     jkr = {
       isNormalUser = true;
       extraGroups = [ "plugdev" "wheel" "cups" "networkmanager" "jkr" ];

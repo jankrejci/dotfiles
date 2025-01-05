@@ -3,6 +3,7 @@
 
 {
   users.users = {
+    root.hashedPassword = "!";
     jkr = {
       isNormalUser = true;
       extraGroups = [ "plugdev" "wheel" "cups" "networkmanager" "jkr" ];
@@ -12,7 +13,7 @@
     paja = {
       isNormalUser = true;
       extraGroups = [ "cups" "networkmanager" "paja" ];
-      uid = 5000;  
+      uid = 5000;
     };
   };
 
@@ -21,8 +22,8 @@
       gid = 1000;
     };
     paja = {
-       gid = 5000;
-    }; 
+      gid = 5000;
+    };
   };
 }
 
