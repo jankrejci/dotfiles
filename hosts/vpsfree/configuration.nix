@@ -18,6 +18,7 @@
   users.users.jkr = {
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN85SndW/OerKK8u2wTxmHcTn4hEtUJmctj9wnseBYtS jkr@optiplex-vpsfree"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICWjLMaGa0MgRX0K1i2+me5iWe3Kpw/9RrpWMZLDtOWr jkr@thinkpad-vpsfree"
     ];
   };
 
