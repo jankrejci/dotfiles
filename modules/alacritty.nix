@@ -17,7 +17,7 @@
     name = "Alacritty";
     comment = "Terminal emulator";
     icon = "Alacritty";
-    exec = "alacritty";
+    exec = "nixGL alacritty";
     categories = [ "TerminalEmulator" ];
     terminal = false;
     mimeType = [ "text/plain" ];

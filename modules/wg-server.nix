@@ -30,11 +30,11 @@
         publicKey = "HP+nPkrKwAxvmXjrI9yjsaGRMVXqt7zdcBGbD2ji83g=";
         allowedIPs = [ "192.168.99.5/32" ];
       }
-      # {
-      #   # jkr@latitude
-      #   publicKey = "";
-      #   allowedIPs = [ "192.168.99.5/32" ];
-      # }
+      {
+        # jkr@latitude
+        publicKey = "ggj+uqF/vij5V+fA5r9GIv5YuT9hX7OBp+lAGYh5SyQ=";
+        allowedIPs = [ "192.168.99.5/32" ];
+      }
     ];
   };
 }

@@ -16,15 +16,40 @@
     nixgl.url = "github:guibou/nixGL";
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, nixgl, ... }@inputs:
+  outputs = { nixpkgs, nixpkgs-unstable, home-manager, nixgl, ... }:
+    let
+      unstable-x86_64-linux = final: _prev: {
+        unstable = import nixpkgs-unstable {
+          system = "x86_64-linux";
+          config.allowUnfree = true;
+        };
+      };
+      pkgs-x86_64-linux = import nixpkgs {
+        system = "x86_64-linux";
+        config.allowUnfree = true;
+        overlays = [ nixgl.overlay unstable-x86_64-linux ];
+      };
+      unstable-aarch64-linux = final: _prev: {
+        unstable = import nixpkgs-unstable {
+          system = "aarch64-linux";
+          config.allowUnfree = true;
+        };
+      };
+      pkgs-aarch64-linux = import nixpkgs {
+        system = "aarch64-linux";
+        config.allowUnfree = true;
+        overlays = [ unstable-aarch64-linux ];
+      };
+    in
     {
       nixosConfigurations = {
         optiplex = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
-          specialArgs = { inherit inputs; };
+          specialArgs = { pkgs = pkgs-x86_64-linux; };
           modules = [
             ./hosts/optiplex/configuration.nix
-            ./modules/users/users.nix
+            ./modules/users/jkr/user.nix
+            ./modules/users/paja/user.nix
             home-manager.nixosModules.home-manager
             {
               home-manager = {
@@ -45,10 +70,11 @@
 
         thinkpad = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
-          specialArgs = { inherit inputs; };
+          specialArgs = { pkgs = pkgs-x86_64-linux; };
           modules = [
             ./hosts/thinkpad/configuration.nix
-            ./modules/users/users.nix
+            ./modules/users/jkr/user.nix
+            ./modules/users/paja/user.nix
             home-manager.nixosModules.home-manager
             {
               home-manager = {
@@ -69,10 +95,10 @@
 
         rpi4 = nixpkgs.lib.nixosSystem {
           system = "aarch64-linux";
-          specialArgs = { inherit inputs; };
+          specialArgs = { pkgs = pkgs-aarch64-linux; };
           modules = [
             ./hosts/rpi4/configuration.nix
-            ./modules/users/single-user.nix
+            ./modules/users/jkr/user.nix
             home-manager.nixosModules.home-manager
             {
               home-manager = {
@@ -80,7 +106,7 @@
                 useUserPackages = true;
                 users = {
                   jkr = { ... }: {
-                    imports = [ ./modules/users/jkr/home-rpi.nix ];
+                    imports = [ ./modules/users/jkr/home-minimal.nix ];
                   };
                 };
               };
@@ -90,11 +116,10 @@
 
         vpsfree = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
-          specialArgs = { inherit inputs; };
+          specialArgs = { pkgs = pkgs-x86_64-linux; };
           modules = [
-            # Make overlay available system-wide
             ./hosts/vpsfree/configuration.nix
-            ./modules/users/single-user.nix
+            ./modules/users/jkr/user.nix
             home-manager.nixosModules.home-manager
             {
               home-manager = {
@@ -102,12 +127,19 @@
                 useUserPackages = true;
                 users = {
                   jkr = { ... }: {
-                    imports = [ ./modules/users/jkr/home-rpi.nix ];
+                    imports = [ ./modules/users/jkr/home-minimal.nix ];
                   };
                 };
               };
             }
           ];
+        };
+      };
+
+      homeConfigurations = {
+        latitude = home-manager.lib.homeManagerConfiguration {
+          pkgs = pkgs-x86_64-linux;
+          modules = [ ./modules/users/jkr/home-ubuntu.nix ];
         };
       };
     };
