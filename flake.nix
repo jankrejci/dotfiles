@@ -99,7 +99,6 @@
             # Make overlay available system-wide
             { nixpkgs.overlays = [ unstable-packages ]; }
             ./hosts/optiplex/configuration.nix
-            ./hosts/optiplex/hardware-configuration.nix
             ./modules/users/users.nix
             home-manager.nixosModules.home-manager
             {
@@ -127,7 +126,6 @@
             # Make overlay available system-wide
             { nixpkgs.overlays = [ unstable-packages ]; }
             ./hosts/thinkpad/configuration.nix
-            ./hosts/thinkpad/hardware-configuration.nix
             ./modules/users/users.nix
             home-manager.nixosModules.home-manager
             {
@@ -155,7 +153,6 @@
             # Make overlay available system-wide
             { nixpkgs.overlays = [ unstable-packages ]; }
             ./hosts/rpi4/configuration.nix
-            ./hosts/rpi4/hardware-configuration.nix
             ./modules/users/single-user.nix
             home-manager.nixosModules.home-manager
             {
