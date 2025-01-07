@@ -92,7 +92,7 @@
     {
       nixosConfigurations = {
         optiplex = nixpkgs.lib.nixosSystem {
-          inherit system;
+          system = "x86_64-linux";
           # Added pkgs to specialArgs
           specialArgs = { inherit inputs lib pkgs; };
           modules = [
@@ -120,7 +120,7 @@
         };
 
         thinkpad = nixpkgs.lib.nixosSystem {
-          inherit system;
+          system = "x86_64-linux";
           specialArgs = { inherit inputs lib pkgs; };
           modules = [
             # Make overlay available system-wide
@@ -147,7 +147,7 @@
         };
 
         rpi4 = nixpkgs.lib.nixosSystem {
-          inherit system;
+          system = "aarch64-linux";
           specialArgs = { inherit inputs lib pkgs; };
           modules = [
             # Make overlay available system-wide
@@ -171,7 +171,7 @@
         };
 
         vpsfree = nixpkgs.lib.nixosSystem {
-          inherit system;
+          system = "x86_64-linux";
           specialArgs = { inherit inputs lib pkgs; };
           modules = [
             # Make overlay available system-wide
