@@ -1,15 +1,8 @@
 # users.nix
-{ config, pkgs, ... }:
+{ ... }:
 
 {
   users.users = {
-    root.hashedPassword = "!";
-    jkr = {
-      isNormalUser = true;
-      extraGroups = [ "plugdev" "wheel" "cups" "networkmanager" "jkr" ];
-      # It's good practice to explicitly set the UID
-      uid = 1000;
-    };
     paja = {
       isNormalUser = true;
       extraGroups = [ "cups" "networkmanager" "paja" ];
@@ -18,9 +11,6 @@
   };
 
   users.groups = {
-    jkr = {
-      gid = 1000;
-    };
     paja = {
       gid = 5000;
     };
