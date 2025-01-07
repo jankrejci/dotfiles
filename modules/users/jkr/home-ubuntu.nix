@@ -1,5 +1,7 @@
-{ pkgs, ... }:
-
+{ pkgs, config, ... }:
+let
+  nixGL = import ../../nixGL.nix { inherit pkgs config; };
+in
 {
   home.username = "jkr";
   home.homeDirectory = "/home/jkr";
@@ -20,6 +22,7 @@
   ];
 
   home.packages = with pkgs; [
+    (nixGL unstable.alacritty)
     unstable.zellij
     unstable.helix
     unstable.nushell
