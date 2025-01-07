@@ -1,5 +1,17 @@
-{ ... }:
+{ system, nixpkgs, nixpkgs-unstable, ... }:
+let
+  unstable = import nixpkgs-unstable {
+    inherit system;
+    config.allowUnfree = true;
+  };
 
+  pkgs = import nixpkgs {
+    inherit system;
+    config.allowUnfree = true;
+    config.nvidia.acceptLicense = true;
+    overlays = [ unstable ];
+  };
+in
 {
   # Enable the X11 windowing system.
   services.xserver.enable = true;
@@ -24,4 +36,17 @@
     enable = true;
     xwayland.enable = true;
   };
+
+  environment.systemPackages = with pkgs; [
+    unstable.alacritty
+    cups
+    vlc
+    solaar
+    rofi
+    rofi-wayland
+    eww
+    powertop
+    tlp
+  ];
+
 }
