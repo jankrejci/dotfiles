@@ -4,7 +4,6 @@
   home.username = "jkr";
   home.homeDirectory = "/home/jkr";
 
-
   imports = [
     ../../starship.nix # customizable prompt
     ../../git.nix # the git
@@ -16,7 +15,6 @@
 
   home.packages = with pkgs; [
     hexyl # cli hex viewer
-    unstable.rustup # rust install tool
     unstable.carapace # terminal command auto complete
   ];
 
@@ -27,5 +25,5 @@
   # You should not change this value, even if you update Home Manager. If you do
   # want to update the value, then make sure to first check the Home Manager
   # release notes.
-  home.stateVersion = "24.05";
+  home.stateVersion = "24.11";
 }
