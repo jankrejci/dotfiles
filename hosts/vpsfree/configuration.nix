@@ -6,6 +6,7 @@
     ../../modules/common.nix
     ../../modules/ssh.nix
     ../../modules/wg-server.nix
+    ../../modules/grafana.nix
   ];
 
   networking.hostName = "vpsfree";
