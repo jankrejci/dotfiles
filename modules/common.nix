@@ -54,5 +54,6 @@
     nmap
     htop
     wireguard-tools
+    dig
   ];
 }
