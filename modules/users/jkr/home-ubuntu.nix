@@ -32,7 +32,6 @@ in
     (pkgs.nerdfonts.override { fonts = [ "DejaVuSansMono" ]; }) # iconic fonts
     curl
     bash
-    home-manager
     unzip
     wget
     coreutils
@@ -55,7 +54,6 @@ in
     tealdeer # tldr help tool
     nmap
     htop
-    wireguard-tools
     rshell
     hexyl # cli hex viewer
     gitui # terminal-ui for git
@@ -67,10 +65,9 @@ in
     delta # syntax highlighting diff
     unstable.espflash
     unstable.carapace # terminal command auto complete
-    # unstable.prusa-slicer # slicer for 3D printing
-    # saleae-logic-2 # logic analyzer software
+    unstable.prusa-slicer # slicer for 3D printing
+    saleae-logic-2 # logic analyzer software
     nixgl.auto.nixGLDefault # opengl wrapper for non-nixos distro
-    # kicad
   ];
 
   # fonts.fontconfig.enable = true;
@@ -79,5 +76,5 @@ in
     EDITOR = "hx";
   };
 
-  # programs.home-manager.enable = true;
+  programs.home-manager.enable = true;
 }
