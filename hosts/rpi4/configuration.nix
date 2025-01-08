@@ -37,6 +37,12 @@
     dns = [ "192.168.99.1" ];
   };
 
+  services.prometheus.exporters.node = {
+    enable = true;
+    openFirewall = true;
+    listenAddress = "192.168.99.2";
+  };
+
   security.sudo.wheelNeedsPassword = false;
 
   system.stateVersion = "24.11"; # Did you read the comment?
