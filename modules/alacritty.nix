@@ -1,9 +1,11 @@
-{ pkgs, ... }:
-
+{ pkgs, config, ... }:
+let
+  nixGL = import ./nixGL.nix { inherit pkgs config; };
+in
 {
   programs.alacritty = {
     enable = true;
-    package = pkgs.unstable.alacritty;
+    package = (nixGL pkgs.unstable.alacritty);
     settings = {
       font.normal.family = "DejaVuSansMono";
       window = {

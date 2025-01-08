@@ -73,7 +73,7 @@ in
     # kicad
   ];
 
-  fonts.fontconfig.enable = true;
+  # fonts.fontconfig.enable = true;
 
   home.sessionVariables = {
     EDITOR = "hx";
