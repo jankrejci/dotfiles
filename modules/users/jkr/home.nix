@@ -13,6 +13,7 @@
     ../../nushell.nix # new type of shell
     ../../broot.nix # a better way to navigate directories
     ../../hyprland.nix # tiling window manager
+    ../../options.nix
   ];
 
   nixpkgs.config.allowUnfree = true;

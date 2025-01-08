@@ -22,9 +22,10 @@
   # Enable networking
   networking.networkmanager.enable = true;
 
-  networking.wireguard.interfaces.wg0 = {
-    ips = [ "192.168.99.4/24" ];
+  networking.wg-quick.interfaces.wg0 = {
+    address = [ "192.168.99.4/24" ];
     privateKeyFile = "/home/jkr/.wg/jkr-thinkpad";
+    dns = [ "192.168.99.1" "home" ];
   };
 
   # This value determines the NixOS release from which the default

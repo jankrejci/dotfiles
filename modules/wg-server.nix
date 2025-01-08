@@ -1,7 +1,6 @@
 { ... }:
 {
   networking.firewall.allowedUDPPorts = [ 51820 ];
-
   networking.wireguard.interfaces.wg0 = {
     # Determines the IP address and subnet of the server's end of the tunnel interface.
     ips = [ "192.168.99.1/24" ];
@@ -37,4 +36,40 @@
       }
     ];
   };
+
+  networking.firewall.interfaces."wg0".allowedUDPPorts = [ 53 ];
+  networking.firewall.interfaces."wg0".allowedTCPPorts = [ 53 ];
+  services.dnsmasq = {
+    enable = true;
+    alwaysKeepRunning = true;
+    settings = {
+      # Basic settings
+      "domain-needed" = true;
+      "bogus-priv" = true;
+      "expand-hosts" = false;
+      "domain" = "home";
+
+      "addn-hosts" = "/etc/dnsmasq-hosts";
+
+      # Listen on specific interface and IP
+      "interface" = "wg0";
+      "listen-address" = [
+        "127.0.0.1"
+        "192.168.99.1"
+      ];
+
+      # Disable DHCP service
+      "no-dhcp-interface" = "wg0";
+
+      server = [
+        "1.1.1.1" # Cloudflare DNS
+        "8.8.8.8" # Google DNS
+      ];
+    };
+  };
+
+  environment.etc."dnsmasq-hosts".text = ''
+    192.168.99.1 vpsfree.home
+    192.168.99.2 rpi4.home
+  '';
 }

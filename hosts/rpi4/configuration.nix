@@ -31,9 +31,10 @@
     ];
   };
 
-  networking.wireguard.interfaces.wg0 = {
-    ips = [ "192.168.99.2/24" ];
+  networking.wg-quick.interfaces.wg0 = {
+    address = [ "192.168.99.2/24" ];
     privateKeyFile = "/home/jkr/.wg/jkr-rpi4";
+    dns = [ "192.168.99.1" ];
   };
 
   security.sudo.wheelNeedsPassword = false;
