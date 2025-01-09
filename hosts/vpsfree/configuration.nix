@@ -29,6 +29,12 @@
     DefaultTimeoutStartSec=900s
   '';
 
+  services.prometheus.exporters.node = {
+    enable = true;
+    openFirewall = true;
+    listenAddress = "192.168.99.1";
+  };
+
   security.sudo.wheelNeedsPassword = false;
 
   system.stateVersion = "24.11";

@@ -12,7 +12,10 @@
       {
         job_name = "node";
         static_configs = [{
-          targets = [ "rpi4.local:9100" ];
+          targets = [
+            "rpi4.home:9100"
+            "vpsfree.home:9100"
+          ];
         }];
       }
     ];
