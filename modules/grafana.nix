@@ -1,12 +1,16 @@
 { config, ... }:
+let
+  server_ip_address = "192.168.99.1";
+  server_domain = "vpsfree.home";
+  grafana_port = 3000;
+in
 {
-  # networking.firewall.interfaces."wg0".allowedUDPPorts = [ 9090 ];
-  networking.firewall.interfaces."wg0".allowedTCPPorts = [ 9090 3000 80 ];
+  networking.firewall.interfaces."wg0".allowedTCPPorts = [ 9090 grafana_port 80 443 ];
 
   services.prometheus = {
     enable = true;
     retentionTime = "180d";
-    listenAddress = "192.168.99.1";
+    listenAddress = server_ip_address;
     globalConfig.scrape_interval = "10s";
     scrapeConfigs = [
       {
@@ -25,10 +29,10 @@
     enable = true;
     settings = {
       server = {
-        http_addr = "192.168.99.1";
-        http_port = 3000;
-        domain = "vpsfree.home";
-        root_url = "http://vpsfree.home/grafana";
+        http_addr = server_ip_address;
+        http_port = grafana_port;
+        domain = server_domain;
+        root_url = "http://${server_domain}/grafana";
         serve_from_sub_path = true;
       };
     };
@@ -36,12 +40,12 @@
 
   services.nginx = {
     enable = true;
-    virtualHosts.${config.services.grafana.domain} = {
+    virtualHosts.${config.services.grafana.settings.server.domain} = {
       # addSSL = true;
       # enableACME = true;
-      listenAddresses = [ "192.168.99.1" ];
+      listenAddresses = [ "${server_domain}" ];
       locations."/grafana/" = {
-        proxyPass = "http://192.168.99.1:3000";
+        proxyPass = "http://${server_domain}:${toString grafana_port}";
         proxyWebsockets = true;
         recommendedProxySettings = true;
       };
