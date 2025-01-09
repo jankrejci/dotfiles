@@ -48,24 +48,10 @@
           system = "x86_64-linux";
           specialArgs = { pkgs = pkgs-x86_64-linux; };
           modules = [
+            home-manager.nixosModules.home-manager
             ./hosts/optiplex/configuration.nix
             ./modules/users/jkr/user.nix
             ./modules/users/paja/user.nix
-            home-manager.nixosModules.home-manager
-            {
-              home-manager = {
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                users = {
-                  jkr = { ... }: {
-                    imports = [ ./modules/users/jkr/home.nix ];
-                  };
-                  paja = { ... }: {
-                    imports = [ ./modules/users/paja/home.nix ];
-                  };
-                };
-              };
-            }
           ];
         };
 
@@ -73,24 +59,10 @@
           system = "x86_64-linux";
           specialArgs = { pkgs = pkgs-x86_64-linux; };
           modules = [
+            home-manager.nixosModules.home-manager
             ./hosts/thinkpad/configuration.nix
             ./modules/users/jkr/user.nix
             ./modules/users/paja/user.nix
-            home-manager.nixosModules.home-manager
-            {
-              home-manager = {
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                users = {
-                  jkr = { ... }: {
-                    imports = [ ./modules/users/jkr/home.nix ];
-                  };
-                  paja = { ... }: {
-                    imports = [ ./modules/users/paja/home.nix ];
-                  };
-                };
-              };
-            }
           ];
         };
 
@@ -108,20 +80,9 @@
           system = "x86_64-linux";
           specialArgs = { pkgs = pkgs-x86_64-linux; };
           modules = [
+            home-manager.nixosModules.home-manager
             ./hosts/vpsfree/configuration.nix
             ./modules/users/admin/user.nix
-            home-manager.nixosModules.home-manager
-            {
-              home-manager = {
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                users = {
-                  admin = { ... }: {
-                    imports = [ ./modules/users/admin/home.nix ];
-                  };
-                };
-              };
-            }
           ];
         };
       };

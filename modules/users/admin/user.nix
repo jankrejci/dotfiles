@@ -26,6 +26,4 @@
   };
 
   users.users.jkr.isNormalUser = true;
-  # users.users.jkr.group = "jkr";
-  # users.groups.jkr = { };
 }
