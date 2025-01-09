@@ -41,9 +41,7 @@
           tab = "none";
           newline = "all";
         };
-        indent-guides = {
-          render = true;
-        };
+        indent-guides.render = true;
       };
       keys = {
         normal = {

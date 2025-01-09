@@ -6,11 +6,6 @@ in
   home.username = "jkr";
   home.homeDirectory = "/home/jkr";
 
-  # You should not change this value, even if you update Home Manager. If you do
-  # want to update the value, then make sure to first check the Home Manager
-  # release notes.
-  home.stateVersion = "24.11";
-
   imports = [
     ../../alacritty.nix # accelerated terminal emulator
     ../../starship.nix # customizable prompt
@@ -19,6 +14,7 @@ in
     ../../zellij.nix # terminal multiplexer
     ../../nushell.nix # new type of shell
     ../../broot.nix # a better way to navigate directories
+    ../../carapace.nix
   ];
 
   home.packages = with pkgs; [
@@ -64,17 +60,20 @@ in
     git-absorb # absorb git hunks within existing commits
     delta # syntax highlighting diff
     unstable.espflash
-    unstable.carapace # terminal command auto complete
     unstable.prusa-slicer # slicer for 3D printing
     saleae-logic-2 # logic analyzer software
     nixgl.auto.nixGLDefault # opengl wrapper for non-nixos distro
   ];
 
-  # fonts.fontconfig.enable = true;
 
   home.sessionVariables = {
     EDITOR = "hx";
   };
 
   programs.home-manager.enable = true;
+
+  # You should not change this value, even if you update Home Manager. If you do
+  # want to update the value, then make sure to first check the Home Manager
+  # release notes.
+  home.stateVersion = "24.11";
 }
