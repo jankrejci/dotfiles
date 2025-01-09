@@ -98,20 +98,9 @@
           system = "aarch64-linux";
           specialArgs = { pkgs = pkgs-aarch64-linux; };
           modules = [
-            ./hosts/rpi4/configuration.nix
-            ./modules/users/jkr/user.nix
             home-manager.nixosModules.home-manager
-            {
-              home-manager = {
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                users = {
-                  jkr = { ... }: {
-                    imports = [ ./modules/users/jkr/home-minimal.nix ];
-                  };
-                };
-              };
-            }
+            ./hosts/rpi4/configuration.nix
+            ./modules/users/admin/user.nix
           ];
         };
 
@@ -120,15 +109,15 @@
           specialArgs = { pkgs = pkgs-x86_64-linux; };
           modules = [
             ./hosts/vpsfree/configuration.nix
-            ./modules/users/jkr/user.nix
+            ./modules/users/admin/user.nix
             home-manager.nixosModules.home-manager
             {
               home-manager = {
                 useGlobalPkgs = true;
                 useUserPackages = true;
                 users = {
-                  jkr = { ... }: {
-                    imports = [ ./modules/users/jkr/home-minimal.nix ];
+                  admin = { ... }: {
+                    imports = [ ./modules/users/admin/home.nix ];
                   };
                 };
               };
