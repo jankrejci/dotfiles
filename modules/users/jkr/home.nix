@@ -13,10 +13,10 @@
     ../../nushell.nix # new type of shell
     ../../broot.nix # a better way to navigate directories
     ../../hyprland.nix # tiling window manager
+    ../../carapace.nix
     ../../options.nix
   ];
 
-  nixpkgs.config.allowUnfree = true;
   home.packages = with pkgs; [
     rshell
     hexyl # cli hex viewer

@@ -11,11 +11,11 @@
     ../../zellij.nix # terminal multiplexer
     ../../nushell.nix # new type of shell
     ../../broot.nix # a better way to navigate directories
+    ../../carapace.nix
   ];
 
   home.packages = with pkgs; [
     hexyl # cli hex viewer
-    unstable.carapace # terminal command auto complete
   ];
 
   fonts.fontconfig.enable = true;
