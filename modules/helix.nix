@@ -95,7 +95,7 @@
         };
         ltex-ls = {
           config = {
-            ltex.enabled = [ "markdown" "rust" "python" "restructuredtext" "context" "html" "git-commit" "git-rebase" ];
+            ltex.enabled = [ "markdown" "python" "restructuredtext" "context" "html" "git-commit" "git-rebase" ];
             ltex.disabledRules = {
               en-US = [ "PROFANITY" ];
             };
@@ -131,7 +131,7 @@
         {
           name = "rust";
           auto-format = true;
-          language-servers = [ "rust-analyzer" "typos" "ltex-ls" ];
+          language-servers = [ "rust-analyzer" ];
         }
         {
           name = "bash";
