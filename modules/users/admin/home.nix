@@ -1,8 +1,8 @@
 { pkgs, ... }:
 
 {
-  home.username = "jkr";
-  home.homeDirectory = "/home/jkr";
+  home.username = "admin";
+  home.homeDirectory = "/home/admin";
 
   imports = [
     ../../starship.nix # customizable prompt
