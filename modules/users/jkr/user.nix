@@ -15,4 +15,14 @@
       gid = 1000;
     };
   };
+
+  home-manager = {
+    useGlobalPkgs = true;
+    useUserPackages = true;
+    users = {
+      jkr = { ... }: {
+        imports = [ ./home.nix ];
+      };
+    };
+  };
 }

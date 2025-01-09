@@ -14,4 +14,13 @@
       gid = 5000;
     };
   };
+  home-manager = {
+    useGlobalPkgs = true;
+    useUserPackages = true;
+    users = {
+      paja = { ... }: {
+        imports = [ ./home.nix ];
+      };
+    };
+  };
 }
