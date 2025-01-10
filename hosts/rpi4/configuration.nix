@@ -33,7 +33,7 @@
 
   networking.wg-quick.interfaces.wg0 = {
     address = [ "192.168.99.2/24" ];
-    privateKeyFile = "/home/jkr/.wg/jkr-rpi4";
+    privateKeyFile = "/home/admin/.wg/admin-rpi4";
     dns = [ "192.168.99.1" ];
   };
 

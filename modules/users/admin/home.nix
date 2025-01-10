@@ -11,7 +11,7 @@
     ../../zellij.nix # terminal multiplexer
     ../../nushell.nix # new type of shell
     ../../broot.nix # a better way to navigate directories
-    ../../carapace.nix
+    ../../carapace.nix # multi-shell completion library
   ];
 
   fonts.fontconfig.enable = true;

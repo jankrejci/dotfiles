@@ -10,8 +10,8 @@
     privateKeyFile = "/home/jkr/.wg/jkr-vpsfree";
     peers = [
       {
-        # jkr@rpi4
-        publicKey = "RGw8RUoKUA1VirhvJHQZEmgzRgyfqCQIlzudkAei4C0=";
+        # admin@rpi4
+        publicKey = "sUUZ9eIfyjqdEDij7vGnOe3sFbbF/eHQqS0RMyWZU0c=";
         allowedIPs = [ "192.168.99.2" ];
       }
       {
