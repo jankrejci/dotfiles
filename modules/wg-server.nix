@@ -7,7 +7,7 @@
     # The port that WireGuard listens to. Must be accessible by the client.
     listenPort = 51820;
     # Path to the private key file.
-    privateKeyFile = "/home/jkr/.wg/jkr-vpsfree";
+    privateKeyFile = "/home/admin/.wg/admin-vpsfree";
     peers = [
       {
         # admin@rpi4
