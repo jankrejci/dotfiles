@@ -12,27 +12,27 @@
       {
         # jkr@rpi4
         publicKey = "RGw8RUoKUA1VirhvJHQZEmgzRgyfqCQIlzudkAei4C0=";
-        allowedIPs = [ "192.168.99.2/32" ];
+        allowedIPs = [ "192.168.99.2" ];
       }
       {
         # jkr@optiplex
         publicKey = "6QNJxFoSDKwqQjF6VgUEWP5yXXe4J3DORGo7ksQscFA=";
-        allowedIPs = [ "192.168.99.3/32" ];
+        allowedIPs = [ "192.168.99.3" ];
       }
       {
         # jkr@thinkpad
         publicKey = "IzW6yPZJdrBC6PtfSaw7k4hjH+b/GjwvwiDLkLevLDI=";
-        allowedIPs = [ "192.168.99.4/32" ];
+        allowedIPs = [ "192.168.99.4" ];
       }
       {
         # jkr@latitude
         publicKey = "ggj+uqF/vij5V+fA5r9GIv5YuT9hX7OBp+lAGYh5SyQ=";
-        allowedIPs = [ "192.168.99.5/32" ];
+        allowedIPs = [ "192.168.99.5" ];
       }
       {
         # jkr@android
         publicKey = "HP+nPkrKwAxvmXjrI9yjsaGRMVXqt7zdcBGbD2ji83g=";
-        allowedIPs = [ "192.168.99.6/32" ];
+        allowedIPs = [ "192.168.99.6" ];
       }
     ];
   };
