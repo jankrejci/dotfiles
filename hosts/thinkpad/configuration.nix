@@ -23,9 +23,15 @@
   networking.networkmanager.enable = true;
 
   networking.wg-quick.interfaces.wg0 = {
-    address = [ "192.168.99.4/24" ];
+    address = [ "192.168.99.4" ];
     privateKeyFile = "/home/jkr/.wg/jkr-thinkpad";
     dns = [ "192.168.99.1" "home" ];
+  };
+
+  services.prometheus.exporters.node = {
+    enable = true;
+    openFirewall = true;
+    listenAddress = "192.168.99.4";
   };
 
   # This value determines the NixOS release from which the default

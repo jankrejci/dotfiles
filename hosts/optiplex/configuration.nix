@@ -28,6 +28,12 @@
     dns = [ "192.168.99.1" "home" ];
   };
 
+  services.prometheus.exporters.node = {
+    enable = true;
+    openFirewall = true;
+    listenAddress = "192.168.99.3";
+  };
+
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
   # on your system were taken. It‘s perfectly fine and recommended to leave

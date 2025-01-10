@@ -19,6 +19,8 @@ in
           targets = [
             "rpi4.home:9100"
             "vpsfree.home:9100"
+            "thinkpad.home:9100"
+            "optiplex.home:9100"
           ];
         }];
       }
