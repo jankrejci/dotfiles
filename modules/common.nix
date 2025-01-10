@@ -1,5 +1,4 @@
 { pkgs, ... }:
-
 {
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
@@ -26,8 +25,6 @@
     unstable.nushell
     unstable.broot
     starship
-    powerline-fonts # patched fonts used for zellij
-    (pkgs.nerdfonts.override { fonts = [ "DejaVuSansMono" ]; }) # iconic fonts
     curl
     bash
     home-manager
@@ -51,9 +48,14 @@
     zoxide # smarter cd command
     ripgrep # search tool 
     tealdeer # tldr help tool
-    nmap
-    htop
+    nmap # network mapper
+    htop # interactive process viewer 
     wireguard-tools
-    dig
+    dig # DNS lookup utility
+    hexyl # hex viewer
+  ];
+
+  fonts.packages = with pkgs; [
+    (nerdfonts.override { fonts = [ "DejaVuSansMono" ]; })
   ];
 }

@@ -3,6 +3,10 @@ let
   nixGL = import ./nixGL.nix { inherit pkgs config; };
 in
 {
+  imports = [
+    ./options.nix
+  ];
+
   programs.alacritty = {
     enable = true;
     package = (nixGL pkgs.unstable.alacritty);

@@ -2,7 +2,7 @@
 {
   programs.carapace = {
     enable = true;
-    package = pkgs.carapace.unstable;
+    package = pkgs.unstable.carapace;
     enableBashIntegration = true;
     enableNushellIntegration = true;
   };

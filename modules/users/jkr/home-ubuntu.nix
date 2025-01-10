@@ -1,7 +1,4 @@
-{ pkgs, config, ... }:
-let
-  nixGL = import ../../nixGL.nix { inherit pkgs config; };
-in
+{ pkgs, ... }:
 {
   home.username = "jkr";
   home.homeDirectory = "/home/jkr";
@@ -14,18 +11,15 @@ in
     ../../zellij.nix # terminal multiplexer
     ../../nushell.nix # new type of shell
     ../../broot.nix # a better way to navigate directories
-    ../../carapace.nix
+    ../../carapace.nix # multi-shell completion library
   ];
 
   home.packages = with pkgs; [
-    (nixGL unstable.alacritty)
-    unstable.zellij
-    unstable.helix
-    unstable.nushell
-    unstable.broot
-    starship
-    powerline-fonts # patched fonts used for zellij
-    (pkgs.nerdfonts.override { fonts = [ "DejaVuSansMono" ]; }) # iconic fonts
+    unstable.shell-gpt # cli gpt prompt
+    unstable.rustup # rust install tool
+    unstable.espflash # flasher utility for Espressif SoCs 
+    unstable.prusa-slicer # slicer for 3D printing
+    nixgl.auto.nixGLDefault # opengl wrapper for non-nixos distro
     curl
     bash
     unzip
@@ -36,7 +30,6 @@ in
     jq
     vim
     neofetch
-    git
     usbutils
     pciutils
     lshw
@@ -48,23 +41,15 @@ in
     zoxide # smarter cd command
     ripgrep # search tool 
     tealdeer # tldr help tool
-    nmap
-    htop
-    rshell
+    nmap # network mapper
+    htop # interactive process viewer 
+    rshell # remote shell for MicroPython 
     hexyl # cli hex viewer
     gitui # terminal-ui for git
     tokei # code statistics tool
     tealdeer # tldr help tool
-    unstable.shell-gpt # cli gpt prompt
-    unstable.rustup # rust install tool
-    git-absorb # absorb git hunks within existing commits
-    delta # syntax highlighting diff
-    unstable.espflash
-    unstable.prusa-slicer # slicer for 3D printing
     saleae-logic-2 # logic analyzer software
-    nixgl.auto.nixGLDefault # opengl wrapper for non-nixos distro
   ];
-
 
   home.sessionVariables = {
     EDITOR = "hx";

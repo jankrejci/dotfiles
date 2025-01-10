@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ ... }:
 
 {
   home.username = "admin";
@@ -12,10 +12,6 @@
     ../../nushell.nix # new type of shell
     ../../broot.nix # a better way to navigate directories
     ../../carapace.nix
-  ];
-
-  home.packages = with pkgs; [
-    hexyl # cli hex viewer
   ];
 
   fonts.fontconfig.enable = true;
