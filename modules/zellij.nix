@@ -21,6 +21,11 @@
     scrollback_editor "hx"
   '';
 
+  # TODO change with the 25.05 stable release
+  home.packages = with pkgs; [
+    (nerdfonts.override { fonts = [ "DejaVuSansMono" ]; })
+  ];
+
   xdg.desktopEntries."Zellij" = {
     name = "Zellij";
     comment = "Terminal multiplexer";
@@ -29,4 +34,5 @@
     categories = [ "System" "TerminalEmulator" ];
     terminal = false;
   };
+
 }

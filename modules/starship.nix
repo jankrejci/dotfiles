@@ -1,3 +1,4 @@
+{ pkgs, ... }:
 {
   programs.starship = {
     enable = true;
@@ -38,4 +39,9 @@
       };
     };
   };
+
+  # TODO change with the 25.05 stable release
+  home.packages = with pkgs; [
+    (nerdfonts.override { fonts = [ "DejaVuSansMono" ]; })
+  ];
 }

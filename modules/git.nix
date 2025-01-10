@@ -1,3 +1,5 @@
+{ pkgs, ... }:
+
 {
   programs.git = {
     enable = true;
@@ -26,4 +28,8 @@
       cob = "checkout -b";
     };
   };
+  home.packages = with pkgs; [
+    git-absorb # absorb git hunks within existing commits
+    gitui # terminal-ui for git
+  ];
 }

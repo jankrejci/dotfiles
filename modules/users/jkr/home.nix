@@ -13,26 +13,20 @@
     ../../nushell.nix # new type of shell
     ../../broot.nix # a better way to navigate directories
     ../../hyprland.nix # tiling window manager
-    ../../carapace.nix
-    ../../options.nix
+    ../../carapace.nix # multi-shell completion library
   ];
 
   home.packages = with pkgs; [
-    rshell
-    hexyl # cli hex viewer
-    gitui # terminal-ui for git
-    tokei # code statistics tool
-    tealdeer # tldr help tool
     unstable.shell-gpt # cli gpt prompt
     unstable.rustup # rust install tool
-    git-absorb # absorb git hunks within existing commits
-    delta # syntax highlighting diff
-    unstable.espflash
-    unstable.carapace # terminal command auto complete
+    unstable.espflash # flasher utility for Espressif SoCs 
     unstable.prusa-slicer # slicer for 3D printing
-    saleae-logic-2 # logic analyzer software
     gnomeExtensions.vitals
     gnomeExtensions.dash-to-panel
+    rshell # remote shell for MicroPython 
+    tokei # code statistics tool
+    tealdeer # tldr help tool
+    saleae-logic-2 # logic analyzer software
     kicad
   ];
 
