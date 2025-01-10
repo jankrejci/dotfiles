@@ -1,11 +1,11 @@
 { ... }:
-
 {
   users.users = {
     admin = {
       isNormalUser = true;
       extraGroups = [ "plugdev" "wheel" "networkmanager" "admin" ];
       uid = 1001;
+      hashedPassword = "$y$j9T$XAzdd2RQeVBlBssRJ33.B.$IiMIyCUpT14.TYNYgXN9Nl4.kEqG/48vhqEE7Us4BN6";
     };
   };
 
