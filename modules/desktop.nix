@@ -15,7 +15,16 @@
   };
 
   # Enable CUPS to print documents.
-  services.printing.enable = true;
+  services.printing = {
+    enable = true;
+    drivers = with pkgs; [
+      cnijfilter_4_00
+      gutenprint
+      cups-bjnp
+    ];
+  };
+  # Enable scanning support
+  hardware.sane.enable = true;
 
   # Install firefox.
   programs.firefox.enable = true;
