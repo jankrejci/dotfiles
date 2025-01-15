@@ -1,5 +1,4 @@
-{ pkgs, ... }:
-
+{ pkgs, lib, ... }:
 {
   home.username = "jkr";
   home.homeDirectory = "/home/jkr";
@@ -36,7 +35,7 @@
     EDITOR = "hx";
   };
 
-  dconf.settings = {
+  dconf.settings = with lib.hm.gvariant; {
     "org/gnome/desktop/interface" = {
       color-scheme = "prefer-dark";
     };
@@ -52,6 +51,19 @@
         "dash-to-panel@jderose9.github.com"
       ];
     };
+    # Generated via dconf2nix: https://github.com/nix-commmunity/dconf2nix
+    "org/gnome/desktop/input-sources" = {
+      mru-sources = [
+        (mkTuple [ "xkb" "us" ])
+        (mkTuple [ "xkb" "cz+qwerty" ])
+      ];
+      sources = [
+        (mkTuple [ "xkb" "us" ])
+        (mkTuple [ "xkb" "cz+qwerty" ])
+      ];
+      xkb-options = [ ];
+    };
+
   };
 
   programs.home-manager.enable = true;
