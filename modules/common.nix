@@ -18,6 +18,8 @@
     LC_TIME = "cs_CZ.UTF-8";
   };
 
+  console.keyMap = "us";
+
   # Common system packages
   environment.systemPackages = with pkgs; [
     unstable.zellij

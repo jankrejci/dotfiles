@@ -1,15 +1,26 @@
-{ ... }:
-
+{ lib, ... }:
 {
   home.username = "paja";
   home.homeDirectory = "/home/paja";
 
-  dconf.settings = {
+  dconf.settings = with lib.hm.gvariant; {
     "org/gnome/desktop/interface" = {
       color-scheme = "prefer-dark";
     };
     "org/gnome/desktop/sound" = {
       allow-volume-above-100-percent = true;
+    };
+    # Generated via dconf2nix: https://github.com/nix-commmunity/dconf2nix
+    "org/gnome/desktop/input-sources" = {
+      mru-sources = [
+        (mkTuple [ "xkb" "us" ])
+        (mkTuple [ "xkb" "cz+qwertz" ])
+      ];
+      sources = [
+        (mkTuple [ "xkb" "us" ])
+        (mkTuple [ "xkb" "cz+qwertz" ])
+      ];
+      xkb-options = [ ];
     };
   };
 
