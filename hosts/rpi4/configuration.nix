@@ -1,5 +1,4 @@
-{ ... }:
-
+{ lib, ... }:
 {
   imports =
     [
@@ -16,6 +15,9 @@
 
   networking.hostName = "rpi4";
   networking.networkmanager.enable = true;
+  # Do not add addidional dependencies, especially networkmanager-openconnect,
+  # which pulls webkit and gtk
+  networking.networkmanager.plugins = lib.mkForce [ ];
 
   services.openssh = {
     listenAddresses = [
