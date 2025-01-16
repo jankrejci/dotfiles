@@ -3,6 +3,10 @@
   home.username = "jkr";
   home.homeDirectory = "/home/jkr";
 
+  nixGL.packages = pkgs.nixgl;
+  nixGL.defaultWrapper = "mesa";
+  nixGL.installScripts = [ "mesa" ];
+
   imports = [
     ../../alacritty.nix # accelerated terminal emulator
     ../../starship.nix # customizable prompt
