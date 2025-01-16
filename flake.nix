@@ -70,6 +70,7 @@
           system = "aarch64-linux";
           specialArgs = { pkgs = pkgs-aarch64-linux; };
           modules = [
+            "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
             home-manager.nixosModules.home-manager
             ./hosts/rpi4/configuration.nix
             ./modules/users/admin/user.nix
