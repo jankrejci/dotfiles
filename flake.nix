@@ -92,11 +92,7 @@
         latitude = home-manager.lib.homeManagerConfiguration {
           pkgs = pkgs-x86_64-linux;
           modules = [
-            {
-              config.nixGLPrefix = "nixGL";
-            }
             ./modules/users/jkr/home-ubuntu.nix
-            ./modules/options.nix
           ];
         };
       };
