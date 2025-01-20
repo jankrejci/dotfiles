@@ -55,6 +55,10 @@
     wireguard-tools
     dig # DNS lookup utility
     hexyl # hex viewer
+    age
+    gnupg
+    sops
+    ssh-to-age
   ];
 
   fonts.packages = with pkgs; [

@@ -5,6 +5,8 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
 
+    sops-nix.url = "github:Mic92/sops-nix";
+
     home-manager = {
       url = "github:nix-community/home-manager/release-24.11";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -16,7 +18,7 @@
     nixgl.url = "github:guibou/nixGL";
   };
 
-  outputs = { nixpkgs, nixpkgs-unstable, home-manager, nixgl, ... }:
+  outputs = { nixpkgs, nixpkgs-unstable, home-manager, nixgl, sops-nix, ... }:
     let
       unstable-x86_64-linux = final: _prev: {
         unstable = import nixpkgs-unstable {
@@ -48,6 +50,7 @@
           system = "x86_64-linux";
           specialArgs = { pkgs = pkgs-x86_64-linux; };
           modules = [
+            sops-nix.nixosModules.sops
             home-manager.nixosModules.home-manager
             ./hosts/optiplex/configuration.nix
             ./modules/users/jkr/user.nix
@@ -59,6 +62,7 @@
           system = "x86_64-linux";
           specialArgs = { pkgs = pkgs-x86_64-linux; };
           modules = [
+            sops-nix.nixosModules.sops
             home-manager.nixosModules.home-manager
             ./hosts/thinkpad/configuration.nix
             ./modules/users/jkr/user.nix
@@ -70,8 +74,9 @@
           system = "aarch64-linux";
           specialArgs = { pkgs = pkgs-aarch64-linux; };
           modules = [
-            "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
+            sops-nix.nixosModules.sops
             home-manager.nixosModules.home-manager
+            "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
             ./hosts/rpi4/configuration.nix
             ./modules/users/admin/user.nix
           ];
@@ -81,6 +86,7 @@
           system = "x86_64-linux";
           specialArgs = { pkgs = pkgs-x86_64-linux; };
           modules = [
+            sops-nix.nixosModules.sops
             home-manager.nixosModules.home-manager
             ./hosts/vpsfree/configuration.nix
             ./modules/users/admin/user.nix
