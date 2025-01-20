@@ -56,7 +56,6 @@
     dig # DNS lookup utility
     hexyl # hex viewer
     age
-    gnupg
     sops
     ssh-to-age
   ];

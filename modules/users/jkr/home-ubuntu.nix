@@ -54,6 +54,9 @@
     tealdeer # tldr help tool
     saleae-logic-2 # logic analyzer software
     ghidra-bin
+    age
+    sops
+    ssh-to-age
   ];
 
   home.sessionVariables = {
