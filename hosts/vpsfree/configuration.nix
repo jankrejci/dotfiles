@@ -8,14 +8,6 @@
     ../../modules/grafana.nix
   ];
 
-  networking.hostName = "vpsfree";
-
-  services.openssh = {
-    listenAddresses = [
-      { addr = "192.168.99.1"; port = 22; }
-    ];
-  };
-
   users.users.admin = {
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN85SndW/OerKK8u2wTxmHcTn4hEtUJmctj9wnseBYtS jkr@optiplex-vpsfree"
@@ -28,13 +20,5 @@
     DefaultTimeoutStartSec=900s
   '';
 
-  services.prometheus.exporters.node = {
-    enable = true;
-    openFirewall = true;
-    listenAddress = "192.168.99.1";
-  };
-
   security.sudo.wheelNeedsPassword = false;
-
-  system.stateVersion = "24.11";
 }

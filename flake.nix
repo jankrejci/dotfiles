@@ -43,52 +43,67 @@
         overlays = [ unstable-aarch64-linux ];
       };
 
+      mkHost = { system, hostName, ipAddress, wgPublicKey, extraModules ? { } }: nixpkgs.lib.nixosSystem {
+        system = system;
+        specialArgs = {
+          pkgs =
+            if system == "aarch64-linux"
+            then pkgs-aarch64-linux
+            else pkgs-x86_64-linux;
+          hostConfig = {
+            hostName = hostName;
+            ipAddress = ipAddress;
+            wgPublicKey = wgPublicKey;
+          };
+        };
+        modules = [
+          sops-nix.nixosModules.sops
+          home-manager.nixosModules.home-manager
+          ./hosts/${hostName}/configuration.nix
+        ] ++ extraModules;
+      };
     in
     {
       nixosConfigurations = {
-        optiplex = nixpkgs.lib.nixosSystem {
+        optiplex = mkHost {
           system = "x86_64-linux";
-          specialArgs = { pkgs = pkgs-x86_64-linux; };
-          modules = [
-            sops-nix.nixosModules.sops
-            home-manager.nixosModules.home-manager
-            ./hosts/optiplex/configuration.nix
+          hostName = "optiplex";
+          ipAddress = "192.168.99.3";
+          wgPublicKey = "6QNJxFoSDKwqQjF6VgUEWP5yXXe4J3DORGo7ksQscFA=";
+          extraModules = [
             ./modules/users/jkr/user.nix
             ./modules/users/paja/user.nix
           ];
         };
 
-        thinkpad = nixpkgs.lib.nixosSystem {
+        thinkpad = mkHost {
           system = "x86_64-linux";
-          specialArgs = { pkgs = pkgs-x86_64-linux; };
-          modules = [
-            sops-nix.nixosModules.sops
-            home-manager.nixosModules.home-manager
-            ./hosts/thinkpad/configuration.nix
+          hostName = "thinkpad";
+          ipAddress = "192.168.99.4";
+          wgPublicKey = "IzW6yPZJdrBC6PtfSaw7k4hjH+b/GjwvwiDLkLevLDI=";
+          extraModules = [
             ./modules/users/jkr/user.nix
             ./modules/users/paja/user.nix
           ];
         };
 
-        rpi4 = nixpkgs.lib.nixosSystem {
+        rpi4 = mkHost {
           system = "aarch64-linux";
-          specialArgs = { pkgs = pkgs-aarch64-linux; };
-          modules = [
-            sops-nix.nixosModules.sops
-            home-manager.nixosModules.home-manager
+          hostName = "rpi4";
+          ipAddress = "192.168.99.2";
+          wgPublicKey = "sUUZ9eIfyjqdEDij7vGnOe3sFbbF/eHQqS0RMyWZU0c=";
+          extraModules = [
             "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
-            ./hosts/rpi4/configuration.nix
             ./modules/users/admin/user.nix
           ];
         };
 
-        vpsfree = nixpkgs.lib.nixosSystem {
+        vpsfree = mkHost {
           system = "x86_64-linux";
-          specialArgs = { pkgs = pkgs-x86_64-linux; };
-          modules = [
-            sops-nix.nixosModules.sops
-            home-manager.nixosModules.home-manager
-            ./hosts/vpsfree/configuration.nix
+          hostName = "vpsfree";
+          ipAddress = "192.168.99.1";
+          wgPublicKey = "iWfrqdXV4bDQOCfhlZ2KRS7eq2B/QI440HylPrzJUww=";
+          extraModules = [
             ./modules/users/admin/user.nix
           ];
         };

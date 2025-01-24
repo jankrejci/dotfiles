@@ -1,5 +1,7 @@
-{ pkgs, ... }:
+{ pkgs, hostConfig, ... }:
 {
+  networking.hostName = hostConfig.hostName;
+
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   time.timeZone = "Europe/Prague";
@@ -63,4 +65,17 @@
   fonts.packages = with pkgs; [
     (nerdfonts.override { fonts = [ "DejaVuSansMono" ]; })
   ];
+
+  services.prometheus.exporters.node = {
+    enable = true;
+    openFirewall = true;
+    listenAddress = hostConfig.ipAddress;
+  };
+
+  systemd.services.prometheus-node-exporter.serviceConfig = {
+    Restart = "always";
+    RestartSec = 5;
+  };
+
+  system.stateVersion = "24.11"; # Did you read the comment?
 }
