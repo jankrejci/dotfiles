@@ -1,12 +1,11 @@
-{ ... }:
+{ config, ... }:
 {
-  imports =
-    [
-      ./hardware-configuration.nix
-      ../../modules/common.nix
-      ../../modules/ssh.nix
-      ../../modules/wg-client.nix
-    ];
+  imports = [
+    ./hardware-configuration.nix
+    ../../modules/common.nix
+    ../../modules/ssh.nix
+    ../../modules/wg-client.nix
+  ];
 
   # Use the extlinux boot loader. (NixOS wants to enable GRUB by default)
   boot.loader.grub.enable = false;
@@ -29,9 +28,24 @@
     ];
   };
 
+  sops = {
+    defaultSopsFile = ./secrets.yaml;
+    validateSopsFiles = true;
+
+    age = {
+      sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+      keyFile = "/var/lib/sops-nix/key.txt";
+      generateKey = true;
+    };
+
+    secrets = {
+      wg-private-key = { };
+    };
+  };
+
   networking.wg-quick.interfaces.wg0 = {
     address = [ "192.168.99.2/24" ];
-    privateKeyFile = "/home/admin/.wg/admin-rpi4";
+    privateKeyFile = config.sops.secrets.wg-private-key.path;
     dns = [ "192.168.99.1" ];
   };
 
