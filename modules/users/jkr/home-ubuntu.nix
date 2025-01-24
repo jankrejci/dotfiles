@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 {
   home.username = "jkr";
   home.homeDirectory = "/home/jkr";
@@ -19,11 +19,12 @@
   ];
 
   home.packages = with pkgs; [
+    nixgl.auto.nixGLDefault # opengl wrapper for non-nixos distro
     unstable.shell-gpt # cli gpt prompt
     unstable.rustup # rust install tool
     unstable.espflash # flasher utility for Espressif SoCs 
-    unstable.prusa-slicer # slicer for 3D printing
-    nixgl.auto.nixGLDefault # opengl wrapper for non-nixos distro
+    (config.lib.nixGL.wrap unstable.prusa-slicer) # slicer for 3D printing
+    (config.lib.nixGL.wrap saleae-logic-2) # logic analyzer software
     curl
     bash
     unzip
@@ -52,7 +53,6 @@
     gitui # terminal-ui for git
     tokei # code statistics tool
     tealdeer # tldr help tool
-    saleae-logic-2 # logic analyzer software
     ghidra-bin
     age
     sops
