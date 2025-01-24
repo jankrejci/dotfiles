@@ -82,9 +82,10 @@
     languages = {
       language-server = {
         rust-analyzer = {
-          check = { commmand = "clippy"; targets = "x86_64-unknown-linux-gnu"; };
-          cargo = { targetDir = true; buildScripts.enable = false; };
-          procMacro.enable = true;
+          check = {
+            commmand = "clippy";
+            targets = "x86_64-unknown-linux-gnu";
+          };
         };
         typos = {
           command = "typos-lsp";
@@ -93,7 +94,15 @@
         };
         ltex-ls = {
           config = {
-            ltex.enabled = [ "markdown" "python" "restructuredtext" "context" "html" "git-commit" "git-rebase" ];
+            ltex.enabled = [
+              "markdown"
+              "python"
+              "restructuredtext"
+              "context"
+              "html"
+              "git-commit"
+              "git-rebase"
+            ];
             ltex.disabledRules = {
               en-US = [ "PROFANITY" ];
             };
@@ -177,12 +186,6 @@
         hint = {
           fg = "blue";
           bg = "bg1";
-        };
-        diagnostic = {
-          error.underline.style = { };
-          warning.underline.style = { };
-          info.underline.style = { };
-          hint.underline.style = { };
         };
       };
     };
