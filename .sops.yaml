@@ -1,0 +1,11 @@
+keys:
+- &users:
+  - &jkr_latitude_rpi4 age1psdf02pazh3pusdajn5rcvsa6pc2t43qk4hehyqsqu37dl07n4ksd46qht
+- &hosts:
+  - &rpi4 age1yck2xrcpzqja8uuf5gt5q2vdmfp34vc08kals7yecmeklw8plglsw49xfm
+creation_rules:
+  - path_regex: hosts/rpi4/secrets.yaml$
+    key_groups:
+    - age:
+      - *jkr_latitude_rpi4
+      - *rpi4
