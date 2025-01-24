@@ -20,6 +20,11 @@
     ];
   };
 
+  systemd.services.sshd.serviceConfig = {
+    Restart = "always";
+    RestartSec = 5;
+  };
+
   users.users.admin = {
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKcPS15FwxQjt4xZJk0+VzKqLTh/rikF0ZI4GFyOTLoD jkr@optiplex-rpi4"
@@ -49,10 +54,20 @@
     dns = [ "192.168.99.1" ];
   };
 
+  systemd.services."wg-quick@wg0".serviceConfig = {
+    Restart = "always";
+    RestartSec = 5;
+  };
+
   services.prometheus.exporters.node = {
     enable = true;
     openFirewall = true;
     listenAddress = "192.168.99.2";
+  };
+
+  systemd.services.prometheus-node-exporter.serviceConfig = {
+    Restart = "always";
+    RestartSec = 5;
   };
 
   security.sudo.wheelNeedsPassword = false;
