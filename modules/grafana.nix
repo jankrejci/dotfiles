@@ -1,7 +1,7 @@
-{ config, ... }:
+{ config, hostConfig, ... }:
 let
-  server_ip_address = "192.168.99.1";
-  server_domain = "vpsfree.home";
+  server_ip_address = "$hostConfig.ipAddress";
+  server_domain = "${hostConfig.hostname}.home";
   grafana_port = 3000;
 in
 {
@@ -17,10 +17,10 @@ in
         job_name = "node";
         static_configs = [{
           targets = [
-            "rpi4.home:9100"
-            "vpsfree.home:9100"
-            "thinkpad.home:9100"
-            "optiplex.home:9100"
+            "${config.hosts.rpi4.hostname}.home:9100"
+            "${config.hosts.vpsfree.hostname}.home:9100"
+            "${config.hosts.thinkpad.hostname}.home:9100"
+            "${config.hosts.optiplex.hostname}.home:9100"
           ];
         }];
       }

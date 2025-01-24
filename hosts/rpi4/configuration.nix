@@ -1,4 +1,4 @@
-{ config, ... }:
+{ ... }:
 {
   imports = [
     ./hardware-configuration.nix
@@ -11,19 +11,6 @@
   boot.loader.grub.enable = false;
   # Enables the generation of /boot/extlinux/extlinux.conf
   boot.loader.generic-extlinux-compatible.enable = true;
-
-  networking.hostName = "rpi4";
-
-  services.openssh = {
-    listenAddresses = [
-      { addr = "192.168.99.2"; port = 22; }
-    ];
-  };
-
-  systemd.services.sshd.serviceConfig = {
-    Restart = "always";
-    RestartSec = 5;
-  };
 
   users.users.admin = {
     openssh.authorizedKeys.keys = [
@@ -48,31 +35,6 @@
     };
   };
 
-  networking.wg-quick.interfaces.wg0 = {
-    address = [ "192.168.99.2/24" ];
-    privateKeyFile = config.sops.secrets.wg-private-key.path;
-    dns = [ "192.168.99.1" ];
-  };
-
-  systemd.services."wg-quick@wg0".serviceConfig = {
-    Restart = "always";
-    RestartSec = 5;
-  };
-
-  services.prometheus.exporters.node = {
-    enable = true;
-    openFirewall = true;
-    listenAddress = "192.168.99.2";
-  };
-
-  systemd.services.prometheus-node-exporter.serviceConfig = {
-    Restart = "always";
-    RestartSec = 5;
-  };
-
   security.sudo.wheelNeedsPassword = false;
-
-  system.stateVersion = "24.11"; # Did you read the comment?
-
 }
 

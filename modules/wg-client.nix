@@ -1,6 +1,10 @@
-{ ... }:
+{ config, hostConfig, ... }:
 {
   networking.wg-quick.interfaces.wg0 = {
+    address = [ "${hostConfig.ipAddress}/24" ];
+    privateKeyFile = config.sops.secrets.wg-private-key.path;
+    dns = [ "192.168.99.11" ];
+
     peers = [
       {
         # Public key of the server
@@ -11,5 +15,10 @@
         persistentKeepalive = 25;
       }
     ];
+  };
+
+  systemd.services."wg-quick@wg0".serviceConfig = {
+    Restart = "always";
+    RestartSec = 5;
   };
 }
