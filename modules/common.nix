@@ -77,5 +77,23 @@
     RestartSec = 5;
   };
 
+  sops = {
+    defaultSopsFile = ../secrets.yaml;
+    validateSopsFiles = true;
+
+    age = {
+      keyFile = "/etc/sops/age/keys.txt";
+      sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+      generateKey = true;
+    };
+
+    secrets = {
+      "hosts/vpsfree/wg_private_key" = { };
+      "hosts/rpi4/wg_private_key" = { };
+      "hosts/optiplex/wg_private_key" = { };
+      "hosts/thinkpad/wg_private_key" = { };
+    };
+  };
+
   system.stateVersion = "24.11"; # Did you read the comment?
 }

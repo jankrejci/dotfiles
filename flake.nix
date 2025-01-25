@@ -59,6 +59,7 @@
         modules = [
           sops-nix.nixosModules.sops
           home-manager.nixosModules.home-manager
+          ./modules/common.nix
           ./hosts/${hostName}/configuration.nix
         ] ++ extraModules;
       };
