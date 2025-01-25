@@ -2,6 +2,7 @@ keys:
 - &users:
   - &jkr_latitude age1cr9rt3gw33aejma8ncd09n77c30ufvwrvamydm3ze778akpqveys4zr9g7
   - &jkr_optiplex age1qleeqawujsmupve3942q2lxt04w2hcfp86s274a3wu0zaw42l4qq8hqucq
+  - &jkr_thinkpad age1ut4xhqf2kaf6tz7rsztr8sle5gnr3wletqylu4sde4z8xllarsuqzshguk
 - &hosts:
   - &rpi4 age1yck2xrcpzqja8uuf5gt5q2vdmfp34vc08kals7yecmeklw8plglsw49xfm
 creation_rules:
@@ -10,4 +11,5 @@ creation_rules:
     - age:
       - *jkr_latitude
       - *jkr_optiplex
+      - *jkr_thinkpad
       - *rpi4

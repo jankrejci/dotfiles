@@ -1,4 +1,4 @@
-{ config, hostConfig, ... }:
+{ config, hostConfig, hostInfo, ... }:
 {
   networking.firewall.allowedUDPPorts = [ 51820 ];
   networking.wireguard.interfaces.wg0 = {
@@ -7,8 +7,8 @@
     # The port that WireGuard listens to. Must be accessible by the client.
     listenPort = 51820;
     # Path to the private key file.
-    privateKeyFile = "/home/admin/.wg/admin-vpsfree";
-    peers = with config.hosts; [
+    privateKeyFile = config.sops.secrets."hosts/${hostConfig.hostName}/wg_private_key".path;
+    peers = with hostInfo; [
       {
         publicKey = rpi4.wgPublicKey;
         allowedIPs = [ rpi4.ipAddress ];
@@ -29,10 +29,10 @@
         publicKey = android.wgPublicKey;
         allowedIPs = [ android.ipAddress ];
       }
-      {
-        publicKey = thinkcenter.wgPublicKey;
-        allowedIPs = [ thinkcenter.ipAddress ];
-      }
+      # {
+      #   publicKey = thinkcenter.wgPublicKey;
+      #   allowedIPs = [ thinkcenter.ipAddress ];
+      # }
     ];
   };
 

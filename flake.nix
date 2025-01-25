@@ -20,6 +20,8 @@
 
   outputs = { nixpkgs, nixpkgs-unstable, home-manager, nixgl, sops-nix, ... }:
     let
+      lib = nixpkgs.lib;
+
       unstable-x86_64-linux = final: _prev: {
         unstable = import nixpkgs-unstable {
           system = "x86_64-linux";
@@ -43,72 +45,85 @@
         overlays = [ unstable-aarch64-linux ];
       };
 
-      mkHost = { system, hostName, ipAddress, wgPublicKey, extraModules ? { } }: nixpkgs.lib.nixosSystem {
+      hostConfigs = {
+        vpsfree = {
+          ipAddress = "192.168.99.1";
+          wgPublicKey = "iWfrqdXV4bDQOCfhlZ2KRS7eq2B/QI440HylPrzJUww=";
+          system = "x86_64-linux";
+          extraModules = [
+            ./modules/users/admin/user.nix
+            ./modules/wg-server.nix
+          ];
+        };
+        rpi4 = {
+          ipAddress = "192.168.99.2";
+          wgPublicKey = "sUUZ9eIfyjqdEDij7vGnOe3sFbbF/eHQqS0RMyWZU0c=";
+          system = "aarch64-linux";
+          extraModules = [
+            "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
+            ./modules/users/admin/user.nix
+          ];
+        };
+        optiplex = {
+          ipAddress = "192.168.99.3";
+          wgPublicKey = "6QNJxFoSDKwqQjF6VgUEWP5yXXe4J3DORGo7ksQscFA=";
+          system = "x86_64-linux";
+          extraModules = [
+            ./modules/users/jkr/user.nix
+            ./modules/users/paja/user.nix
+          ];
+        };
+        thinkpad = {
+          ipAddress = "192.168.99.4";
+          wgPublicKey = "IzW6yPZJdrBC6PtfSaw7k4hjH+b/GjwvwiDLkLevLDI=";
+          system = "x86_64-linux";
+          extraModules = [
+            ./modules/users/jkr/user.nix
+            ./modules/users/paja/user.nix
+          ];
+        };
+        latitude = {
+          ipAddress = "192.168.99.5";
+          wgPublicKey = "iWfrqdXV4bDQOCfhlZ2KRS7eq2B/QI440HylPrzJUww=";
+        };
+        android = {
+          ipAddress = "192.168.99.6";
+          wgPublicKey = "iWfrqdXV4bDQOCfhlZ2KRS7eq2B/QI440HylPrzJUww=";
+        };
+      };
+
+      hostInfo = builtins.mapAttrs
+        (hostName: config: {
+          hostName = hostName;
+          ipAddress = config.ipAddress;
+          wgPublicKey = config.wgPublicKey;
+        })
+        hostConfigs;
+
+      mkHost = { system, extraModules ? [ ], ... }@config: lib.nixosSystem {
         system = system;
         specialArgs = {
           pkgs =
             if system == "aarch64-linux"
             then pkgs-aarch64-linux
             else pkgs-x86_64-linux;
-          hostConfig = {
-            hostName = hostName;
-            ipAddress = ipAddress;
-            wgPublicKey = wgPublicKey;
-          };
+          hostConfig = config;
+          hostInfo = hostInfo;
         };
         modules = [
           sops-nix.nixosModules.sops
           home-manager.nixosModules.home-manager
           ./modules/common.nix
-          ./hosts/${hostName}/configuration.nix
+          ./modules/ssh.nix
+          ./hosts/${config.hostName}/configuration.nix
         ] ++ extraModules;
       };
     in
     {
-      nixosConfigurations = {
-        optiplex = mkHost {
-          system = "x86_64-linux";
-          hostName = "optiplex";
-          ipAddress = "192.168.99.3";
-          wgPublicKey = "6QNJxFoSDKwqQjF6VgUEWP5yXXe4J3DORGo7ksQscFA=";
-          extraModules = [
-            ./modules/users/jkr/user.nix
-            ./modules/users/paja/user.nix
-          ];
-        };
+      nixosConfigurations = builtins.mapAttrs
+        (hostName: config: mkHost (config // { hostName = hostName; }))
+        hostConfigs;
 
-        thinkpad = mkHost {
-          system = "x86_64-linux";
-          hostName = "thinkpad";
-          ipAddress = "192.168.99.4";
-          wgPublicKey = "IzW6yPZJdrBC6PtfSaw7k4hjH+b/GjwvwiDLkLevLDI=";
-          extraModules = [
-            ./modules/users/jkr/user.nix
-            ./modules/users/paja/user.nix
-          ];
-        };
-
-        rpi4 = mkHost {
-          system = "aarch64-linux";
-          hostName = "rpi4";
-          ipAddress = "192.168.99.2";
-          wgPublicKey = "sUUZ9eIfyjqdEDij7vGnOe3sFbbF/eHQqS0RMyWZU0c=";
-          extraModules = [
-            "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
-            ./modules/users/admin/user.nix
-          ];
-        };
-
-        vpsfree = mkHost {
-          system = "x86_64-linux";
-          hostName = "vpsfree";
-          ipAddress = "192.168.99.1";
-          wgPublicKey = "iWfrqdXV4bDQOCfhlZ2KRS7eq2B/QI440HylPrzJUww=";
-          extraModules = [
-            ./modules/users/admin/user.nix
-          ];
-        };
-      };
 
       homeConfigurations = {
         latitude = home-manager.lib.homeManagerConfiguration {
