@@ -2,7 +2,6 @@
 {
   imports = [
     ./hardware-configuration.nix
-    ../../modules/common.nix
     ../../modules/desktop.nix
     ../../modules/displaylink.nix
     ../../modules/disable-nvidia.nix

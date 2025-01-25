@@ -1,7 +1,7 @@
 { config, hostConfig, ... }:
 let
   server_ip_address = "$hostConfig.ipAddress";
-  server_domain = "${hostConfig.hostname}.home";
+  server_domain = "${hostConfig.hostName}.home";
   grafana_port = 3000;
 in
 {
@@ -17,10 +17,10 @@ in
         job_name = "node";
         static_configs = [{
           targets = [
-            "${config.hosts.rpi4.hostname}.home:9100"
-            "${config.hosts.vpsfree.hostname}.home:9100"
-            "${config.hosts.thinkpad.hostname}.home:9100"
-            "${config.hosts.optiplex.hostname}.home:9100"
+            "${config.hosts.rpi4.hostName}.home:9100"
+            "${config.hosts.vpsfree.hostName}.home:9100"
+            "${config.hosts.thinkpad.hostName}.home:9100"
+            "${config.hosts.optiplex.hostName}.home:9100"
           ];
         }];
       }
