@@ -3,9 +3,7 @@
   imports = [
     ./hardware-configuration.nix
     ../../modules/desktop.nix
-    ../../modules/displaylink.nix
     ../../modules/disable-nvidia.nix
-    ../../modules/audio.nix
     ../../modules/wg-client.nix
   ];
 

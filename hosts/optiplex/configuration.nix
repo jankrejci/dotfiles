@@ -3,8 +3,6 @@
   imports = [
     ./hardware-configuration.nix
     ../../modules/desktop.nix
-    ../../modules/displaylink.nix
-    ../../modules/audio.nix
     ../../modules/wg-client.nix
   ];
 

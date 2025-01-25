@@ -2,8 +2,6 @@
 {
   imports = [
     ./vpsadminos.nix
-    ../../modules/ssh.nix
-    ../../modules/wg-server.nix
     ../../modules/grafana.nix
   ];
 

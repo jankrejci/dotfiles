@@ -2,7 +2,6 @@
 {
   imports = [
     ./hardware-configuration.nix
-    ../../modules/ssh.nix
     ../../modules/wg-client.nix
   ];
 

@@ -17,10 +17,10 @@ in
         job_name = "node";
         static_configs = [{
           targets = [
-            "${config.hosts.rpi4.hostName}.home:9100"
-            "${config.hosts.vpsfree.hostName}.home:9100"
-            "${config.hosts.thinkpad.hostName}.home:9100"
-            "${config.hosts.optiplex.hostName}.home:9100"
+            "rpi4.home:9100"
+            "vpsfree.home:9100"
+            "thinkpad.home:9100"
+            "optiplex.home:9100"
           ];
         }];
       }
