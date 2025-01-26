@@ -5,6 +5,7 @@ keys:
   - &jkr_thinkpad age1ut4xhqf2kaf6tz7rsztr8sle5gnr3wletqylu4sde4z8xllarsuqzshguk
 - &hosts:
   - &rpi4 age1yck2xrcpzqja8uuf5gt5q2vdmfp34vc08kals7yecmeklw8plglsw49xfm
+  - &vpsfree age13vqwdw4s4t2ncw9qqnnakcjhmkca3gzrrn9ee2drj3j3lpppv9zq8f2lth
 creation_rules:
   - path_regex: secrets.yaml$
     key_groups:
@@ -13,3 +14,4 @@ creation_rules:
       - *jkr_optiplex
       - *jkr_thinkpad
       - *rpi4
+      - *vpsfree
