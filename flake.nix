@@ -53,6 +53,8 @@
           extraModules = [
             ./modules/users/admin/user.nix
             ./modules/wg-server.nix
+            ./modules/grafana.nix
+            ./modules/vpsadminos.nix
           ];
         };
         rpi4 = {

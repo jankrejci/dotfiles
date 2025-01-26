@@ -1,10 +1,5 @@
 { ... }:
 {
-  imports = [
-    ./vpsadminos.nix
-    ../../modules/grafana.nix
-  ];
-
   users.users.admin = {
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN85SndW/OerKK8u2wTxmHcTn4hEtUJmctj9wnseBYtS jkr@optiplex-vpsfree"
