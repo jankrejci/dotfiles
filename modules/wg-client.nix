@@ -4,7 +4,7 @@
     {
       address = [ "${hostConfig.ipAddress}/24" ];
       privateKeyFile = config.sops.secrets."hosts/${hostConfig.hostName}/wg_private_key".path;
-      dns = [ "192.168.99.1" ];
+      dns = [ "192.168.99.1" "home" ];
 
       peers = [
         {
