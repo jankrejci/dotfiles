@@ -8,32 +8,14 @@
     listenPort = 51820;
     # Path to the private key file.
     privateKeyFile = config.sops.secrets."hosts/${hostConfig.hostName}/wg_private_key".path;
-    peers = with hostInfo; [
-      {
-        publicKey = rpi4.wgPublicKey;
-        allowedIPs = [ rpi4.ipAddress ];
-      }
-      {
-        publicKey = optiplex.wgPublicKey;
-        allowedIPs = [ optiplex.ipAddress ];
-      }
-      {
-        publicKey = thinkpad.wgPublicKey;
-        allowedIPs = [ thinkpad.ipAddress ];
-      }
-      {
-        publicKey = latitude.wgPublicKey;
-        allowedIPs = [ latitude.ipAddress ];
-      }
-      {
-        publicKey = android.wgPublicKey;
-        allowedIPs = [ android.ipAddress ];
-      }
-      # {
-      #   publicKey = thinkcenter.wgPublicKey;
-      #   allowedIPs = [ thinkcenter.ipAddress ];
-      # }
-    ];
+    peers =
+      let
+        makePeer = host: {
+          publicKey = host.wgPublicKey;
+          allowedIPs = [ host.ipAddress ];
+        };
+      in
+      builtins.map makePeer (builtins.attrValues hostInfo);
   };
 
   systemd.services."wg-quick@wg0".serviceConfig = {
