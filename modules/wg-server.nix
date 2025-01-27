@@ -54,12 +54,9 @@
     };
   };
 
-  environment.etc."dnsmasq-hosts".text = ''
-    192.168.99.1 vpsfree.home
-    192.168.99.2 rpi4.home
-    192.168.99.3 optiplex.home
-    192.168.99.4 thinkpad.home
-    192.168.99.5 latitude.home
-    192.168.99.6 android.home
-  '';
+  environment.etc."dnsmasq-hosts".text =
+    let
+      makeHostEntry = name: hostInfo.${name}.ipAddress + " " + name + ".home";
+    in
+    builtins.concatStringsSep "\n" (builtins.map makeHostEntry (builtins.attrNames hostInfo)) + "\n";
 }
