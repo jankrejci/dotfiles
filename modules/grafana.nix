@@ -1,16 +1,16 @@
 { config, hostConfig, ... }:
 let
-  server_ip_address = "$hostConfig.ipAddress";
-  server_domain = "${hostConfig.hostName}.home";
-  grafana_port = 3000;
+  serverIpAddress = "${hostConfig.ipAddress}";
+  serverDomain = "${hostConfig.hostName}.home";
+  grafanaPort = 3000;
 in
 {
-  networking.firewall.interfaces."wg0".allowedTCPPorts = [ 9090 grafana_port 80 443 ];
+  networking.firewall.interfaces."wg0".allowedTCPPorts = [ 9090 grafanaPort 80 443 ];
 
   services.prometheus = {
     enable = true;
     retentionTime = "180d";
-    listenAddress = server_ip_address;
+    listenAddress = serverIpAddress;
     globalConfig.scrape_interval = "10s";
     scrapeConfigs = [
       {
@@ -31,10 +31,10 @@ in
     enable = true;
     settings = {
       server = {
-        http_addr = server_ip_address;
-        http_port = grafana_port;
-        domain = server_domain;
-        root_url = "http://${server_domain}/grafana";
+        http_addr = serverIpAddress;
+        http_port = grafanaPort;
+        domain = serverDomain;
+        root_url = "http://${serverDomain}/grafana";
         serve_from_sub_path = true;
       };
     };
@@ -45,9 +45,9 @@ in
     virtualHosts.${config.services.grafana.settings.server.domain} = {
       # addSSL = true;
       # enableACME = true;
-      listenAddresses = [ "${server_domain}" ];
+      listenAddresses = [ "${serverDomain}" ];
       locations."/grafana/" = {
-        proxyPass = "http://${server_domain}:${toString grafana_port}";
+        proxyPass = "http://${serverDomain}:${toString grafanaPort}";
         proxyWebsockets = true;
         recommendedProxySettings = true;
       };
