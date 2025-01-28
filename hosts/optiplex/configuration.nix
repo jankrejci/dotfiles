@@ -2,8 +2,6 @@
 {
   imports = [
     ./hardware-configuration.nix
-    ../../modules/desktop.nix
-    ../../modules/wg-client.nix
   ];
 
   boot.loader.systemd-boot.enable = true;

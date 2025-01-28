@@ -2,7 +2,6 @@
 {
   imports = [
     ./hardware-configuration.nix
-    ../../modules/wg-client.nix
   ];
 
   # Use the extlinux boot loader. (NixOS wants to enable GRUB by default)
