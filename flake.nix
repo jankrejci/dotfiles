@@ -64,6 +64,7 @@
           extraModules = [
             "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
             ./modules/users/admin/user.nix
+            ./modules/wg-client.nix
           ];
         };
         optiplex = {
@@ -73,6 +74,8 @@
           extraModules = [
             ./modules/users/jkr/user.nix
             ./modules/users/paja/user.nix
+            ./modules/wg-client.nix
+            ./modules/desktop.nix
           ];
         };
         thinkpad = {
@@ -82,6 +85,9 @@
           extraModules = [
             ./modules/users/jkr/user.nix
             ./modules/users/paja/user.nix
+            ./modules/wg-client.nix
+            ./modules/desktop.nix
+            ./modules/disable-nvidia.nix
           ];
         };
         latitude = {
