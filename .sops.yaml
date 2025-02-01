@@ -1,17 +1,18 @@
 keys:
-- &users:
+- users:
   - &jkr_latitude age1cr9rt3gw33aejma8ncd09n77c30ufvwrvamydm3ze778akpqveys4zr9g7
   - &jkr_optiplex age1qleeqawujsmupve3942q2lxt04w2hcfp86s274a3wu0zaw42l4qq8hqucq
-  - &jkr_thinkpad age1ut4xhqf2kaf6tz7rsztr8sle5gnr3wletqylu4sde4z8xllarsuqzshguk
-- &hosts:
-  - &rpi4 age1yck2xrcpzqja8uuf5gt5q2vdmfp34vc08kals7yecmeklw8plglsw49xfm
+  - &jkr_thinkpad age127r6wq8wevccdvxqgr5x25z2umfms8c9v2mgg63ejvs5lm9229tq6qkde0
+- hosts:
+  - &rpi4 age1l2epw25x6cqu2jcacspfr5dwtug6x9xcgnrd9u0s6v9420t5xu2q4sken8
   - &vpsfree age13vqwdw4s4t2ncw9qqnnakcjhmkca3gzrrn9ee2drj3j3lpppv9zq8f2lth
+
 creation_rules:
-  - path_regex: secrets.yaml$
+  - path_regex: secrets\.yaml$
     key_groups:
-    - age:
-      - *jkr_latitude
-      - *jkr_optiplex
-      - *jkr_thinkpad
-      - *rpi4
-      - *vpsfree
+      - age:
+          - *jkr_latitude
+          - *jkr_optiplex
+          - *jkr_thinkpad
+          - *rpi4
+          - *vpsfree
