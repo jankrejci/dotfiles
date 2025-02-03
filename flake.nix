@@ -85,7 +85,6 @@
         iso = nixosConfigurations.iso.config.system.build.isoImage;
       };
 
-
       homeConfigurations = {
         latitude = home-manager.lib.homeManagerConfiguration {
           pkgs = pkgs-x86_64-linux;
