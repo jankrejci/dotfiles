@@ -11,6 +11,7 @@
     peers =
       let
         makePeer = host: {
+          name = host.hostName;
           publicKey = host.wgPublicKey;
           allowedIPs = [ host.ipAddress ];
         };
