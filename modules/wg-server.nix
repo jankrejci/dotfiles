@@ -1,27 +1,51 @@
 { config, hostConfig, hostInfo, ... }:
+let
+  wgPort = 51820;
+in
 {
-  networking.firewall.allowedUDPPorts = [ 51820 ];
-  networking.wireguard.interfaces.wg0 = {
-    # Determines the IP address and subnet of the server's end of the tunnel interface.
-    ips = [ "${hostConfig.ipAddress}/24" ];
-    # The port that WireGuard listens to. Must be accessible by the client.
-    listenPort = 51820;
-    # Path to the private key file.
-    privateKeyFile = config.sops.secrets."hosts/${hostConfig.hostName}/wg_private_key".path;
-    peers =
-      let
-        makePeer = host: {
-          name = host.hostName;
-          publicKey = host.wgPublicKey;
-          allowedIPs = [ host.ipAddress ];
+
+  networking.firewall.allowedUDPPorts = [ wgPort ];
+  networking.useNetworkd = true;
+  systemd.network = {
+    enable = true;
+    netdevs = {
+      "50-wg0" = {
+        netdevConfig = {
+          Kind = "wireguard";
+          Name = "wg0";
+          # WG adds 80 bytes so the total frame size is 1300
+          MTUBytes = "1220";
         };
-      in
-      builtins.map makePeer (builtins.attrValues hostInfo);
+        wireguardConfig = {
+          PrivateKeyFile = config.sops.secrets."hosts/${hostConfig.hostName}/wg_private_key".path;
+          ListenPort = wgPort;
+        };
+        wireguardPeers =
+          let
+            makePeer = host: {
+              PublicKey = host.wgPublicKey;
+              AllowedIPs = [ host.ipAddress ];
+              PersistentKeepalive = 25;
+            };
+          in
+          builtins.map makePeer (builtins.attrValues hostInfo);
+      };
+    };
+    networks.wg0 = {
+      matchConfig.Name = "wg0";
+      address = [ "${hostConfig.ipAddress}/24" ];
+      networkConfig = {
+        IPMasquerade = "ipv4";
+        IPv4Forwarding = true;
+      };
+    };
   };
 
-  systemd.services."wg-quick@wg0".serviceConfig = {
-    Restart = "always";
-    RestartSec = 5;
+  services.resolved = {
+    # Disable the default 127.0.0.53:53 to avoid collision with dnsmasq
+    extraConfig = ''
+      DNSStubListener=no
+    '';
   };
 
   networking.firewall.interfaces."wg0".allowedUDPPorts = [ 53 ];
@@ -30,19 +54,17 @@
     enable = true;
     alwaysKeepRunning = true;
     settings = {
-      # Basic settings
       "domain-needed" = true;
       "bogus-priv" = true;
-      "expand-hosts" = false;
       "domain" = "home";
 
+      "expand-hosts" = false;
       "addn-hosts" = "/etc/dnsmasq-hosts";
 
-      # Listen on specific interface and IP
       "interface" = "wg0";
       "listen-address" = [
         "127.0.0.1"
-        "${hostConfig.ipAddress}"
+        hostConfig.ipAddress
       ];
 
       # Disable DHCP service
