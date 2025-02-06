@@ -6,6 +6,7 @@ in
 
   networking.firewall.allowedUDPPorts = [ wgPort ];
   networking.useNetworkd = true;
+
   systemd.network = {
     enable = true;
     netdevs = {

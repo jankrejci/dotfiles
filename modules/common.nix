@@ -83,12 +83,15 @@
 
     age = {
       keyFile = "/etc/sops/age/keys.txt";
-      sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
-      generateKey = true;
+      generateKey = false;
     };
 
     secrets = {
-      "hosts/vpsfree/wg_private_key" = { };
+      "hosts/vpsfree/wg_private_key" = {
+        mode = "0400";
+        owner = "systemd-network";
+        restartUnits = [ "systemd-networkd.service" ];
+      };
       "hosts/rpi4/wg_private_key" = { };
       "hosts/optiplex/wg_private_key" = { };
       "hosts/thinkpad/wg_private_key" = { };
