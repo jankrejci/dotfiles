@@ -6,6 +6,7 @@ keys:
 - hosts:
   - &rpi4 age1l2epw25x6cqu2jcacspfr5dwtug6x9xcgnrd9u0s6v9420t5xu2q4sken8
   - &vpsfree age13vqwdw4s4t2ncw9qqnnakcjhmkca3gzrrn9ee2drj3j3lpppv9zq8f2lth
+  - &optiplex age1aeanpuukrd0024z3yq2x868d75g4krwh8azdkm6dl04ecqwy3gmqlfzde9
 
 creation_rules:
   - path_regex: secrets\.yaml$
@@ -16,3 +17,4 @@ creation_rules:
           - *jkr_thinkpad
           - *rpi4
           - *vpsfree
+          - *optiplex
