@@ -1,6 +1,7 @@
 { config, hostConfig, hostInfo, ... }:
 let
   wgPort = 51820;
+  dnsPort = 5454;
 in
 {
 
@@ -35,6 +36,8 @@ in
     networks.wg0 = {
       matchConfig.Name = "wg0";
       address = [ "${hostConfig.ipAddress}/24" ];
+      dns = [ "${hostConfig.ipAddress}:${toString dnsPort}" ];
+      domains = [ "home" ];
       networkConfig = {
         IPMasquerade = "ipv4";
         IPv4Forwarding = true;
@@ -42,19 +45,13 @@ in
     };
   };
 
-  services.resolved = {
-    # Disable the default 127.0.0.53:53 to avoid collision with dnsmasq
-    extraConfig = ''
-      DNSStubListener=no
-    '';
-  };
-
-  networking.firewall.interfaces."wg0".allowedUDPPorts = [ 53 ];
-  networking.firewall.interfaces."wg0".allowedTCPPorts = [ 53 ];
+  networking.firewall.interfaces."wg0".allowedUDPPorts = [ dnsPort ];
+  networking.firewall.interfaces."wg0".allowedTCPPorts = [ dnsPort ];
   services.dnsmasq = {
     enable = true;
     alwaysKeepRunning = true;
     settings = {
+      "port" = "${toString dnsPort}";
       "domain-needed" = true;
       "bogus-priv" = true;
       "domain" = "home";
@@ -63,18 +60,10 @@ in
       "addn-hosts" = "/etc/dnsmasq-hosts";
 
       "interface" = "wg0";
-      "listen-address" = [
-        "127.0.0.1"
-        hostConfig.ipAddress
-      ];
+      "listen-address" = [ hostConfig.ipAddress ];
 
       # Disable DHCP service
       "no-dhcp-interface" = "wg0";
-
-      server = [
-        "1.1.1.1" # Cloudflare DNS
-        "8.8.8.8" # Google DNS
-      ];
     };
   };
 
