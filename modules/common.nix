@@ -1,4 +1,7 @@
 { pkgs, hostConfig, ... }:
+let
+  nameServers = [ "1.1.1.1" "8.8.8.8" "1.0.0.1" ];
+in
 {
   networking.hostName = hostConfig.hostName;
 
@@ -77,7 +80,17 @@
     RestartSec = 5;
   };
 
+  networking.nameservers = nameServers;
+  services.resolved = {
+    enable = true;
+    dnssec = "true";
+    domains = [ "~." ];
+    fallbackDns = nameServers;
+    dnsovertls = "true";
+  };
+
   sops = {
+
     defaultSopsFile = ../secrets.yaml;
     validateSopsFiles = true;
 

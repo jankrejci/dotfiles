@@ -6,17 +6,8 @@
 #
 #   https://github.com/vpsfreecz/vpsadminos/blob/staging/os/lib/nixos-container/vpsadminos.nix
 
-{ config, pkgs, lib, ... }:
-with lib;
-let
-  nameservers = [
-    "1.1.1.1"
-    "2606:4700:4700::1111"
-  ];
-in
-{
-  networking.nameservers = mkDefault nameservers;
-  services.resolved = mkDefault { fallbackDns = nameservers; };
+{ pkgs, lib, ... }:
+with lib; {
   networking.dhcpcd.extraConfig = "noipv4ll";
 
   systemd.services.systemd-sysctl.enable = false;
