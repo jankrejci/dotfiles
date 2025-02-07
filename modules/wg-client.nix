@@ -26,10 +26,9 @@
     networks.wg0 = {
       matchConfig.Name = "wg0";
       routingPolicyRules = [{
-        # From = "192.168.99.3/32";
         To = "192.168.99.0/24";
         Table = 99;
-        # Priority = 20;
+        Priority = 50;
       }];
       routes = [{
         Destination = "192.168.99.0/24";
@@ -39,14 +38,6 @@
       DHCP = "no";
       dns = [ "192.168.99.1:5454" ];
       domains = [ "home" ];
-    };
-
-    networks."99-default" = {
-      # Applies to all interfaces
-      matchConfig.Name = "enp* eno* wlo*";
-      DHCP = "yes";
-      # Explicitly prevent any search domains
-      domains = [ ];
     };
   };
 }

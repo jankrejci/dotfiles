@@ -87,6 +87,7 @@ in
     dnssec = "true";
     # Explicitely disabled as it interfere with dns resolving
     dnsovertls = "false";
+    # Disable caching as it fails to resolve name over wg
     extraConfig = ''
       [Resolve]
       Cache=no
