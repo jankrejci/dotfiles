@@ -1,6 +1,6 @@
 { pkgs, hostConfig, ... }:
 let
-  nameServers = [ "1.1.1.1" "8.8.8.8" "1.0.0.1" ];
+  nameServers = [ "1.1.1.1" "8.8.8.8" ];
 in
 {
   networking.hostName = hostConfig.hostName;
@@ -63,6 +63,7 @@ in
     age
     sops
     ssh-to-age
+    tcpdump
   ];
 
   fonts.packages = with pkgs; [
@@ -84,9 +85,13 @@ in
   services.resolved = {
     enable = true;
     dnssec = "true";
-    domains = [ "~." ];
-    fallbackDns = nameServers;
-    dnsovertls = "true";
+    # Explicitely disabled as it interfere with dns resolving
+    dnsovertls = "false";
+    extraConfig = ''
+      [Resolve]
+      Cache=no
+      Domains=~home
+    '';
   };
 
   sops = {
@@ -106,7 +111,11 @@ in
         restartUnits = [ "systemd-networkd.service" ];
       };
       "hosts/rpi4/wg_private_key" = { };
-      "hosts/optiplex/wg_private_key" = { };
+      "hosts/optiplex/wg_private_key" = {
+        mode = "0400";
+        owner = "systemd-network";
+        restartUnits = [ "systemd-networkd.service" ];
+      };
       "hosts/thinkpad/wg_private_key" = { };
     };
   };
