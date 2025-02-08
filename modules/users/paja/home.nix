@@ -1,7 +1,12 @@
-{ lib, ... }:
+{ pkgs, lib, ... }:
 {
   home.username = "paja";
   home.homeDirectory = "/home/paja";
+
+  home.packages = with pkgs; [
+    gnomeExtensions.vitals
+    gnomeExtensions.dash-to-panel
+  ];
 
   dconf.settings = with lib.hm.gvariant; {
     "org/gnome/desktop/interface" = {
@@ -9,6 +14,14 @@
     };
     "org/gnome/desktop/sound" = {
       allow-volume-above-100-percent = true;
+    };
+    "org/gnome/shell" = {
+      disable-user-extensions = false;
+      # `gnome-extensions list` for a list
+      enabled-extensions = [
+        "Vitals@CoreCoding.com"
+        "dash-to-panel@jderose9.github.com"
+      ];
     };
     # Generated via dconf2nix: https://github.com/nix-commmunity/dconf2nix
     "org/gnome/desktop/input-sources" = {
