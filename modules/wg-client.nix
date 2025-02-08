@@ -25,15 +25,6 @@
     };
     networks.wg0 = {
       matchConfig.Name = "wg0";
-      routingPolicyRules = [{
-        To = "192.168.99.0/24";
-        Table = 99;
-        Priority = 50;
-      }];
-      routes = [{
-        Destination = "192.168.99.0/24";
-        Table = 99;
-      }];
       address = [ "${hostConfig.ipAddress}/24" ];
       DHCP = "no";
       dns = [ "192.168.99.1:5454" ];
