@@ -7,6 +7,7 @@ keys:
   - &rpi4 age1l2epw25x6cqu2jcacspfr5dwtug6x9xcgnrd9u0s6v9420t5xu2q4sken8
   - &vpsfree age13vqwdw4s4t2ncw9qqnnakcjhmkca3gzrrn9ee2drj3j3lpppv9zq8f2lth
   - &optiplex age1aeanpuukrd0024z3yq2x868d75g4krwh8azdkm6dl04ecqwy3gmqlfzde9
+  - &thinkpad age1qn78rj8tn4svzut2738lv3hc6je97lql4quvxwjcxsm2wvxyeylqlh8kqz
 
 creation_rules:
   - path_regex: secrets\.yaml$
@@ -18,3 +19,4 @@ creation_rules:
           - *rpi4
           - *vpsfree
           - *optiplex
+          - *thinkpad
