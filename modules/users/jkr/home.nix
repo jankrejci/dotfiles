@@ -45,7 +45,6 @@
     };
     "org/gnome/shell" = {
       disable-user-extensions = false;
-
       # `gnome-extensions list` for a list
       enabled-extensions = [
         "Vitals@CoreCoding.com"
