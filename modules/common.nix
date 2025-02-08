@@ -81,6 +81,15 @@ in
     RestartSec = 5;
   };
 
+  # Do not wait to long for interfaces to become online,
+  # this is especially handy for notebooks on wifi,
+  # where the eth interface is disconnected
+  boot.initrd.systemd.network.wait-online.enable = false;
+  systemd.network.wait-online = {
+    anyInterface = true;
+    timeout = 10;
+  };
+
   networking.nameservers = nameServers;
   services.resolved = {
     enable = true;
