@@ -5,6 +5,7 @@
       isNormalUser = true;
       extraGroups = [ "cups" "networkmanager" "paja" ];
       uid = 5000;
+      hashedPassword = "$y$j9T$osBbtqLvq0nOsFx1WThF40$oqcK0hbg8rgeLkX/ptVY5WJ32XTiRcuXkOT9DFMJ/i2";
     };
   };
 
@@ -13,6 +14,7 @@
       gid = 5000;
     };
   };
+
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;

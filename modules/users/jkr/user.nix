@@ -12,6 +12,7 @@
       ];
       # It's good practice to explicitly set the UID
       uid = 1000;
+      hashedPassword = "$y$j9T$u.2s1lYSq.YKGJd0QN7cr.$rQlNj0kYmBpMqmFTK83GpMtYciDcryxABItQziWmml5";
     };
   };
 

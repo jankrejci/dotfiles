@@ -24,6 +24,4 @@
       };
     };
   };
-
-  users.users.jkr.isNormalUser = true;
 }
