@@ -1,4 +1,8 @@
 { ... }:
+let
+  ethDevice = "enp0s25";
+  dockDevice = "enp0s29u1u2u1i5";
+in
 {
   imports = [
     ./hardware-configuration.nix
@@ -13,23 +17,23 @@
   # steals all the connection, there is configuration for both
   # systemd-networkd and for  network manager
   systemd.network.networks = {
-    "10-enp0s25" = {
-      matchConfig.Name = "enp0s25";
+    "10-${ethDevice}" = {
+      matchConfig.Name = ethDevice;
       DHCP = "yes";
       dhcpV4Config.RouteMetric = 48;
     };
-    "10-enp0s29u1u2u1i5" = {
-      matchConfig.Name = "enp0s29u1u2u1i5 ";
+    "10-${dockDevice}" = {
+      matchConfig.Name = dockDevice;
       DHCP = "yes";
       dhcpV4Config.RouteMetric = 49;
     };
   };
   networking.networkmanager.ensureProfiles = {
     profiles = {
-      enp0s25 = {
+      "${ethDevice}" = {
         connection = {
-          id = "enp0s25";
-          interface-name = "enp0s25";
+          id = ethDevice;
+          interface-name = ethDevice;
           type = "ethernet";
         };
         ipv4 = {
@@ -37,10 +41,10 @@
           route-metric = 48;
         };
       };
-      enp0s29u1u2u1i5 = {
+      "${dockDevice}" = {
         connection = {
-          id = "enp0s29u1u2u1i5";
-          interface-name = "enp0s29u1u2u1i5";
+          id = dockDevice;
+          interface-name = dockDevice;
           type = "ethernet";
         };
         ipv4 = {
