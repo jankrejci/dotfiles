@@ -127,10 +127,15 @@
         ] ++ extraModules;
       };
     in
-    {
+    rec {
       nixosConfigurations = builtins.mapAttrs
         (hostName: config: mkHost (config // { hostName = hostName; }))
         hostConfigs;
+
+      image = {
+        rpi4 = nixosConfigurations.rpi4.config.system.build.sdImage;
+        prusa = nixosConfigurations.prusa.config.system.build.sdImage;
+      };
 
 
       homeConfigurations = {
