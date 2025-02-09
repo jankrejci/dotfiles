@@ -16,9 +16,12 @@
     # refer to https://github.com/NixOS/nixpkgs/issues/122671
     # https://github.com/guibou/nixGL/#use-an-overlay
     nixgl.url = "github:guibou/nixGL";
+
+    # Declarative partitioning and formatting
+    disko.url = "github:nix-community/disko";
   };
 
-  outputs = { nixpkgs, nixpkgs-unstable, home-manager, nixgl, sops-nix, ... }:
+  outputs = { nixpkgs, nixpkgs-unstable, home-manager, nixgl, sops-nix, disko, ... }:
     let
       lib = nixpkgs.lib;
 
@@ -45,7 +48,7 @@
         overlays = [ unstable-aarch64-linux ];
       };
 
-      hostConfigs = import ./hosts.nix;
+      hostConfigs = import ./hosts.nix { inherit nixpkgs; };
 
       hostInfo = builtins.mapAttrs
         (hostName: config: {
@@ -84,6 +87,7 @@
         prusa = nixosConfigurations.prusa.config.system.build.sdImage;
         iso = nixosConfigurations.iso.config.system.build.isoImage;
       };
+
 
       homeConfigurations = {
         latitude = home-manager.lib.homeManagerConfiguration {

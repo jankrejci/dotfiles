@@ -105,7 +105,6 @@ in
   };
 
   sops = {
-
     defaultSopsFile = ../secrets.yaml;
     validateSopsFiles = true;
 
@@ -115,18 +114,11 @@ in
     };
 
     secrets = {
-      "hosts/vpsfree/wg_private_key" = {
+      "hosts/${hostConfig.hostName}/wg_private_key" = {
         mode = "0400";
         owner = "systemd-network";
         restartUnits = [ "systemd-networkd.service" ];
       };
-      "hosts/rpi4/wg_private_key" = { };
-      "hosts/optiplex/wg_private_key" = {
-        mode = "0400";
-        owner = "systemd-network";
-        restartUnits = [ "systemd-networkd.service" ];
-      };
-      "hosts/thinkpad/wg_private_key" = { };
     };
   };
 

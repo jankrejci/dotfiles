@@ -1,4 +1,4 @@
-{ hostConfig, ... }:
+{ lib, hostConfig, ... }:
 {
   # Server-side SSH configuration
   services.openssh = {
@@ -10,7 +10,7 @@
 
     settings = {
       PasswordAuthentication = false;
-      PermitRootLogin = "no";
+      PermitRootLogin = lib.mkForce "no";
     };
   };
 

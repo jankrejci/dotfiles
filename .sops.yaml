@@ -11,6 +11,7 @@ keys:
   - &framework age1f8mg3vs9rpnp962skm4jk35jcqzfqpjrh9wjker4n6kpkt4f9sqsjdu5yv 
   - &rpi4 age1l2epw25x6cqu2jcacspfr5dwtug6x9xcgnrd9u0s6v9420t5xu2q4sken8
   - &prusa age1mwjzn932mhpxu89u6qr220r3ftlzck8rdm4zxld9j4ha8k35a3jqdvecdt
+  - &iso age1xzfpfm0zl6dxn6fn98d4rv54xwvgdjg50qx9mgwf6yk78y57kf4sxpps5z
 
 creation_rules:
   - path_regex: secrets\.yaml$
@@ -26,3 +27,4 @@ creation_rules:
           - *framework
           - *rpi4
           - *prusa
+          - *iso
