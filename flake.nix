@@ -82,6 +82,7 @@
       image = {
         rpi4 = nixosConfigurations.rpi4.config.system.build.sdImage;
         prusa = nixosConfigurations.prusa.config.system.build.sdImage;
+        iso = nixosConfigurations.iso.config.system.build.isoImage;
       };
 
 
