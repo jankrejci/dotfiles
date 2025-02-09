@@ -63,7 +63,6 @@
     ];
   };
 
-
   ### Single chip boards ###
 
   rpi4 = {
@@ -104,9 +103,10 @@
 
   iso = {
     ipAddress = "192.168.99.99";
-    wgPublicKey = "xxxxxx";
+    wgPublicKey = "Oy92wzxmvxteRQkjCmWmQDFfOevbby6qx/9ZDG2SMSs=";
     system = "x86_64-linux";
     extraModules = [
+      "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
       ./modules/users/admin/user.nix
       ./modules/wg-client.nix
     ];
