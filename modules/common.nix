@@ -4,6 +4,7 @@ let
 in
 {
   networking.hostName = hostConfig.hostName;
+  networking.firewall.enable = true;
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
@@ -94,14 +95,8 @@ in
   services.resolved = {
     enable = true;
     dnssec = "true";
-    # Explicitely disabled as it interfere with dns resolving
+    # Explicitely disabled as it interfere with dnsmasq resolving somehow
     dnsovertls = "false";
-    # Disable caching as it fails to resolve name over wg
-    extraConfig = ''
-      [Resolve]
-      Cache=no
-      Domains=~home
-    '';
   };
 
   sops = {

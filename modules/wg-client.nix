@@ -27,8 +27,17 @@
       matchConfig.Name = "wg0";
       address = [ "${hostConfig.ipAddress}/24" ];
       DHCP = "no";
-      dns = [ "192.168.99.1:5454" ];
-      domains = [ "home" ];
+      dns = [ "192.168.99.1" ];
+      domains = [ "~home" ];
     };
   };
+  services.resolved = {
+    # Disable caching as it fails to resolve name over wg somehow
+    extraConfig = ''
+      [Resolve]
+      Cache=no
+      Domains=~home
+    '';
+  };
+
 }
