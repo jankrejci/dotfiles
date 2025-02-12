@@ -58,7 +58,7 @@
         })
         hostConfigs;
 
-      mkHost = { system, extraModules ? [ ], ... }@config: lib.nixosSystem {
+      mkHost = { system ? "x86_64-linux", extraModules ? [ ], ... }@config: lib.nixosSystem {
         system = system;
         specialArgs = {
           pkgs =
@@ -68,13 +68,20 @@
           hostConfig = config;
           hostInfo = hostInfo;
         };
-        modules = [
-          sops-nix.nixosModules.sops
-          home-manager.nixosModules.home-manager
-          ./modules/common.nix
-          ./modules/ssh.nix
-          ./hosts/${config.hostName}/configuration.nix
-        ] ++ extraModules;
+        modules =
+          let
+            hostConfigFile = ./hosts/${config.hostName}/configuration.nix;
+            hasHostConfig = builtins.pathExists hostConfigFile;
+          in
+          [
+            sops-nix.nixosModules.sops
+            home-manager.nixosModules.home-manager
+            ./modules/common.nix
+            ./modules/ssh.nix
+            ./modules/wg-config.nix
+          ]
+          ++ (lib.optional hasHostConfig hostConfigFile)
+          ++ extraModules;
       };
     in
     rec {
@@ -88,6 +95,10 @@
         iso = nixosConfigurations.iso.config.system.build.isoImage;
       };
 
+      wg = {
+        nokia = nixosConfigurations.nokia.config.system.build.wgConfig;
+        latitude = nixosConfigurations.latitude.config.system.build.wgConfig;
+      };
 
       homeConfigurations = {
         latitude = home-manager.lib.homeManagerConfiguration {
