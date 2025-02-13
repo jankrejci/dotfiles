@@ -21,6 +21,7 @@ in
             "vpsfree.home:9100"
             "thinkpad.home:9100"
             "optiplex.home:9100"
+            "prusa.home:9100"
           ];
         }];
       }

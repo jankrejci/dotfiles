@@ -1,7 +1,13 @@
-{ config, hostConfig, hostInfo, ... }:
+{ lib, config, hostConfig, hostInfo, ... }:
 {
+  # Avoid collision with the sysystemd.network
+  networking = {
+    useDHCP = lib.mkForce false;
+    useNetworkd = lib.mkForce true;
+  };
+
   systemd.network = {
-    enable = true;
+    enable = lib.mkForce true;
     netdevs = {
       "10-wg0" = {
         netdevConfig = {
