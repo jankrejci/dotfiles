@@ -50,6 +50,10 @@
 
       hostConfigs = import ./hosts.nix { inherit nixpkgs; };
 
+      # Whether to load age key when building the image
+      # `LOAD_KEYS=true nix build .#images.iso`
+      loadKeys = builtins.getEnv "LOAD_KEYS" == "1";
+
       hostInfo = builtins.mapAttrs
         (hostName: config: {
           hostName = hostName;
@@ -80,7 +84,8 @@
             ./modules/ssh.nix
             ./modules/wg-config.nix
           ]
-          ++ (lib.optional hasHostConfig hostConfigFile)
+          ++ (lib.optional hasHostConfig (builtins.trace "Loading host config" hostConfigFile))
+          ++ (lib.optional loadKeys (builtins.trace "Loading age keys" ./modules/load-keys.nix))
           ++ extraModules;
       };
     in
