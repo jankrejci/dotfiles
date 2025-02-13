@@ -1,6 +1,9 @@
-{ config, lib, ... }:
+{ lib, config, ... }:
 {
-  security.sudo.wheelNeedsPassword = false;
+  # Use the extlinux boot loader. (NixOS wants to enable GRUB by default)
+  boot.loader.grub.enable = false;
+  # Enables the generation of /boot/extlinux/extlinux.conf
+  boot.loader.generic-extlinux-compatible.enable = true;
 
   users.users.admin = {
     openssh.authorizedKeys.keys = [
@@ -10,10 +13,7 @@
     ];
   };
 
-  # Use the extlinux boot loader. (NixOS wants to enable GRUB by default)
-  boot.loader.grub.enable = false;
-  # Enables the generation of /boot/extlinux/extlinux.conf
-  boot.loader.generic-extlinux-compatible.enable = true;
+  security.sudo.wheelNeedsPassword = false;
 
   boot.initrd.availableKernelModules = [ "xhci_pci" ];
   boot.initrd.kernelModules = [ ];
@@ -24,8 +24,8 @@
 
   networking.useDHCP = lib.mkForce false;
 
-  networking.interfaces.end0.useDHCP = true;
-  networking.interfaces.wlan0.useDHCP = true;
+  networking.interfaces.end0.useDHCP = lib.mkDefault true;
+  networking.interfaces.wlan0.useDHCP = lib.mkDefault true;
 
   nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
 
