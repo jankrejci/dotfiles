@@ -28,3 +28,17 @@ creation_rules:
           - *rpi4
           - *prusa
           - *iso
+  - path_regex: wifi\.env$
+    key_groups:
+      - age:
+          - *jkr_thinkpad
+          - *jkr_optiplex
+          - *jkr_latitude
+          - *vpsfree
+          - *thinkcenter
+          - *thinkpad
+          - *optiplex
+          - *framework
+          - *rpi4
+          - *prusa
+          - *iso

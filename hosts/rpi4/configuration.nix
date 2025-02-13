@@ -1,4 +1,4 @@
-{ pkgs, lib, hostConfig, ... }:
+{ config, pkgs, lib, hostConfig, ... }:
 let
   # Import the key file
   adminKeyFilePath = builtins.toFile "keys.txt" (builtins.readFile "/home/jkr/.config/sops/age/keys.txt");
@@ -17,14 +17,10 @@ let
   '';
 in
 {
-  # imports = [
-  #   ./hardware-configuration.nix
-  # ];
+  # Ensure the key is stored in the correct location
+  environment.etc."sops/age/keys.txt".source = "${decryptedSecret}/keys.txt";
 
-  # Use the extlinux boot loader. (NixOS wants to enable GRUB by default)
-  boot.loader.grub.enable = false;
-  # Enables the generation of /boot/extlinux/extlinux.conf
-  boot.loader.generic-extlinux-compatible.enable = true;
+  security.sudo.wheelNeedsPassword = false;
 
   users.users.admin = {
     openssh.authorizedKeys.keys = [
@@ -34,7 +30,10 @@ in
     ];
   };
 
-  security.sudo.wheelNeedsPassword = false;
+  # Use the extlinux boot loader. (NixOS wants to enable GRUB by default)
+  boot.loader.grub.enable = false;
+  # Enables the generation of /boot/extlinux/extlinux.conf
+  boot.loader.generic-extlinux-compatible.enable = true;
 
   boot.initrd.availableKernelModules = [ "xhci_pci" ];
   boot.initrd.kernelModules = [ ];
@@ -43,18 +42,33 @@ in
 
   swapDevices = [ ];
 
-  # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
-  # (the default) this is the recommended approach. When using systemd-networkd it's
-  # still possible to use this option, but it's recommended to use it in conjunction
-  # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
-  networking.useDHCP = lib.mkDefault true;
-  # networking.interfaces.end0.useDHCP = lib.mkDefault true;
-  # networking.interfaces.wlan0.useDHCP = lib.mkDefault true;
+  networking.useDHCP = lib.mkForce false;
+
+  networking.interfaces.end0.useDHCP = true;
+  networking.interfaces.wlan0.useDHCP = true;
 
   nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
 
+  sops = {
+    secrets = {
+      wifi = {
+        sopsFile = ../../wifi.env;
+        format = "dotenv";
+        owner = "root";
+        group = "systemd-networkd";
+        mode = "0400";
+      };
+    };
+  };
 
-  # Ensure the key is stored in the correct location
-  environment.etc."sops/age/keys.txt".source = "${decryptedSecret}/keys.txt";
+  networking.wireless = {
+    enable = true;
+    secretsFile = config.sops.secrets.wifi.path;
+    networks = {
+      "ext:home_ssid" = {
+        pskRaw = "ext:home_psk";
+      };
+    };
+  };
 }
 
