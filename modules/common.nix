@@ -104,7 +104,7 @@ in
     validateSopsFiles = true;
 
     age = {
-      keyFile = "/etc/sops/age/keys.txt";
+      keyFile = "/var/lib/sops/age/keys.txt";
       generateKey = false;
     };
 

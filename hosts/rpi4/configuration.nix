@@ -1,25 +1,5 @@
-{ config, pkgs, lib, hostConfig, ... }:
-let
-  # Import the key file
-  adminKeyFilePath = builtins.toFile "keys.txt" (builtins.readFile "/home/jkr/.config/sops/age/keys.txt");
-
-  # Copy the key into a derivation
-  adminKeyFile = pkgs.runCommand "age-key.txt" { } ''
-    mkdir -p $out
-    cp ${adminKeyFilePath} $out/keys.txt
-  '';
-
-  # Decrypt the secrets using the correct path
-  decryptedSecret = pkgs.runCommand "decrypted-secret" { buildInputs = [ pkgs.sops ]; } ''
-    export SOPS_AGE_KEY_FILE=${adminKeyFile}/keys.txt
-    mkdir -p $out
-    sops --decrypt --extract '["hosts"]["${hostConfig.hostName}"]["sops_private_key"]' ${../../secrets.yaml} > $out/keys.txt
-  '';
-in
+{ config, lib, ... }:
 {
-  # Ensure the key is stored in the correct location
-  environment.etc."sops/age/keys.txt".source = "${decryptedSecret}/keys.txt";
-
   security.sudo.wheelNeedsPassword = false;
 
   users.users.admin = {
