@@ -24,6 +24,14 @@
 
   sdImage.compressImage = false;
 
+  services.avahi.enable = false;
+  services.nfs.server.enable = false;
+  services.samba.enable = false;
+  networking.networkmanager.enable = false;
+  # Disable unneeded features
+  hardware.bluetooth.enable = false;
+  services.journald.extraConfig = "Storage=volatile";
+
   networking.useDHCP = lib.mkForce false;
 
   networking.interfaces.end0.useDHCP = true;
