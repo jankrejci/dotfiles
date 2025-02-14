@@ -58,8 +58,10 @@
     wgPublicKey = "9YMpp9mFeXXbe04SmEpwBMcUrBf7XEf/sdregqrkBDw=";
     system = "x86_64-linux";
     extraModules = [
-      ./modules/users/admin/user.nix
+      ./modules/users/jkr/user.nix
+      ./modules/users/paja/user.nix
       ./modules/wg-client.nix
+      ./modules/desktop.nix
     ];
   };
 
