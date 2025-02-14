@@ -65,6 +65,7 @@ in
     sops
     ssh-to-age
     tcpdump
+    nix-tree
   ];
 
   fonts.packages = with pkgs; [
