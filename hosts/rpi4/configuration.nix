@@ -22,6 +22,8 @@
 
   swapDevices = [ ];
 
+  sdImage.compressImage = false;
+
   networking.useDHCP = lib.mkForce false;
 
   networking.interfaces.end0.useDHCP = true;
