@@ -17,7 +17,7 @@
           MTUBytes = "1220";
         };
         wireguardConfig = {
-          PrivateKeyFile = config.sops.secrets."hosts/${hostConfig.hostName}/wg_private_key".path;
+          PrivateKeyFile = config.sops.secrets."wg_private_key".path;
         };
         wireguardPeers = [
           {

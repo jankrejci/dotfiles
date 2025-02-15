@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ lib, ... }:
 {
   security.sudo.wheelNeedsPassword = false;
 
@@ -39,26 +39,14 @@
 
   nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
 
-  sops = {
-    secrets = {
-      wifi = {
-        sopsFile = ../../wifi.env;
-        format = "dotenv";
-        owner = "root";
-        group = "systemd-network";
-        mode = "0400";
-      };
-    };
-  };
-
-  networking.wireless = {
-    enable = true;
-    secretsFile = config.sops.secrets.wifi.path;
-    networks = {
-      "ext:home_ssid" = {
-        pskRaw = "ext:home_psk";
-      };
-    };
+  systemd.services."first-boot-reboot" = {
+    description = "Reboot after first boot initialization";
+    wantedBy = [ "multi-user.target" ];
+    unitConfig.ConditionFirstBoot = true;
+    script = ''
+      echo "First boot detected. Rebooting system."
+      systemctl reboot
+    '';
   };
 }
 

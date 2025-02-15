@@ -14,7 +14,7 @@ let
   decryptedKey = pkgs.runCommand "decrypted-wg-key" { buildInputs = [ pkgs.sops ]; } ''
     export SOPS_AGE_KEY_FILE=${ageKeyFile}/keys.txt
     mkdir -p $out
-    sops --decrypt --extract '["hosts"]["${hostName}"]["wg_private_key"]' ${../secrets.yaml} > $out/wg_private_key
+    sops --decrypt --extract '["wg_private_key"]' "${../hosts/${hostName}/secrets.yaml}" > $out/wg_private_key
   '';
 
   wgConfig = ''

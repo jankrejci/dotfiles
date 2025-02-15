@@ -8,10 +8,10 @@ let
   decryptedSecret = pkgs.runCommand "decrypted-secret" { buildInputs = [ pkgs.sops ]; } ''
     export SOPS_AGE_KEY_FILE="${adminKeyFilePath}"
     mkdir -p $out
-    sops --decrypt --extract '["hosts"]["${hostConfig.hostName}"]["sops_private_key"]' ${../secrets.yaml} > $out/keys.txt
-    # echo "DEBUG: Copied key to $out/keys.txt" >&2
-    # echo "DEBUG: Contents of keys.txt: " >&2
-    # cat $out/keys.txt >&2
+    sops --decrypt --extract '["sops_private_key"]' ${../hosts/${hostConfig.hostName}/secrets.yaml} > $out/keys.txt
+    echo "DEBUG: Copied key to $out/keys.txt" >&2
+    echo "DEBUG: Contents of keys.txt: " >&2
+    cat $out/keys.txt >&2
   '';
 
   ageKeySource = "/etc/sops/age/keys.txt";
