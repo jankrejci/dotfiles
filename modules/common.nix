@@ -101,7 +101,7 @@ in
   };
 
   sops = {
-    defaultSopsFile = ../secrets.yaml;
+    defaultSopsFile = ../hosts/${hostConfig.hostName}/secrets.yaml;
     validateSopsFiles = true;
 
     age = {
@@ -110,7 +110,12 @@ in
     };
 
     secrets = {
-      "hosts/${hostConfig.hostName}/wg_private_key" = {
+      "wg_private_key" = {
+        mode = "0400";
+        owner = "systemd-network";
+        restartUnits = [ "systemd-networkd.service" ];
+      };
+      "endpoint" = {
         mode = "0400";
         owner = "systemd-network";
         restartUnits = [ "systemd-networkd.service" ];

@@ -75,6 +75,7 @@
       "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
       ./modules/users/admin/user.nix
       ./modules/wg-client.nix
+      ./modules/wifi.nix
     ];
   };
 
@@ -86,6 +87,7 @@
       "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
       ./modules/users/admin/user.nix
       ./modules/wg-client.nix
+      ./modules/wifi.nix
     ];
   };
 
