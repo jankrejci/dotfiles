@@ -45,7 +45,15 @@
       pkgs-aarch64-linux = import nixpkgs {
         system = "aarch64-linux";
         config.allowUnfree = true;
-        overlays = [ unstable-aarch64-linux ];
+        overlays = [
+          unstable-aarch64-linux
+          # Some packages reports `ahci fail`, this bypasses that
+          # https://discourse.nixos.org/t/does-pkgs-linuxpackages-rpi3-build-all-required-kernel-modules/42509
+          (final: super: {
+            makeModulesClosure = x:
+              super.makeModulesClosure (x // { allowMissing = true; });
+          })
+        ];
       };
 
       hostConfigs = import ./hosts.nix { inherit nixpkgs; };
