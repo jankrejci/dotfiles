@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ pkgs, lib, ... }:
 {
   security.sudo.wheelNeedsPassword = false;
 
@@ -10,19 +10,40 @@
     ];
   };
 
+  nix.settings.trusted-public-keys = [
+    "jkr-prusa:mfZZpEV+n0c0Pe4dTJyLSnNz6oQO2Kx86S3RcG9mwXk="
+  ];
+
   # Use the extlinux boot loader. (NixOS wants to enable GRUB by default)
   boot.loader.grub.enable = false;
   # Enables the generation of /boot/extlinux/extlinux.conf
   boot.loader.generic-extlinux-compatible.enable = true;
+
+  hardware = {
+    enableRedistributableFirmware = lib.mkForce false;
+    firmware = [ pkgs.raspberrypiWirelessFirmware ];
+  };
 
   boot.initrd.availableKernelModules = [ "xhci_pci" ];
   boot.initrd.kernelModules = [ ];
   boot.kernelModules = [ ];
   boot.extraModulePackages = [ ];
 
+  boot.extraModprobeConfig = ''
+    options cfg80211 ieee80211_regdom=CZ
+  '';
+
+  networking.supplicant.wlan0 = {
+    driver = "nl80211";
+    configFile.path = "/etc/wpa_supplicant.conf";
+  };
+
   swapDevices = [ ];
 
-  sdImage.compressImage = false;
+  sdImage = {
+    compressImage = false;
+    imageName = "rpi4.img";
+  };
 
   services.avahi.enable = false;
   services.nfs.server.enable = false;
