@@ -54,5 +54,7 @@ in
       };
     };
   };
-
+  nix.extraOptions = ''
+    secret-key-files = /home/jkr/.config/nix/signing-key
+  '';
 }
