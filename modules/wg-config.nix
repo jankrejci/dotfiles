@@ -1,3 +1,4 @@
+# Generate wireguard configuration for the non-NixOS hosts
 { pkgs, hostConfig, hostInfo, ... }:
 let
   hostName = hostConfig.hostName;
@@ -14,6 +15,7 @@ let
   decryptedKey = pkgs.runCommand "decrypted-wg-key" { buildInputs = [ pkgs.sops ]; } ''
     export SOPS_AGE_KEY_FILE=${ageKeyFile}/keys.txt
     mkdir -p $out
+    # TODO we can possibly return the key immediatelly without the need for intermidiate storage
     sops --decrypt --extract '["wg_private_key"]' "${../hosts/${hostName}/secrets.yaml}" > $out/wg_private_key
   '';
 

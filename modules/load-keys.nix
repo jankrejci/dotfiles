@@ -1,17 +1,17 @@
 { pkgs, hostConfig, ... }:
 let
-  # Import the key file
+  # Import the admin key file to decrypt shared secrets.yaml
   homeDir = builtins.getEnv "HOME";
   adminKeyFilePath = builtins.toFile "admin-keys.txt" (builtins.readFile "${homeDir}/.config/sops/age/keys.txt");
 
-  # Decrypt the secrets using the correct path
+  # Decrypt host's private age key
   decryptedSecret = pkgs.runCommand "decrypted-secret" { buildInputs = [ pkgs.sops ]; } ''
     export SOPS_AGE_KEY_FILE="${adminKeyFilePath}"
     mkdir -p $out
     sops --decrypt --extract '["sops_private_key"]' ${../hosts/${hostConfig.hostName}/secrets.yaml} > $out/keys.txt
-    echo "DEBUG: Copied key to $out/keys.txt" >&2
-    echo "DEBUG: Contents of keys.txt: " >&2
-    cat $out/keys.txt >&2
+    # echo "DEBUG: Copied key to $out/keys.txt" >&2
+    # echo "DEBUG: Contents of keys.txt: " >&2
+    # cat $out/keys.txt >&2
   '';
 
   ageKeySource = "/etc/sops/age/keys.txt";
@@ -21,6 +21,7 @@ let
   group = "root";
 in
 {
+  # Inject the key into /etc, this is removed with the first nixos-rebuild
   environment.etc."sops/age/keys.txt" = {
     source = "${decryptedSecret}/keys.txt";
     mode = "0600";
@@ -28,13 +29,12 @@ in
     group = group;
   };
 
-  # Ensure the target directory exists
+  # Ensure the persistent target directory exists
   systemd.tmpfiles.rules = [
-    # "d ${ageKeyFolder} ${user} ${group} -"
-    "d /var/lib/sops/age 0700 root root -"
+    "d ${ageKeyFolder} 0700 ${user} ${group} -"
   ];
 
-  # Activation script to copy the key if it exists
+  # Copy the key to the persistent storage during the first boot
   system.activationScripts.copyAgeKey = {
     text = ''
       set -x
