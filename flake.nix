@@ -1,16 +1,20 @@
 {
-  description = "NixOS configuration with system-wide packages and allowUnfree";
+  description = "NixOS multi host configuration";
 
   inputs = {
+    # Most of packages are fetched from the stable channel
     nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
+    # Some bleeding edge packages are fetch from unstable
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
 
-    sops-nix.url = "github:Mic92/sops-nix";
-
+    # Manage a user environment
     home-manager = {
       url = "github:nix-community/home-manager/release-24.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Atomic secret provisioning for NixOS based on sops 
+    sops-nix.url = "github:Mic92/sops-nix";
 
     # nixgl is needed for alacritty outside of nixOS
     # refer to https://github.com/NixOS/nixpkgs/issues/122671
@@ -25,6 +29,7 @@
     let
       lib = nixpkgs.lib;
 
+      # Two version of packages are declared both for x86_64 and aarch64 hosts
       unstable-x86_64-linux = final: _prev: {
         unstable = import nixpkgs-unstable {
           system = "x86_64-linux";
@@ -56,12 +61,14 @@
         ];
       };
 
+      # All hosts are defined within the host hostConfigs
       hostConfigs = import ./hosts.nix { inherit nixpkgs; };
 
       # Whether to load age key when building the image
       # `LOAD_KEYS=true nix build .#images.iso`
       loadKeys = builtins.getEnv "LOAD_KEYS" == "1";
 
+      # Subset of host config used mainly for network configuration
       hostInfo = builtins.mapAttrs
         (hostName: config: {
           hostName = hostName;
@@ -70,6 +77,7 @@
         })
         hostConfigs;
 
+      # The main unit creating nixosConfiguration for a given host configuration
       mkHost = { system ? "x86_64-linux", extraModules ? [ ], ... }@config: lib.nixosSystem {
         system = system;
         specialArgs = {
@@ -98,21 +106,27 @@
       };
     in
     rec {
+      # Generate nixosConfiguration for all hosts
       nixosConfigurations = builtins.mapAttrs
         (hostName: config: mkHost (config // { hostName = hostName; }))
         hostConfigs;
 
+      # Image generator shortcuts
+      # `LOAD_KEYS=1 nix build .#image.rpi4 --impure`
       image = {
         rpi4 = nixosConfigurations.rpi4.config.system.build.sdImage;
         prusa = nixosConfigurations.prusa.config.system.build.sdImage;
         iso = nixosConfigurations.iso.config.system.build.isoImage;
       };
 
+      # Wireguard config generator shortcut for non-NixOS hosts
+      # `nix build .#wg.nokia --impure`
       wg = {
         nokia = nixosConfigurations.nokia.config.system.build.wgConfig;
         latitude = nixosConfigurations.latitude.config.system.build.wgConfig;
       };
 
+      # Generate homeConfiguration for non-NixOS host running home manager
       homeConfigurations = {
         latitude = home-manager.lib.homeManagerConfiguration {
           pkgs = pkgs-x86_64-linux;

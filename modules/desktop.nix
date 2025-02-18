@@ -9,6 +9,7 @@
 
   networking.networkmanager.enable = true;
 
+  # Enable cross compilation support. It is needed to build aarch64 images.
   boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
 
   # Configure keymap in X11
@@ -57,6 +58,7 @@
     pulse.enable = true;
   };
 
+  # Enable support for display link devices
   nixpkgs.config.displaylink = {
     enable = true;
     # Use a fixed path relative to the repository
