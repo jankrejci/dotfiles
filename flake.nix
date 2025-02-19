@@ -109,11 +109,13 @@
       };
     in
     {
+      # TODO create remote installation process
       # Generate nixosConfiguration for all hosts
       nixosConfigurations = builtins.mapAttrs
         (hostName: config: mkHost (config // { hostName = hostName; }))
         hostConfigs;
 
+      # TODO generate the nodes via some function
       deploy.nodes = {
         rpi4 = {
           hostname = "rpi4.home";
@@ -133,6 +135,7 @@
         };
       };
 
+      # TODO find a way how to do checks together with the nokia / latitude hosts
       # This is highly advised, and will prevent many possible mistakes
       checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) deploy-rs.lib;
 
@@ -144,6 +147,7 @@
         iso = self.nixosConfigurations.iso.config.system.build.isoImage;
       };
 
+      # TODO maybe use a standalone flake rather than ninixosConfigurations build
       # Wireguard config generator shortcut for non-NixOS hosts
       # `nix build .#wg.nokia --impure`
       wg = {

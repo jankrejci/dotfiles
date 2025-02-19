@@ -32,6 +32,7 @@
   # Install firefox.
   programs.firefox.enable = true;
 
+  # TODO make the hyprland usable
   programs.hyprland = {
     enable = true;
     xwayland.enable = true;

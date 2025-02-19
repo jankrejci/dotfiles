@@ -47,6 +47,7 @@
     imageName = "prusa.img";
   };
 
+  # TODO find out more unused services to disable
   services.avahi.enable = false;
   services.nfs.server.enable = false;
   services.samba.enable = false;
@@ -72,6 +73,7 @@
     '';
   };
 
+  # TODO add obico plugin and enable the port
   services.octoprint = {
     enable = true;
     host = hostConfig.ipAddress;

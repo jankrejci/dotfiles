@@ -1,5 +1,5 @@
 { config, pkgs, ... }:
-
+# TODO merge with raspberry config
 let
   # Define paths to the decrypted secrets
   ssidPath = config.sops.secrets."wifi_ssid".path;
@@ -10,6 +10,7 @@ let
   wpaConfigPath = "${wpaConfigFolder}/wpa_supplicant.conf";
 in
 {
+  # TODO find out how to share multiple wifi config in a better way
   sops = {
     secrets = {
       "wifi_ssid" = { mode = "0400"; owner = "systemd-network"; };
