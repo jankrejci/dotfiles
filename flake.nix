@@ -13,6 +13,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # For accessing `deploy-rs`'s utility Nix functions
+    deploy-rs.url = "github:serokell/deploy-rs";
+
     # Atomic secret provisioning for NixOS based on sops 
     sops-nix.url = "github:Mic92/sops-nix";
 
@@ -25,7 +28,7 @@
     disko.url = "github:nix-community/disko";
   };
 
-  outputs = { nixpkgs, nixpkgs-unstable, home-manager, nixgl, sops-nix, disko, ... }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, nixgl, sops-nix, disko, deploy-rs, ... }:
     let
       lib = nixpkgs.lib;
 
@@ -105,25 +108,47 @@
           ++ extraModules;
       };
     in
-    rec {
+    {
       # Generate nixosConfiguration for all hosts
       nixosConfigurations = builtins.mapAttrs
         (hostName: config: mkHost (config // { hostName = hostName; }))
         hostConfigs;
 
+      deploy.nodes = {
+        rpi4 = {
+          hostname = "rpi4.home";
+          sshUser = "admin";
+          profiles.system = {
+            user = "root";
+            path = deploy-rs.lib.aarch64-linux.activate.nixos self.nixosConfigurations.rpi4;
+          };
+        };
+        prusa = {
+          hostname = "prusa.home";
+          sshUser = "admin";
+          profiles.system = {
+            user = "root";
+            path = deploy-rs.lib.aarch64-linux.activate.nixos self.nixosConfigurations.prusa;
+          };
+        };
+      };
+
+      # This is highly advised, and will prevent many possible mistakes
+      checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) deploy-rs.lib;
+
       # Image generator shortcuts
       # `LOAD_KEYS=1 nix build .#image.rpi4 --impure`
       image = {
-        rpi4 = nixosConfigurations.rpi4.config.system.build.sdImage;
-        prusa = nixosConfigurations.prusa.config.system.build.sdImage;
-        iso = nixosConfigurations.iso.config.system.build.isoImage;
+        rpi4 = self.nixosConfigurations.rpi4.config.system.build.sdImage;
+        prusa = self.nixosConfigurations.prusa.config.system.build.sdImage;
+        iso = self.nixosConfigurations.iso.config.system.build.isoImage;
       };
 
       # Wireguard config generator shortcut for non-NixOS hosts
       # `nix build .#wg.nokia --impure`
       wg = {
-        nokia = nixosConfigurations.nokia.config.system.build.wgConfig;
-        latitude = nixosConfigurations.latitude.config.system.build.wgConfig;
+        nokia = self.nixosConfigurations.nokia.config.system.build.wgConfig;
+        latitude = self.nixosConfigurations.latitude.config.system.build.wgConfig;
       };
 
       # Generate homeConfiguration for non-NixOS host running home manager
