@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, hostConfig, ... }:
 {
   security.sudo.wheelNeedsPassword = false;
 
@@ -70,6 +70,11 @@
       echo "First boot detected. Rebooting system."
       systemctl reboot
     '';
+  };
+
+  services.octoprint = {
+    enable = true;
+    host = hostConfig.ipAddress;
   };
 }
 
