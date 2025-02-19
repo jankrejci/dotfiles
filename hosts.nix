@@ -74,9 +74,9 @@
     system = "aarch64-linux";
     extraModules = [
       "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
+      ./modules/raspberry.nix
       ./modules/users/admin/user.nix
       ./modules/wg-client.nix
-      ./modules/wifi.nix
     ];
   };
 
@@ -86,9 +86,9 @@
     system = "aarch64-linux";
     extraModules = [
       "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
+      ./modules/raspberry.nix
       ./modules/users/admin/user.nix
       ./modules/wg-client.nix
-      ./modules/wifi.nix
     ];
   };
 
