@@ -26,6 +26,10 @@
     options brcmfmac roamoff=1 feature_disable=0x82000
   '';
 
+  nix.settings.trusted-public-keys = [
+    "jkr-prusa:mfZZpEV+n0c0Pe4dTJyLSnNz6oQO2Kx86S3RcG9mwXk="
+  ];
+
   boot.initrd.availableKernelModules = [ "xhci_pci" ];
   boot.initrd.kernelModules = [ ];
   boot.kernelModules = [ ];
