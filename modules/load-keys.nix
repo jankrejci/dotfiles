@@ -1,4 +1,5 @@
 { pkgs, hostConfig, ... }:
+# TODO generate, inject and forget those keys during the instalation
 let
   # Import the admin key file to decrypt shared secrets.yaml
   homeDir = builtins.getEnv "HOME";

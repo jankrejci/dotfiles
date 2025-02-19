@@ -16,6 +16,7 @@ in
       {
         job_name = "node";
         static_configs = [{
+          # TODO generate targets with function
           targets = [
             "rpi4.home:9100"
             "vpsfree.home:9100"

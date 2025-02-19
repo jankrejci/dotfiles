@@ -1,7 +1,9 @@
 { pkgs, lib, ... }:
 {
+  # TODO create raspberry.nix module and factor out common things
   security.sudo.wheelNeedsPassword = false;
 
+  # TODO find out how to manage admin keys
   users.users.admin = {
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKcPS15FwxQjt4xZJk0+VzKqLTh/rikF0ZI4GFyOTLoD jkr@optiplex-rpi4"
@@ -10,6 +12,7 @@
     ];
   };
 
+  # TODO find out how to generate the key automatically
   nix.settings.trusted-public-keys = [
     "jkr-prusa:mfZZpEV+n0c0Pe4dTJyLSnNz6oQO2Kx86S3RcG9mwXk="
   ];

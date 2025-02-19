@@ -67,6 +67,7 @@
 
   ### Single chip boards ###
 
+  # TODO create minimal aarch64 build to check minimal reasonable image size
   rpi4 = {
     ipAddress = "192.168.99.31";
     wgPublicKey = "sUUZ9eIfyjqdEDij7vGnOe3sFbbF/eHQqS0RMyWZU0c=";
@@ -105,6 +106,7 @@
 
   ### NixOS installer ###
 
+  # TODO create install flash disk also for raspberry hosts
   iso = {
     ipAddress = "192.168.99.99";
     wgPublicKey = "Oy92wzxmvxteRQkjCmWmQDFfOevbby6qx/9ZDG2SMSs=";
@@ -115,5 +117,4 @@
       ./modules/wg-client.nix
     ];
   };
-
 }

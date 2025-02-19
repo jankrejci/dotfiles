@@ -4,6 +4,7 @@
   home.username = "admin";
   home.homeDirectory = "/home/admin";
 
+  # TODO consider removing some of the tools to have smaller image
   imports = [
     ../../starship.nix # customizable prompt
     ../../git.nix # the git
