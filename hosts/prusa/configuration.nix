@@ -10,10 +10,6 @@
     ];
   };
 
-  nix.settings.trusted-public-keys = [
-    "jkr-prusa:mfZZpEV+n0c0Pe4dTJyLSnNz6oQO2Kx86S3RcG9mwXk="
-  ];
-
   # TODO add obico plugin and enable the port
   services.octoprint = {
     enable = true;
