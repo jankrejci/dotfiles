@@ -9,6 +9,9 @@ let
   wpaConfigPath = "${wpaConfigFolder}/wpa_supplicant.conf";
 in
 {
+  # Access to all raspberry hosts without sudo for convenience
+  security.sudo.wheelNeedsPassword = false;
+
   nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
 
   # TODO Enable package signatures. For now dont use sigs to avoid additional struggle.

@@ -58,7 +58,6 @@
     hexyl # hex viewer
     tealdeer # tldr help tool
     rclone
-    git
     cups
     vlc
     solaar
@@ -71,6 +70,7 @@
     age
     ssh-to-age
     neofetch
+    git
   ];
 
   fonts.packages = with pkgs; [
