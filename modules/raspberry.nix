@@ -11,6 +11,8 @@ in
 {
   nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
 
+  # TODO Enable package signatures. For now dont use sigs to avoid additional struggle.
+  nix.settings.require-sigs = false;
 
   hardware = {
     enableRedistributableFirmware = lib.mkForce false;

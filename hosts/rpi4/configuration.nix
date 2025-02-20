@@ -10,9 +10,4 @@
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICqz14JAcEgnxuy4xIkUiots+K1bo1uQGd/Tn7mRWyu+ jkr@latitude-rpi4"
     ];
   };
-
-  # TODO find out how to generate the key automatically
-  nix.settings.trusted-public-keys = [
-    "jkr-prusa:mfZZpEV+n0c0Pe4dTJyLSnNz6oQO2Kx86S3RcG9mwXk="
-  ];
 }
