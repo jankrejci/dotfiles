@@ -11,10 +11,6 @@ in
 {
   nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
 
-  # Use the extlinux boot loader. (NixOS wants to enable GRUB by default)
-  boot.loader.grub.enable = false;
-  # Enables the generation of /boot/extlinux/extlinux.conf
-  boot.loader.generic-extlinux-compatible.enable = true;
 
   hardware = {
     enableRedistributableFirmware = lib.mkForce false;
@@ -23,6 +19,12 @@ in
   };
 
   boot = {
+    loader = {
+      # Use the extlinux boot loader. NixOS wants to enable GRUB by default.
+      grub.enable = false;
+      # Enables the generation of /boot/extlinux/extlinux.conf
+      generic-extlinux-compatible.enable = true;
+    };
     initrd = {
       availableKernelModules = [ "xhci_pci" ];
       kernelModules = [ ];
