@@ -1,20 +1,18 @@
 { pkgs, ... }:
 {
-  # Enable the X11 windowing system.
-  services.xserver.enable = true;
-
-  # Enable the GNOME Desktop Environment.
-  services.xserver.displayManager.gdm.enable = true;
-  services.xserver.desktopManager.gnome.enable = true;
-
-  networking.networkmanager.enable = true;
-
   # Enable cross compilation support. It is needed to build aarch64 images.
   boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
 
-  # Configure keymap in X11
-  services.xserver.xkb = {
-    layout = "us";
+  services.xserver = {
+    # Enable the X11 windowing system.
+    enable = true;
+    # Enable the GNOME Desktop Environment.
+    displayManager.gdm.enable = true;
+    desktopManager.gnome.enable = true;
+    # Configure keymap in X11
+    xkb = {
+      layout = "us";
+    };
   };
 
   # Enable CUPS to print documents.
@@ -26,6 +24,17 @@
       cups-bjnp
     ];
   };
+
+  networking.networkmanager.enable = true;
+  hardware.pulseaudio.enable = false;
+  security.rtkit.enable = true;
+  services.pipewire = {
+    enable = true;
+    alsa.enable = true;
+    alsa.support32Bit = true;
+    pulse.enable = true;
+  };
+
   # Enable scanning support
   hardware.sane.enable = true;
 
@@ -40,6 +49,16 @@
 
   environment.systemPackages = with pkgs; [
     unstable.alacritty
+    unstable.zellij
+    unstable.helix
+    unstable.nushell
+    unstable.broot
+    home-manager
+    starship
+    hexyl # hex viewer
+    tealdeer # tldr help tool
+    rclone
+    git
     cups
     vlc
     solaar
@@ -48,16 +67,15 @@
     eww
     powertop
     tlp
+    brightnessctl
+    age
+    ssh-to-age
+    neofetch
   ];
 
-  hardware.pulseaudio.enable = false;
-  security.rtkit.enable = true;
-  services.pipewire = {
-    enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
-    pulse.enable = true;
-  };
+  fonts.packages = with pkgs; [
+    (nerdfonts.override { fonts = [ "DejaVuSansMono" ]; })
+  ];
 
   # Enable support for display link devices
   nixpkgs.config.displaylink = {

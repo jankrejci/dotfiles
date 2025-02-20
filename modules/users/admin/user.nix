@@ -14,14 +14,4 @@
       gid = 1001;
     };
   };
-
-  home-manager = {
-    useGlobalPkgs = true;
-    useUserPackages = true;
-    users = {
-      admin = { ... }: {
-        imports = [ ./home.nix ];
-      };
-    };
-  };
 }

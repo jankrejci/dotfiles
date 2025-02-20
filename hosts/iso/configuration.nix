@@ -1,16 +1,15 @@
-{ pkgs, lib, ... }:
+{ lib, ... }:
 {
   fileSystems."/boot".options = [ "umask=0077" ]; # Removes permissions and security warnings.
 
   boot = {
-    kernelPackages = pkgs.linuxPackages_latest;
-    supportedFilesystems = lib.mkForce [ "btrfs" "reiserfs" "vfat" "f2fs" "xfs" "ntfs" "cifs" ];
+    supportedFilesystems = lib.mkForce [ "vfat" "f2fs" "xfs" "ntfs" "cifs" ];
     kernelParams = [
       "systemd.setenv=SYSTEMD_SULOGIN_FORCE=1"
       "systemd.show_status=true"
       #"systemd.log_level=debug"
       "systemd.log_target=console"
-      "systemd.journald.forward_to_console=1"
+      # "systemd.journald.forward_to_console=1"
     ];
   };
 
@@ -18,8 +17,6 @@
     efi.canTouchEfiVariables = true;
     systemd-boot = {
       enable = true;
-      # We use Git for version control, so we don't need to keep too many generations.
-      configurationLimit = lib.mkDefault 2;
       # Pick the highest resolution for systemd-boot's console.
       consoleMode = lib.mkDefault "max";
     };
@@ -52,9 +49,6 @@
     ];
   };
 
-  # The default compression-level is (6) and takes too long on some machines (>30m). 3 takes <2m
-  isoImage.squashfsCompression = "zstd -Xcompression-level 3";
-
-  services.qemuGuest.enable = true;
+  isoImage.compressImage = false;
 }
 

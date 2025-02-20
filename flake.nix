@@ -6,24 +6,19 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
     # Some bleeding edge packages are fetch from unstable
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
-
     # Manage a user environment
     home-manager = {
       url = "github:nix-community/home-manager/release-24.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
     # For accessing `deploy-rs`'s utility Nix functions
     deploy-rs.url = "github:serokell/deploy-rs";
-
     # Atomic secret provisioning for NixOS based on sops 
     sops-nix.url = "github:Mic92/sops-nix";
-
     # nixgl is needed for alacritty outside of nixOS
     # refer to https://github.com/NixOS/nixpkgs/issues/122671
     # https://github.com/guibou/nixGL/#use-an-overlay
     nixgl.url = "github:guibou/nixGL";
-
     # Declarative partitioning and formatting
     disko.url = "github:nix-community/disko";
   };
@@ -53,15 +48,7 @@
       pkgs-aarch64-linux = import nixpkgs {
         system = "aarch64-linux";
         config.allowUnfree = true;
-        overlays = [
-          unstable-aarch64-linux
-          # Some packages reports `ahci fail`, this bypasses that
-          # https://discourse.nixos.org/t/does-pkgs-linuxpackages-rpi3-build-all-required-kernel-modules/42509
-          (final: super: {
-            makeModulesClosure = x:
-              super.makeModulesClosure (x // { allowMissing = true; });
-          })
-        ];
+        overlays = [ unstable-aarch64-linux ];
       };
 
       # All hosts are defined within the host hostConfigs

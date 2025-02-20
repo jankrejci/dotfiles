@@ -16,4 +16,3 @@
     "jkr-prusa:mfZZpEV+n0c0Pe4dTJyLSnNz6oQO2Kx86S3RcG9mwXk="
   ];
 }
-
