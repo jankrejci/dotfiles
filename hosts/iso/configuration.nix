@@ -5,10 +5,10 @@
   boot = {
     supportedFilesystems = lib.mkForce [ "vfat" "f2fs" "xfs" "ntfs" "cifs" ];
     kernelParams = [
-      "systemd.setenv=SYSTEMD_SULOGIN_FORCE=1"
-      "systemd.show_status=true"
+      # "systemd.setenv=SYSTEMD_SULOGIN_FORCE=1"
+      # "systemd.show_status=true"
       #"systemd.log_level=debug"
-      "systemd.log_target=console"
+      # "systemd.log_target=console"
       # "systemd.journald.forward_to_console=1"
     ];
   };
