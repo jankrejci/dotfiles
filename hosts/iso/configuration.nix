@@ -1,35 +1,9 @@
 { lib, ... }:
 {
-  fileSystems."/boot".options = [ "umask=0077" ]; # Removes permissions and security warnings.
-
   boot = {
     supportedFilesystems = lib.mkForce [ "vfat" "f2fs" "xfs" "ntfs" "cifs" ];
-    kernelParams = [
-      # "systemd.setenv=SYSTEMD_SULOGIN_FORCE=1"
-      # "systemd.show_status=true"
-      #"systemd.log_level=debug"
-      # "systemd.log_target=console"
-      # "systemd.journald.forward_to_console=1"
-    ];
+    loader.efi.canTouchEfiVariables = true;
   };
-
-  boot.loader = {
-    efi.canTouchEfiVariables = true;
-    systemd-boot = {
-      enable = true;
-      # Pick the highest resolution for systemd-boot's console.
-      consoleMode = lib.mkDefault "max";
-    };
-  };
-
-  # boot.initrd = {
-  #   systemd.enable = true;
-  #   systemd.emergencyAccess = true; # Don't need to enter password in emergency mode
-  #   luks.forceLuksSupportInInitrd = true;
-  # };
-
-  # Avoid collision with systemd networking
-  networking.useDHCP = lib.mkForce false;
 
   systemd.network.networks = {
     "10-all-ethernet" = {
