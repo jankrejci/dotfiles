@@ -62,7 +62,7 @@ in
     ];
     settings = {
       PasswordAuthentication = false;
-      PermitRootLogin = lib.mkForce "no";
+      PermitRootLogin = "no";
       AuthorizedKeysCommand = "/etc/fetch-authorized-keys";
       AuthorizedKeysCommandUser = keysUser;
     };

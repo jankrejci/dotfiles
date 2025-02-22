@@ -86,6 +86,7 @@
           [
             sops-nix.nixosModules.sops
             home-manager.nixosModules.home-manager
+            disko.nixosModules.disko
             ./modules/common.nix
             ./modules/ssh.nix
             ./modules/wg-config.nix
