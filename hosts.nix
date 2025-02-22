@@ -106,12 +106,23 @@
   ### NixOS installer ###
 
   # TODO create install flash disk also for raspberry hosts
-  iso = {
+  iso-x86_64 = {
     ipAddress = "192.168.99.99";
     wgPublicKey = "Oy92wzxmvxteRQkjCmWmQDFfOevbby6qx/9ZDG2SMSs=";
     system = "x86_64-linux";
     extraModules = [
       "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+      ./modules/users/admin/user.nix
+      ./modules/wg-client.nix
+    ];
+  };
+
+  iso-aarch64 = {
+    ipAddress = "192.168.99.99";
+    wgPublicKey = "Oy92wzxmvxteRQkjCmWmQDFfOevbby6qx/9ZDG2SMSs=";
+    system = "aarch64-linux";
+    extraModules = [
+      "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
       ./modules/users/admin/user.nix
       ./modules/wg-client.nix
     ];
