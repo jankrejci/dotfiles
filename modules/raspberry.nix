@@ -121,16 +121,5 @@ in
       '';
     };
   };
-
-  # Reboot after first boot to get config in place
-  systemd.services."first-boot-reboot" = {
-    description = "Reboot after first boot initialization";
-    wantedBy = [ "multi-user.target" ];
-    unitConfig.ConditionFirstBoot = true;
-    script = ''
-      echo "First boot detected. Rebooting system."
-      systemctl reboot
-    '';
-  };
 }
 
