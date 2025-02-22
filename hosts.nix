@@ -20,9 +20,8 @@
     system = "x86_64-linux";
     extraModules = [
       ./modules/users/admin/user.nix
-      ./modules/wg-server.nix
-      ./modules/grafana.nix
-      ./modules/vpsadminos.nix
+      ./modules/wg-client.nix
+      ./modules/disk.nix
     ];
   };
 

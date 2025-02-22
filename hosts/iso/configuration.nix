@@ -24,5 +24,9 @@
   };
 
   isoImage.compressImage = false;
+
+  # Allow nixos-anywhere to logint as root for installation
+  services.openssh.settings.PermitRootLogin = lib.mkForce "yes";
+
 }
 
