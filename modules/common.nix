@@ -78,21 +78,8 @@ in
     validateSopsFiles = true;
 
     age = {
-      keyFile = "/var/lib/sops/age/keys.txt";
+      keyFile = "/var/cache/sops/age/keys.txt";
       generateKey = false;
-    };
-
-    secrets = {
-      "wg_private_key" = {
-        mode = "0400";
-        owner = "systemd-network";
-        restartUnits = [ "systemd-networkd.service" ];
-      };
-      "endpoint" = {
-        mode = "0400";
-        owner = "systemd-network";
-        restartUnits = [ "systemd-networkd.service" ];
-      };
     };
   };
 

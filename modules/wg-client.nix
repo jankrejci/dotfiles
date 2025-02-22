@@ -37,6 +37,7 @@
       domains = [ "~home" ];
     };
   };
+
   services.resolved = {
     # Disable caching as it fails to resolve name over wg somehow
     extraConfig = ''
@@ -46,4 +47,17 @@
     '';
   };
 
+  # Define wireguard relevant secrets
+  sops.secrets = {
+    "wg_private_key" = {
+      mode = "0400";
+      owner = "systemd-network";
+      restartUnits = [ "systemd-networkd.service" ];
+    };
+    "endpoint" = {
+      mode = "0400";
+      owner = "systemd-network";
+      restartUnits = [ "systemd-networkd.service" ];
+    };
+  };
 }
