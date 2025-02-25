@@ -25,9 +25,9 @@
     rshell # remote shell for MicroPython 
     tokei # code statistics tool
     tealdeer # tldr help tool
-    saleae-logic-2 # logic analyzer software
-    kicad
-    ghidra-bin
+    # saleae-logic-2 # logic analyzer software
+    # kicad
+    # ghidra-bin
   ];
 
   fonts.fontconfig.enable = true;

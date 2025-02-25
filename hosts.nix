@@ -7,10 +7,9 @@
     wgPublicKey = "iWfrqdXV4bDQOCfhlZ2KRS7eq2B/QI440HylPrzJUww=";
     system = "x86_64-linux";
     extraModules = [
-      ./modules/users/admin/user.nix
-      ./modules/wg-server.nix
       ./modules/grafana.nix
       ./modules/vpsadminos.nix
+      ./modules/wg-server.nix
     ];
   };
 
@@ -19,8 +18,6 @@
     wgPublicKey = "1oh3e+TaDcOFlxBTm6A3WYBkvQSNDPlnzK7FQc1DxVM=";
     system = "x86_64-linux";
     extraModules = [
-      ./modules/users/admin/user.nix
-      ./modules/wg-client.nix
       ./modules/disk.nix
     ];
   };
@@ -34,7 +31,6 @@
     extraModules = [
       ./modules/users/jkr/user.nix
       ./modules/users/paja/user.nix
-      ./modules/wg-client.nix
       ./modules/desktop.nix
       ./modules/disable-nvidia.nix
     ];
@@ -47,7 +43,6 @@
     extraModules = [
       ./modules/users/jkr/user.nix
       ./modules/users/paja/user.nix
-      ./modules/wg-client.nix
       ./modules/desktop.nix
     ];
   };
@@ -59,8 +54,8 @@
     extraModules = [
       ./modules/users/jkr/user.nix
       ./modules/users/paja/user.nix
-      ./modules/wg-client.nix
       ./modules/desktop.nix
+      ./modules/disk.nix
     ];
   };
 
@@ -74,8 +69,6 @@
     extraModules = [
       "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
       ./modules/raspberry.nix
-      ./modules/users/admin/user.nix
-      ./modules/wg-client.nix
     ];
   };
 
@@ -86,8 +79,6 @@
     extraModules = [
       "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
       ./modules/raspberry.nix
-      ./modules/users/admin/user.nix
-      ./modules/wg-client.nix
     ];
   };
 
@@ -105,26 +96,13 @@
 
   ### NixOS installer ###
 
-  # TODO create install flash disk also for raspberry hosts
-  iso-x86_64 = {
+  iso = {
     ipAddress = "192.168.99.99";
     wgPublicKey = "Oy92wzxmvxteRQkjCmWmQDFfOevbby6qx/9ZDG2SMSs=";
     system = "x86_64-linux";
     extraModules = [
       "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-      ./modules/users/admin/user.nix
-      ./modules/wg-client.nix
     ];
   };
 
-  iso-aarch64 = {
-    ipAddress = "192.168.99.99";
-    wgPublicKey = "Oy92wzxmvxteRQkjCmWmQDFfOevbby6qx/9ZDG2SMSs=";
-    system = "aarch64-linux";
-    extraModules = [
-      "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
-      ./modules/users/admin/user.nix
-      ./modules/wg-client.nix
-    ];
-  };
 }
