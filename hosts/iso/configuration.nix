@@ -1,22 +1,10 @@
 { lib, ... }:
 {
   boot = {
-    supportedFilesystems = lib.mkForce [ "vfat" "f2fs" "xfs" "ntfs" "cifs" ];
     loader.efi.canTouchEfiVariables = true;
   };
 
-  systemd.network.networks = {
-    "10-all-ethernet" = {
-      matchConfig.Type = "ether";
-      DHCP = "yes";
-    };
-
-    "10-all-wifi" = {
-      matchConfig.Type = "wlan";
-      DHCP = "yes";
-    };
-  };
-
+  # TODO use the ssh-authorized-keys.pub file instead
   users.users.admin = {
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBsvOywMRwMnEqlKobDF1F1ZrEJNGj0kIHPZAmvVmZbG jkr@optiplex-iso"
@@ -25,8 +13,7 @@
 
   isoImage.compressImage = false;
 
-  # Allow nixos-anywhere to logint as root for installation
+  # Allow nixos-anywhere to login as root for installation
   services.openssh.settings.PermitRootLogin = lib.mkForce "yes";
-
 }
 

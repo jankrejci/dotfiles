@@ -5,7 +5,6 @@
       isNormalUser = true;
       extraGroups = [ "plugdev" "wheel" "networkmanager" "admin" ];
       uid = 1001;
-      hashedPassword = "$y$j9T$8qLqeoP/jNv9rFtFfyljl1$S/GqBaFaaCIluY88qW9app4APK49d9wFI.5CmfFnwH/";
     };
   };
 

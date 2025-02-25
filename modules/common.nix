@@ -1,9 +1,8 @@
-{ pkgs, hostConfig, ... }:
-let
-  nameServers = [ "1.1.1.1" "8.8.8.8" ];
-in
+{ lib, pkgs, hostConfig, ... }:
 {
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
+  nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
 
   time.timeZone = "Europe/Prague";
   console.keyMap = "us";
@@ -51,28 +50,6 @@ in
     nix-tree
   ];
 
-  # Do not wait to long for interfaces to become online,
-  # this is especially handy for notebooks on wifi,
-  # where the eth interface is disconnected
-  boot.initrd.systemd.network.wait-online.enable = false;
-  systemd.network.wait-online = {
-    anyInterface = true;
-    timeout = 10;
-  };
-
-  networking = {
-    hostName = hostConfig.hostName;
-    firewall.enable = true;
-    nameservers = nameServers;
-  };
-
-  services.resolved = {
-    enable = true;
-    dnssec = "true";
-    # Explicitely disabled as it interfere with dnsmasq resolving somehow
-    dnsovertls = "false";
-  };
-
   sops = {
     defaultSopsFile = ../hosts/${hostConfig.hostName}/secrets.yaml;
     validateSopsFiles = true;
@@ -80,6 +57,19 @@ in
     age = {
       keyFile = "/var/cache/sops/age/keys.txt";
       generateKey = false;
+    };
+    # Define wireguard relevant secrets
+    secrets = {
+      "wg_private_key" = {
+        mode = "0400";
+        owner = "systemd-network";
+        restartUnits = [ "systemd-networkd.service" ];
+      };
+      "endpoint" = {
+        mode = "0400";
+        owner = "systemd-network";
+        restartUnits = [ "systemd-networkd.service" ];
+      };
     };
   };
 

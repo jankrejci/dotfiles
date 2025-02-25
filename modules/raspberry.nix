@@ -12,15 +12,18 @@ in
   # Access to all raspberry hosts without sudo for convenience
   security.sudo.wheelNeedsPassword = false;
 
-  nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
+  # Add password for the admin user to be able to log in from local console
+  users.users.admin.hashedPassword = "$y$j9T$8qLqeoP/jNv9rFtFfyljl1$S/GqBaFaaCIluY88qW9app4APK49d9wFI.5CmfFnwH/";
+
+  # Override the default platform
+  nixpkgs.hostPlatform = "aarch64-linux";
 
   # TODO Enable package signatures. For now dont use sigs to avoid additional struggle.
   nix.settings.require-sigs = false;
 
   hardware = {
-    enableRedistributableFirmware = lib.mkForce false;
+    enableRedistributableFirmware = true;
     firmware = [ pkgs.raspberrypiWirelessFirmware ];
-    deviceTree.filter = "bcm2837-rpi-zero*.dtb";
   };
 
   boot = {
@@ -31,15 +34,18 @@ in
       generic-extlinux-compatible.enable = true;
     };
     initrd = {
-      availableKernelModules = [ "xhci_pci" ];
+      availableKernelModules = [ "xhci_pci" "usbhid" "usb_storage" ];
       kernelModules = [ ];
     };
     kernelModules = [ ];
     extraModulePackages = [ ];
-    extraModprobeConfig = ''
+    # Define propper wifi channels
+    # This workaroud seems too be no longer needed for proper wifi function on rpi02w
+    # options brcmfmac roamoff=1 feature_disable=0x82000
+    extraModprobeConfig = lib.mkDefault ''
       options cfg80211 ieee80211_regdom=CZ
-      options brcmfmac roamoff=1 feature_disable=0x82000
     '';
+    supportedFilesystems = { zfs = lib.mkForce false; };
   };
 
   swapDevices = [ ];
@@ -80,20 +86,11 @@ in
   networking = {
     wireless = {
       enable = true;
-      userControlled.enable = false;
       interfaces = [ "wlan0" ];
     };
     supplicant.wlan0 = {
       driver = "nl80211";
       configFile.path = "/etc/wpa_supplicant.conf";
-    };
-    # Do not use network manager as it brings lot of dependencies
-    networkmanager.enable = false;
-    # Use systemd-networking dhcp
-    useDHCP = lib.mkForce false;
-    interfaces = {
-      end0.useDHCP = true;
-      wlan0.useDHCP = true;
     };
   };
 

@@ -1,38 +1,20 @@
 { ... }:
-let
-  ethDevice = "enp0s31f6";
-in
 {
   imports = [
     ./hardware-configuration.nix
   ];
 
+  users.users.admin = {
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN85SndW/OerKK8u2wTxmHcTn4hEtUJmctj9wnseBYtS jkr@optiplex-vpsfree"
+    ];
+  };
+
+  # Add password for the admin user to be able to log in from local console
+  users.users.admin.hashedPassword = "$y$j9T$8qLqeoP/jNv9rFtFfyljl1$S/GqBaFaaCIluY88qW9app4APK49d9wFI.5CmfFnwH/";
+
+  disko.devices.disk.main.device = "/dev/sda";
+
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
-
-  # Workaround to avoid the VPNs default route with metric 50
-  # steals all the connection, there is configuration for both
-  # systemd-networkd and for  network manager
-  systemd.network.networks = {
-    "10-${ethDevice}" = {
-      matchConfig.Name = ethDevice;
-      DHCP = "yes";
-      dhcpV4Config.RouteMetric = 48;
-    };
-  };
-  networking.networkmanager.ensureProfiles = {
-    profiles = {
-      "${ethDevice}" = {
-        connection = {
-          id = ethDevice;
-          interface-name = ethDevice;
-          type = "ethernet";
-        };
-        ipv4 = {
-          method = "auto";
-          route-metric = 48;
-        };
-      };
-    };
-  };
 }
