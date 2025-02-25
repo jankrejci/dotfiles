@@ -2,6 +2,7 @@
 { pkgs, hostConfig, hostInfo, ... }:
 let
   hostName = hostConfig.hostName;
+  domain = "vpn";
 
   adminKeyFilePath = "${builtins.getEnv "HOME"}/.config/sops/age/keys.txt";
 
@@ -23,7 +24,7 @@ let
     [Interface]
     PrivateKey = ${builtins.readFile "${decryptedKey}/wg_private_key"}
     Address = ${hostConfig.ipAddress}
-    DNS = 192.168.99.1, home
+    DNS = 192.168.99.1, ${domain}
 
     [Peer]
     PublicKey = ${hostInfo.vpsfree.wgPublicKey}

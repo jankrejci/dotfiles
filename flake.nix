@@ -23,7 +23,17 @@
     disko.url = "github:nix-community/disko";
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, nixgl, sops-nix, disko, deploy-rs, ... }:
+  outputs =
+    { self
+    , nixpkgs
+    , nixpkgs-unstable
+    , home-manager
+    , deploy-rs
+    , sops-nix
+    , nixgl
+    , disko
+    , ...
+    }:
     let
       lib = nixpkgs.lib;
 
@@ -89,12 +99,27 @@
             disko.nixosModules.disko
             ./modules/common.nix
             ./modules/ssh.nix
+            ./modules/networking.nix
             ./modules/wg-config.nix
+            ./modules/users/admin/user.nix
           ]
           ++ (lib.optional hasHostConfig (builtins.trace "Loading host config" hostConfigFile))
+          # Inject age key during the sdcard / iso build
           ++ (lib.optional loadKeys (builtins.trace "Loading age keys" ./modules/load-keys.nix))
           ++ extraModules;
       };
+
+      # Function to create a deploy node entry
+      mkNode = { system ? "x86_64-linux", ... }@config: {
+        hostname = "${config.hostName}.vpn";
+        sshUser = "admin";
+        profiles.system = {
+          user = "root";
+          path = deploy-rs.lib.${system}.activate.nixos self.nixosConfigurations.${config.hostName};
+        };
+      };
+
+      nixosHosts = lib.filterAttrs (name: config: config ? system) hostConfigs;
     in
     {
       # TODO create remote installation process
@@ -103,25 +128,9 @@
         (hostName: config: mkHost (config // { hostName = hostName; }))
         hostConfigs;
 
-      # TODO generate the nodes via some function
-      deploy.nodes = {
-        rpi4 = {
-          hostname = "rpi4.home";
-          sshUser = "admin";
-          profiles.system = {
-            user = "root";
-            path = deploy-rs.lib.aarch64-linux.activate.nixos self.nixosConfigurations.rpi4;
-          };
-        };
-        prusa = {
-          hostname = "prusa.home";
-          sshUser = "admin";
-          profiles.system = {
-            user = "root";
-            path = deploy-rs.lib.aarch64-linux.activate.nixos self.nixosConfigurations.prusa;
-          };
-        };
-      };
+      deploy.nodes = builtins.mapAttrs
+        (hostName: config: mkNode (config // { hostName = hostName; }))
+        nixosHosts;
 
       # TODO find a way how to do checks together with the nokia / latitude hosts
       # This is highly advised, and will prevent many possible mistakes
@@ -141,6 +150,7 @@
       wg = {
         nokia = self.nixosConfigurations.nokia.config.system.build.wgConfig;
         latitude = self.nixosConfigurations.latitude.config.system.build.wgConfig;
+        optiplex = self.nixosConfigurations.optiplex.config.system.build.wgConfig;
       };
 
       # Generate homeConfiguration for non-NixOS host running home manager

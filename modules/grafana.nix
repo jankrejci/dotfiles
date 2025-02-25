@@ -1,7 +1,8 @@
 { config, hostConfig, ... }:
 let
+  domain = "vpn";
   serverIpAddress = "${hostConfig.ipAddress}";
-  serverDomain = "${hostConfig.hostName}.home";
+  serverDomain = hostConfig.hostName + "." + domain;
   grafanaPort = 3000;
 in
 {
@@ -18,11 +19,11 @@ in
         static_configs = [{
           # TODO generate targets with function
           targets = [
-            "rpi4.home:9100"
-            "vpsfree.home:9100"
-            "thinkpad.home:9100"
-            "optiplex.home:9100"
-            "prusa.home:9100"
+            "rpi4.${domain}:9100"
+            "vpsfree.${domain}:9100"
+            "thinkpad.${domain}:9100"
+            "optiplex.${domain}:9100"
+            "prusa.${domain}:9100"
           ];
         }];
       }
