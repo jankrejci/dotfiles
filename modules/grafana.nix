@@ -46,8 +46,6 @@ in
   services.nginx = {
     enable = true;
     virtualHosts.${config.services.grafana.settings.server.domain} = {
-      # addSSL = true;
-      # enableACME = true;
       listenAddresses = [ "${serverDomain}" ];
       locations."/grafana/" = {
         proxyPass = "http://${serverDomain}:${toString grafanaPort}";
@@ -57,8 +55,17 @@ in
     };
   };
 
-  # security.acme = {
-  #   acceptTerms = true;
-  #   defaults.email = "krejcijan@protonmail.com";
-  # };
+  services.grafana.provision.dashboards.settings = {
+    apiVersion = 1;
+    providers = [{
+      name = "default";
+      options.path = "/etc/grafana/dashboards";
+    }];
+  };
+
+  environment.etc."grafana/dashboards/overview.json" = {
+    source = ./grafana/overview.json;
+    mode = "0644";
+  };
 }
+
