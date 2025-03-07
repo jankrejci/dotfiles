@@ -75,4 +75,8 @@ in
     in
     builtins.concatStringsSep "\n" (lib.mapAttrsToList makeHostEntry config.hosts) + "\n";
 
+  # Restart dnsmasq when /etc/dnsmasq-hosts changes
+  systemd.services.dnsmasq.restartTriggers = [
+    config.environment.etc."dnsmasq-hosts".source
+  ];
 }
