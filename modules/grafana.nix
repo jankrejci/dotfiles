@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, lib, ... }:
 let
   domain = "vpn";
   serverIpAddress = "${config.hosts.self.ipAddress}";
@@ -13,21 +13,20 @@ in
     retentionTime = "180d";
     listenAddress = serverIpAddress;
     globalConfig.scrape_interval = "10s";
-    scrapeConfigs = [
-      {
-        job_name = "node";
-        static_configs = [{
-          # TODO generate targets with function
-          targets = [
-            "rpi4.${domain}:9100"
-            "vpsfree.${domain}:9100"
-            "thinkpad.${domain}:9100"
-            "optiplex.${domain}:9100"
-            "prusa.${domain}:9100"
-          ];
-        }];
-      }
-    ];
+    scrapeConfigs = [{
+      job_name = "node";
+      static_configs = [{
+        targets =
+          let
+            nodeExporterPort = "9100";
+            makeTarget = hostName: hostConfig: hostName + "." + domain + ":" nodeExporterPort;
+            # Only NixOS hosts are running the prometheus node exporter
+            nixosHosts = lib.filterAttrs (_: hostConfig: hostConfig.kind == "nixos") config.hosts;
+          in
+          # Generate the list of targets
+          lib.mapAttrsToList makeTarget nixosHosts;
+      }];
+    }];
   };
 
   services.grafana = {
