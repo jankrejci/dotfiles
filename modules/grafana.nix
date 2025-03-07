@@ -1,8 +1,8 @@
-{ config, hostConfig, ... }:
+{ config, ... }:
 let
   domain = "vpn";
-  serverIpAddress = "${hostConfig.ipAddress}";
-  serverDomain = hostConfig.hostName + "." + domain;
+  serverIpAddress = "${config.hosts.self.ipAddress}";
+  serverDomain = config.hosts.self.hostName + "." + domain;
   grafanaPort = 3000;
 in
 {

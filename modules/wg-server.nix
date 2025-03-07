@@ -1,4 +1,4 @@
-{ hostConfig, hostInfo, ... }:
+{ config, lib, ... }:
 let
   wgPort = 51820;
   dnsPort = 53;
@@ -19,7 +19,7 @@ in
           PersistentKeepalive = 25;
         };
       in
-      builtins.map makePeer (builtins.attrValues hostInfo);
+      builtins.map makePeer (builtins.attrValues config.hosts);
   };
 
   systemd.network.networks."wg0" = {
@@ -48,7 +48,7 @@ in
       "addn-hosts" = "/etc/dnsmasq-hosts";
 
       "interface" = "wg0";
-      "listen-address" = [ hostConfig.ipAddress ];
+      "listen-address" = [ config.hosts.self.ipAddress ];
 
       # Disable DHCP service
       "no-dhcp-interface" = "wg0";
@@ -71,7 +71,8 @@ in
   # Create a list of all ip - host pairs to be resolved
   environment.etc."dnsmasq-hosts".text =
     let
-      makeHostEntry = name: hostInfo.${name}.ipAddress + " " + name + "." + domain;
+      makeHostEntry = hostName: hostConfig: hostConfig.ipAddress + " " + hostName + "." + domain;
     in
-    builtins.concatStringsSep "\n" (builtins.map makeHostEntry (builtins.attrNames hostInfo)) + "\n";
+    builtins.concatStringsSep "\n" (lib.mapAttrsToList makeHostEntry config.hosts) + "\n";
+
 }

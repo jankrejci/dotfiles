@@ -1,7 +1,7 @@
 # Generate wireguard configuration for the non-NixOS hosts
-{ pkgs, hostConfig, hostInfo, ... }:
+{ config, pkgs, ... }:
 let
-  hostName = hostConfig.hostName;
+  hostName = config.hosts.self.hostName;
   domain = "vpn";
 
   adminKeyFilePath = "${builtins.getEnv "HOME"}/.config/sops/age/keys.txt";
@@ -23,11 +23,11 @@ let
   wgConfig = ''
     [Interface]
     PrivateKey = ${builtins.readFile "${decryptedKey}/wg_private_key"}
-    Address = ${hostConfig.ipAddress}
+    Address = ${config.hosts.self.ipAddress}
     DNS = 192.168.99.1, ${domain}
 
     [Peer]
-    PublicKey = ${hostInfo.vpsfree.wgPublicKey}
+    PublicKey = ${config.hosts.vpsfree.wgPublicKey}
     AllowedIPs = 192.168.99.0/24
     Endpoint = 37.205.13.227:51820
   '';

@@ -1,4 +1,4 @@
-{ pkgs, lib, hostConfig, ... }:
+{ config, lib, pkgs, ... }:
 # TODO generate, inject and forget those keys during the instalation
 let
   # Import the admin key file to decrypt shared secrets.yaml
@@ -9,7 +9,7 @@ let
   decryptedSecret = pkgs.runCommand "decrypted-secret" { buildInputs = [ pkgs.sops ]; } ''
     export SOPS_AGE_KEY_FILE="${adminKeyFilePath}"
     mkdir -p $out
-    sops --decrypt --extract '["sops_private_key"]' ${../hosts/${hostConfig.hostName}/secrets.yaml} > $out/keys.txt
+    sops --decrypt --extract '["sops_private_key"]' ${../hosts/${config.hosts.self.hostName}/secrets.yaml} > $out/keys.txt
   '';
 
   ageKeySource = "/etc/sops/age/keys.txt";

@@ -1,4 +1,4 @@
-{ pkgs, lib, hostConfig, ... }:
+{ config, pkgs, ... }:
 let
   gitRepo = "https://raw.githubusercontent.com/jankrejci/dotfiles";
   gitBranch = "jkr/install";
@@ -14,7 +14,7 @@ let
     #!${pkgs.stdenv.shell}
 
     if [ ! -f "${keysPath}" ]; then
-      "${pkgs.curl}/bin/curl" "${gitRepo}/refs/heads/${gitBranch}/hosts/${hostConfig.hostName}/${keysFile}" > "${keysPath}"
+      "${pkgs.curl}/bin/curl" "${gitRepo}/refs/heads/${gitBranch}/hosts/${config.hosts.self.hostName}/${keysFile}" > "${keysPath}"
     fi
 
     "${pkgs.util-linux}/bin/logger" "Moc necum"
@@ -58,7 +58,7 @@ in
     enable = true;
 
     listenAddresses = [
-      { addr = hostConfig.ipAddress; port = 22; }
+      { addr = config.hosts.self.ipAddress; port = 22; }
     ];
     settings = {
       PasswordAuthentication = false;
