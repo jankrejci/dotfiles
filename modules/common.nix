@@ -1,4 +1,4 @@
-{ lib, pkgs, hostConfig, ... }:
+{ config, lib, pkgs, ... }:
 {
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
@@ -51,7 +51,7 @@
   ];
 
   sops = {
-    defaultSopsFile = ../hosts/${hostConfig.hostName}/secrets.yaml;
+    defaultSopsFile = ../hosts/${config.hosts.self.hostName}/secrets.yaml;
     validateSopsFiles = true;
 
     age = {
@@ -76,7 +76,7 @@
   services.prometheus.exporters.node = {
     enable = true;
     openFirewall = true;
-    listenAddress = hostConfig.ipAddress;
+    listenAddress = config.hosts.self.ipAddress;
   };
 
   systemd.services.prometheus-node-exporter.serviceConfig = {

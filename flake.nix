@@ -61,36 +61,31 @@
         overlays = [ unstable-aarch64-linux ];
       };
 
-      # All hosts are defined within the host hostConfigs
-      hostConfigs = import ./hosts.nix { inherit nixpkgs; };
-
       # Whether to load age key when building the image
       # `LOAD_KEYS=true nix build .#images.iso`
       loadKeys = builtins.getEnv "LOAD_KEYS" == "1";
 
-      # Subset of host config used mainly for network configuration
-      hostInfo = builtins.mapAttrs
-        (hostName: config: {
-          hostName = hostName;
-          ipAddress = config.ipAddress;
-          wgPublicKey = config.wgPublicKey;
-        })
-        hostConfigs;
+
+      # All hosts defined in hosts.nix
+      hosts = (nixpkgs.lib.evalModules {
+        modules = [ ./hosts.nix ];
+      }).config.hosts;
+
+      # Full NixOS hosts only, used for the deploy-rs
+      nixosHosts = lib.filterAttrs (name: hostConfig: hostConfig.kind == "nixos") hosts;
 
       # The main unit creating nixosConfiguration for a given host configuration
-      mkHost = { system ? "x86_64-linux", extraModules ? [ ], ... }@config: lib.nixosSystem {
-        system = system;
+      mkHost = hostName: hostConfig: lib.nixosSystem {
+        system = hostConfig.system;
         specialArgs = {
           pkgs =
-            if system == "aarch64-linux"
+            if hostConfig.system == "aarch64-linux"
             then pkgs-aarch64-linux
             else pkgs-x86_64-linux;
-          hostConfig = config;
-          hostInfo = hostInfo;
         };
         modules =
           let
-            hostConfigFile = ./hosts/${config.hostName}/configuration.nix;
+            hostConfigFile = ./hosts/${hostName}/configuration.nix;
             hasHostConfig = builtins.pathExists hostConfigFile;
           in
           [
@@ -106,31 +101,27 @@
           ++ (lib.optional hasHostConfig (builtins.trace "Loading host config" hostConfigFile))
           # Inject age key during the sdcard / iso build
           ++ (lib.optional loadKeys (builtins.trace "Loading age keys" ./modules/load-keys.nix))
-          ++ extraModules;
+          # Ensure the hosts module is always imported, inject host config
+          ++ [ ./hosts.nix ({ config, ... }: { hosts.self = hostConfig; }) ]
+          ++ hostConfig.extraModules;
       };
 
       # Function to create a deploy node entry
-      mkNode = { system ? "x86_64-linux", ... }@config: {
-        hostname = "${config.hostName}.vpn";
+      mkNode = hostConfig: {
+        hostname = "${hostConfig.hostName}.vpn";
         sshUser = "admin";
         profiles.system = {
           user = "root";
-          path = deploy-rs.lib.${system}.activate.nixos self.nixosConfigurations.${config.hostName};
+          path = deploy-rs.lib.${hostConfig.system}.activate.nixos self.nixosConfigurations.${hostConfig.hostName};
         };
       };
-
-      nixosHosts = lib.filterAttrs (name: config: config ? system) hostConfigs;
     in
     {
       # TODO create remote installation process
       # Generate nixosConfiguration for all hosts
-      nixosConfigurations = builtins.mapAttrs
-        (hostName: config: mkHost (config // { hostName = hostName; }))
-        hostConfigs;
+      nixosConfigurations = builtins.mapAttrs mkHost hosts;
 
-      deploy.nodes = builtins.mapAttrs
-        (hostName: config: mkNode (config // { hostName = hostName; }))
-        nixosHosts;
+      deploy.nodes = builtins.mapAttrs mkNode nixosHosts;
 
       # TODO find a way how to do checks together with the nokia / latitude hosts
       # This is highly advised, and will prevent many possible mistakes

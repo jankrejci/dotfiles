@@ -1,4 +1,4 @@
-{ hostConfig, ... }:
+{ config, ... }:
 {
 
   # TODO Find out a way how to do this hack properly
@@ -18,6 +18,6 @@
   # TODO add obico plugin and enable the port
   services.octoprint = {
     enable = true;
-    host = hostConfig.ipAddress;
+    host = config.hosts.self.ipAddress;
   };
 }

@@ -1,4 +1,4 @@
-{ lib, config, hostConfig, hostInfo, ... }:
+{ config, lib, ... }:
 let
   domain = "vpn";
   nameServers = [ "127.0.0.53" "1.1.1.1" "8.8.8.8" ];
@@ -20,7 +20,7 @@ in
   };
 
   networking = {
-    hostName = hostConfig.hostName;
+    hostName = config.hosts.self.hostName;
     firewall.enable = true;
     nameservers = nameServers;
   };
@@ -55,7 +55,7 @@ in
         };
         wireguardPeers = [
           {
-            PublicKey = hostInfo.vpsfree.wgPublicKey;
+            PublicKey = config.hosts.vpsfree.wgPublicKey;
             AllowedIPs = [ "192.168.99.0/24" ];
             Endpoint = "37.205.13.227:51820";
             PersistentKeepalive = 25;
@@ -66,7 +66,7 @@ in
     networks = {
       "10-wg0" = {
         matchConfig.Name = "wg0";
-        address = [ "${hostConfig.ipAddress}/24" ];
+        address = [ "${config.hosts.self.ipAddress}/24" ];
         DHCP = "no";
         dns = [ "192.168.99.1" ];
         domains = [ "~${domain}" ];

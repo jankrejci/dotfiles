@@ -1,4 +1,4 @@
-{ lib, pkgs, config, hostConfig, ... }:
+{ config, lib, pkgs, ... }:
 let
   # Define paths to the decrypted secrets
   ssidPath = config.sops.secrets."wifi_ssid".path;
@@ -52,7 +52,7 @@ in
 
   sdImage = {
     compressImage = false;
-    imageName = "${hostConfig.hostName}-sdcard.img";
+    imageName = "${config.hosts.self.hostName}-sdcard.img";
   };
 
   # TODO find out more unused services to disable
