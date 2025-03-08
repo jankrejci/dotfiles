@@ -1,9 +1,9 @@
 { config, pkgs, ... }:
 let
   gitRepo = "https://raw.githubusercontent.com/jankrejci/dotfiles";
-  gitBranch = "jkr/install";
-  keysFolder = "/var/cache/ssh";
+  gitBranch = "main";
   keysFile = "ssh-authorized-keys.pub";
+  keysFolder = "/var/cache/ssh";
   keysPath = "${keysFolder}/${keysFile}";
   keysUser = "nobody";
   keysGroup = "nogroup";
