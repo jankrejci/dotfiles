@@ -115,6 +115,9 @@
           user = "root";
           path = deploy-rs.lib.${hostConfig.system}.activate.nixos self.nixosConfigurations.${hostName};
         };
+        postBuildHook = ''
+          nix sign-paths --key-file "$HOME/.config/nix/signing-key" $(nix path-info -r /nix/store)
+        '';
       };
     in
     {

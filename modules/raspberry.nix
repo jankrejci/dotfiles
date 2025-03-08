@@ -18,9 +18,6 @@ in
   # Override the default platform
   nixpkgs.hostPlatform = "aarch64-linux";
 
-  # TODO Enable package signatures. For now dont use sigs to avoid additional struggle.
-  nix.settings.require-sigs = false;
-
   hardware = {
     enableRedistributableFirmware = true;
     firmware = [ pkgs.raspberrypiWirelessFirmware ];

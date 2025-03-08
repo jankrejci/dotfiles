@@ -48,6 +48,7 @@
     sops
     tcpdump
     nix-tree
+    gitMinimal
   ];
 
   sops = {
