@@ -140,7 +140,6 @@
         "wideLayout": true
       },
       "pluginVersion": "11.3.4",
-      "repeatDirection": "v",
       "targets": [
         {
           "datasource": {
@@ -754,15 +753,19 @@
         "current": {
           "text": [
             "vpsfree",
+            "thinkcenter",
             "rpi4",
             "prusa",
-            "thinkpad"
+            "thinkpad",
+            "framework"
           ],
           "value": [
             "vpsfree",
+            "thinkcenter",
             "rpi4",
             "prusa",
-            "thinkpad"
+            "thinkpad",
+            "framework"
           ]
         },
         "description": "",
@@ -776,7 +779,7 @@
             "value": "vpsfree"
           },
           {
-            "selected": false,
+            "selected": true,
             "text": "thinkcenter",
             "value": "thinkcenter"
           },
@@ -791,17 +794,22 @@
             "value": "prusa"
           },
           {
+            "selected": false,
+            "text": "optiplex",
+            "value": "optiplex"
+          },
+          {
             "selected": true,
             "text": "thinkpad",
             "value": "thinkpad"
           },
           {
-            "selected": false,
+            "selected": true,
             "text": "framework",
             "value": "framework"
           }
         ],
-        "query": "vpsfree, thinkcenter, rpi4, prusa, thinkpad, framework",
+        "query": "vpsfree, thinkcenter, rpi4, prusa, optiplex, thinkpad, framework",
         "type": "custom"
       },
       {
@@ -818,13 +826,12 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Overview Copy",
-  "uid": "eef42nf9jixa8a",
+  "title": "Overview",
   "version": 4,
   "weekStart": ""
 }
