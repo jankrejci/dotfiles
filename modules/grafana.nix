@@ -19,7 +19,7 @@ in
         targets =
           let
             nodeExporterPort = "9100";
-            makeTarget = hostName: hostConfig: hostName + "." + domain + ":" nodeExporterPort;
+            makeTarget = hostName: hostConfig: hostName + "." + domain + ":" + nodeExporterPort;
             # Only NixOS hosts are running the prometheus node exporter
             nixosHosts = lib.filterAttrs (_: hostConfig: hostConfig.kind == "nixos") config.hosts;
           in
