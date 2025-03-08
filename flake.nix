@@ -67,12 +67,13 @@
 
 
       # All hosts defined in hosts.nix
-      hosts = (nixpkgs.lib.evalModules {
+      hosts = (lib.evalModules {
         modules = [ ./hosts.nix ];
+        specialArgs = { inherit nixpkgs; };
       }).config.hosts;
 
       # Full NixOS hosts only, used for the deploy-rs
-      nixosHosts = lib.filterAttrs (name: hostConfig: hostConfig.kind == "nixos") hosts;
+      nixosHosts = lib.filterAttrs (hostName: hostConfig: hostConfig.kind == "nixos") hosts;
 
       # The main unit creating nixosConfiguration for a given host configuration
       mkHost = hostName: hostConfig: lib.nixosSystem {
@@ -107,12 +108,12 @@
       };
 
       # Function to create a deploy node entry
-      mkNode = hostConfig: {
-        hostname = "${hostConfig.hostName}.vpn";
+      mkNode = hostName: hostConfig: {
+        hostname = "${hostName}.vpn";
         sshUser = "admin";
         profiles.system = {
           user = "root";
-          path = deploy-rs.lib.${hostConfig.system}.activate.nixos self.nixosConfigurations.${hostConfig.hostName};
+          path = deploy-rs.lib.${hostConfig.system}.activate.nixos self.nixosConfigurations.${hostName};
         };
       };
     in
