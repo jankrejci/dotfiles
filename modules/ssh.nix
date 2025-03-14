@@ -13,11 +13,10 @@ let
   fetchAuthorizedKeys = ''
     #!${pkgs.stdenv.shell}
 
+    # Check if there are cached ssh keys, if not fetch it from github
     if [ ! -f "${keysPath}" ]; then
       "${pkgs.curl}/bin/curl" "${gitRepo}/refs/heads/${gitBranch}/hosts/${config.hosts.self.hostName}/${keysFile}" > "${keysPath}"
     fi
-
-    "${pkgs.util-linux}/bin/logger" "Moc necum"
 
     "${pkgs.coreutils}/bin/cat" "${keysPath}"
   '';
