@@ -37,6 +37,11 @@ with lib;
           description = "System architecture";
         };
 
+        device = mkOption {
+          type = types.str;
+          description = "System disk device";
+        };
+
         extraModules = mkOption {
           type = types.listOf types.path;
           default = [ ];
@@ -62,8 +67,9 @@ with lib;
     thinkcenter = {
       ipAddress = "192.168.99.2";
       wgPublicKey = "1oh3e+TaDcOFlxBTm6A3WYBkvQSNDPlnzK7FQc1DxVM=";
+      device = "/dev/sda";
       extraModules = [
-        ./modules/disk.nix
+        ./modules/encrypted-disk.nix
       ];
     };
 
