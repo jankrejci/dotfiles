@@ -70,7 +70,8 @@
     ];
     loader = {
       systemd-boot = {
-        # Systemd boot instead of GRUB is needed for secure boot 
+        # Systemd boot instead of GRUB is needed for secure boot,
+        # to use secure boot with GRUB, you need to use Lanzaboote project 
         enable = true;
         # Avoid too many bootloader generations
         # that can consume all the /boot partition space
@@ -89,6 +90,12 @@
     clevis
   ];
 
+  # To use TPM stored key for disk encryption, wipe the luks tmp slot first
+  # `systemd-cryptenroll --wipe-slot=tpm2 ${luksPartition}`
+  # and then enroll new key
+  # `systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0,7 /dev/sda`
+  # It is good practice to still have a manual password to recover partition
+  # if TMP approach fails
   boot.initrd.luks.devices."cryptroot" = {
     device = "/dev/disk/by-partlabel/disk-main-luks";
     preLVM = true;
@@ -102,7 +109,7 @@
     tpm2.enable = true;
   };
 
-  # Workaround to add delay to avoid TPM unloc timing issues  
+  # Workaround to add delay to avoid TPM unlock timing issues  
   boot.initrd.systemd.services."tpm-delay" = {
     description = "Delay before TPM decryption";
     wantedBy = [ "systemd-cryptsetup@cryptroot.service" ];
@@ -113,7 +120,11 @@
     };
   };
 
-  # Sign all secure boot relevant images
+  # Sign all secure boot relevant images on rebuild,
+  # prerequisity is to have secure boot keys generated and pushed into uefi
+  # Generate keys `sbctl create-keys`
+  # It is needed to have secure boot in setup mode for pushing keys
+  # Push keys to uefi `sbctl enroll-keys`
   system.activationScripts."sign-secure-boot" = {
     text = ''
       ${pkgs.sbctl}/bin/sbctl sign -s /boot/EFI/systemd/systemd-bootx64.efi
