@@ -1,4 +1,8 @@
 { config, lib, pkgs, ... }:
+let
+  luksDevice = "/dev/disk/by-partlabel/disk-main-luks";
+  diskPasswordFile = "/tmp/disk-password";
+in
 {
   # Boot parition and encrypted root partition
   disko.devices = {
@@ -71,7 +75,7 @@
     loader = {
       systemd-boot = {
         # Systemd boot instead of GRUB is needed for secure boot,
-        # to use secure boot with GRUB, you need to use Lanzaboote project 
+        # to use secure boot with GRUB, you need to use Lanzaboote project
         enable = true;
         # Avoid too many bootloader generations
         # that can consume all the /boot partition space
@@ -97,7 +101,7 @@
   # It is good practice to still have a manual password to recover partition
   # if TMP approach fails
   boot.initrd.luks.devices."cryptroot" = {
-    device = "/dev/disk/by-partlabel/disk-main-luks";
+    device = luksDevice;
     preLVM = true;
     allowDiscards = true;
   };
@@ -109,7 +113,7 @@
     tpm2.enable = true;
   };
 
-  # Workaround to add delay to avoid TPM unlock timing issues  
+  # Workaround to add delay to avoid TPM unlock timing issues
   boot.initrd.systemd.services."tpm-delay" = {
     description = "Delay before TPM decryption";
     wantedBy = [ "systemd-cryptsetup@cryptroot.service" ];
@@ -126,10 +130,29 @@
   # It is needed to have secure boot in setup mode for pushing keys
   # Push keys to uefi `sbctl enroll-keys`
   system.activationScripts."sign-secure-boot" = {
+    deps = [ ];
     text = ''
       ${pkgs.sbctl}/bin/sbctl sign -s /boot/EFI/systemd/systemd-bootx64.efi
       ${pkgs.sbctl}/bin/sbctl sign -s /boot/EFI/BOOT/BOOTX64.EFI
       ${pkgs.sbctl}/bin/sbctl sign -s /boot/EFI/nixos/*.efi
+    '';
+  };
+
+  system.activationScripts."enroll-tpm" = {
+    deps = [ ];
+    text = ''
+      # Exit early if password file doesn't exist, it means the TPM is probably rolled already
+      if [ ! -f "${diskPasswordFile}" ]; then
+        echo "Password file not found, skipping TPM enrollment"
+        exit 0
+      fi
+    
+      # Enroll TPM using password file
+      ${pkgs.systemd}/bin/systemd-cryptenroll --wipe-slot=tpm2 "${luksDevice}" < "${diskPasswordFile}"
+      ${pkgs.systemd}/bin/systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0,7 "${luksDevice}" < "${diskPasswordFile}"
+    
+      # Clean up securely
+      ${pkgs.coreutils}/bin/shred -u "${diskPasswordFile}"
     '';
   };
 }
