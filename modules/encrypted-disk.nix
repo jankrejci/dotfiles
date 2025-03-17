@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 let
   luksDevice = "/dev/disk/by-partlabel/disk-main-luks";
-  diskPasswordFile = "/tmp/disk-password";
+  diskPasswordFile = "/var/lib/disk-password";
 in
 {
   # Boot parition and encrypted root partition
@@ -29,6 +29,7 @@ in
                 type = "luks";
                 name = "crypted";
                 extraOpenArgs = [ ];
+                passwordFile = diskPasswordFile;
                 content = {
                   type = "lvm_pv";
                   vg = "pool";
@@ -130,29 +131,31 @@ in
   # It is needed to have secure boot in setup mode for pushing keys
   # Push keys to uefi `sbctl enroll-keys`
   system.activationScripts."sign-secure-boot" = {
-    deps = [ ];
+    # Ensure signing is done at the end of the activation process,
+    # when the bootloader is build, it would be nice to depend on
+    # the bootloader, but there is no activation script for that,
+    # so this is bit workaround
+    deps = [ "etc" "users" "var" ];
     text = ''
       ${pkgs.sbctl}/bin/sbctl sign -s /boot/EFI/systemd/systemd-bootx64.efi
       ${pkgs.sbctl}/bin/sbctl sign -s /boot/EFI/BOOT/BOOTX64.EFI
       ${pkgs.sbctl}/bin/sbctl sign -s /boot/EFI/nixos/*.efi
+      echo "Bootloader has been signed"
     '';
   };
 
   system.activationScripts."enroll-tpm" = {
-    deps = [ ];
+    deps = [ "sign-secure-boot" ];
     text = ''
       # Exit early if password file doesn't exist, it means the TPM is probably rolled already
       if [ ! -f "${diskPasswordFile}" ]; then
-        echo "Password file not found, skipping TPM enrollment"
+        echo "Password file "${diskPasswordFile}" not found, skipping TPM enrollment"
         exit 0
       fi
-    
-      # Enroll TPM using password file
-      ${pkgs.systemd}/bin/systemd-cryptenroll --wipe-slot=tpm2 "${luksDevice}" < "${diskPasswordFile}"
-      ${pkgs.systemd}/bin/systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0,7 "${luksDevice}" < "${diskPasswordFile}"
-    
-      # Clean up securely
-      ${pkgs.coreutils}/bin/shred -u "${diskPasswordFile}"
+ 
+      # Temporary enroll TPM key sealed with PCR0 only
+      ${pkgs.systemd}/bin/systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0 "${luksDevice}" --unlock-key-file "${diskPasswordFile}"
+      echo "TPM key enrolled to ${luksDevice}"
     '';
   };
 }

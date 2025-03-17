@@ -26,7 +26,12 @@ pkgs.writeShellApplication {
     AGE_KEY_FOLDER="var/cache/sops/age"
     AGE_KEY_PATH="$AGE_KEY_FOLDER/keys.txt"
 
-    DISK_PASSWORD_PATH="/tmp/disk-password"
+    # Store the disk password in the /tmp folder
+    # and erase it later after the disk encryption
+    LOCAL_DISK_PASSWORD_FOLDER="/tmp"
+    LOCAL_DISK_PASSWORD_PATH="$LOCAL_DISK_PASSWORD_FOLDER/disk-password"
+    REMOTE_DISK_PASSWORD_FOLDER="/var/lib"
+    REMOTE_DISK_PASSWORD_PATH="$REMOTE_DISK_PASSWORD_FOLDER/disk-password"
 
     # Usage
     if [ $# -lt 1 ]; then
@@ -42,8 +47,8 @@ pkgs.writeShellApplication {
     cleanup() {
       rm -rf "$temp"
       # Cleanup temporary password file
-      if [ -f "$DISK_PASSWORD_PATH" ]; then
-        shred -u "$DISK_PASSWORD_PATH"
+      if [ -f "$LOCAL_DISK_PASSWORD_PATH" ]; then
+        shred -u "$LOCAL_DISK_PASSWORD_PATH"
       fi
       # Cleanup password variables
       DISK_PASSWORD_CONFIRM=""
@@ -69,8 +74,12 @@ pkgs.writeShellApplication {
       fi
     done
 
-    # Create temporary password file
-    echo "$DISK_PASSWORD" >"$DISK_PASSWORD_PATH"
+    # Create temporary password file for disk encryption
+    echo -n "$DISK_PASSWORD" >"$LOCAL_DISK_PASSWORD_PATH"
+    # Create the directory where TPM expects disk password
+    # during the key enrollment
+    install -d -m755 "$temp/$REMOTE_DISK_PASSWORD_FOLDER"
+    cp "$LOCAL_DISK_PASSWORD_PATH" "$temp/$REMOTE_DISK_PASSWORD_FOLDER"
 
     # Create the directory where sops expects to find the age key
     install -d -m755 "$temp/$AGE_KEY_FOLDER"
@@ -87,7 +96,7 @@ pkgs.writeShellApplication {
     # Install NixOS to the host system with our secrets
     nixos-anywhere \
       --generate-hardware-config nixos-generate-config "hosts/$HOSTNAME/hardware-configuration.nix" \
-      --disk-encryption-keys "$DISK_PASSWORD_PATH" "$DISK_PASSWORD_PATH" \
+      --disk-encryption-keys "$REMOTE_DISK_PASSWORD_PATH" "$LOCAL_DISK_PASSWORD_PATH" \
       --extra-files "$temp" \
       --flake ".#$HOSTNAME" \
       --target-host "root@$TARGET"
