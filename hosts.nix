@@ -22,6 +22,8 @@ with lib;
 
         wgPublicKey = mkOption {
           type = types.str;
+          # Use nix path ./host to properly evaluate the full path
+          default = builtins.readFile (toString ./hosts + "/${config.hostName}/wg-key.pub");
           description = "WireGuard public key";
         };
 
@@ -56,7 +58,6 @@ with lib;
   config.hosts = {
     vpsfree = {
       ipAddress = "192.168.99.1";
-      wgPublicKey = "iWfrqdXV4bDQOCfhlZ2KRS7eq2B/QI440HylPrzJUww=";
       extraModules = [
         ./modules/grafana.nix
         ./modules/vpsadminos.nix
@@ -66,7 +67,6 @@ with lib;
 
     thinkcenter = {
       ipAddress = "192.168.99.2";
-      wgPublicKey = "1oh3e+TaDcOFlxBTm6A3WYBkvQSNDPlnzK7FQc1DxVM=";
       device = "/dev/sda";
       extraModules = [
         ./modules/encrypted-disk.nix
@@ -77,7 +77,6 @@ with lib;
 
     thinkpad = {
       ipAddress = "192.168.99.21";
-      wgPublicKey = "IzW6yPZJdrBC6PtfSaw7k4hjH+b/GjwvwiDLkLevLDI=";
       extraModules = [
         ./modules/users/jkr/user.nix
         ./modules/users/paja/user.nix
@@ -88,7 +87,6 @@ with lib;
 
     optiplex = {
       ipAddress = "192.168.99.22";
-      wgPublicKey = "6QNJxFoSDKwqQjF6VgUEWP5yXXe4J3DORGo7ksQscFA=";
       extraModules = [
         ./modules/users/jkr/user.nix
         ./modules/users/paja/user.nix
@@ -98,7 +96,6 @@ with lib;
 
     framework = {
       ipAddress = "192.168.99.23";
-      wgPublicKey = "9YMpp9mFeXXbe04SmEpwBMcUrBf7XEf/sdregqrkBDw=";
       extraModules = [
         ./modules/users/jkr/user.nix
         ./modules/users/paja/user.nix
@@ -112,7 +109,6 @@ with lib;
     # TODO create minimal aarch64 build to check minimal reasonable image size
     rpi4 = {
       ipAddress = "192.168.99.31";
-      wgPublicKey = "sUUZ9eIfyjqdEDij7vGnOe3sFbbF/eHQqS0RMyWZU0c=";
       system = "aarch64-linux";
       extraModules = [
         "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
@@ -122,7 +118,6 @@ with lib;
 
     prusa = {
       ipAddress = "192.168.99.32";
-      wgPublicKey = "jprPNJTX7OSXshr+SYanLjxyGdXH4ESHF+sAsUrxshk=";
       system = "aarch64-linux";
       extraModules = [
         "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
@@ -134,13 +129,11 @@ with lib;
 
     latitude = {
       ipAddress = "192.168.99.51";
-      wgPublicKey = "ggj+uqF/vij5V+fA5r9GIv5YuT9hX7OBp+lAGYh5SyQ=";
       kind = "home-manager";
     };
 
     nokia = {
       ipAddress = "192.168.99.52";
-      wgPublicKey = "HP+nPkrKwAxvmXjrI9yjsaGRMVXqt7zdcBGbD2ji83g=";
       kind = "wg-client";
     };
 
@@ -148,7 +141,6 @@ with lib;
 
     iso = {
       ipAddress = "192.168.99.99";
-      wgPublicKey = "Oy92wzxmvxteRQkjCmWmQDFfOevbby6qx/9ZDG2SMSs=";
       extraModules = [
         "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
       ];
