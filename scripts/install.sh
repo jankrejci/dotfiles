@@ -14,6 +14,8 @@ ADMIN_KEY_PATH="$HOME/.config/sops/age/keys.txt"
 AGE_KEY_FOLDER="var/cache/sops/age"
 AGE_KEY_PATH="$AGE_KEY_FOLDER/keys.txt"
 
+DISK_PASSWORD_PATH="/tmp/disk-password"
+
 # Create a temporary directory
 temp=$(mktemp -d)
 
@@ -22,6 +24,30 @@ cleanup() {
 	rm -rf "$temp"
 }
 trap cleanup EXIT
+
+# Prompt for password with confirmation
+while true; do
+	echo -n "Enter disk encryption password: "
+	read -rs DISK_PASSWORD
+	echo
+
+	echo -n "Confirm password: "
+	read -rs DISK_PASSWORD_CONFIRM
+	echo
+
+	if [ "$DISK_PASSWORD" = "$DISK_PASSWORD_CONFIRM" ]; then
+		break
+	else
+		echo "Passwords do not match. Please try again."
+	fi
+done
+
+# Create temporary password file
+echo "$DISK_PASSWORD" >"$DISK_PASSWORD_PATH"
+
+# Cleanup variables
+DISK_PASSWORD_CONFIRM=""
+DISK_PASSWORD=""
 
 # Create the directory where sops expects to find the age key
 install -d -m755 "$temp/$AGE_KEY_FOLDER"
@@ -35,6 +61,10 @@ chmod 600 "$temp/$AGE_KEY_PATH"
 # Install NixOS to the host system with our secrets
 nix run github:nix-community/nixos-anywhere -- \
 	--generate-hardware-config nixos-generate-config "hosts/$HOSTNAME/hardware-configuration.nix" \
+	--disk-encryption-keys "$DISK_PASSWORD_PATH" "$DISK_PASSWORD_PATH" \
 	--extra-files "$temp" \
 	--flake ".#$HOSTNAME" \
 	--target-host "root@$TARGET"
+
+# Clean up disk passwod file securely
+shred -u "$DISK_PASSWORD_PATH"
