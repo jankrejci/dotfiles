@@ -21,6 +21,11 @@
     nixgl.url = "github:guibou/nixGL";
     # Declarative partitioning and formatting
     disko.url = "github:nix-community/disko";
+    # Install NixOS everywhere via SSH 
+    nixos-anywhere = {
+      url = "github:nix-community/nixos-anywhere";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -32,10 +37,12 @@
     , sops-nix
     , nixgl
     , disko
+    , nixos-anywhere
     , ...
     }:
     let
       lib = nixpkgs.lib;
+      pkgs = import nixpkgs;
 
       # Two version of packages are declared both for x86_64 and aarch64 hosts
       unstable-x86_64-linux = final: _prev: {
@@ -152,6 +159,13 @@
           modules = [
             ./modules/users/jkr/home-ubuntu.nix
           ];
+        };
+      };
+
+      packages."x86_64-linux" = {
+        nixos-install = import ./scripts/install.nix {
+          pkgs = pkgs-x86_64-linux;
+          nixos-anywhere = nixos-anywhere.packages."x86_64-linux".nixos-anywhere;
         };
       };
     };
