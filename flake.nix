@@ -103,7 +103,6 @@
             ./modules/common.nix
             ./modules/ssh.nix
             ./modules/networking.nix
-            ./modules/wg-config.nix
             ./modules/users/admin/user.nix
           ]
           ++ (lib.optional hasHostConfig (builtins.trace "Loading host config" hostConfigFile))
@@ -143,15 +142,6 @@
         iso = self.nixosConfigurations.iso.config.system.build.isoImage;
       };
 
-      # TODO maybe use a standalone flake rather than ninixosConfigurations build
-      # Wireguard config generator shortcut for non-NixOS hosts
-      # `nix build .#wg.nokia --impure`
-      wg = {
-        nokia = self.nixosConfigurations.nokia.config.system.build.wgConfig;
-        latitude = self.nixosConfigurations.latitude.config.system.build.wgConfig;
-        optiplex = self.nixosConfigurations.optiplex.config.system.build.wgConfig;
-      };
-
       # Generate homeConfiguration for non-NixOS host running home manager
       homeConfigurations = {
         latitude = home-manager.lib.homeManagerConfiguration {
@@ -163,9 +153,17 @@
       };
 
       packages."x86_64-linux" = {
+        # Install nixos vian nixos-anywhere
+        # `nix run .#nixos-install HOSTNAME`
         nixos-install = import ./scripts/install.nix {
           pkgs = pkgs-x86_64-linux;
           nixos-anywhere = nixos-anywhere.packages."x86_64-linux".nixos-anywhere;
+        };
+        # Generate wireguard configuration for non-NixOS hosts
+        # `nix run .#wireguard HOSTNAME`
+        wireguard = import ./scripts/wireguard.nix {
+          pkgs = pkgs-x86_64-linux;
+          nixosConfigurations = self.nixosConfigurations;
         };
       };
     };
