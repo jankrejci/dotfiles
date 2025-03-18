@@ -117,12 +117,9 @@
           modules = [
             "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
             ({ config, lib, pkgs, ... }: {
+              # Populate custom files
               sdImage.populateRootCommands = ''
-                # Create the custom directory
-                mkdir -p ./root/var/lib/abc
-
-                # Create custom file with content
-                echo "Custom content" > ./root/var/lib/abc/xxx
+                cp -r /tmp/build/root  ./root
               '';
             })
           ];
