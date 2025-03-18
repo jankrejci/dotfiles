@@ -96,7 +96,7 @@ in
   ];
 
   # To use TPM stored key for disk encryption, wipe the luks tmp slot first
-  # `systemd-cryptenroll --wipe-slot=tpm2 ${luksPartition}`
+  # `systemd-cryptenroll --wipe-slot=tpm2 ${luksDevice}`
   # and then enroll new key
   # `systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0,7 /dev/sda`
   # It is good practice to still have a manual password to recover partition
@@ -125,27 +125,27 @@ in
     };
   };
 
-  # Sign all secure boot relevant images on rebuild,
-  # prerequisity is to have secure boot keys generated and pushed into uefi
-  # Generate keys `sbctl create-keys`
-  # It is needed to have secure boot in setup mode for pushing keys
-  # Push keys to uefi `sbctl enroll-keys`
-  system.activationScripts."sign-secure-boot" = {
+  system.activationScripts."enroll-secure-boot-keys" = {
     # Ensure signing is done at the end of the activation process,
     # when the bootloader is build, it would be nice to depend on
     # the bootloader, but there is no activation script for that,
     # so this is bit workaround
-    deps = [ "etc" "users" "var" ];
+    deps = [ ];
     text = ''
-      ${pkgs.sbctl}/bin/sbctl sign -s /boot/EFI/systemd/systemd-bootx64.efi
-      ${pkgs.sbctl}/bin/sbctl sign -s /boot/EFI/BOOT/BOOTX64.EFI
-      ${pkgs.sbctl}/bin/sbctl sign -s /boot/EFI/nixos/*.efi
-      echo "Bootloader has been signed"
+      if [ -f "/var/lib/sbctl" ]; then
+        echo "Secure boot keys already exist"
+        exit 0
+      fi
+
+      # Create secure boot keys and enroll to uefi
+      ${pkgs.sbctl}/bin/sbctl create-keys
+      ${pkgs.sbctl}/bin/sbctl enroll-keys
+      echo "Secure boot keys has been generated and enrolled"
     '';
   };
 
   system.activationScripts."enroll-tpm" = {
-    deps = [ "sign-secure-boot" ];
+    deps = [ ];
     text = ''
       # Exit early if password file doesn't exist, it means the TPM is probably rolled already
       if [ ! -f "${diskPasswordFile}" ]; then
@@ -158,4 +158,11 @@ in
       echo "TPM key enrolled to ${luksDevice}"
     '';
   };
+
+  boot.loader.systemd-boot.extraInstallCommands = ''
+    ${pkgs.sbctl}/bin/sbctl sign -s /boot/EFI/systemd/systemd-bootx64.efi
+    ${pkgs.sbctl}/bin/sbctl sign -s /boot/EFI/BOOT/BOOTX64.EFI
+    ${pkgs.sbctl}/bin/sbctl sign -s /boot/EFI/nixos/*.efi
+    echo "Bootloader has been signed"
+  '';
 }
