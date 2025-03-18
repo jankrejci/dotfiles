@@ -21,11 +21,6 @@ pkgs.writeShellApplication {
 
     TARGET="iso.vpn"
 
-    ADMIN_KEY_PATH="$HOME/.config/sops/age/keys.txt"
-
-    AGE_KEY_FOLDER="var/cache/sops/age"
-    AGE_KEY_PATH="$AGE_KEY_FOLDER/keys.txt"
-
     # Store the disk password in the /tmp folder
     # and erase it later after the disk encryption
     LOCAL_DISK_PASSWORD_FOLDER="/tmp"
@@ -34,6 +29,10 @@ pkgs.writeShellApplication {
     # during the first boot and then it is erased
     REMOTE_DISK_PASSWORD_FOLDER="/var/lib"
     REMOTE_DISK_PASSWORD_PATH="$REMOTE_DISK_PASSWORD_FOLDER/disk-password"
+
+    WG_KEY_FOLDER="/var/lib/wireguard"
+    WG_PRIVATE_KEY_PATH="$WG_KEY_FOLDER/wg-key"
+    WG_PUBLIC_KEY_PATH="$WG_KEY_FOLDER/wg-key.pub"
 
     # Usage
     if [ $# -lt 1 ]; then
@@ -75,26 +74,31 @@ pkgs.writeShellApplication {
         echo "Passwords do not match. Please try again."
       fi
     done
-
     # Create temporary password file for disk encryption
     echo -n "$DISK_PASSWORD" >"$LOCAL_DISK_PASSWORD_PATH"
     # Create the directory where TPM expects disk password
     # during the key enrollment
     install -d -m755 "$temp/$REMOTE_DISK_PASSWORD_FOLDER"
     cp "$LOCAL_DISK_PASSWORD_PATH" "$temp/$REMOTE_DISK_PASSWORD_FOLDER"
-    chmod 600 "$temp/$REMOTE_DISK_PASSWORD_FOLDER"
 
-    # Create the directory where sops expects to find the age key
-    install -d -m755 "$temp/$AGE_KEY_FOLDER"
-    
-    # Decrypt host's private age key
-    export SOPS_AGE_KEY_FILE="$ADMIN_KEY_PATH"
-    
-    # Decrypt your private key from the secrets and copy it to the temporary directory
-    sops --decrypt --extract '["sops_private_key"]' "hosts/$HOSTNAME/secrets.yaml" >"$temp/$AGE_KEY_PATH"
-    
-    # Set restricted permissions
-    chmod 600 "$temp/$AGE_KEY_PATH"
+ 
+    # Generate new wireguard keys
+    WG_PRIVATE_KEY=$(${pkgs.wireguard-tools}/bin/wg genkey)
+    WG_PUBLIC_KEY=$(echo "$WG_PRIVATE_KEY" | ${pkgs.wireguard-tools}/bin/wg pubkey)
+    # Check if host directory exists
+    if [ ! -d "hosts/$HOSTNAME" ]; then
+      echo "Host directory hosts/$HOSTNAME does not exist"
+      exit 1
+    fi  
+    # Write public key to file
+    echo "$WG_PUBLIC_KEY" > "hosts/$HOSTNAME/wg-key.pub"
+    echo "Wireguard public key written to hosts/$HOSTNAME/wg-key.pub"
+    # Create the directory where wiregusrd expects to find the private key
+    install -d -m755 "$temp/$WG_KEY_FOLDER"
+    echo "$WG_PRIVATE_KEY" > "$temp/$WG_PRIVATE_KEY_PATH"
+    chmod 600 "$temp/$WG_PRIVATE_KEY_PATH"
+    echo "$WG_PUBLIC_KEY" > "$temp/$WG_PUBLIC_KEY_PATH"
+    chmod 644 "$temp/$WG_PUBLIC_KEY_PATH"
 
     # Install NixOS to the host system with our secrets
     nixos-anywhere \

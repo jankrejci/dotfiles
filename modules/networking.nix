@@ -2,6 +2,7 @@
 let
   domain = "vpn";
   nameServers = [ "127.0.0.53" "1.1.1.1" "8.8.8.8" ];
+  privateKeyPath = "/var/lib/wireguard/wg-key";
 in
 {
   # Avoid collision of the dhcp with the sysystemd.network
@@ -51,7 +52,7 @@ in
           MTUBytes = "1220";
         };
         wireguardConfig = {
-          PrivateKeyFile = config.sops.secrets."wg_private_key".path;
+          PrivateKeyFile = privateKeyPath;
         };
         wireguardPeers = [
           {

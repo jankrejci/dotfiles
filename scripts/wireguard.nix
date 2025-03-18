@@ -27,7 +27,7 @@ pkgs.writeShellScriptBin "wireguard" ''
   fi  
 
   # Write public key to file
-  echo $PUBLIC_KEY > hosts/$HOSTNAME/wg-key.pub
+  echo "$PUBLIC_KEY" >"hosts/$HOSTNAME/wg-key.pub"
   echo "Public key written to hosts/$HOSTNAME/wg-key.pub"
   
   # Create config file
