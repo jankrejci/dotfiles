@@ -30,6 +30,8 @@ pkgs.writeShellApplication {
     # and erase it later after the disk encryption
     LOCAL_DISK_PASSWORD_FOLDER="/tmp"
     LOCAL_DISK_PASSWORD_PATH="$LOCAL_DISK_PASSWORD_FOLDER/disk-password"
+    # The password must be persistent, it is used to enroll TPM key
+    # during the first boot and then it is erased
     REMOTE_DISK_PASSWORD_FOLDER="/var/lib"
     REMOTE_DISK_PASSWORD_PATH="$REMOTE_DISK_PASSWORD_FOLDER/disk-password"
 
@@ -80,6 +82,7 @@ pkgs.writeShellApplication {
     # during the key enrollment
     install -d -m755 "$temp/$REMOTE_DISK_PASSWORD_FOLDER"
     cp "$LOCAL_DISK_PASSWORD_PATH" "$temp/$REMOTE_DISK_PASSWORD_FOLDER"
+    chmod 600 "$temp/$REMOTE_DISK_PASSWORD_FOLDER"
 
     # Create the directory where sops expects to find the age key
     install -d -m755 "$temp/$AGE_KEY_FOLDER"
