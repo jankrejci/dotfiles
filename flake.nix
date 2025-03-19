@@ -159,6 +159,12 @@
           pkgs = pkgs-x86_64-linux;
           nixosConfigurations = self.nixosConfigurations;
         };
+        # Generate SD card image for the Raspberry Pi host
+        packages."x86_64-linux" = {
+          build-image = import ./scripts/build-image.nix {
+            pkgs = pkgs-x86_64-linux;
+          };
+        };
       };
     };
 }
