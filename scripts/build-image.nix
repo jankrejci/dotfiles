@@ -1,7 +1,7 @@
 { pkgs, ... }:
 
 pkgs.writeShellScriptBin "build-image" ''
-  #!${pkgs.bash}/bin/bash
+  #!/usr/bin/env bash
   set -euo pipefail
   
   if [ $# -ne 1 ]; then
@@ -12,8 +12,8 @@ pkgs.writeShellScriptBin "build-image" ''
   hostname="$1"
   echo "Building image for host: $hostname"
   
-  # Build using the existing image output
-  nix build ".#image.$hostname" -o "result-$hostname-image"
+  # Build the image - clean and simple
+  nix build ".#image.sdImage.$hostname" -o "$hostname-sdcard.img"
   
-  echo "Image built successfully: result-$hostname-image"
+  echo "Image built successfully: $hostname-sdcard.img"
 ''

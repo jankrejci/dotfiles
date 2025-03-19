@@ -64,10 +64,6 @@
         overlays = [ unstable-aarch64-linux ];
       };
 
-      # Whether to load age key when building the image
-      # `LOAD_KEYS=true nix build .#images.iso`
-      loadKeys = builtins.getEnv "LOAD_KEYS" == "1";
-
 
       # All hosts defined in hosts.nix
       hosts = (lib.evalModules {
@@ -101,8 +97,6 @@
             ./modules/users/admin/user.nix
           ]
           ++ (lib.optional hasHostConfig (builtins.trace "Loading host config" hostConfigFile))
-          # Inject age key during the sdcard / iso build
-          ++ (lib.optional loadKeys (builtins.trace "Loading age keys" ./modules/load-keys.nix))
           # Ensure the hosts module is always imported, inject host config
           ++ [ ./hosts.nix ({ config, ... }: { hosts.self = hostConfig; }) ]
           ++ hostConfig.extraModules;
@@ -117,6 +111,22 @@
           path = deploy-rs.lib.${hostConfig.system}.activate.nixos self.nixosConfigurations.${hostName};
         };
       };
+
+      mkSdImage = hostName:
+        (self.nixosConfigurations.${hostName}.extendModules {
+          modules = [
+            "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
+            ({ config, lib, pkgs, ... }: {
+              sdImage.populateRootCommands = ''
+                # Create the custom directory
+                mkdir -p ./root/var/lib/abc
+
+                # Create custom file with content
+                echo "Custom content" > ./root/var/lib/abc/xxx
+              '';
+            })
+          ];
+        }).config.system.build.sdImage;
     in
     {
       # Generate nixosConfiguration for all hosts
@@ -128,12 +138,14 @@
       # This is highly advised, and will prevent many possible mistakes
       checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) deploy-rs.lib;
 
-      # Image generator shortcuts
-      # `LOAD_KEYS=1 nix build .#image.rpi4 --impure`
+      # TODO get rid of the iso shortcut
       image = {
-        rpi4 = self.nixosConfigurations.rpi4.config.system.build.sdImage;
-        prusa = self.nixosConfigurations.prusa.config.system.build.sdImage;
         iso = self.nixosConfigurations.iso.config.system.build.isoImage;
+        sdImage = lib.genAttrs
+          (builtins.attrNames (lib.filterAttrs
+            (hostName: hostConfig: hostConfig.kind == "nixos" && hostConfig.system == "aarch64-linux")
+            hosts))
+          (hostName: mkSdImage hostName);
       };
 
       # Generate homeConfiguration for non-NixOS host running home manager
@@ -160,10 +172,9 @@
           nixosConfigurations = self.nixosConfigurations;
         };
         # Generate SD card image for the Raspberry Pi host
-        packages."x86_64-linux" = {
-          build-image = import ./scripts/build-image.nix {
-            pkgs = pkgs-x86_64-linux;
-          };
+        build-image = import ./scripts/build-image.nix {
+          pkgs = pkgs-x86_64-linux;
+          nixosConfigurations = self.nixosConfigurations;
         };
       };
     };
