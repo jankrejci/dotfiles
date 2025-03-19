@@ -43,11 +43,6 @@ in
 
   swapDevices = [ ];
 
-  sdImage = {
-    compressImage = false;
-    imageName = "${config.hosts.self.hostName}-sdcard.img";
-  };
-
   # TODO find out more unused services to disable
   # Disable unneeded features
   services = {
@@ -60,14 +55,6 @@ in
   # TODO Turn off BT properly, it still emmits some errors
   # I dont need the bluetooth so far
   hardware.bluetooth.enable = false;
-
-  # TODO find out how to share multiple wifi config in a better way
-  sops = {
-    secrets = {
-      "wifi_ssid" = { mode = "0400"; owner = "systemd-network"; };
-      "wifi_psk" = { mode = "0400"; owner = "systemd-network"; };
-    };
-  };
 
   # Enable wpa_supplicant service
   networking = {
