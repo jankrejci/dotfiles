@@ -1,9 +1,5 @@
 { config, lib, pkgs, ... }:
 let
-  # Define paths to the decrypted secrets
-  ssidPath = config.sops.secrets."wifi_ssid".path;
-  pskPath = config.sops.secrets."wifi_psk".path;
-
   # Path where the wpa_supplicant configuration will be generated
   wpaConfigFolder = "/var/lib/wpa_supplicant";
   wpaConfigPath = "${wpaConfigFolder}/wpa_supplicant.conf";
@@ -73,12 +69,6 @@ in
     };
   };
 
-  # Ensure wpa_supplicant is installed
-  environment = {
-    systemPackages = with pkgs; [ wpa_supplicant ];
-    etc."wpa_supplicant.conf".source = wpaConfigPath;
-  };
-
   # Enable wpa_supplicant service
   networking = {
     wireless = {
@@ -87,32 +77,7 @@ in
     };
     supplicant.wlan0 = {
       driver = "nl80211";
-      configFile.path = "/etc/wpa_supplicant.conf";
-    };
-  };
-
-  systemd.services = {
-    # Ensure wpa_supplicant starts after the configuration is generated
-    wpa_supplicant.after = [ "wpa-generate-config.service" ];
-    # Systemd service to generate the wpa_supplicant configuration at runtime
-    "wpa-generate-config" = {
-      description = "Generate wpa_supplicant configuration from SOPS secrets";
-      after = [ "network-pre.target" ];
-      before = [ "wpa_supplicant.service" ];
-      wantedBy = [ "multi-user.target" ];
-      script = ''
-        SSID=$(cat ${ssidPath})
-        PSK=$(cat ${pskPath})
-        mkdir -p ${wpaConfigFolder}
-        cat > ${wpaConfigPath} <<EOF
-        network={
-          ssid="$SSID"
-          psk="$PSK"
-        }
-        EOF
-        chmod 600 ${wpaConfigPath}
-        chown root:root ${wpaConfigPath}
-      '';
+      configFile.path = wpaConfigPath;
     };
   };
 }
