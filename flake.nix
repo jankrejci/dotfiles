@@ -42,7 +42,6 @@
     }:
     let
       lib = nixpkgs.lib;
-      pkgs = import nixpkgs;
 
       # Two version of packages are declared both for x86_64 and aarch64 hosts
       unstable-x86_64-linux = final: _prev: {
@@ -124,7 +123,6 @@
       };
     in
     {
-      # TODO create remote installation process
       # Generate nixosConfiguration for all hosts
       nixosConfigurations = builtins.mapAttrs mkHost hosts;
 
@@ -155,7 +153,7 @@
       packages."x86_64-linux" = {
         # Install nixos vian nixos-anywhere
         # `nix run .#nixos-install HOSTNAME`
-        nixos-install = import ./scripts/install.nix {
+        install = import ./scripts/install.nix {
           pkgs = pkgs-x86_64-linux;
           nixos-anywhere = nixos-anywhere.packages."x86_64-linux".nixos-anywhere;
         };
