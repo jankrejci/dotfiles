@@ -111,7 +111,6 @@ with lib;
       ipAddress = "192.168.99.31";
       system = "aarch64-linux";
       extraModules = [
-        "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
         ./modules/raspberry.nix
       ];
     };
@@ -120,7 +119,6 @@ with lib;
       ipAddress = "192.168.99.32";
       system = "aarch64-linux";
       extraModules = [
-        "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
         ./modules/raspberry.nix
       ];
     };
@@ -141,9 +139,6 @@ with lib;
 
     iso = {
       ipAddress = "192.168.99.99";
-      extraModules = [
-        "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-      ];
     };
   };
 }
