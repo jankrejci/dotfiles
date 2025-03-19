@@ -1,7 +1,7 @@
 { nixos-anywhere, pkgs, ... }:
 
 pkgs.writeShellApplication {
-  name = "nixos-install";
+  name = "install";
   runtimeInputs = with pkgs; [
     sops
     coreutils
@@ -12,100 +12,107 @@ pkgs.writeShellApplication {
   text = ''
     #!/usr/bin/env bash
     set -euo pipefail
-
-    # Usage
-    if [ $# -lt 1 ]; then
-      echo "Usage: $0 hostname [target]"
-      exit 1
-    fi
+    trap cleanup EXIT INT TERM
 
     TARGET="iso.vpn"
-
-    # Store the disk password in the /tmp folder
-    # and erase it later after the disk encryption
-    LOCAL_DISK_PASSWORD_FOLDER="/tmp"
-    LOCAL_DISK_PASSWORD_PATH="$LOCAL_DISK_PASSWORD_FOLDER/disk-password"
     # The password must be persistent, it is used to enroll TPM key
     # during the first boot and then it is erased
     REMOTE_DISK_PASSWORD_FOLDER="/var/lib"
     REMOTE_DISK_PASSWORD_PATH="$REMOTE_DISK_PASSWORD_FOLDER/disk-password"
-
+    # Where wireguard expects the key
     WG_KEY_FOLDER="/var/lib/wireguard"
-    WG_PRIVATE_KEY_PATH="$WG_KEY_FOLDER/wg-key"
-    WG_PUBLIC_KEY_PATH="$WG_KEY_FOLDER/wg-key.pub"
-
-    # Usage
-    if [ $# -lt 1 ]; then
-      echo "Usage: $0 hostname"
-      exit 1
-    fi
-    HOSTNAME="$1"
-
-    # Create a temporary directory
-    temp=$(mktemp -d)
+    WG_KEY_PATH="$WG_KEY_FOLDER/wg-key"
 
     # Function to cleanup temporary directory on exit
-    cleanup() {
-      rm -rf "$temp"
+    function cleanup() {
+      rm -rf "$TEMP"
+
       # Cleanup temporary password file
       if [ -f "$LOCAL_DISK_PASSWORD_PATH" ]; then
         shred -u "$LOCAL_DISK_PASSWORD_PATH"
       fi
-      # Cleanup password variables
-      DISK_PASSWORD_CONFIRM=""
-      DISK_PASSWORD=""
     }
 
-    trap cleanup EXIT INT TERM
+    function generate_disk_password() {
+      # Create temporary password file to be passed to nixos-anywhere
+      local -r tmp_folder=$(mktemp -d)
+      readonly LOCAL_DISK_PASSWORD_PATH="$tmp_folder/disk-password"
 
-    # Prompt for password with confirmation
-    while true; do
-      echo -n "Enter disk encryption password: "
-      read -rs DISK_PASSWORD
-      echo
+      # Prompt for password with confirmation
+      while true; do
+        echo -n "Enter disk encryption password: "
+        local disk_password
+        read -rs disk_password
+        echo
 
-      echo -n "Confirm password: "
-      read -rs DISK_PASSWORD_CONFIRM
-      echo
+        echo -n "Confirm password: "
+        local disk_password_confirm
+        read -rs disk_password_confirm
+        echo
 
-      if [ "$DISK_PASSWORD" = "$DISK_PASSWORD_CONFIRM" ]; then
-        break
-      else
-        echo "Passwords do not match. Please try again."
+        if [ "$disk_password" = "$disk_password_confirm" ]; then
+          break
+        else
+          echo "Passwords do not match. Please try again."
+        fi
+      done
+
+      echo -n "$disk_password" >"$LOCAL_DISK_PASSWORD_PATH"
+      # Create the directory where TPM expects disk password during
+      # the key enrollment, it will be removed after the fisrt boot
+      install -d -m755 "$TEMP/$REMOTE_DISK_PASSWORD_FOLDER"
+      cp "$LOCAL_DISK_PASSWORD_PATH" "$TEMP/$REMOTE_DISK_PASSWORD_FOLDER"
+    }
+
+     function generate_wg_key() {
+      local -r hostname="$1"
+
+      # Generate new wireguard keys
+      local -r wg_private_key=$(${pkgs.wireguard-tools}/bin/wg genkey)
+      local -r wg_public_key=$(echo "$wg_private_key" | ${pkgs.wireguard-tools}/bin/wg pubkey)
+
+      # Check if host directory exists
+      local host_folder="hosts/$hostname"
+      if [ ! -d "$host_folder" ]; then
+        echo "Host directory $host_folder does not exist"
+        exit 1
+      fi  
+      local -r pubkey_path="$host_folder/wg-key.pub"
+
+      # Write public key to the host file
+      echo "$wg_public_key" > "$pubkey_path"
+      echo "Wireguard public key written to $pubkey_path"
+
+      # Create the directory where wiregusrd expects to find the private key
+      install -d -m700 "$TEMP/$WG_KEY_FOLDER"
+      echo "$wg_private_key" > "$TEMP/$WG_KEY_PATH"
+      chmod 600 "$TEMP/$WG_KEY_PATH"
+    }
+
+    function main() {
+      if [ $# -lt 1 ]; then
+        echo "Usage: $0 hostname"
+        exit 1
       fi
-    done
-    # Create temporary password file for disk encryption
-    echo -n "$DISK_PASSWORD" >"$LOCAL_DISK_PASSWORD_PATH"
-    # Create the directory where TPM expects disk password
-    # during the key enrollment
-    install -d -m755 "$temp/$REMOTE_DISK_PASSWORD_FOLDER"
-    cp "$LOCAL_DISK_PASSWORD_PATH" "$temp/$REMOTE_DISK_PASSWORD_FOLDER"
 
- 
-    # Generate new wireguard keys
-    WG_PRIVATE_KEY=$(${pkgs.wireguard-tools}/bin/wg genkey)
-    WG_PUBLIC_KEY=$(echo "$WG_PRIVATE_KEY" | ${pkgs.wireguard-tools}/bin/wg pubkey)
-    # Check if host directory exists
-    if [ ! -d "hosts/$HOSTNAME" ]; then
-      echo "Host directory hosts/$HOSTNAME does not exist"
-      exit 1
-    fi  
-    # Write public key to file
-    echo "$WG_PUBLIC_KEY" > "hosts/$HOSTNAME/wg-key.pub"
-    echo "Wireguard public key written to hosts/$HOSTNAME/wg-key.pub"
-    # Create the directory where wiregusrd expects to find the private key
-    install -d -m755 "$temp/$WG_KEY_FOLDER"
-    echo "$WG_PRIVATE_KEY" > "$temp/$WG_PRIVATE_KEY_PATH"
-    chmod 600 "$temp/$WG_PRIVATE_KEY_PATH"
-    echo "$WG_PUBLIC_KEY" > "$temp/$WG_PUBLIC_KEY_PATH"
-    chmod 644 "$temp/$WG_PUBLIC_KEY_PATH"
+      local -r hostname="$1"
 
-    # Install NixOS to the host system with our secrets
-    nixos-anywhere \
-      --generate-hardware-config nixos-generate-config "hosts/$HOSTNAME/hardware-configuration.nix" \
-      --disk-encryption-keys "$REMOTE_DISK_PASSWORD_PATH" "$LOCAL_DISK_PASSWORD_PATH" \
-      --extra-files "$temp" \
-      --flake ".#$HOSTNAME" \
-      --target-host "root@$TARGET"
+      # Create a temporary directory for extra files
+      declare -r TEMP=$(mktemp -d)
+
+      generate_disk_password
+
+      generate_wg_key "$hostname"
+
+      # Install NixOS to the host system with our secrets
+      nixos-anywhere \
+        --generate-hardware-config nixos-generate-config "hosts/$hostname/hardware-configuration.nix" \
+        --disk-encryption-keys "$REMOTE_DISK_PASSWORD_PATH" "$LOCAL_DISK_PASSWORD_PATH" \
+        --extra-files "$TEMP" \
+        --flake ".#$hostname" \
+        --target-host "root@$TARGET"
+    }
+
+    main "$@"
   '';
 }
