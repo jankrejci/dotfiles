@@ -3,7 +3,6 @@
 pkgs.writeShellApplication {
   name = "install";
   runtimeInputs = with pkgs; [
-    sops
     coreutils
     util-linux
     gnused

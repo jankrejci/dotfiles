@@ -51,29 +51,6 @@
     gitMinimal
   ];
 
-  sops = {
-    defaultSopsFile = ../hosts/${config.hosts.self.hostName}/secrets.yaml;
-    validateSopsFiles = true;
-
-    age = {
-      keyFile = "/var/cache/sops/age/keys.txt";
-      generateKey = false;
-    };
-    # Define wireguard relevant secrets
-    secrets = {
-      "wg_private_key" = {
-        mode = "0400";
-        owner = "systemd-network";
-        restartUnits = [ "systemd-networkd.service" ];
-      };
-      "endpoint" = {
-        mode = "0400";
-        owner = "systemd-network";
-        restartUnits = [ "systemd-networkd.service" ];
-      };
-    };
-  };
-
   services.prometheus.exporters.node = {
     enable = true;
     openFirewall = true;

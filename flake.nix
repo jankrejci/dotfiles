@@ -13,8 +13,6 @@
     };
     # For accessing `deploy-rs`'s utility Nix functions
     deploy-rs.url = "github:serokell/deploy-rs";
-    # Atomic secret provisioning for NixOS based on sops 
-    sops-nix.url = "github:Mic92/sops-nix";
     # nixgl is needed for alacritty outside of nixOS
     # refer to https://github.com/NixOS/nixpkgs/issues/122671
     # https://github.com/guibou/nixGL/#use-an-overlay
@@ -34,7 +32,6 @@
     , nixpkgs-unstable
     , home-manager
     , deploy-rs
-    , sops-nix
     , nixgl
     , disko
     , nixos-anywhere
@@ -96,7 +93,6 @@
             hasHostConfig = builtins.pathExists hostConfigFile;
           in
           [
-            sops-nix.nixosModules.sops
             home-manager.nixosModules.home-manager
             disko.nixosModules.disko
             ./modules/common.nix
