@@ -1,6 +1,5 @@
 { config, ... }:
 {
-
   # TODO Find out a way how to do this hack properly
   # 
   # To boot the raspberry device succesfully with an uart device connected,
@@ -12,8 +11,6 @@
   # `savenv`
   # Next you need to disable extlinux prompt commenting out the MENU and TIMEOUT
   # entries in /boot/extlinux/extlinux.conf
-
-  disko.devices.disk.main.device = "/dev/mmcblk0";
 
   # TODO add obico plugin and enable the port
   services.octoprint = {
