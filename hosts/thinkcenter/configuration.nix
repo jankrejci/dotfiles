@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, ... }:
 {
   # Access to all raspberry hosts without sudo for convenience
   security.sudo.wheelNeedsPassword = false;
@@ -11,7 +11,5 @@
     "jkr@optiplex:KwH9qv7qCHd+npxC0FUFCApM1rP6GSbB8Ze983CCT8o="
   ];
 
-  boot.kernelModules = [ "kvm-intel" ];
-
-  hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+  hardware.cpu.intel.updateMicrocode = config.hardware.enableRedistributableFirmware;
 }

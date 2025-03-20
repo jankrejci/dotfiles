@@ -20,13 +20,13 @@ in
   };
 
   boot = {
+    kernelModules = [ ];
     loader = {
       # Use the extlinux boot loader. NixOS wants to enable GRUB by default.
       grub.enable = false;
       # Enables the generation of /boot/extlinux/extlinux.conf
       generic-extlinux-compatible.enable = true;
     };
-    kernelModules = [ ];
     # Define propper wifi channels
     # This workaroud seems too be no longer needed for proper wifi function on rpi02w
     # options brcmfmac roamoff=1 feature_disable=0x82000
