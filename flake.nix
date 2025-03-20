@@ -124,6 +124,7 @@
 
       image = {
         # Generate USB stick installer
+        # TODO isoImage.compressImage = false;
         installer = lib.genAttrs
           (builtins.attrNames (lib.filterAttrs
             (hostName: hostConfig: hostConfig.kind == "nixos" && hostConfig.system == "x86_64-linux")

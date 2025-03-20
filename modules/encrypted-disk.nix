@@ -56,7 +56,7 @@ in
             };
           };
           swap = {
-            size = lib.mkDefault "1G";
+            size = config.hosts.self.swapSize;
             content = {
               type = "swap";
               discardPolicy = "both";

@@ -36,6 +36,12 @@ in
     supportedFilesystems = { zfs = lib.mkForce false; };
   };
 
+  fileSystems = {
+    "/" = {
+      device = "/dev/disk/by-label/NIXOS-SD";
+      fsType = "ext4";
+    };
+  };
   swapDevices = [ ];
 
   # TODO find out more unused services to disable

@@ -44,6 +44,12 @@ with lib;
           description = "System disk device";
         };
 
+        swapSize = mkOption {
+          type = types.str;
+          default = "1G";
+          description = "Size of the swap partition";
+        };
+
         extraModules = mkOption {
           type = types.listOf types.path;
           default = [ ];
@@ -68,6 +74,7 @@ with lib;
     thinkcenter = {
       ipAddress = "192.168.99.2";
       device = "/dev/sda";
+      swapSize = "8G";
       extraModules = [
         ./modules/encrypted-disk.nix
       ];
@@ -77,6 +84,8 @@ with lib;
 
     thinkpad = {
       ipAddress = "192.168.99.21";
+      device = "/dev/sda";
+      swapSize = "8G";
       extraModules = [
         ./modules/users/jkr/user.nix
         ./modules/users/paja/user.nix
@@ -88,6 +97,8 @@ with lib;
 
     optiplex = {
       ipAddress = "192.168.99.22";
+      device = "/dev/sda";
+      swapSize = "8G";
       extraModules = [
         ./modules/users/jkr/user.nix
         ./modules/users/paja/user.nix
@@ -98,6 +109,8 @@ with lib;
 
     framework = {
       ipAddress = "192.168.99.23";
+      device = "/dev/nvme0n1";
+      swapSize = "8G";
       extraModules = [
         ./modules/users/jkr/user.nix
         ./modules/users/paja/user.nix
