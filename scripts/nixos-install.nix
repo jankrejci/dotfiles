@@ -1,7 +1,7 @@
 { nixos-anywhere, pkgs, ... }:
 
 pkgs.writeShellApplication {
-  name = "install";
+  name = "nixos-install";
   runtimeInputs = with pkgs; [
     coreutils
     util-linux

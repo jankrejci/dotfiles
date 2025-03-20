@@ -96,7 +96,7 @@
             ./modules/networking.nix
             ./modules/users/admin/user.nix
           ]
-          ++ (lib.optional hasHostConfig (builtins.trace "Loading host config" hostConfigFile))
+          ++ (lib.optional hasHostConfig (builtins.trace "Loading host config ${hostConfigFile}" hostConfigFile))
           # Ensure the hosts module is always imported, inject host config
           ++ [ ./hosts.nix ({ config, ... }: { hosts.self = hostConfig; }) ]
           ++ hostConfig.extraModules;
@@ -111,19 +111,6 @@
           path = deploy-rs.lib.${hostConfig.system}.activate.nixos self.nixosConfigurations.${hostName};
         };
       };
-
-      mkSdImage = hostName:
-        (self.nixosConfigurations.${hostName}.extendModules {
-          modules = [
-            "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
-            ({ config, lib, pkgs, ... }: {
-              # Populate custom files
-              sdImage.populateRootCommands = ''
-                cp -r /tmp/build/root  ./root
-              '';
-            })
-          ];
-        }).config.system.build.sdImage;
     in
     {
       # Generate nixosConfiguration for all hosts
@@ -135,14 +122,23 @@
       # This is highly advised, and will prevent many possible mistakes
       checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) deploy-rs.lib;
 
-      # TODO get rid of the iso shortcut
       image = {
-        iso = self.nixosConfigurations.iso.config.system.build.isoImage;
-        sdImage = lib.genAttrs
+        # Generate USB stick installer
+        installer = lib.genAttrs
+          (builtins.attrNames (lib.filterAttrs
+            (hostName: hostConfig: hostConfig.kind == "nixos" && hostConfig.system == "x86_64-linux")
+            hosts))
+          (hostName: (self.nixosConfigurations.${hostName}.extendModules {
+            modules = [ "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" ];
+          }).config.system.build.isoImage);
+        # Generate SD card image for raspberry pi
+        sdcard = lib.genAttrs
           (builtins.attrNames (lib.filterAttrs
             (hostName: hostConfig: hostConfig.kind == "nixos" && hostConfig.system == "aarch64-linux")
             hosts))
-          (hostName: mkSdImage hostName);
+          (hostName: (self.nixosConfigurations.${hostName}.extendModules {
+            modules = [ "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix" ];
+          }).config.system.build.sdImage);
       };
 
       # Generate homeConfiguration for non-NixOS host running home manager
@@ -158,18 +154,19 @@
       packages."x86_64-linux" = {
         # Install nixos vian nixos-anywhere
         # `nix run .#nixos-install HOSTNAME`
-        install = import ./scripts/install.nix {
+        nixos-install = import ./scripts/nixos-install.nix {
           pkgs = pkgs-x86_64-linux;
           nixos-anywhere = nixos-anywhere.packages."x86_64-linux".nixos-anywhere;
         };
         # Generate wireguard configuration for non-NixOS hosts
-        # `nix run .#wireguard HOSTNAME`
-        wireguard = import ./scripts/wireguard.nix {
+        # `nix run .#wireguard-config HOSTNAME`
+        wireguard-config = import ./scripts/wireguard-config.nix {
           pkgs = pkgs-x86_64-linux;
           nixosConfigurations = self.nixosConfigurations;
         };
         # Generate SD card image for the Raspberry Pi host
-        build-image = import ./scripts/build-image.nix {
+        # `nix run .#build-sdcard HOSTNAME`
+        build-sdcard = import ./scripts/build-sdcard.nix {
           pkgs = pkgs-x86_64-linux;
           nixosConfigurations = self.nixosConfigurations;
         };
