@@ -4,6 +4,24 @@
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
 
+  boot = {
+    extraModulePackages = [ ];
+    initrd = {
+      availableKernelModules = [
+        "nvme"
+        "thunderbolt"
+        "ahci"
+        "ehci_pci"
+        "sdhci_pci"
+        "xhci_pci"
+        "usbhid"
+        "usb_storage"
+        "sd_mod"
+      ];
+      kernelModules = [ ];
+    };
+  };
+
   time.timeZone = "Europe/Prague";
   console.keyMap = "us";
 

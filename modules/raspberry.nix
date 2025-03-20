@@ -26,12 +26,7 @@ in
       # Enables the generation of /boot/extlinux/extlinux.conf
       generic-extlinux-compatible.enable = true;
     };
-    initrd = {
-      availableKernelModules = [ "xhci_pci" "usbhid" "usb_storage" ];
-      kernelModules = [ ];
-    };
     kernelModules = [ ];
-    extraModulePackages = [ ];
     # Define propper wifi channels
     # This workaroud seems too be no longer needed for proper wifi function on rpi02w
     # options brcmfmac roamoff=1 feature_disable=0x82000
