@@ -174,6 +174,11 @@
         build-installer = import ./scripts/build-installer.nix {
           pkgs = pkgs-x86_64-linux;
         };
+        # Deploy configuration to a NixOS host
+        # `nix run .#deploy HOSTNAME [--skip-checks]`
+        deploy-config = import ./scripts/deploy-config.nix {
+          pkgs = pkgs-x86_64-linux;
+        };
       };
     };
 }
