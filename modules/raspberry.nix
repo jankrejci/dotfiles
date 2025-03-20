@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ lib, pkgs, ... }:
 let
   # Path where the wpa_supplicant configuration will be generated
   wpaConfigFolder = "/var/lib/wpa_supplicant";
