@@ -168,7 +168,11 @@
         # `nix run .#build-sdcard HOSTNAME`
         build-sdcard = import ./scripts/build-sdcard.nix {
           pkgs = pkgs-x86_64-linux;
-          nixosConfigurations = self.nixosConfigurations;
+        };
+        # Generate installer iso image
+        # `nix run .#build-installer`
+        build-installer = import ./scripts/build-installer.nix {
+          pkgs = pkgs-x86_64-linux;
         };
       };
     };
