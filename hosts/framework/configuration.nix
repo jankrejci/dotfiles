@@ -1,7 +1,5 @@
-{ config, lib, ... }:
+{ config, ... }:
 {
-  disko.devices.disk.main.device = "/dev/nvme0n1";
   boot.kernelModules = [ "kvm-amd" ];
-
-  hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+  hardware.cpu.amd.updateMicrocode = config.hardware.enableRedistributableFirmware;
 }
