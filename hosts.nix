@@ -1,4 +1,4 @@
-{ lib, nixpkgs, ... }:
+{ lib, ... }:
 
 with lib;
 
@@ -100,7 +100,7 @@ with lib;
         ./modules/users/jkr/user.nix
         ./modules/users/paja/user.nix
         ./modules/desktop.nix
-        ./modules/disk.nix
+        ./modules/encrypted-disk.nix
       ];
     };
 
