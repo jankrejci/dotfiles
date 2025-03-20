@@ -80,6 +80,7 @@ with lib;
       extraModules = [
         ./modules/users/jkr/user.nix
         ./modules/users/paja/user.nix
+        ./modules/encrypted-disk.nix
         ./modules/desktop.nix
         ./modules/disable-nvidia.nix
       ];
@@ -90,6 +91,7 @@ with lib;
       extraModules = [
         ./modules/users/jkr/user.nix
         ./modules/users/paja/user.nix
+        ./modules/encrypted-disk.nix
         ./modules/desktop.nix
       ];
     };
@@ -99,8 +101,8 @@ with lib;
       extraModules = [
         ./modules/users/jkr/user.nix
         ./modules/users/paja/user.nix
-        ./modules/desktop.nix
         ./modules/encrypted-disk.nix
+        ./modules/desktop.nix
       ];
     };
 
