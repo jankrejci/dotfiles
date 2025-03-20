@@ -114,7 +114,7 @@
     in
     {
       # Generate nixosConfiguration for all hosts
-      nixosConfigurations = builtins.mapAttrs mkHost hosts;
+      nixosConfigurations = builtins.mapAttrs mkHost nixosHosts;
 
       deploy.nodes = builtins.mapAttrs mkNode nixosHosts;
 
@@ -151,6 +151,10 @@
         };
       };
 
+      # Declare hosts in outputs to be evaluable with nix eval,
+      # this is usefull for wireguard-config generator
+      hosts = hosts;
+
       packages."x86_64-linux" = {
         # Install nixos vian nixos-anywhere
         # `nix run .#nixos-install HOSTNAME`
@@ -162,7 +166,6 @@
         # `nix run .#wireguard-config HOSTNAME`
         wireguard-config = import ./scripts/wireguard-config.nix {
           pkgs = pkgs-x86_64-linux;
-          nixosConfigurations = self.nixosConfigurations;
         };
         # Generate SD card image for the Raspberry Pi host
         # `nix run .#build-sdcard HOSTNAME`
