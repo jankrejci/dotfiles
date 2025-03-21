@@ -24,6 +24,11 @@
       url = "github:nix-community/nixos-anywhere";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # NixOS image generator
+    nixos-generators = {
+      url = "github:nix-community/nixos-generators";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -35,6 +40,7 @@
     , nixgl
     , disko
     , nixos-anywhere
+    , nixos-generators
     , ...
     }:
     let
@@ -125,13 +131,45 @@
       image = {
         # Generate USB stick installer
         # TODO isoImage.compressImage = false;
-        installer = lib.genAttrs
-          (builtins.attrNames (lib.filterAttrs
-            (hostName: hostConfig: hostConfig.kind == "nixos" && hostConfig.system == "x86_64-linux")
-            hosts))
-          (hostName: (self.nixosConfigurations.${hostName}.extendModules {
-            modules = [ "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" ];
-          }).config.system.build.isoImage);
+        # ISO installer image for x86_64 hosts
+        installer = nixos-generators.nixosGenerate
+          {
+            system = "x86_64-linux";
+            format = "iso";
+            modules =
+              let
+                hostConfigFile = ./hosts/iso/configuration.nix;
+                hasHostConfig = builtins.pathExists hostConfigFile;
+              in
+
+              [
+                home-manager.nixosModules.home-manager
+                disko.nixosModules.disko
+                ./modules/common.nix
+                ./modules/ssh.nix
+                ./modules/networking.nix
+                ./modules/users/admin/user.nix
+                ({ config, ... }: {
+                  hosts.self = hosts.iso;
+
+                  # Create directory for wireguard key
+                  system.activationScripts.createWgDir = ''
+                    mkdir -p /var/lib/wireguard
+                    chmod 700 /var/lib/wireguard
+                  '';
+
+                  # Copy the private key to the SD card
+                  system.activationScripts.installKey = lib.mkIf (builtins.pathExists ./hosts/rpi4/wg-key) ''
+                    cp ${./hosts/rpi4/wg-key} /var/lib/wireguard/wg-key
+                    chmod 600 /var/lib/wireguard/wg-key
+                  '';
+                })
+              ]
+              ++ (lib.optional hasHostConfig (builtins.trace "Loading host config ${hostConfigFile}" hostConfigFile))
+              # Ensure the hosts module is always imported, inject host config
+              ++ [ ./hosts.nix ({ config, ... }: { hosts.self = hosts.iso; }) ]
+              ++ hosts.iso.extraModules;
+          };
         # Generate SD card image for raspberry pi
         sdcard = lib.genAttrs
           (builtins.attrNames (lib.filterAttrs
