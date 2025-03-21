@@ -74,33 +74,48 @@
       # Full NixOS hosts only, used for the deploy-rs
       nixosHosts = lib.filterAttrs (hostName: hostConfig: hostConfig.kind == "nixos") hosts;
 
+      # Common base modules for all configurations
+      baseModules = [
+        home-manager.nixosModules.home-manager
+        disko.nixosModules.disko
+        ./modules/common.nix
+        ./modules/ssh.nix
+        ./modules/networking.nix
+        ./modules/users/admin/user.nix
+      ];
+
+      # Create a reusable function to generate modules list
+      mkModulesList = { hostName, hostConfig, additionalModules ? [ ] }:
+        let
+          hostConfigFile = ./hosts/${hostName}/configuration.nix;
+          hasHostConfig = builtins.pathExists hostConfigFile;
+        in
+        baseModules
+        ++ (lib.optional hasHostConfig
+          (builtins.trace "Loading host config ${hostConfigFile}" hostConfigFile))
+        # Ensure the hosts module is always imported, inject host config
+        ++ [ ./hosts.nix ({ config, ... }: { hosts.self = hostConfig; }) ]
+        ++ hostConfig.extraModules or [ ]
+        ++ additionalModules;
+
       # The main unit creating nixosConfiguration for a given host configuration
-      mkHost = hostName: hostConfig: lib.nixosSystem {
-        system = hostConfig.system;
-        specialArgs = {
-          pkgs =
-            if hostConfig.system == "aarch64-linux"
-            then pkgs-aarch64-linux
-            else pkgs-x86_64-linux;
+      mkSystem =
+        { hostName
+        , hostConfig
+        , additionalModules ? [ ]
+        }:
+        lib.nixosSystem {
+          system = hostConfig.system;
+          specialArgs = {
+            pkgs =
+              if hostConfig.system == "aarch64-linux"
+              then pkgs-aarch64-linux
+              else pkgs-x86_64-linux;
+          };
+          modules = mkModulesList {
+            inherit hostName hostConfig additionalModules;
+          };
         };
-        modules =
-          let
-            hostConfigFile = ./hosts/${hostName}/configuration.nix;
-            hasHostConfig = builtins.pathExists hostConfigFile;
-          in
-          [
-            home-manager.nixosModules.home-manager
-            disko.nixosModules.disko
-            ./modules/common.nix
-            ./modules/ssh.nix
-            ./modules/networking.nix
-            ./modules/users/admin/user.nix
-          ]
-          ++ (lib.optional hasHostConfig (builtins.trace "Loading host config ${hostConfigFile}" hostConfigFile))
-          # Ensure the hosts module is always imported, inject host config
-          ++ [ ./hosts.nix ({ config, ... }: { hosts.self = hostConfig; }) ]
-          ++ hostConfig.extraModules;
-      };
 
       # Function to create a deploy node entry
       mkNode = hostName: hostConfig: {
@@ -114,7 +129,11 @@
     in
     {
       # Generate nixosConfiguration for all hosts
-      nixosConfigurations = builtins.mapAttrs mkHost nixosHosts;
+      nixosConfigurations = builtins.mapAttrs
+        (hostName: hostConfig: mkSystem {
+          inherit hostName hostConfig;
+        })
+        nixosHosts;
 
       deploy.nodes = builtins.mapAttrs mkNode nixosHosts;
 
@@ -124,18 +143,28 @@
 
       image = {
         # Generate USB stick installer
-        # TODO isoImage.compressImage = false;
-        installer = lib.genAttrs
-          (builtins.attrNames (lib.filterAttrs
-            (hostName: hostConfig: hostConfig.kind == "nixos" && hostConfig.system == "x86_64-linux")
-            hosts))
-          (hostName: (self.nixosConfigurations.${hostName}.extendModules {
-            modules = [ "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix" ];
-          }).config.system.build.isoImage);
+        installer =
+          let
+            installerSystem = mkSystem {
+              hostName = "iso";
+              hostConfig = hosts.iso;
+              additionalModules = [
+                "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+                ./modules/load-keys.nix
+                ({ config, pkgs, ... }: {
+                  isoImage.makeEfiBootable = true;
+                  isoImage.makeUsbBootable = true;
+                  isoImage.compressImage = false;
+                })
+              ];
+            };
+          in
+          installerSystem.config.system.build.isoImage;
+
         # Generate SD card image for raspberry pi
         sdcard = lib.genAttrs
           (builtins.attrNames (lib.filterAttrs
-            (hostName: hostConfig: hostConfig.kind == "nixos" && hostConfig.system == "aarch64-linux")
+            (hostName: hostConfig: hostConfig.system == "aarch64-linux")
             hosts))
           (hostName: (self.nixosConfigurations.${hostName}.extendModules {
             modules = [ "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix" ];
