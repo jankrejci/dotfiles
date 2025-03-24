@@ -22,7 +22,7 @@ with lib;
 
         wgPublicKey = mkOption {
           type = types.str;
-          # Use nix path ./host to properly evaluate the full path
+          # Use nix path ./hosts to properly evaluate the full path
           default = builtins.readFile (toString ./hosts + "/${config.hostName}/wg-key.pub");
           description = "WireGuard public key";
         };

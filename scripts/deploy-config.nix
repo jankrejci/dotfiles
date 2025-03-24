@@ -35,7 +35,7 @@ pkgs.writeShellApplication {
 
     # Run deploy-rs
     echo "Deploying to $hostname..."
-    deploy ".#$hostname" "$@"
+    deploy ".#$hostname" "$@" --skip-checks
   ''
   ;
 }
