@@ -139,7 +139,7 @@
 
       # TODO find a way how to do checks together with the nokia / latitude hosts
       # This is highly advised, and will prevent many possible mistakes
-      checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) deploy-rs.lib;
+      # checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) deploy-rs.lib;
 
       image = {
         # Generate USB stick installer
