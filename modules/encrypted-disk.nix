@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, pkgs, ... }:
 let
   luksDevice = "/dev/disk/by-partlabel/disk-main-luks";
   diskPasswordFile = "/var/lib/disk-password";
@@ -176,7 +176,7 @@ in
     script = ''
       if [ ! -f "${diskPasswordFile}" ]; then
         echo "Password file "${diskPasswordFile}" not found, skipping TPM enrollment"
-        exit 1
+        exit 0
       fi
 
       # Enroll TPM key sealed with PCR0 and PCR7 (secure boot)
