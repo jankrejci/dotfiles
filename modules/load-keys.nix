@@ -5,7 +5,7 @@ let
   wgKeySource = "/etc/wireguard/wg-key";
   wgKeyFolder = "/var/lib/wireguard";
   wgKeyPath = "${wgKeyFolder}/wg-key";
-  keyUser = "root";
+  keyUser = "systemd-network";
   keyGroup = "systemd-network";
 in
 {
