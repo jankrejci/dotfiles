@@ -11,7 +11,7 @@ pkgs.writeShellApplication {
 
     # Display usage information
     if [ $# -lt 1 ]; then
-      echo "Usage: deploy HOSTNAME [--skip-checks]"
+      echo "Usage: deploy HOSTNAME"
     fi
 
     readonly hostname="$1"
@@ -35,6 +35,7 @@ pkgs.writeShellApplication {
 
     # Run deploy-rs
     echo "Deploying to $hostname..."
+    # TODO get rid of skip checks
     deploy ".#$hostname" "$@" --skip-checks
   ''
   ;
