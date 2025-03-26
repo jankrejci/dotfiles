@@ -9,6 +9,4 @@
 
   # Avoid collision between networking and vpsadminos module
   systemd.network.networks."98-all-ethernet".DHCP = "no";
-
-  security.sudo.wheelNeedsPassword = false;
 }
