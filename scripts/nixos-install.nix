@@ -13,14 +13,17 @@ pkgs.writeShellApplication {
     set -euo pipefail
     trap cleanup EXIT INT TERM
 
-    TARGET="iso.vpn"
+    readonly TARGET="iso.vpn"
     # The password must be persistent, it is used to enroll TPM key
     # during the first boot and then it is erased
-    REMOTE_DISK_PASSWORD_FOLDER="/var/lib"
-    REMOTE_DISK_PASSWORD_PATH="$REMOTE_DISK_PASSWORD_FOLDER/disk-password"
+    readonly REMOTE_DISK_PASSWORD_FOLDER="/var/lib"
+    readonly REMOTE_DISK_PASSWORD_PATH="$REMOTE_DISK_PASSWORD_FOLDER/disk-password"
     # Where wireguard expects the key
-    WG_KEY_FOLDER="/var/lib/wireguard"
-    WG_KEY_PATH="$WG_KEY_FOLDER/wg-key"
+    readonly WG_KEY_FOLDER="/var/lib/wireguard"
+    readonly WG_KEY_PATH="$WG_KEY_FOLDER/wg-key"
+
+    readonly WG_KEY_USER="systemd-network"
+    readonly WG_KEY_GROUP="systemd-network"
 
     # Function to cleanup temporary directory on exit
     function cleanup() {
@@ -108,6 +111,8 @@ pkgs.writeShellApplication {
         --generate-hardware-config nixos-generate-config "hosts/$hostname/hardware-configuration.nix" \
         --disk-encryption-keys "$REMOTE_DISK_PASSWORD_PATH" "$LOCAL_DISK_PASSWORD_PATH" \
         --extra-files "$TEMP" \
+        --chown "$WG_KEY_FOLDER" "$WG_KEY_USER:$WG_KEY_GROUP" \
+        --chown "$WG_KEY_PATH" "$WG_KEY_USER:$WG_KEY_GROUP" \
         --flake ".#$hostname" \
         --target-host "root@$TARGET"
     }

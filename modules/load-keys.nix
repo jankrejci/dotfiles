@@ -18,7 +18,7 @@ in
 
   # Ensure the persistent target directory exists
   systemd.tmpfiles.rules = [
-    "d ${wgKeyFolder} 0750 ${keyUser} ${keyGroup} -"
+    "d ${wgKeyFolder} 0700 ${keyUser} ${keyGroup} -"
   ];
 
   # TODO find a better way to avoid copying the key
@@ -38,7 +38,7 @@ in
       if [ -f "${wgKeySource}" ]; then
         echo "Copying wireguard key from ${wgKeySource} to ${wgKeyPath}"
         cp "${wgKeySource}" "${wgKeyPath}"
-        chmod 640 "${wgKeyPath}"
+        chmod 600 "${wgKeyPath}"
         chown ${keyUser}:${keyGroup} "${wgKeyPath}"
       else
         echo "No ${wgKeySource} found, skipping copy."
