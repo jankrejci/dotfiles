@@ -202,13 +202,13 @@
         build-sdcard = import ./scripts/build-sdcard.nix {
           pkgs = pkgs-x86_64-linux;
         };
-        # Generate installer iso image
+        # Generate installer iso image for USB stick
         # `nix run .#build-installer`
         build-installer = import ./scripts/build-installer.nix {
           pkgs = pkgs-x86_64-linux;
         };
         # Deploy configuration to a NixOS host
-        # `nix run .#deploy HOSTNAME [--skip-checks]`
+        # `nix run .#deploy HOSTNAME`
         deploy-config = import ./scripts/deploy-config.nix {
           pkgs = pkgs-x86_64-linux;
         };

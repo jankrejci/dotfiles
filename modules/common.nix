@@ -4,6 +4,8 @@
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
 
+  # Consider users with the root access trustfull enough
+  # to allow changes in the nix store
   nix.settings.trusted-users = [ "@wheel" ];
 
   boot = {
