@@ -64,7 +64,17 @@
       ];
       xkb-options = [ ];
     };
-
+    "org/gnome/settings-daemon/plugins/power" = {
+      sleep-inactive-ac-type = "nothing";
+      sleep-inactive-battery-type = "suspend";
+      sleep-inactive-battery-timeout = 3600;
+    };
+    "org/gnome/desktop/session" = {
+      idle-delay = 60;
+    };
+    "org/gnome/desktop/interface" = {
+      show-battery-percentage = true;
+    };
   };
 
   programs.home-manager.enable = true;
