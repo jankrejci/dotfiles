@@ -72,6 +72,7 @@
     tcpdump
     nix-tree
     gitMinimal
+    sbctl
   ];
 
   services.prometheus.exporters.node = {

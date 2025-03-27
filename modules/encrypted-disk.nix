@@ -126,13 +126,11 @@ in
   };
 
   system.activationScripts."enroll-secure-boot-keys" = {
-    # Ensure signing is done at the end of the activation process,
-    # when the bootloader is build, it would be nice to depend on
-    # the bootloader, but there is no activation script for that,
-    # so this is bit workaround
     deps = [ ];
     text = ''
-      if [ -f "/var/lib/sbctl" ]; then
+      ${pkgs.sbctl}/bin/ls -la /var/lib
+
+      if [ -d "/var/lib/sbctl" ]; then
         echo "Secure boot keys already exist"
         exit 0
       fi
@@ -140,7 +138,14 @@ in
       # Create secure boot keys and enroll to uefi
       ${pkgs.sbctl}/bin/sbctl create-keys
       ${pkgs.sbctl}/bin/sbctl enroll-keys
-      echo "Secure boot keys has been generated and enrolled"
+
+      # Verify enrollment
+      if ${pkgs.sbctl}/bin/sbctl status | grep -qE "Secure Boot:.*enabled"; then
+        echo "Secure boot keys have been generated and enrolled successfully"
+      else
+        echo "Warning: Secure boot keys were created but secure boot may not be enabled"
+        ${pkgs.sbctl}/bin/sbctl status
+      fi
     '';
   };
 
@@ -149,7 +154,7 @@ in
   boot.loader.systemd-boot.extraInstallCommands = ''
     ${pkgs.sbctl}/bin/sbctl sign -s /boot/EFI/systemd/systemd-bootx64.efi
     ${pkgs.sbctl}/bin/sbctl sign -s /boot/EFI/BOOT/BOOTX64.EFI
-    ${pkgs.sbctl}/bin/sbctl sign -s /boot/EFI/nixos/*.efi
+    ${pkgs.sbctl}/bin/sbctl sign -s /boot/EFI/nixos/*bzImage.efi
     echo "Bootloader has been signed"
 
     # Exit early if password file doesn't exist, it means TPM key is probably enrolled already
