@@ -6,6 +6,8 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
     # Some bleeding edge packages are fetch from unstable
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
+    # A collection of NixOS modules covering hardware quirks
+    nixos-hardware.url = "github:NixOS/nixos-hardware";
     # Manage a user environment
     home-manager = {
       url = "github:nix-community/home-manager/release-24.11";
@@ -30,6 +32,7 @@
     { self
     , nixpkgs
     , nixpkgs-unstable
+    , nixos-hardware
     , home-manager
     , deploy-rs
     , nixgl
@@ -68,7 +71,7 @@
       # All hosts defined in hosts.nix
       hosts = (lib.evalModules {
         modules = [ ./hosts.nix ];
-        specialArgs = { inherit nixpkgs; };
+        specialArgs = { inherit nixos-hardware; };
       }).config.hosts;
 
       # Full NixOS hosts only, used for the deploy-rs
