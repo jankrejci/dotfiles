@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib, nixos-hardware, ... }:
 
 with lib;
 
@@ -87,6 +87,7 @@ with lib;
       device = "/dev/sda";
       swapSize = "8G";
       extraModules = [
+        nixos-hardware.nixosModules.lenovo-thinkpad-e470
         ./modules/users/jkr/user.nix
         ./modules/users/paja/user.nix
         ./modules/encrypted-disk.nix
@@ -112,6 +113,7 @@ with lib;
       device = "/dev/nvme0n1";
       swapSize = "8G";
       extraModules = [
+        nixos-hardware.nixosModules.framework-13-7040-amd
         ./modules/users/jkr/user.nix
         ./modules/users/paja/user.nix
         ./modules/encrypted-disk.nix
