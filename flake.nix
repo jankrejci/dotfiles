@@ -27,7 +27,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # A calmer internet, without any gimmicks
-    zen-browser.url = "github:MarceColl/zen-browser-flake";
+    zen-browser = {
+      url = "github:0xc000022070/zen-browser-flake";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
   };
 
   outputs =
@@ -40,11 +43,15 @@
     , nixgl
     , disko
     , nixos-anywhere
+    , zen-browser
     , ...
     }@inputs:
     let
       lib = nixpkgs.lib;
 
+      zen-overlay = final: prev: {
+        zen-browser = zen-browser.packages.x86_64-linux.default;
+      };
       # Two version of packages are declared both for x86_64 and aarch64 hosts
       unstable-x86_64-linux = final: _prev: {
         unstable = import nixpkgs-unstable {
@@ -55,7 +62,11 @@
       pkgs-x86_64-linux = import nixpkgs {
         system = "x86_64-linux";
         config.allowUnfree = true;
-        overlays = [ nixgl.overlay unstable-x86_64-linux ];
+        overlays = [
+          nixgl.overlay
+          unstable-x86_64-linux
+          zen-overlay
+        ];
       };
       unstable-aarch64-linux = final: _prev: {
         unstable = import nixpkgs-unstable {
