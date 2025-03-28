@@ -117,8 +117,12 @@ in
   # Workaround to add delay to avoid TPM unlock timing issues
   boot.initrd.systemd.services."tpm-delay" = {
     description = "Delay before TPM decryption";
-    wantedBy = [ "systemd-cryptsetup@cryptroot.service" ];
+    wantedBy = [ "cryptsetup.target" ];
     before = [ "systemd-cryptsetup@cryptroot.service" ];
+    # Prevent boot order cycle
+    after = [ "systemd-modules-load.service" ];
+    # wantedBy = [ "systemd-cryptsetup@cryptroot.service" ];
+    # before = [ "systemd-cryptsetup@cryptroot.service" ];
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${pkgs.coreutils}/bin/sleep 5";
@@ -153,6 +157,10 @@ in
     ${pkgs.sbctl}/bin/sbctl sign -s /boot/EFI/nixos/*bzImage.efi
     echo "Bootloader has been signed"
 
+    # This is a workaround to get provisional key enrolle during installation,
+    # enrolmennt through the activation script doesn't work, because the LUKS
+    # partition is not ready at that time
+
     # Exit early if password file doesn't exist, it means TPM key is probably enrolled already
     if [ ! -f "${diskPasswordFile}" ]; then
       echo "Password file "${diskPasswordFile}" not found, skipping TPM enrollment"
@@ -172,6 +180,7 @@ in
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
+      ConditionPathExists = "!/run/initramfs";
     };
 
     script = ''
