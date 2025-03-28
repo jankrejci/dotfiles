@@ -95,7 +95,6 @@ pkgs.writeShellApplication {
 
       # Install NixOS to the host system with our secrets
       nixos-anywhere \
-        --generate-hardware-config nixos-generate-config "hosts/$hostname/hardware-configuration.nix" \
         --disk-encryption-keys "$REMOTE_DISK_PASSWORD_PATH" "$LOCAL_DISK_PASSWORD_PATH" \
         --extra-files "$TEMP" \
         --chown "$WG_KEY_FOLDER" "$WG_KEY_USER:$WG_KEY_GROUP" \
