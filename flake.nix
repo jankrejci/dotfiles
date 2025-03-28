@@ -26,6 +26,8 @@
       url = "github:nix-community/nixos-anywhere";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # A calmer internet, without any gimmicks
+    zen-browser.url = "github:MarceColl/zen-browser-flake";
   };
 
   outputs =
@@ -39,7 +41,7 @@
     , disko
     , nixos-anywhere
     , ...
-    }:
+    }@inputs:
     let
       lib = nixpkgs.lib;
 
@@ -110,6 +112,7 @@
         lib.nixosSystem {
           system = hostConfig.system;
           specialArgs = {
+            inherit inputs;
             pkgs =
               if hostConfig.system == "aarch64-linux"
               then pkgs-aarch64-linux
