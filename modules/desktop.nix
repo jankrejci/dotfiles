@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, inputs, ... }:
 {
   # Enable cross compilation support. It is needed to build aarch64 images.
   boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
@@ -53,6 +53,7 @@
     unstable.helix
     unstable.nushell
     unstable.broot
+    inputs.zen-browser.packages."${system}".specific
     home-manager
     starship
     hexyl # hex viewer
