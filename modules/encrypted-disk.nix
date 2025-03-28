@@ -128,22 +128,18 @@ in
   system.activationScripts."enroll-secure-boot-keys" = {
     deps = [ ];
     text = ''
-      ${pkgs.sbctl}/bin/ls -la /var/lib
-
-      if [ -d "/var/lib/sbctl" ]; then
-        echo "Secure boot keys already exist"
+      if ${pkgs.sbctl}/bin/sbctl status | grep -qE "Secure Boot:.*Enabled"; then
+        echo "Secure boot is already enrolled, skipping creating keys"
         exit 0
       fi
 
       # Create secure boot keys and enroll to uefi
       ${pkgs.sbctl}/bin/sbctl create-keys
-      ${pkgs.sbctl}/bin/sbctl enroll-keys
 
-      # Verify enrollment
-      if ${pkgs.sbctl}/bin/sbctl status | grep -qE "Secure Boot:.*enabled"; then
-        echo "Secure boot keys have been generated and enrolled successfully"
+      if ${pkgs.sbctl}/bin/sbctl enroll-keys; then
+        echo "Secure boot keys has been enrolled succesfully"
       else
-        echo "Warning: Secure boot keys were created but secure boot may not be enabled"
+        echo "Failed to enroll Secure boot keys has beend already enrolled"
         ${pkgs.sbctl}/bin/sbctl status
       fi
     '';
