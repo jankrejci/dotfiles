@@ -70,11 +70,20 @@
       sleep-inactive-battery-timeout = 3600;
     };
     "org/gnome/desktop/session" = {
-      idle-delay = 60;
+      idle-delay = 1800;
     };
     "org/gnome/desktop/interface" = {
       show-battery-percentage = true;
     };
+    "org/gnome/shell" = {
+      favorite-apps = [ "Alacritty.desktop" "firefox.desktop" ];
+    };
+    "org/gnome/shell/extensions/dash-to-panel" = {
+      panel-positions = ''
+        {"0":"TOP"}
+      '';
+    };
+
   };
 
   programs.home-manager.enable = true;
