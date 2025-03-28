@@ -25,6 +25,7 @@
     rshell # remote shell for MicroPython 
     tokei # code statistics tool
     tealdeer # tldr help tool
+    zen-browser
     # saleae-logic-2 # logic analyzer software
     # kicad
     # ghidra-bin
