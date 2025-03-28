@@ -23,7 +23,14 @@
         "usb_storage"
         "sd_mod"
       ];
-      kernelModules = [ ];
+      # Add modules to decrypt disk on boot
+      kernelModules = [
+        "ext4"
+        "dm-snapshot"
+        "dm-mod"
+        "dm-cache"
+        "dm-cache-smq"
+      ];
     };
   };
 
