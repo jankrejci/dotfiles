@@ -25,6 +25,10 @@ pkgs.writeShellApplication {
     readonly WG_KEY_USER="systemd-network"
     readonly WG_KEY_GROUP="systemd-network"
 
+    # Create a temporary directory for extra files
+    TEMP=$(mktemp -d)
+    readonly TEMP
+
     # Function to cleanup temporary directory on exit
     function cleanup() {
       rm -rf "$TEMP"
@@ -40,25 +44,10 @@ pkgs.writeShellApplication {
       local -r tmp_folder=$(mktemp -d)
       readonly LOCAL_DISK_PASSWORD_PATH="$tmp_folder/disk-password"
 
-      # Prompt for password with confirmation
-      while true; do
-        echo -n "Enter disk encryption password: "
-        local disk_password
-        read -rs disk_password
-        echo
-
-        echo -n "Confirm password: "
-        local disk_password_confirm
-        read -rs disk_password_confirm
-        echo
-
-        if [ "$disk_password" = "$disk_password_confirm" ]; then
-          break
-        else
-          echo "Passwords do not match. Please try again."
-        fi
-      done
-
+      # Generate random password that can be changed later
+      echo "Generating disk password"
+      local disk_password
+      disk_password=$(head -c 12 /dev/urandom | base64 | tr -d '/+=' | head -c 16)
       echo -n "$disk_password" >"$LOCAL_DISK_PASSWORD_PATH"
       # Create the directory where TPM expects disk password during
       # the key enrollment, it will be removed after the fisrt boot
@@ -70,6 +59,7 @@ pkgs.writeShellApplication {
       local -r hostname="$1"
 
       # Generate new wireguard keys
+      echo "Generating wireguard key"
       local -r wg_private_key=$(${pkgs.wireguard-tools}/bin/wg genkey)
       local -r wg_public_key=$(echo "$wg_private_key" | ${pkgs.wireguard-tools}/bin/wg pubkey)
 
@@ -98,9 +88,6 @@ pkgs.writeShellApplication {
       fi
 
       local -r hostname="$1"
-
-      # Create a temporary directory for extra files
-      declare -r TEMP=$(mktemp -d)
 
       generate_disk_password
 
