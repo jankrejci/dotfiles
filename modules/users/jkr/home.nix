@@ -20,6 +20,7 @@
     unstable.rustup # rust install tool
     unstable.espflash # flasher utility for Espressif SoCs 
     unstable.prusa-slicer # slicer for 3D printing
+    unstable.kicad-small
     gnomeExtensions.vitals
     gnomeExtensions.dash-to-panel
     rshell # remote shell for MicroPython 
@@ -27,7 +28,6 @@
     tealdeer # tldr help tool
     zen-browser
     # saleae-logic-2 # logic analyzer software
-    # kicad
     # ghidra-bin
   ];
 

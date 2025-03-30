@@ -53,7 +53,6 @@
     unstable.helix
     unstable.nushell
     unstable.broot
-    inputs.zen-browser.packages."${system}".specific
     home-manager
     starship
     hexyl # hex viewer
