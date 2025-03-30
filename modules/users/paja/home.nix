@@ -35,6 +35,25 @@
       ];
       xkb-options = [ ];
     };
+    "org/gnome/settings-daemon/plugins/power" = {
+      sleep-inactive-ac-type = "nothing";
+      sleep-inactive-battery-type = "suspend";
+      sleep-inactive-battery-timeout = 3600;
+    };
+    "org/gnome/desktop/session" = {
+      idle-delay = 1800;
+    };
+    "org/gnome/desktop/interface" = {
+      show-battery-percentage = true;
+    };
+    "org/gnome/shell" = {
+      favorite-apps = [ "firefox.desktop" "org.gnome.Nautilus.desktop" ];
+    };
+    "org/gnome/shell/extensions/dash-to-panel" = {
+      panel-positions = ''
+        {"0":"TOP"}
+      '';
+    };
   };
 
   # Let Home Manager install and manage itself.
