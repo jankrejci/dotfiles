@@ -39,9 +39,11 @@
       sleep-inactive-ac-type = "nothing";
       sleep-inactive-battery-type = "suspend";
       sleep-inactive-battery-timeout = 3600;
+      ambient-enabled = false;
+      idle-dim = false;
     };
     "org/gnome/desktop/session" = {
-      idle-delay = 1800;
+      idle-delay = "uint32 0";
     };
     "org/gnome/desktop/interface" = {
       show-battery-percentage = true;
