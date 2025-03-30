@@ -76,7 +76,7 @@ with lib;
       device = "/dev/sda";
       swapSize = "8G";
       extraModules = [
-        ./modules/encrypted-disk.nix
+        ./modules/disk-tpm-encryption.nix
       ];
     };
 
@@ -90,7 +90,7 @@ with lib;
         nixos-hardware.nixosModules.lenovo-thinkpad-e470
         ./modules/users/jkr/user.nix
         ./modules/users/paja/user.nix
-        ./modules/encrypted-disk.nix
+        ./modules/disk-tpm-encryption.nix
         ./modules/desktop.nix
         ./modules/disable-nvidia.nix
       ];
@@ -103,7 +103,7 @@ with lib;
       extraModules = [
         ./modules/users/jkr/user.nix
         ./modules/users/paja/user.nix
-        ./modules/encrypted-disk.nix
+        ./modules/disk-password-encryption.nix
         ./modules/desktop.nix
       ];
     };
@@ -116,7 +116,7 @@ with lib;
         nixos-hardware.nixosModules.framework-13-7040-amd
         ./modules/users/jkr/user.nix
         ./modules/users/paja/user.nix
-        ./modules/encrypted-disk.nix
+        ./modules/disk-tpm-encryption.nix
         ./modules/desktop.nix
       ];
     };

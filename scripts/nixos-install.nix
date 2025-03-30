@@ -39,23 +39,67 @@ pkgs.writeShellApplication {
       fi
     }
 
+    # Ask for password with confirmation
+    function ask_for_disk_password() {
+      local disk_password
+      local confirm_password
+
+      while true; do
+        read -r -s -p "Enter disk encryption password: " disk_password; echo
+        read -r -s -p "Confirm disk encryption password: " confirm_password; echo
+
+        if [ -z "$disk_password" ]; then
+          echo "Password cannot be empty. Please try again."
+          continue
+        fi
+
+        if [ "$disk_password" = "$confirm_password" ]; then
+          break
+        fi
+        echo "Passwords do not match. Please try again."
+      done
+
+      echo "$disk_password"
+    }
+
+    # Generate random password that can be changed later
     function generate_disk_password() {
+      local disk_password
+
+      echo "Generating disk password"
+      disk_password=$(head -c 12 /dev/urandom | base64 | tr -d '/+=' | head -c 16)
+
+      echo "$disk_password"
+    }
+
+    function set_disk_password() {
+      local generate_password
+      read -r -p "Auto-generate disk encryption password? [Y/n] " generate_password
+
       # Create temporary password file to be passed to nixos-anywhere
       local -r tmp_folder=$(mktemp -d)
       readonly LOCAL_DISK_PASSWORD_PATH="$tmp_folder/disk-password"
 
-      # Generate random password that can be changed later
-      echo "Generating disk password"
       local disk_password
-      disk_password=$(head -c 12 /dev/urandom | base64 | tr -d '/+=' | head -c 16)
+      # Default to Yes if empty or starts with Y/y
+      if [[ -z "$generate_password" || "$generate_password" =~ ^[Yy] ]]; then
+        disk_password=$(generate_disk_password)
+        echo "Disk password auto-generated."
+      else
+        disk_password=$(ask_for_disk_password)
+        echo "Disk password has been set."
+      fi
+
       echo -n "$disk_password" >"$LOCAL_DISK_PASSWORD_PATH"
       # Create the directory where TPM expects disk password during
       # the key enrollment, it will be removed after the fisrt boot
       install -d -m755 "$TEMP/$REMOTE_DISK_PASSWORD_FOLDER"
       cp "$LOCAL_DISK_PASSWORD_PATH" "$TEMP/$REMOTE_DISK_PASSWORD_FOLDER"
+
+      echo "Disk password successfully installed."
     }
 
-     function generate_wg_key() {
+    function generate_wg_key() {
       local -r hostname="$1"
 
       # Generate new wireguard keys
@@ -68,7 +112,7 @@ pkgs.writeShellApplication {
       if [ ! -d "$host_folder" ]; then
         echo "Host directory $host_folder does not exist"
         exit 1
-      fi  
+      fi
       local -r pubkey_path="$host_folder/wg-key.pub"
 
       # Write public key to the host file
@@ -89,7 +133,7 @@ pkgs.writeShellApplication {
 
       local -r hostname="$1"
 
-      generate_disk_password
+      set_disk_password
 
       generate_wg_key "$hostname"
 
