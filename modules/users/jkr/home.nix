@@ -77,7 +77,7 @@
       show-battery-percentage = true;
     };
     "org/gnome/shell" = {
-      favorite-apps = [ "Alacritty.desktop" "firefox.desktop" ];
+      favorite-apps = [ "Alacritty.desktop" "zen.desktop" "org.gnome.Nautilus.desktop" ];
     };
     "org/gnome/shell/extensions/dash-to-panel" = {
       panel-positions = ''
