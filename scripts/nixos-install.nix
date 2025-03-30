@@ -41,40 +41,45 @@ pkgs.writeShellApplication {
 
     # Ask for password with confirmation
     function ask_for_disk_password() {
-      local disk_password
-      local confirm_password
-
       while true; do
-        read -r -s -p "Enter disk encryption password: " disk_password; echo
-        read -r -s -p "Confirm disk encryption password: " confirm_password; echo
+        echo -n "Enter disk encryption password: " >&2
+        local disk_password
+        read -rs disk_password
+        echo >&2
 
         if [ -z "$disk_password" ]; then
-          echo "Password cannot be empty. Please try again."
+          echo "Password cannot be empty. Please try again." >&2
           continue
         fi
 
-        if [ "$disk_password" = "$confirm_password" ]; then
+        echo -n "Confirm password: " >&2
+        local disk_password_confirm
+        read -rs disk_password_confirm
+        echo >&2
+
+        if [ "$disk_password" = "$disk_password_confirm" ]; then
           break
         fi
-        echo "Passwords do not match. Please try again."
+        echo "Passwords do not match. Please try again." >&2
       done
 
-      echo "$disk_password"
+      echo -n "$disk_password"
     }
 
     # Generate random password that can be changed later
     function generate_disk_password() {
-      local disk_password
+      echo "Generating disk password" >&2
 
-      echo "Generating disk password"
+      local disk_password
       disk_password=$(head -c 12 /dev/urandom | base64 | tr -d '/+=' | head -c 16)
 
-      echo "$disk_password"
+      echo -n "$disk_password"
     }
 
     function set_disk_password() {
       local generate_password
-      read -r -p "Auto-generate disk encryption password? [Y/n] " generate_password
+      echo -n "Auto-generate disk encryption password? [Y/n] " >&2
+      read -r generate_password
 
       # Create temporary password file to be passed to nixos-anywhere
       local -r tmp_folder=$(mktemp -d)
@@ -84,10 +89,10 @@ pkgs.writeShellApplication {
       # Default to Yes if empty or starts with Y/y
       if [[ -z "$generate_password" || "$generate_password" =~ ^[Yy] ]]; then
         disk_password=$(generate_disk_password)
-        echo "Disk password auto-generated."
+        echo "Disk password auto-generated." >&2
       else
         disk_password=$(ask_for_disk_password)
-        echo "Disk password has been set."
+        echo "Disk password has been set." >&2
       fi
 
       echo -n "$disk_password" >"$LOCAL_DISK_PASSWORD_PATH"
@@ -96,28 +101,28 @@ pkgs.writeShellApplication {
       install -d -m755 "$TEMP/$REMOTE_DISK_PASSWORD_FOLDER"
       cp "$LOCAL_DISK_PASSWORD_PATH" "$TEMP/$REMOTE_DISK_PASSWORD_FOLDER"
 
-      echo "Disk password successfully installed."
+      echo "Disk password successfully installed." >&2
     }
 
     function generate_wg_key() {
       local -r hostname="$1"
 
       # Generate new wireguard keys
-      echo "Generating wireguard key"
+      echo "Generating wireguard key" >&2
       local -r wg_private_key=$(${pkgs.wireguard-tools}/bin/wg genkey)
       local -r wg_public_key=$(echo "$wg_private_key" | ${pkgs.wireguard-tools}/bin/wg pubkey)
 
       # Check if host directory exists
       local host_folder="hosts/$hostname"
       if [ ! -d "$host_folder" ]; then
-        echo "Host directory $host_folder does not exist"
+        echo "Host directory $host_folder does not exist" >&2
         exit 1
       fi
       local -r pubkey_path="$host_folder/wg-key.pub"
 
       # Write public key to the host file
       echo "$wg_public_key" > "$pubkey_path"
-      echo "Wireguard public key written to $pubkey_path"
+      echo "Wireguard public key written to $pubkey_path" >&2
 
       # Create the directory where wiregusrd expects to find the private key
       install -d -m700 "$TEMP/$WG_KEY_FOLDER"
@@ -127,7 +132,7 @@ pkgs.writeShellApplication {
 
     function main() {
       if [ $# -lt 1 ]; then
-        echo "Usage: $0 hostname"
+        echo "Usage: $0 hostname" >&2
         exit 1
       fi
 
