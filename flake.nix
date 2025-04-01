@@ -229,6 +229,11 @@
         deploy-config = import ./scripts/deploy-config.nix {
           pkgs = pkgs-x86_64-linux;
         };
+        # Deploy configuration to a NixOS host
+        # `nix run .#add-ssh-key HOSTNAME`
+        add-ssh-key = import ./scripts/add-ssh-key.nix {
+          pkgs = pkgs-x86_64-linux;
+        };
       };
     };
 }
