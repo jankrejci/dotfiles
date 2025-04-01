@@ -26,6 +26,7 @@
     (config.lib.nixGL.wrap unstable.prusa-slicer) # slicer for 3D printing
     (config.lib.nixGL.wrap unstable.kicad-small)
     (config.lib.nixGL.wrap saleae-logic-2) # logic analyzer software
+    (config.lib.nixGL.wrap zen-browser)
     curl
     bash
     unzip
