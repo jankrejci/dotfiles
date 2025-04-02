@@ -156,6 +156,7 @@ with lib;
 
     iso = {
       ipAddress = "192.168.99.99";
+      kind = "installer";
     };
   };
 }
