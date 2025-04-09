@@ -108,7 +108,7 @@
         in
         baseModules
         ++ (lib.optional hasHostConfig
-          (builtins.trace "Loading host config ${hostConfigFile}" hostConfigFile))
+          (builtins.trace "Loading ${hostName} config ${hostConfigFile}" hostConfigFile))
         # Ensure the hosts module is always imported, inject host config
         ++ [ ./hosts.nix ({ config, ... }: { hosts.self = hostConfig; }) ]
         ++ hostConfig.extraModules or [ ]
