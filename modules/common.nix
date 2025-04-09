@@ -8,6 +8,8 @@
   # to allow changes in the nix store
   nix.settings.trusted-users = [ "@wheel" ];
 
+
+
   # Since all ssh keys are password protected, allow users
   # to run sudo without password, which is convenient
   # option for the remote deployment
