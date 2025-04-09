@@ -16,14 +16,14 @@ pkgs.writeShellApplication {
 
     readonly hostname="$1"
     shift
-     
+
     # Run deploy-rs
     echo "Deploying to $hostname..."
     # TODO get rid of skip checks
+    
     deploy \
-      --interactive-sudo true \
       --skip-checks \
-      ".#$hostname" "$@" 
+      ".#$hostname" "$@"
   ''
   ;
 }
