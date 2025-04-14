@@ -25,6 +25,7 @@
     unstable.kicad
     gnomeExtensions.vitals
     gnomeExtensions.dash-to-panel
+    unstable.gnomeExtensions.unite
     rshell # remote shell for MicroPython 
     tokei # code statistics tool
     tealdeer # tldr help tool
@@ -53,6 +54,7 @@
       enabled-extensions = [
         "Vitals@CoreCoding.com"
         "dash-to-panel@jderose9.github.com"
+        "unite-shell@hardpixel.github.com"
       ];
     };
     # Generated via dconf2nix: https://github.com/nix-commmunity/dconf2nix
