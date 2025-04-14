@@ -71,6 +71,7 @@
     ssh-to-age
     neofetch
     git
+    chromium
   ];
 
   fonts.packages = with pkgs; [
