@@ -34,4 +34,9 @@
   # For Bluetooth
   hardware.bluetooth.enable = true;
   services.blueman.enable = true; # Optional Bluetooth manager
+
+  services.udev.extraRules = ''
+    # Disable autosuspend for mouse devices
+    ACTION=="add", SUBSYSTEM=="usb", ATTR{product}=="*[Mm]ouse*", ATTR{power/autosuspend}="-1"
+  '';
 }
