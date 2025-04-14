@@ -9,6 +9,7 @@
         "cups"
         "networkmanager"
         "jkr"
+        "dialout"
       ];
       # It's good practice to explicitly set the UID
       uid = 1000;
