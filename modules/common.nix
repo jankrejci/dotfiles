@@ -87,6 +87,8 @@
     nix-tree
     gitMinimal
     sbctl
+    gcc
+    gnumake
   ];
 
   services.prometheus.exporters.node = {
