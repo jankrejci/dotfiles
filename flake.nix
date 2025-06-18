@@ -3,14 +3,14 @@
 
   inputs = {
     # Most of packages are fetched from the stable channel
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
     # Some bleeding edge packages are fetch from unstable
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     # A collection of NixOS modules covering hardware quirks
     nixos-hardware.url = "github:NixOS/nixos-hardware";
     # Manage a user environment
     home-manager = {
-      url = "github:nix-community/home-manager/release-24.11";
+      url = "github:nix-community/home-manager/release-25.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # For accessing `deploy-rs`'s utility Nix functions
