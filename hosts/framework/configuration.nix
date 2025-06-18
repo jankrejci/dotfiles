@@ -7,6 +7,7 @@
       "mem_sleep_default=deep"
       # More stable performance for AMD models (if applicable)
       # "amd_pstate=active"
+      "usbcore.autosuspend=-1"
     ];
   };
 
@@ -38,5 +39,7 @@
   services.udev.extraRules = ''
     # Disable autosuspend for mouse devices
     ACTION=="add", SUBSYSTEM=="usb", ATTR{product}=="*[Mm]ouse*", ATTR{power/autosuspend}="-1"
+    # Disable autosuspend for keyboard devices
+    ACTION=="add", SUBSYSTEM=="usb", ATTR{product}=="*[Kk]eyboard*", ATTR{power/autosuspend}="-1"
   '';
 }
