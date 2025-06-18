@@ -21,9 +21,8 @@
     scrollback_editor "hx"
   '';
 
-  # TODO change with the 25.05 stable release
   home.packages = with pkgs; [
-    (nerdfonts.override { fonts = [ "DejaVuSansMono" ]; })
+    nerd-fonts.dejavu-sans-mono
   ];
 
   xdg.desktopEntries."Zellij" = {
