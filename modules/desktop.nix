@@ -1,4 +1,4 @@
-{ pkgs, inputs, ... }:
+{ pkgs, ... }:
 {
   # Enable cross compilation support. It is needed to build aarch64 images.
   boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
@@ -25,6 +25,25 @@
     ];
   };
 
+  # Enable scanning support
+  hardware.sane = {
+    enable = true;
+    extraBackends = with pkgs; [ sane-airscan ];
+    netConf = "192.168.0.136";
+  };
+
+  systemd.tmpfiles.rules = [
+    "L+ /etc/sane-config/pixma.conf - - - - /dev/null"
+    "w /etc/sane-config/pixma.conf - - - - bjnp://192.168.0.136"
+  ];
+
+  # Enable Avahi for network device discovery
+  services.avahi = {
+    enable = true;
+    nssmdns4 = true;
+    openFirewall = true;
+  };
+
   networking.networkmanager.enable = true;
   hardware.pulseaudio.enable = false;
   security.rtkit.enable = true;
@@ -34,9 +53,6 @@
     alsa.support32Bit = true;
     pulse.enable = true;
   };
-
-  # Enable scanning support
-  hardware.sane.enable = true;
 
   # Install firefox.
   programs.firefox.enable = true;
@@ -72,6 +88,10 @@
     neofetch
     git
     chromium
+    sane-backends
+    sane-frontends
+    simple-scan
+    avahi
   ];
 
   fonts.packages = with pkgs; [

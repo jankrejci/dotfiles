@@ -10,6 +10,8 @@
         "networkmanager"
         "jkr"
         "dialout"
+        "scanner"
+        "lp"
       ];
       # It's good practice to explicitly set the UID
       uid = 1000;
