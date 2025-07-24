@@ -84,4 +84,22 @@ in
       };
     };
   };
+
+  # NetworkManager configuration for better OpenVPN handling
+  networking.networkmanager = {
+    enable = true;
+    # Don't let NetworkManager manage systemd-networkd interfaces
+    unmanaged = [ "wg0" ];
+    # Enhanced DNS handling
+    dns = "systemd-resolved";
+    # Connection timeout and retry settings
+    settings = {
+      main = {
+        # Don't modify resolv.conf directly
+        rc-manager = "resolvconf";
+        # Faster connection establishment
+        dhcp = "dhclient";
+      };
+    };
+  };
 }
