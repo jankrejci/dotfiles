@@ -92,6 +92,7 @@
     sane-frontends
     simple-scan
     avahi
+    probe-rs-tools
   ];
 
   fonts.packages = with pkgs; [
