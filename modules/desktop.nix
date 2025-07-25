@@ -1,5 +1,9 @@
 { pkgs, ... }:
 {
+  imports = [
+    ./probe-rs.nix # udev rules for the probe-rs
+  ];
+
   # Enable cross compilation support. It is needed to build aarch64 images.
   boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
 
