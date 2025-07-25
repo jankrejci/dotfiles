@@ -12,7 +12,6 @@
     ../../nushell.nix # new type of shell
     ../../broot.nix # a better way to navigate directories
     ../../hyprland.nix # tiling window manager
-    ../../carapace.nix # multi-shell completion library
   ];
 
   home.packages = with pkgs; [
