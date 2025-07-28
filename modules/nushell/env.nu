@@ -31,15 +31,5 @@ $env.NU_PLUGIN_DIRS = [
 
 $env.EDITOR = "hx"
 
-mkdir ~/.cache/starship
-starship init nu | save -f ~/.cache/starship/init.nu
-
-mkdir ~/.cache/zoxide
-zoxide init nushell | save -f ~/.cache/zoxide/init.nu
-
 mkdir ~/.cache/broot
 broot --print-shell-function nushell | save -f ~/.cache/broot/init.nu
-
-$env.CARAPACE_BRIDGES = 'zsh,fish,bash,inshellisense'
-mkdir ~/.cache/carapace
-carapace _carapace nushell | save -f ~/.cache/carapace/init.nu
