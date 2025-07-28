@@ -10,7 +10,20 @@
     enable = true;
     package = pkgs.alacritty;
     settings = {
-      font.normal.family = "DejaVuSansM Nerd Font Mono";
+      font = {
+        normal = {
+          family = "DejaVuSansM Nerd Font Mono";
+          style = "Regular";
+        };
+        bold = {
+          family = "DejaVuSansM Nerd Font Mono";
+          style = "Bold";
+        };
+        italic = {
+          family = "DejaVuSansM Nerd Font Mono";
+          style = "Oblique";
+        };
+      };
       window = {
         decorations = "None";
         startup_mode = "Maximized";
@@ -109,13 +122,13 @@
       };
       directory = {
         truncation_length = 1;
-        read_only = "🔒";
+        read_only = "";
       };
       git_branch = {
-        symbol = " ";
+        symbol = "";
       };
       os.symbols = {
-        NixOS = "❄️ ";
+        NixOS = "󱄅";
         Arch = " ";
         Debian = " ";
         Linux = " ";
@@ -123,18 +136,18 @@
         Raspbian = " ";
         Ubuntu = " ";
         Unknown = " ";
-        Windows = "🪟 ";
+        Windows = " ";
       };
       package = {
-        symbol = "📦 ";
+        symbol = " ";
         disabled = true;
       };
       python = {
-        symbol = " ";
+        symbol = " ";
       };
       rust = {
-        symbol = " ";
-        format = "[ $version](red bold)";
+        symbol = " ";
+        format = "[ $version](red bold)";
       };
     };
   };
