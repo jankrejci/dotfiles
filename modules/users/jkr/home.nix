@@ -4,13 +4,8 @@
   home.homeDirectory = "/home/jkr";
 
   imports = [
-    ../../alacritty.nix # accelerated terminal emulator
-    ../../starship.nix # customizable prompt
-    ../../git.nix # the git
+    ../../terminal.nix # terminal environment setup
     ../../helix.nix # modal editor
-    ../../zellij.nix # terminal multiplexer
-    ../../nushell.nix # new type of shell
-    ../../broot.nix # a better way to navigate directories
     ../../hyprland.nix # tiling window manager
   ];
 
