@@ -142,11 +142,6 @@ with lib;
 
     ### non-NixOS ###
 
-    latitude = {
-      ipAddress = "192.168.99.51";
-      kind = "home-manager";
-    };
-
     nokia = {
       ipAddress = "192.168.99.52";
       kind = "wg-client";
