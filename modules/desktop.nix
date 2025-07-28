@@ -68,11 +68,11 @@
   };
 
   environment.systemPackages = with pkgs; [
-    unstable.alacritty
     unstable.zellij
     unstable.helix
     unstable.nushell
     unstable.broot
+    alacritty
     home-manager
     starship
     hexyl # hex viewer
