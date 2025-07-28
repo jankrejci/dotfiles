@@ -10,7 +10,7 @@
     enable = true;
     package = pkgs.alacritty;
     settings = {
-      font.normal.family = "DejaVuSansMono";
+      font.normal.family = "DejaVuSansM Nerd Font Mono";
       window = {
         decorations = "None";
         startup_mode = "Maximized";
