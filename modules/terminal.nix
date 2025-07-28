@@ -139,6 +139,12 @@
     };
   };
 
+  programs.zoxide = {
+    enable = true;
+    enableBashIntegration = true;
+    enableNushellIntegration = true;
+  };
+
   programs.broot = {
     enable = true;
     package = pkgs.unstable.broot;
