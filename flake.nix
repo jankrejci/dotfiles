@@ -61,7 +61,18 @@
       };
       pkgs-x86_64-linux = import nixpkgs {
         system = "x86_64-linux";
-        config.allowUnfree = true;
+        config = {
+          allowUnfree = true;
+          # Enable support for display link devices
+          displaylink = {
+            enable = true;
+            # Use a fixed path relative to the repository
+            driverFile = ./modules/displaylink/displaylink-600.zip;
+            # Provide a fixed hash that you'll get after downloading the file
+            # Add the hash here after downloading and running nix-prefetch-url file://$(pwd)/modules/displaylink/displaylink-600.zip
+            sha256 = "1ixrklwk67w25cy77n7l0pq6j9i4bp4lkdr30kp1jsmyz8daaypw";
+          };
+        };
         overlays = [
           nixgl.overlay
           unstable-x86_64-linux
@@ -122,16 +133,18 @@
         }:
         lib.nixosSystem {
           system = hostConfig.system;
-          specialArgs = {
-            inherit inputs;
-            pkgs =
-              if hostConfig.system == "aarch64-linux"
-              then pkgs-aarch64-linux
-              else pkgs-x86_64-linux;
-          };
-          modules = mkModulesList {
-            inherit hostName hostConfig additionalModules;
-          };
+          specialArgs = { inherit inputs; };
+          modules = mkModulesList
+            {
+              inherit hostName hostConfig additionalModules;
+            } ++ [
+            ({ ... }: {
+              nixpkgs.pkgs =
+                if hostConfig.system == "aarch64-linux"
+                then pkgs-aarch64-linux
+                else pkgs-x86_64-linux;
+            })
+          ];
         };
 
       # Function to create a deploy node entry
