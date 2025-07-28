@@ -1,8 +1,8 @@
-{ pkgs, config, ... }:
+{ pkgs, ... }:
 {
   programs.alacritty = {
     enable = true;
-    package = (config.lib.nixGL.wrap pkgs.unstable.alacritty);
+    package = pkgs.alacritty;
     settings = {
       font.normal.family = "DejaVuSansMono";
       window = {
