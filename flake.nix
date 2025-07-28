@@ -188,16 +188,6 @@
           }).config.system.build.sdImage);
       };
 
-      # Generate homeConfiguration for non-NixOS host running home manager
-      homeConfigurations = {
-        latitude = home-manager.lib.homeManagerConfiguration {
-          pkgs = pkgs-x86_64-linux;
-          modules = [
-            ./modules/users/jkr/home-ubuntu.nix
-          ];
-        };
-      };
-
       # Declare hosts in outputs to be evaluable with nix eval,
       # this is usefull for wireguard-config generator
       hosts = hosts;
