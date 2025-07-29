@@ -44,8 +44,33 @@
   programs.nushell = {
     enable = true;
     package = pkgs.unstable.nushell;
-    configFile.source = ./nushell/config.nu;
-    envFile.source = ./nushell/env.nu;
+    extraConfig = ''
+      $env.config = {
+        completions: {
+          algorithm: 'fuzzy',
+        },
+        history: {
+          file_format: 'sqlite',
+          sync_on_enter: true,
+          isolation: true,
+        },
+        show_banner: false,
+        keybindings: [
+          {
+            name: open_editor
+            modifier: control
+            keycode: char_e
+            mode: [vi_normal vi_insert emacs]
+            event: { send: OpenEditor}
+          }
+        ]
+      }
+    '';
+
+    extraEnv = ''
+      $env.EDITOR = "hx"
+    '';
+
     shellAliases = {
       ll = "ls -l";
       lt = "exa -T -L2";
@@ -58,6 +83,7 @@
     enable = true;
     package = pkgs.unstable.zellij;
   };
+
   home.file.".config/zellij/config.kdl".text = ''
     keybinds {
         pane {
@@ -161,6 +187,8 @@
   programs.broot = {
     enable = true;
     package = pkgs.unstable.broot;
+    enableBashIntegration = true;
+    enableNushellIntegration = true;
     settings = {
       icon_theme = "nerdfont";
     };
