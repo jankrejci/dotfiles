@@ -8,7 +8,7 @@
     marksman # markdown language server
     typos # spell checker
     typos-lsp # typos language server api
-    unstable.nil # nix LSP server
+    nixd # nix LSP server
     taplo # toml toolkit
     alejandra # nix opinionated formatter
   ];
