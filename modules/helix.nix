@@ -6,11 +6,11 @@
     slint-lsp # slint language server
     shfmt # bash file formatter
     marksman # markdown language server
-    nixpkgs-fmt # nix file formatter
     typos # spell checker
     typos-lsp # typos language server api
     unstable.nil # nix LSP server
     taplo # toml toolkit
+    alejandra # nix opinionated formatter
   ];
 
   programs.helix = {
@@ -162,7 +162,10 @@
             tab-width = 4;
             unit = " ";
           };
-          formatter.command = "nixpkgs-fmt";
+          formatter = {
+            command = "alejandra";
+            args = ["-"];
+          };
         }
       ];
     };
