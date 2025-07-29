@@ -1,5 +1,4 @@
-{ pkgs, ... }:
-{
+{pkgs, ...}: {
   home.packages = with pkgs; [
     nerd-fonts.dejavu-sans-mono
     git-absorb # absorb git hunks within existing commits
@@ -36,9 +35,9 @@
     comment = "Terminal emulator";
     icon = "Alacritty";
     exec = "alacritty";
-    categories = [ "TerminalEmulator" ];
+    categories = ["TerminalEmulator"];
     terminal = false;
-    mimeType = [ "text/plain" ];
+    mimeType = ["text/plain"];
   };
 
   programs.nushell = {
@@ -106,7 +105,7 @@
     comment = "Terminal multiplexer";
     exec = "alacritty -e zellij -l welcome";
     icon = "/home/jkr/dotfiles/modules/zellij/logo.png";
-    categories = [ "System" "TerminalEmulator" ];
+    categories = ["System" "TerminalEmulator"];
     terminal = false;
   };
 
@@ -201,4 +200,3 @@
     enableNushellIntegration = true;
   };
 }
-

@@ -1,9 +1,11 @@
-{ config, pkgs, ... }:
-let
+{
+  config,
+  pkgs,
+  ...
+}: let
   luksDevice = "/dev/disk/by-partlabel/disk-main-luks";
   diskPasswordFile = "/var/lib/disk-password";
-in
-{
+in {
   # Boot parition and encrypted root partition
   disko.devices = {
     disk = {
@@ -20,7 +22,7 @@ in
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot";
-                mountOptions = [ "umask=0077" ];
+                mountOptions = ["umask=0077"];
               };
             };
             luks = {
@@ -28,7 +30,7 @@ in
               content = {
                 type = "luks";
                 name = "crypted";
-                extraOpenArgs = [ ];
+                extraOpenArgs = [];
                 passwordFile = diskPasswordFile;
                 content = {
                   type = "lvm_pv";
@@ -95,7 +97,7 @@ in
   # Final TPM key enrollment
   systemd.services."erase-temporary-password" = {
     description = "Get rid of the temporary disk password";
-    wantedBy = [ "multi-user.target" ];
+    wantedBy = ["multi-user.target"];
 
     serviceConfig = {
       Type = "oneshot";

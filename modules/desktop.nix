@@ -1,11 +1,10 @@
-{ pkgs, ... }:
-{
+{pkgs, ...}: {
   imports = [
     ./probe-rs.nix # udev rules for the probe-rs
   ];
 
   # Enable cross compilation support. It is needed to build aarch64 images.
-  boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+  boot.binfmt.emulatedSystems = ["aarch64-linux"];
 
   services.xserver = {
     # Enable the X11 windowing system.
@@ -32,7 +31,7 @@
   # Enable scanning support
   hardware.sane = {
     enable = true;
-    extraBackends = with pkgs; [ sane-airscan ];
+    extraBackends = with pkgs; [sane-airscan];
     netConf = "192.168.0.136";
   };
 
@@ -106,5 +105,5 @@
   ];
 
   # Add DisplayLink to video drivers
-  services.xserver.videoDrivers = [ "displaylink" "modesetting" ];
+  services.xserver.videoDrivers = ["displaylink" "modesetting"];
 }

@@ -5,15 +5,23 @@
 # from vpsAdminOS repository:
 #
 #   https://github.com/vpsfreecz/vpsadminos/blob/staging/os/lib/nixos-container/vpsadminos.nix
-
-{ pkgs, lib, ... }:
+{
+  pkgs,
+  lib,
+  ...
+}:
 with lib; {
   networking.dhcpcd.extraConfig = "noipv4ll";
 
   systemd.services.systemd-sysctl.enable = false;
   systemd.services.systemd-oomd.enable = false;
   systemd.sockets."systemd-journald-audit".enable = false;
-  systemd.mounts = [{ where = "/sys/kernel/debug"; enable = false; }];
+  systemd.mounts = [
+    {
+      where = "/sys/kernel/debug";
+      enable = false;
+    }
+  ];
   systemd.services.rpc-gssd.enable = false;
 
   # Due to our restrictions in /sys, the default systemd-udev-trigger fails
@@ -43,10 +51,10 @@ with lib; {
   # Bring up the network, /ifcfg.{add,del} are supplied by the vpsAdminOS host
   systemd.services.networking-setup = {
     description = "Load network configuration provided by the vpsAdminOS host";
-    before = [ "network.target" ];
-    wantedBy = [ "network.target" ];
-    after = [ "network-pre.target" ];
-    path = [ pkgs.iproute2 ];
+    before = ["network.target"];
+    wantedBy = ["network.target"];
+    after = ["network-pre.target"];
+    path = [pkgs.iproute2];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;

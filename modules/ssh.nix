@@ -1,5 +1,8 @@
-{ config, pkgs, ... }:
-let
+{
+  config,
+  pkgs,
+  ...
+}: let
   gitRepo = "https://raw.githubusercontent.com/jankrejci/dotfiles";
   gitBranch = "main";
   keysFile = "ssh-authorized-keys.pub";
@@ -20,8 +23,7 @@ let
 
     "${pkgs.coreutils}/bin/cat" "${keysPath}"
   '';
-in
-{
+in {
   # Use the folder for the key cache, keys are valid at least 1 minute
   systemd.tmpfiles.settings = {
     "10-ssh-authorized-keys-cache" = {
@@ -57,7 +59,10 @@ in
     enable = true;
 
     listenAddresses = [
-      { addr = config.hosts.self.ipAddress; port = 22; }
+      {
+        addr = config.hosts.self.ipAddress;
+        port = 22;
+      }
     ];
     settings = {
       PasswordAuthentication = false;
@@ -72,4 +77,3 @@ in
     RestartSec = 5;
   };
 }
-

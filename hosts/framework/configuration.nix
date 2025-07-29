@@ -1,7 +1,6 @@
-{ pkgs, ... }:
-{
+{pkgs, ...}: {
   boot = {
-    kernelModules = [ "kvm-amd" ];
+    kernelModules = ["kvm-amd"];
     # Better support for sleep states
     kernelParams = [
       "mem_sleep_default=deep"

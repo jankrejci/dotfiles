@@ -1,10 +1,12 @@
-{ lib, pkgs, ... }:
-let
+{
+  lib,
+  pkgs,
+  ...
+}: let
   # Path where the wpa_supplicant configuration will be generated
   wpaConfigFolder = "/var/lib/wpa_supplicant";
   wpaConfigPath = "${wpaConfigFolder}/wpa_supplicant.conf";
-in
-{
+in {
   # Add password for the admin user to be able to log in from local console
   users.users.admin.hashedPassword = "$y$j9T$8qLqeoP/jNv9rFtFfyljl1$S/GqBaFaaCIluY88qW9app4APK49d9wFI.5CmfFnwH/";
 
@@ -13,11 +15,11 @@ in
 
   hardware = {
     enableRedistributableFirmware = true;
-    firmware = [ pkgs.raspberrypiWirelessFirmware ];
+    firmware = [pkgs.raspberrypiWirelessFirmware];
   };
 
   boot = {
-    kernelModules = [ ];
+    kernelModules = [];
     loader = {
       # Use the extlinux boot loader. NixOS wants to enable GRUB by default.
       grub.enable = false;
@@ -30,7 +32,7 @@ in
     extraModprobeConfig = lib.mkDefault ''
       options cfg80211 ieee80211_regdom=CZ
     '';
-    supportedFilesystems = { zfs = lib.mkForce false; };
+    supportedFilesystems = {zfs = lib.mkForce false;};
   };
 
   fileSystems = {
@@ -39,7 +41,7 @@ in
       fsType = "ext4";
     };
   };
-  swapDevices = [ ];
+  swapDevices = [];
 
   # TODO find out more unused services to disable
   # Disable unneeded features
@@ -58,7 +60,7 @@ in
   networking = {
     wireless = {
       enable = true;
-      interfaces = [ "wlan0" ];
+      interfaces = ["wlan0"];
     };
     supplicant.wlan0 = {
       driver = "nl80211";
@@ -66,4 +68,3 @@ in
     };
   };
 }
-

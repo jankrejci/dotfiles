@@ -1,10 +1,12 @@
-{ config, lib, ... }:
-let
-  domain = "vpn";
-  nameServers = [ "127.0.0.53" "1.1.1.1" "8.8.8.8" ];
-  privateKeyPath = "/var/lib/wireguard/wg-key";
-in
 {
+  config,
+  lib,
+  ...
+}: let
+  domain = "vpn";
+  nameServers = ["127.0.0.53" "1.1.1.1" "8.8.8.8"];
+  privateKeyPath = "/var/lib/wireguard/wg-key";
+in {
   # Avoid collision of the dhcp with the sysystemd.network
   networking = {
     useDHCP = lib.mkForce false;
@@ -57,7 +59,7 @@ in
         wireguardPeers = [
           {
             PublicKey = config.hosts.vpsfree.wgPublicKey;
-            AllowedIPs = [ "192.168.99.0/24" ];
+            AllowedIPs = ["192.168.99.0/24"];
             Endpoint = "37.205.13.227:51820";
             PersistentKeepalive = 25;
           }
@@ -67,10 +69,10 @@ in
     networks = {
       "10-wg0" = {
         matchConfig.Name = "wg0";
-        address = [ "${config.hosts.self.ipAddress}/24" ];
+        address = ["${config.hosts.self.ipAddress}/24"];
         DHCP = "no";
-        dns = [ "192.168.99.1" ];
-        domains = [ "~${domain}" ];
+        dns = ["192.168.99.1"];
+        domains = ["~${domain}"];
       };
       # Enable dhcp via sysystemd.network
       # This can be overriden for servers with fixed ip
@@ -89,7 +91,7 @@ in
   networking.networkmanager = {
     enable = true;
     # Don't let NetworkManager manage systemd-networkd interfaces
-    unmanaged = [ "wg0" ];
+    unmanaged = ["wg0"];
     # Enhanced DNS handling
     dns = "systemd-resolved";
     # Connection timeout and retry settings

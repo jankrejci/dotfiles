@@ -1,5 +1,4 @@
-{ pkgs, ... }:
-
+{pkgs, ...}:
 pkgs.writeShellApplication {
   name = "deploy-config";
   runtimeInputs = with pkgs; [
@@ -20,10 +19,9 @@ pkgs.writeShellApplication {
     # Run deploy-rs
     echo "Deploying to $hostname..."
     # TODO get rid of skip checks
-    
+
     deploy \
       --skip-checks \
       ".#$hostname" "$@"
-  ''
-  ;
+  '';
 }

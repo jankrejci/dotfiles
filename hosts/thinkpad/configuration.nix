@@ -1,5 +1,4 @@
-{ pkgs, ... }:
-{
+{pkgs, ...}: {
   # Enable ThinkPad ACPI support for ThinkPad features
   hardware.trackpoint = {
     enable = true;

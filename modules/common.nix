@@ -1,14 +1,16 @@
-{ config, lib, pkgs, ... }:
 {
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  config,
+  lib,
+  pkgs,
+  ...
+}: {
+  nix.settings.experimental-features = ["nix-command" "flakes"];
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
 
   # Consider users with the root access trustfull enough
   # to allow changes in the nix store
-  nix.settings.trusted-users = [ "@wheel" ];
-
-
+  nix.settings.trusted-users = ["@wheel"];
 
   # Since all ssh keys are password protected, allow users
   # to run sudo without password, which is convenient
@@ -16,8 +18,8 @@
   security.sudo.wheelNeedsPassword = false;
 
   boot = {
-    kernelModules = lib.mkDefault [ "kvm-intel" ];
-    extraModulePackages = [ ];
+    kernelModules = lib.mkDefault ["kvm-intel"];
+    extraModulePackages = [];
     initrd = {
       availableKernelModules = [
         "nvme"
@@ -77,9 +79,9 @@
     fd # find relplacement
     fzf # cli fuzzy finder
     zoxide # smarter cd command
-    ripgrep # search tool 
+    ripgrep # search tool
     nmap # network mapper
-    htop # interactive process viewer 
+    htop # interactive process viewer
     wireguard-tools
     dig # DNS lookup utility
     sops
