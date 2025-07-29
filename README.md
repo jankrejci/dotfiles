@@ -1,54 +1,56 @@
-# Description
-Working environment defined with Nix and home-manager
+# Dotfiles
+NixOS system defined through flake.
 
-# Host installation
-## Generic x86_64 targets
-Generate installation ISO image 
-```nix
-LOAD_KEYS=1 nix build .#image.iso --impure
-```
-Create installation USB stick
-```shell
-sudo dd if=./result/iso/nisox-installer.img of=/dev/sdX bs=10MB oflag=dsync status=progress; sync
-```
+## Bootable images
+
+### USB stick for x86_64 targets 
+
 When you boot from this stick, host connects over the VPN and is prepared to be installed.
 
-## Raspberry aarch64 targets
-Generate installation SD card image. 
-```nix
-LOAD_KEYS=1 nix build .#image.rpi4 --impure
-```
-Create installation USB stick
-```shell
-sudo dd if=./result/sd-image/rpi4.img of=/dev/sdX bs=10MB oflag=dsync status=progress; sync
-```
+### SD card for aarch64 raspberries
+
 Insert SD card and wait for boot, now everything works out of the box! It restarts after the first boot, so the first start takes a bit longer.
 
-## Legacy way
-Install nix through the [nix-installer](https://github.com/DeterminateSystems/nix-installer)
-```shell
-curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
-```
-Or download the nixos image from the [nixos.org](https://nixos.org/download/) and create bootable flash
-```
-sudo dd bs=4M conv=fsync oflag=direct status=progress if=<path-to-image> of=/dev/sdX
-```
+## Installation
 
-# Key management
-All private keys are stored in `./secrets.yaml` encrypted with "admin" age keys. 
+## Update
 
-## Generate host specific secrets
-Out of the shared `secrets.yaml`, host secrets are generated using the `sops/.#host` flake. It generates host specific secrets stored in `hosts/<hostname>/secrets.yaml`, encrypted with "admin" keys and also with the host key.
-```nix
-nix run sops/.#host rpi4 --impure
-```
-## Generate sops configuration
-```nix
-nix run sops/.#config --impure
-```
-## Generate image with host age key included
-Host age key is injected into installation image during the build process if the `LOAD_KEYS=1` environment variable is set. 
-```nix
-LOAD_KEYS=1 nix build .#image.rpi4 --impure
-```
+## Handy scripts
 
+### build-installer
+```
+nix run .#build-installer
+```
+Builds iso file, that can be burned on USB flash with
+```
+sudo dd if=./result/iso-image/nixos-minimal-...-linux.iso of=/dev/sdX bs=10MB oflag=dsync status=progress; sync
+```
+This USB stick can be used to boot x86-64 machine and NixOS can be istalled trhough it.
+Every time the script is invoked, new wireguard key pair is generated. The reason is to avoid storing
+the private key anywhere. Therefore you need to push the change and rebuild VPN server with updated public key.
+
+### build-sdcard
+```
+nix run .#build-sdcard rpi4
+```
+Builds image, that can be burned on sdcard
+```
+sudo dd if=./result/rpi4-sdcard/nixos-image-...-linux.img of=/dev/sdX bs=10MB oflag=dsync status=progress; sync
+```
+This sdcard can be used to boot aarch64 Raspberry Pi machine and NixOS can be istalled trhough it.
+Every time the script is invoked, new wireguard key pair is generated. The reason is to avoid storing
+the private key anywhere. Therefore you need to push the change and rebuild VPN server with updated public key.
+
+### generate-ssh-key
+
+### wireguard-config
+
+### deploy-config
+
+### nixos-install
+
+```
+nix run .#nixos-install optiplex
+```
+You can install NixOS system using this script. It expects running Linux system reachable on iso.vpn.
+This can be achieved through booting the machine from USB stick prepared with `build-installer`
