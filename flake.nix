@@ -220,38 +220,10 @@
     # this is usefull for wireguard-config generator
     hosts = hosts;
 
-    packages."x86_64-linux" = {
-      # Install nixos vian nixos-anywhere
-      # `nix run .#nixos-install HOSTNAME`
-      nixos-install = import ./scripts/nixos-install.nix {
-        pkgs = pkgs-x86_64-linux;
-        nixos-anywhere = nixos-anywhere.packages."x86_64-linux".nixos-anywhere;
-      };
-      # Generate wireguard configuration for non-NixOS hosts
-      # `nix run .#wireguard-config HOSTNAME`
-      wireguard-config = import ./scripts/wireguard-config.nix {
-        pkgs = pkgs-x86_64-linux;
-      };
-      # Generate SD card image for the Raspberry Pi host
-      # `nix run .#build-sdcard HOSTNAME`
-      build-sdcard = import ./scripts/build-sdcard.nix {
-        pkgs = pkgs-x86_64-linux;
-      };
-      # Generate installer iso image for USB stick
-      # `nix run .#build-installer`
-      build-installer = import ./scripts/build-installer.nix {
-        pkgs = pkgs-x86_64-linux;
-      };
-      # Deploy configuration to a NixOS host
-      # `nix run .#deploy HOSTNAME`
-      deploy-config = import ./scripts/deploy-config.nix {
-        pkgs = pkgs-x86_64-linux;
-      };
-      # Deploy configuration to a NixOS host
-      # `nix run .#add-ssh-key HOSTNAME`
-      add-ssh-key = import ./scripts/add-ssh-key.nix {
-        pkgs = pkgs-x86_64-linux;
-      };
+    # Import usefull scripts
+    packages."x86_64-linux" = import ./scripts.nix {
+      pkgs = pkgs-x86_64-linux;
+      nixos-anywhere = nixos-anywhere.packages."x86_64-linux".nixos-anywhere;
     };
   };
 }
