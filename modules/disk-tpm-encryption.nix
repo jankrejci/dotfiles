@@ -1,9 +1,11 @@
-{ config, pkgs, ... }:
-let
+{
+  config,
+  pkgs,
+  ...
+}: let
   luksDevice = "/dev/disk/by-partlabel/disk-main-luks";
   diskPasswordFile = "/var/lib/disk-password";
-in
-{
+in {
   # Boot parition and encrypted root partition
   disko.devices = {
     disk = {
@@ -20,7 +22,7 @@ in
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot";
-                mountOptions = [ "umask=0077" ];
+                mountOptions = ["umask=0077"];
               };
             };
             luks = {
@@ -28,7 +30,7 @@ in
               content = {
                 type = "luks";
                 name = "crypted";
-                extraOpenArgs = [ ];
+                extraOpenArgs = [];
                 passwordFile = diskPasswordFile;
                 content = {
                   type = "lvm_pv";
@@ -117,10 +119,10 @@ in
   # Workaround to add delay to avoid TPM unlock timing issues
   boot.initrd.systemd.services."tpm-delay" = {
     description = "Delay before TPM decryption";
-    wantedBy = [ "cryptsetup.target" ];
-    before = [ "systemd-cryptsetup@cryptroot.service" ];
+    wantedBy = ["cryptsetup.target"];
+    before = ["systemd-cryptsetup@cryptroot.service"];
     # Prevent boot order cycle
-    after = [ "systemd-modules-load.service" ];
+    after = ["systemd-modules-load.service"];
     # wantedBy = [ "systemd-cryptsetup@cryptroot.service" ];
     # before = [ "systemd-cryptsetup@cryptroot.service" ];
     serviceConfig = {
@@ -130,7 +132,7 @@ in
   };
 
   system.activationScripts."enroll-secure-boot-keys" = {
-    deps = [ ];
+    deps = [];
     text = ''
       if ${pkgs.sbctl}/bin/sbctl status | grep -qE "Secure Boot:.*Enabled"; then
         echo "Secure boot is already enrolled, skipping creating keys"
@@ -175,7 +177,7 @@ in
   # Final TPM key enrollment
   systemd.services."enroll-tpm-key" = {
     description = "Enroll TPM key for disk encryption";
-    wantedBy = [ "multi-user.target" ];
+    wantedBy = ["multi-user.target"];
 
     serviceConfig = {
       Type = "oneshot";

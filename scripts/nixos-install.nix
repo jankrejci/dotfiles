@@ -1,5 +1,8 @@
-{ nixos-anywhere, pkgs, ... }:
-
+{
+  nixos-anywhere,
+  pkgs,
+  ...
+}:
 pkgs.writeShellApplication {
   name = "nixos-install";
   runtimeInputs = with pkgs; [

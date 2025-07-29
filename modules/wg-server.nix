@@ -1,24 +1,25 @@
-{ config, lib, ... }:
-let
+{
+  config,
+  lib,
+  ...
+}: let
   wgPort = 51820;
   dnsPort = 53;
   domain = "vpn";
-in
-{
+in {
   # Enable wg listenning port
-  networking.firewall.allowedUDPPorts = [ wgPort ];
+  networking.firewall.allowedUDPPorts = [wgPort];
 
   # Create list of all peers for wg server
   systemd.network.netdevs."10-wg0" = {
     wireguardConfig.ListenPort = wgPort;
-    wireguardPeers =
-      let
-        makePeer = host: {
-          PublicKey = host.wgPublicKey;
-          AllowedIPs = [ host.ipAddress ];
-          PersistentKeepalive = 25;
-        };
-      in
+    wireguardPeers = let
+      makePeer = host: {
+        PublicKey = host.wgPublicKey;
+        AllowedIPs = [host.ipAddress];
+        PersistentKeepalive = 25;
+      };
+    in
       builtins.map makePeer (builtins.attrValues config.hosts);
   };
 
@@ -31,8 +32,8 @@ in
 
   # Enable ports for dns withing the wg vpn
   networking.firewall.interfaces = {
-    "wg0".allowedUDPPorts = [ dnsPort ];
-    "wg0".allowedTCPPorts = [ dnsPort ];
+    "wg0".allowedUDPPorts = [dnsPort];
+    "wg0".allowedTCPPorts = [dnsPort];
   };
 
   services.dnsmasq = {
@@ -48,7 +49,7 @@ in
       "addn-hosts" = "/etc/dnsmasq-hosts";
 
       "interface" = "wg0";
-      "listen-address" = [ config.hosts.self.ipAddress ];
+      "listen-address" = [config.hosts.self.ipAddress];
 
       # Disable DHCP service
       "no-dhcp-interface" = "wg0";
@@ -69,10 +70,9 @@ in
   };
 
   # Create a list of all ip - host pairs to be resolved
-  environment.etc."dnsmasq-hosts".text =
-    let
-      makeHostEntry = hostName: hostConfig: hostConfig.ipAddress + " " + hostName + "." + domain;
-    in
+  environment.etc."dnsmasq-hosts".text = let
+    makeHostEntry = hostName: hostConfig: hostConfig.ipAddress + " " + hostName + "." + domain;
+  in
     builtins.concatStringsSep "\n" (lib.mapAttrsToList makeHostEntry config.hosts) + "\n";
 
   # Restart dnsmasq when /etc/dnsmasq-hosts changes

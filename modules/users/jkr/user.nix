@@ -1,5 +1,4 @@
-{ ... }:
-{
+{...}: {
   users.users = {
     jkr = {
       isNormalUser = true;
@@ -29,8 +28,8 @@
     useGlobalPkgs = true;
     useUserPackages = true;
     users = {
-      jkr = { ... }: {
-        imports = [ ./home.nix ];
+      jkr = {...}: {
+        imports = [./home.nix];
       };
     };
   };

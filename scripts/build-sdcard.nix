@@ -1,5 +1,4 @@
-{ pkgs, ... }:
-
+{pkgs, ...}:
 pkgs.writeShellApplication {
   name = "build-sdcard";
   runtimeInputs = with pkgs; [
@@ -8,12 +7,12 @@ pkgs.writeShellApplication {
   text = ''
     #!/usr/bin/env bash
     set -euo pipefail
-  
+
     if [ $# -ne 1 ]; then
       echo "Usage: build-image HOSTNAME"
       exit 1
     fi
-  
+
     # Create temporary root build to be copied to the sdcard image root
     readonly TEMP="/tmp/build/root"
     mkdir -p "$TEMP"
@@ -27,10 +26,10 @@ pkgs.writeShellApplication {
 
     hostname="$1"
     echo "Building image for host: $hostname"
-  
+
     # Build the image - clean and simple
     nix build ".#image.sdcard.$hostname" -o "$hostname-sdcard"
-  
+
     echo "Image built successfully: $hostname-sdcard"
   '';
 }

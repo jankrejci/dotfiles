@@ -1,5 +1,4 @@
-{ ... }:
-{
+{...}: {
   users.users = {
     paja = {
       isNormalUser = true;
@@ -25,8 +24,8 @@
     useGlobalPkgs = true;
     useUserPackages = true;
     users = {
-      paja = { ... }: {
-        imports = [ ./home.nix ];
+      paja = {...}: {
+        imports = [./home.nix];
       };
     };
   };

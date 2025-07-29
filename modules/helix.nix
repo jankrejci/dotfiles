@@ -1,6 +1,4 @@
-{ pkgs, ... }:
-
-{
+{pkgs, ...}: {
   home.packages = with pkgs; [
     ltex-ls # spell check language server
     nodePackages.bash-language-server # bash language server
@@ -22,7 +20,7 @@
       theme = "sonokai_no_underline";
       editor = {
         mouse = false;
-        shell = [ "nu" "-c" ];
+        shell = ["nu" "-c"];
         cursorline = true;
         idle-timeout = 5;
         true-color = true;
@@ -48,11 +46,11 @@
           p = "paste_clipboard_after";
           P = "paste_clipboard_before";
           y = "yank_joined_to_clipboard";
-          D = [ "yank_main_selection_to_clipboard" "delete_selection" ];
+          D = ["yank_main_selection_to_clipboard" "delete_selection"];
           V = "extend_to_line_end";
           C-l = "goto_next_buffer";
           C-h = "goto_previous_buffer";
-          esc = [ "collapse_selection" "keep_primary_selection" ];
+          esc = ["collapse_selection" "keep_primary_selection"];
           g = {
             o = "jump_backward";
             O = "jump_forward";
@@ -67,15 +65,15 @@
           pagedown = "no_op";
           home = "no_op";
           end = "no_op";
-          esc = [ "collapse_selection" "normal_mode" ];
+          esc = ["collapse_selection" "normal_mode"];
         };
         select = {
           p = "replace_selections_with_clipboard";
           P = "no_op";
           y = "yank_joined_to_clipboard";
-          D = [ "yank_main_selection_to_clipboard" "delete_selection" ];
+          D = ["yank_main_selection_to_clipboard" "delete_selection"];
           V = "extend_to_line_end";
-          esc = [ "collapse_selection" "keep_primary_selection" "normal_mode" ];
+          esc = ["collapse_selection" "keep_primary_selection" "normal_mode"];
         };
       };
     };
@@ -104,7 +102,7 @@
               "git-rebase"
             ];
             ltex.disabledRules = {
-              en-US = [ "PROFANITY" ];
+              en-US = ["PROFANITY"];
             };
             ltex.dictionary = {
               en-US = [
@@ -138,7 +136,7 @@
         {
           name = "rust";
           auto-format = true;
-          language-servers = [ "rust-analyzer" ];
+          language-servers = ["rust-analyzer"];
         }
         {
           name = "bash";

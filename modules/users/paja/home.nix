@@ -1,5 +1,8 @@
-{ pkgs, lib, ... }:
 {
+  pkgs,
+  lib,
+  ...
+}: {
   home.username = "paja";
   home.homeDirectory = "/home/paja";
 
@@ -26,14 +29,14 @@
     # Generated via dconf2nix: https://github.com/nix-commmunity/dconf2nix
     "org/gnome/desktop/input-sources" = {
       mru-sources = [
-        (mkTuple [ "xkb" "us" ])
-        (mkTuple [ "xkb" "cz+qwertz" ])
+        (mkTuple ["xkb" "us"])
+        (mkTuple ["xkb" "cz+qwertz"])
       ];
       sources = [
-        (mkTuple [ "xkb" "us" ])
-        (mkTuple [ "xkb" "cz+qwertz" ])
+        (mkTuple ["xkb" "us"])
+        (mkTuple ["xkb" "cz+qwertz"])
       ];
-      xkb-options = [ ];
+      xkb-options = [];
     };
     "org/gnome/settings-daemon/plugins/power" = {
       sleep-inactive-ac-type = "nothing";
@@ -49,7 +52,7 @@
       show-battery-percentage = true;
     };
     "org/gnome/shell" = {
-      favorite-apps = [ "firefox.desktop" "org.gnome.Nautilus.desktop" ];
+      favorite-apps = ["firefox.desktop" "org.gnome.Nautilus.desktop"];
     };
     "org/gnome/shell/extensions/dash-to-panel" = {
       panel-positions = ''

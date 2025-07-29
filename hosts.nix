@@ -1,12 +1,17 @@
-{ lib, nixos-hardware, ... }:
-
-with lib;
-
 {
+  lib,
+  nixos-hardware,
+  ...
+}:
+with lib; {
   options.hosts = mkOption {
     description = "A set of defined hosts";
     # Explicitly pass `name`
-    type = types.attrsOf (types.submodule ({ config, name, ... }: {
+    type = types.attrsOf (types.submodule ({
+      config,
+      name,
+      ...
+    }: {
       options = {
         hostName = mkOption {
           type = types.str;
@@ -52,13 +57,12 @@ with lib;
 
         extraModules = mkOption {
           type = types.listOf types.path;
-          default = [ ];
+          default = [];
           description = "Extra NixOS modules to include";
         };
       };
     }));
   };
-
 
   ### Servers ###
   config.hosts = {

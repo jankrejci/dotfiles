@@ -1,5 +1,4 @@
-{ pkgs, ... }:
-
+{pkgs, ...}:
 pkgs.writeShellApplication {
   name = "generate-ssh-key";
   runtimeInputs = with pkgs; [

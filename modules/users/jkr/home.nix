@@ -1,5 +1,8 @@
-{ pkgs, lib, ... }:
 {
+  pkgs,
+  lib,
+  ...
+}: {
   home.username = "jkr";
   home.homeDirectory = "/home/jkr";
 
@@ -12,7 +15,7 @@
   home.packages = with pkgs; [
     unstable.shell-gpt # cli gpt prompt
     unstable.rustup # rust install tool
-    unstable.espflash # flasher utility for Espressif SoCs 
+    unstable.espflash # flasher utility for Espressif SoCs
     unstable.prusa-slicer # slicer for 3D printing
     unstable.trezor-suite
     # unstable.kicad-small
@@ -20,7 +23,7 @@
     gnomeExtensions.vitals
     gnomeExtensions.dash-to-panel
     unstable.gnomeExtensions.unite
-    rshell # remote shell for MicroPython 
+    rshell # remote shell for MicroPython
     tokei # code statistics tool
     tealdeer # tldr help tool
     zen-browser
@@ -54,14 +57,14 @@
     # Generated via dconf2nix: https://github.com/nix-commmunity/dconf2nix
     "org/gnome/desktop/input-sources" = {
       mru-sources = [
-        (mkTuple [ "xkb" "us" ])
-        (mkTuple [ "xkb" "cz+qwerty" ])
+        (mkTuple ["xkb" "us"])
+        (mkTuple ["xkb" "cz+qwerty"])
       ];
       sources = [
-        (mkTuple [ "xkb" "us" ])
-        (mkTuple [ "xkb" "cz+qwerty" ])
+        (mkTuple ["xkb" "us"])
+        (mkTuple ["xkb" "cz+qwerty"])
       ];
-      xkb-options = [ ];
+      xkb-options = [];
     };
     "org/gnome/settings-daemon/plugins/power" = {
       sleep-inactive-ac-type = "nothing";
@@ -75,14 +78,13 @@
       show-battery-percentage = true;
     };
     "org/gnome/shell" = {
-      favorite-apps = [ "Alacritty.desktop" "zen.desktop" "org.gnome.Nautilus.desktop" ];
+      favorite-apps = ["Alacritty.desktop" "zen.desktop" "org.gnome.Nautilus.desktop"];
     };
     "org/gnome/shell/extensions/dash-to-panel" = {
       panel-positions = ''
         {"0":"TOP"}
       '';
     };
-
   };
 
   programs.home-manager.enable = true;

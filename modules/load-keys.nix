@@ -1,5 +1,4 @@
-{ ... }:
-let
+{...}: let
   # Enviroment variable needs to be set by the install script
   wgPrivateKey = builtins.getEnv "WG_PRIVATE_KEY";
   wgKeySource = "/etc/wireguard/wg-key";
@@ -7,10 +6,9 @@ let
   wgKeyPath = "${wgKeyFolder}/wg-key";
   keyUser = "systemd-network";
   keyGroup = "systemd-network";
-in
-{
+in {
   environment.etc."wireguard/wg-key" = {
-    text = (builtins.trace "Loading host config ${wgPrivateKey}" wgPrivateKey);
+    text = builtins.trace "Loading host config ${wgPrivateKey}" wgPrivateKey;
     mode = "0600";
     user = keyUser;
     group = keyGroup;
@@ -25,9 +23,9 @@ in
   # Copy the key to the persistent storage during the first boot
   systemd.services.wireguard-key-copy = {
     description = "Copy Wireguard Key";
-    wantedBy = [ "multi-user.target" ];
-    before = [ "network.target" ];
-    after = [ "local-fs.target" ];
+    wantedBy = ["multi-user.target"];
+    before = ["network.target"];
+    after = ["local-fs.target"];
 
     serviceConfig = {
       Type = "oneshot";
@@ -46,5 +44,3 @@ in
     '';
   };
 }
-
-

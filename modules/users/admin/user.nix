@@ -1,9 +1,8 @@
-{ ... }:
-{
+{...}: {
   users.users = {
     admin = {
       isNormalUser = true;
-      extraGroups = [ "plugdev" "wheel" "networkmanager" "admin" ];
+      extraGroups = ["plugdev" "wheel" "networkmanager" "admin"];
       uid = 1001;
     };
   };

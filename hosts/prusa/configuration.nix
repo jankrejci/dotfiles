@@ -1,7 +1,6 @@
-{ config, ... }:
-{
+{config, ...}: {
   # TODO Find out a way how to do this hack properly
-  # 
+  #
   # To boot the raspberry device succesfully with an uart device connected,
   # you need to ignore the uart input. The thing is that U-Boot needs the
   # UART enabled, otherwise it fails booting.
