@@ -158,6 +158,11 @@
       };
     in
     {
+      formatter = {
+        x86_64-linux = pkgs-x86_64-linux.alejandra;
+        aarch64-linux = pkgs-aarch64-linux.alejandra;
+      };
+
       # Generate nixosConfiguration for all hosts
       nixosConfigurations = builtins.mapAttrs
         (hostName: hostConfig: mkSystem {
