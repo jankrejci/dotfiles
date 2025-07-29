@@ -113,6 +113,9 @@
       '';
     };
 
+  # Generate wireguard key pair and configuration
+  # for non-NixOS system, e.g. cell phone.
+  # `nix run .#wireguard-config hostname`
   wireguard-config =
     pkgs.writeShellApplication
     {
@@ -178,6 +181,9 @@
       '';
     };
 
+  # Builds NixOS sdcard image that can be used for aarch64
+  # Raspberry Pi machines.
+  # `nix run .#build-sdcard hostname`
   build-sdcard =
     pkgs.writeShellApplication
     {
@@ -190,7 +196,7 @@
         set -euo pipefail
 
         if [ $# -ne 1 ]; then
-          echo "Usage: build-image HOSTNAME"
+          echo "Usage: build-sdcard HOSTNAME"
           exit 1
         fi
 
@@ -215,6 +221,8 @@
       '';
     };
 
+  # Builds iso image for USB stick that can be used to boot
+  # and install the NixOS system on x86-64 machine.
   build-installer =
     pkgs.writeShellApplication
     {
@@ -258,6 +266,9 @@
       '';
     };
 
+  # Deploy changes remotely. It is expected that the host
+  # is running the NixOS and is accessible over network.
+  # `nix run .#deploy-config hostname`
   deploy-config =
     pkgs.writeShellApplication
     {
@@ -287,6 +298,9 @@
       '';
     };
 
+  # Install nixos remotely. It is expected that the host
+  # is booted via USB stick and accesible on iso.vpn
+  # `nix run .#nixos-install`
   nixos-install =
     pkgs.writeShellApplication
     {
