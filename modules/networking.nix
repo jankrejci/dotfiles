@@ -4,7 +4,6 @@
   ...
 }: let
   domain = "vpn";
-  nameServers = ["127.0.0.53" "1.1.1.1" "8.8.8.8"];
   privateKeyPath = "/var/lib/wireguard/wg-key";
 in {
   # Avoid collision of the dhcp with the sysystemd.network
@@ -25,18 +24,21 @@ in {
   networking = {
     hostName = config.hosts.self.hostName;
     firewall.enable = true;
-    nameservers = nameServers;
   };
 
   services.resolved = {
     enable = true;
     extraConfig = lib.mkDefault ''
       [Resolve]
-      DNS=127.0.0.53
+      # Backup if no interface provides DNS servers
       FallbackDNS=1.1.1.1 8.8.8.8
+      # Keeps compatibility with apps expecting DNS on 127.0.0.53
       DNSStubListener=yes
+      # Reduces noise on the network
       MulticastDNS=no
+      # Reduces noise on the network
       LLMNR=no
+      # Avoids double-caching (CoreDNS already caches)
       Cache=no
       DNSSEC=allow-downgrade
     '';
