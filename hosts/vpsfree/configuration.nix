@@ -8,4 +8,7 @@
 
   # Avoid collision between networking and vpsadminos module
   systemd.network.networks."98-all-ethernet".DHCP = "no";
+
+  # There is no DHCP, so fixed dns is needed
+  networking.nameservers = ["1.1.1.1" "8.8.8.8"];
 }
