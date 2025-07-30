@@ -31,52 +31,47 @@ in {
   };
 
   # Enable ports for dns withing the wg vpn
-  networking.firewall.interfaces = {
-    "wg0".allowedUDPPorts = [dnsPort];
-    "wg0".allowedTCPPorts = [dnsPort];
+  networking.firewall.interfaces."wg0" = {
+    allowedUDPPorts = [dnsPort];
+    allowedTCPPorts = [dnsPort];
   };
 
-  services.dnsmasq = {
+  services.coredns = {
     enable = true;
-    alwaysKeepRunning = true;
-    settings = {
-      "port" = "${toString dnsPort}";
-      "domain-needed" = true;
-      "bogus-priv" = true;
-      "domain" = domain;
+    config = ''
+      # VPN hosts with custom mappings
+      .:53 {
+        # Bind only to VPN interfaces
+        bind wg0
 
-      "expand-hosts" = false;
-      "addn-hosts" = "/etc/dnsmasq-hosts";
+        # Custom host mappings
+        hosts /etc/coredns/vpn-hosts {
+          ttl 300
+          reload 5s
+          fallthrough
+        }
 
-      "interface" = "wg0";
-      "listen-address" = [config.hosts.self.ipAddress];
+        # Forward external queries
+        forward . 1.1.1.1 8.8.8.8 {
+          prefer_udp
+        }
 
-      # Disable DHCP service
-      "no-dhcp-interface" = "wg0";
-      server = [
-        "1.1.1.1"
-        "8.8.8.8"
-      ];
-    };
-  };
+        # Performance and reliability
+        cache 300
+        loop
+        errors
+        log
 
-  # Avoid collision between systemd-resolve and dnsmasq
-  services.resolved = {
-    extraConfig = ''
-      [Resolve]
-      Cache=no
-      DNSStubListener=no
+        # Health endpoints
+        health :8080
+        prometheus :9153
+      }
     '';
   };
 
   # Create a list of all ip - host pairs to be resolved
-  environment.etc."dnsmasq-hosts".text = let
+  environment.etc."coredns/vpn-hosts".text = let
     makeHostEntry = hostName: hostConfig: hostConfig.ipAddress + " " + hostName + "." + domain;
   in
     builtins.concatStringsSep "\n" (lib.mapAttrsToList makeHostEntry config.hosts) + "\n";
-
-  # Restart dnsmasq when /etc/dnsmasq-hosts changes
-  systemd.services.dnsmasq.restartTriggers = [
-    config.environment.etc."dnsmasq-hosts".source
-  ];
 }
