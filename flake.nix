@@ -123,7 +123,7 @@
       ++ (lib.optional hasHostConfig
         (builtins.trace "Loading ${hostName} config ${hostConfigFile}" hostConfigFile))
       # Ensure the hosts module is always imported, inject host config
-      ++ [./hosts.nix ({config, ...}: {hosts.self = hostConfig;})]
+      ++ [./hosts.nix ({...}: {hosts.self = hostConfig;})]
       ++ hostConfig.extraModules or []
       ++ additionalModules;
 
@@ -190,11 +190,7 @@
           additionalModules = [
             "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
             ./modules/load-keys.nix
-            ({
-              config,
-              pkgs,
-              ...
-            }: {
+            ({...}: {
               isoImage.makeEfiBootable = true;
               isoImage.makeUsbBootable = true;
               isoImage.compressImage = false;
