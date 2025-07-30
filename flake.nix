@@ -208,7 +208,10 @@
           hosts))
         (hostName:
           (self.nixosConfigurations.${hostName}.extendModules {
-            modules = ["${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"];
+            modules = [
+              "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
+              ./modules/load-keys.nix
+            ];
           }).config.system.build.sdImage);
     };
 

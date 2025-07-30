@@ -190,6 +190,7 @@
       name = "build-sdcard";
       runtimeInputs = with pkgs; [
         coreutils
+        wireguard-tools
       ];
       text = ''
         #!/usr/bin/env bash
@@ -199,25 +200,37 @@
           echo "Usage: build-sdcard HOSTNAME"
           exit 1
         fi
+        readonly HOSTNAME="$1"
 
-        # Create temporary root build to be copied to the sdcard image root
-        readonly TEMP="/tmp/build/root"
-        mkdir -p "$TEMP"
+        readonly IMAGE_NAME="$HOSTNAME-sdcard"
 
-        declare -r WG_KEY_FOLDER="/var/lib/wireguard"
-        declare -r WG_KEY_PATH="$WG_KEY_FOLDER/wg-key"
+        # Create a temporary directory for the build
+        echo "Generating WireGuard keys for $HOSTNAME..."
+        TMP_DIR=$(mktemp -d)
+        wg genkey > "$TMP_DIR/wg-key"
+        wg pubkey < "$TMP_DIR/wg-key" > "hosts/$HOSTNAME/wg-key.pub"
 
+        echo "Public key generated and saved to hosts/$HOSTNAME/wg-key.pub"
+        echo "Building ISO image with embedded private key..."
 
-        mkdir -p "$TEMP/$WG_KEY_FOLDER"
-        touch "$TEMP/$WG_KEY_PATH"
+        WG_PRIVATE_KEY=$(cat "$TMP_DIR/wg-key")
+        export WG_PRIVATE_KEY
 
-        hostname="$1"
-        echo "Building image for host: $hostname"
+        echo "Building image for host: $HOSTNAME"
 
         # Build the image - clean and simple
-        nix build ".#image.sdcard.$hostname" -o "$hostname-sdcard"
+        nix build ".#image.sdcard.$HOSTNAME" \
+          --impure \
+          -o "$IMAGE_NAME"
 
-        echo "Image built successfully: $hostname-sdcard"
+        echo "Image built successfully: $IMAGE_NAME"
+
+        # Clean up private key
+        shred -zu "$TMP_DIR//wg-key"
+        rm -rf "$TMP_DIR"
+        unset WG_PRIVATE_KEY
+
+        echo "Private key securely deleted, build complete."
       '';
     };
 
