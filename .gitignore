@@ -1,4 +1,4 @@
 result
-*-sdcard/
-*-image/
+*-sdcard
+*-image
 .sops.yaml
