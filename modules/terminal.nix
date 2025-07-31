@@ -68,6 +68,9 @@
 
     extraEnv = ''
       $env.EDITOR = "hx"
+      $env.config.edit_mode = "vi"
+      $env.PROMPT_INDICATOR_VI_NORMAL = $"(ansi bg_blue)(ansi black_bold) NOR (ansi reset) "
+      $env.PROMPT_INDICATOR_VI_INSERT = $"(ansi bg_green)(ansi black_bold) INS (ansi reset) "
     '';
 
     shellAliases = {
