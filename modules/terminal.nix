@@ -150,10 +150,10 @@
       };
       directory = {
         truncation_length = 1;
-        read_only = "";
+        read_only = " ";
       };
       git_branch = {
-        symbol = "";
+        symbol = " ";
       };
       os.symbols = {
         NixOS = "󱄅";
