@@ -2,11 +2,59 @@
   pkgs,
   nixos-anywhere ? null,
   ...
-}: {
-  generate-ssh-key =
+}: let
+  # Helper library with usefull functions
+  lib = pkgs.writeShellScript "script-lib" ''
+    require_hostname() {
+      if [ $# -eq 0 ]; then
+        echo "Error: Hostname required"
+        echo "Usage: $0 HOSTNAME"
+        exit 1
+      fi
+    }
+
+    validate_hostname() {
+      local -r hostname="$1"
+      if ! nix eval .#hosts."$hostname" &>/dev/null; then
+        echo "Error: Unknown host '$hostname'"
+        echo "Available hosts:"
+        nix eval .#hosts --apply 'hosts: builtins.attrNames hosts' --json | jq -r '.[]' | sed 's/^/  - /'
+        exit 1
+      fi
+    }
+
+    # Ask for password with confirmation
+    function ask_for_password() {
+      while true; do
+        echo -n "Enter key password: " >&2
+        local key_password
+        read -rs key_password
+        echo >&2
+
+        if [ -z "$key_password" ]; then
+          echo "Password cannot be empty. Please try again." >&2
+          continue
+        fi
+
+        echo -n "Confirm password: " >&2
+        local key_password_confirm
+        read -rs key_password_confirm
+        echo >&2
+
+        if [ "$key_password" = "$key_password_confirm" ]; then
+          break
+        fi
+        echo "Passwords do not match. Please try again." >&2
+      done
+
+      echo -n "$key_password"
+    }
+  '';
+in {
+  add-ssh-key =
     pkgs.writeShellApplication
     {
-      name = "generate-ssh-key";
+      name = "add-ssh-key";
       runtimeInputs = with pkgs; [
         coreutils
         openssh
@@ -14,39 +62,12 @@
         gnupg
       ];
       text = ''
-        #!/usr/bin/env bash
-        set -euo pipefail
+        # shellcheck source=/dev/null
+        source ${lib}
 
         readonly KEYTYPE="ed25519"
         readonly KEYS_DIR="$HOME/.ssh"
         readonly AUTH_KEYS_FILE="ssh-authorized-keys.pub"
-
-        # Ask for password with confirmation
-        function ask_for_password() {
-          while true; do
-            echo -n "Enter key password: " >&2
-            local key_password
-            read -rs key_password
-            echo >&2
-
-            if [ -z "$key_password" ]; then
-              echo "Password cannot be empty. Please try again." >&2
-              continue
-            fi
-
-            echo -n "Confirm password: " >&2
-            local key_password_confirm
-            read -rs key_password_confirm
-            echo >&2
-
-            if [ "$key_password" = "$key_password_confirm" ]; then
-              break
-            fi
-            echo "Passwords do not match. Please try again." >&2
-          done
-
-          echo -n "$key_password"
-        }
 
         function generate_ssh_keys() {
           local -r key_name="$1"
@@ -124,15 +145,12 @@
         wireguard-tools
       ];
       text = ''
-          #!/usr/bin/env bash
-          set -euo pipefail
+        # shellcheck source=/dev/null
+        source ${lib}
 
-        if [ $# -ne 1 ]; then
-          echo "Usage: wireguard HOSTNAME"
-          exit 1
-        fi
-
-        HOSTNAME=$1
+        require_hostname "$@"
+        readonly HOSTNAME="$1"
+        validate_hostname "$HOSTNAME"
 
         SERVER_HOSTNAME="vpsfree"
         DOMAIN="vpn"
@@ -160,18 +178,19 @@
         # Create config file
         CONFIG_DIR=$(mktemp -d)
         CONFIG_FILE="$CONFIG_DIR/wg0.conf"
-
-        cat > "$CONFIG_FILE" << EOF
-        [Interface]
-        PrivateKey = $PRIVATE_KEY
-        Address = $IP_ADDRESS
-        DNS = 192.168.99.1, $DOMAIN
-
-        [Peer]
-        PublicKey = $SERVER_PUBKEY
-        AllowedIPs = 192.168.99.0/24
-        Endpoint = 37.205.13.227:51820
-        EOF
+        # Use echo to generate CONFIG_FILE to avoid breaking
+        # of the code highlighting
+        {
+          echo "[Interface]"
+          echo "PrivateKey = $PRIVATE_KEY"
+          echo "Address = $IP_ADDRESS"
+          echo "DNS = 192.168.99.1, $DOMAIN"
+          echo
+          echo "[Peer]"
+          echo "PublicKey = $SERVER_PUBKEY"
+          echo "AllowedIPs = 192.168.99.0/24"
+          echo "Endpoint = 37.205.13.227:51820"
+        } > "$CONFIG_FILE"
 
         # Generate QR code
         ${pkgs.qrencode}/bin/qrencode -o "$CONFIG_DIR/wg0.png" < "$CONFIG_FILE"
@@ -193,8 +212,8 @@
         wireguard-tools
       ];
       text = ''
-        #!/usr/bin/env bash
-        set -euo pipefail
+        # shellcheck source=/dev/null
+        source ${lib}
 
         if [ $# -ne 1 ]; then
           echo "Usage: build-sdcard HOSTNAME"
@@ -245,8 +264,8 @@
         wireguard-tools
       ];
       text = ''
-        #!/usr/bin/env bash
-        set -euo pipefail
+        # shellcheck source=/dev/null
+        source ${lib}
 
         readonly HOSTNAME="iso"
 
@@ -290,24 +309,22 @@
         deploy-rs
       ];
       text = ''
-        #!/usr/bin/env bash
-        set -euo pipefail
+        # shellcheck source=/dev/null
+        source ${lib}
 
-        # Display usage information
-        if [ $# -lt 1 ]; then
-          echo "Usage: deploy HOSTNAME"
-        fi
+        require_hostname "$@"
 
-        readonly hostname="$1"
+        readonly HOSTNAME="$1"
         shift
 
+        validate_hostname "$HOSTNAME"
+
         # Run deploy-rs
-        echo "Deploying to $hostname..."
-        # TODO get rid of skip checks
+        echo "Deploying to $HOSTNAME..."
 
         deploy \
           --skip-checks \
-          ".#$hostname" "$@"
+          ".#$HOSTNAME" "$@"
       '';
     };
 
@@ -325,8 +342,9 @@
         nixos-anywhere
       ];
       text = ''
-        #!/usr/bin/env bash
-        set -euo pipefail
+        # shellcheck source=/dev/null
+        source ${lib}
+
         trap cleanup EXIT INT TERM
 
         readonly TARGET="iso.vpn"
@@ -447,12 +465,10 @@
         }
 
         function main() {
-          if [ $# -lt 1 ]; then
-            echo "Usage: $0 hostname" >&2
-            exit 1
-          fi
 
+          require_hostname "$@"
           local -r hostname="$1"
+          validate_hostname "$hostname"
 
           set_disk_password
 
