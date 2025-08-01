@@ -2,11 +2,7 @@
   lib,
   pkgs,
   ...
-}: let
-  # Path where the wpa_supplicant configuration will be generated
-  wpaConfigFolder = "/var/lib/wpa_supplicant";
-  wpaConfigPath = "${wpaConfigFolder}/wpa_supplicant.conf";
-in {
+}: {
   # Add password for the admin user to be able to log in from local console
   users.users.admin.hashedPassword = "$y$j9T$8qLqeoP/jNv9rFtFfyljl1$S/GqBaFaaCIluY88qW9app4APK49d9wFI.5CmfFnwH/";
 
@@ -35,6 +31,7 @@ in {
     supportedFilesystems = {zfs = lib.mkForce false;};
   };
 
+  # Override sd-card module configuration
   fileSystems = {
     "/" = {
       device = "/dev/disk/by-label/NIXOS-SD";
@@ -55,16 +52,4 @@ in {
   # TODO Turn off BT properly, it still emmits some errors
   # I dont need the bluetooth so far
   hardware.bluetooth.enable = false;
-
-  # Enable wpa_supplicant service
-  networking = {
-    wireless = {
-      enable = true;
-      interfaces = ["wlan0"];
-    };
-    supplicant.wlan0 = {
-      driver = "nl80211";
-      configFile.path = wpaConfigPath;
-    };
-  };
 }
