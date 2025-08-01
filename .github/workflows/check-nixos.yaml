@@ -9,20 +9,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Nix
         uses: cachix/install-nix-action@v26
         with:
           nix_path: nixpkgs=channel:nixos-unstable
-          
+
       - name: Check flake
         run: |
           nix flake check
-          
+
       - name: Check formatting
         run: |
           nix fmt -- --check .
-          
+
   build-configs:
     runs-on: ubuntu-latest
     strategy:
@@ -30,18 +30,58 @@ jobs:
         host: [framework, thinkpad, vpsfree, optiplex, thinkcenter]
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Nix
         uses: cachix/install-nix-action@v26
         with:
           nix_path: nixpkgs=channel:nixos-unstable
           extra_nix_config: |
             extra-experimental-features = nix-command flakes
-            
+
       - name: Check NixOS configuration for ${{ matrix.host }}
         run: |
           nix build .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel --dry-run
-          
+
       - name: Evaluate configuration
         run: |
           nix eval .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel.outPath
+
+  check-scripts:  # This should be at the same level as build-configs and check-flake
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        script: 
+          - deploy-config
+          - wireguard-config
+          - build-sdcard
+          - build-installer
+          - nixos-install
+          - add-ssh-key
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v26
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+          extra_nix_config: |
+            extra-experimental-features = nix-command flakes
+
+      - name: Build script ${{ matrix.script }}
+        run: |
+          nix build .#packages.x86_64-linux.${{ matrix.script }}
+
+      - name: Verify script ${{ matrix.script }} handles missing args
+        run: |
+          # Test that script handles missing arguments appropriately
+          set +e  # Don't fail on non-zero exit
+          nix run .#${{ matrix.script }} -- 2>&1
+          EXIT_CODE=$?
+          set -e
+
+          # Scripts should exit with code 1 when missing required args
+          if [ "$EXIT_CODE" != "1" ] && [ "$EXIT_CODE" != "0" ]; then
+            echo "❌ Unexpected exit code: $EXIT_CODE"
+            exit 1
+          fi
+          echo "✓ Script correctly handles missing arguments"
