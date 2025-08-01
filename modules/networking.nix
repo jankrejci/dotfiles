@@ -93,7 +93,7 @@ in {
   networking.networkmanager = {
     enable = true;
     # Don't let NetworkManager manage systemd-networkd interfaces
-    unmanaged = ["wg0"];
+    # unmanaged = ["wg0"];
     # Enhanced DNS handling
     dns = "systemd-resolved";
     # Connection timeout and retry settings
