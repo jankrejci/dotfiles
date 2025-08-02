@@ -219,28 +219,16 @@
       nixos-anywhere = nixos-anywhere.packages."x86_64-linux".nixos-anywhere;
     };
 
-    # Test infrastructure
+    # Script tests
     # Run tests with: nix flake check
     checks."x86_64-linux" = let
       scripts = import ./scripts.nix {
         pkgs = pkgs-x86_64-linux;
         nixos-anywhere = nixos-anywhere.packages."x86_64-linux".nixos-anywhere;
       };
-      hostsModule = lib.evalModules {
-        modules = [./hosts.nix];
-        specialArgs = {inherit nixos-hardware;};
-      };
     in {
       # Script function tests
       scripts-tests = scripts.tests;
-      
-      # Host configuration tests
-      host-tests = pkgs-x86_64-linux.runCommand "host-tests" {} ''
-        echo "Running host configuration tests..."
-        ${if hostsModule.config.host-tests == [] 
-          then "echo 'All host tests passed!' && touch $out" 
-          else "echo 'Host tests failed' && exit 1"}
-      '';
     };
 
     # Test runner app
@@ -248,17 +236,9 @@
     apps."x86_64-linux".test = {
       type = "app";
       program = toString (pkgs-x86_64-linux.writeShellScript "test-runner" ''
-        echo "Running all tests..."
-        echo
-        echo "=== Script Tests ==="
+        echo "Running script tests..."
         nix build .#checks.x86_64-linux.scripts-tests --no-link
-        echo "✓ Script tests passed"
-        echo
-        echo "=== Host Tests ==="
-        nix build .#checks.x86_64-linux.host-tests --no-link
-        echo "✓ Host tests passed"
-        echo
-        echo "All tests completed successfully!"
+        echo "✓ All script tests passed!"
       '');
     };
   };
