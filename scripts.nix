@@ -73,6 +73,43 @@
       # Return private key
       echo "$private_key"
     }
+
+    # Ask for disk password with confirmation
+    ask_for_disk_password() {
+      while true; do
+        echo -n "Enter disk encryption password: " >&2
+        local disk_password
+        read -rs disk_password
+        echo >&2
+
+        if [ -z "$disk_password" ]; then
+          echo "Password cannot be empty. Please try again." >&2
+          continue
+        fi
+
+        echo -n "Confirm password: " >&2
+        local disk_password_confirm
+        read -rs disk_password_confirm
+        echo >&2
+
+        if [ "$disk_password" = "$disk_password_confirm" ]; then
+          break
+        fi
+        echo "Passwords do not match. Please try again." >&2
+      done
+
+      echo -n "$disk_password"
+    }
+
+    # Generate random disk password
+    generate_disk_password() {
+      echo "Generating disk password" >&2
+
+      local disk_password
+      disk_password=$(head -c 12 /dev/urandom | base64 | tr -d '/+=' | head -c 16)
+
+      echo -n "$disk_password"
+    }
   '';
 in {
   add-ssh-key =
