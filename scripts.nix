@@ -49,6 +49,30 @@
 
       echo -n "$key_password"
     }
+
+    # Generate WireGuard key pair
+    generate_wg_keys() {
+      local -r hostname="$1"
+      local -r output_dir="${2:-hosts/$hostname}"
+
+      echo "Generating WireGuard keys for $hostname" >&2
+      
+      # Check if host directory exists
+      if [ ! -d "$output_dir" ]; then
+        echo "Directory $output_dir does not exist" >&2
+        return 1
+      fi
+
+      local -r private_key=$(wg genkey)
+      local -r public_key=$(echo "$private_key" | wg pubkey)
+
+      # Write public key to file
+      echo "$public_key" > "$output_dir/wg-key.pub"
+      echo "Public key written to $output_dir/wg-key.pub" >&2
+
+      # Return private key
+      echo "$private_key"
+    }
   '';
 in {
   add-ssh-key =
