@@ -185,19 +185,8 @@ in {
 
         echo "Generating WireGuard configuration for $HOSTNAME with IP $IP_ADDRESS"
 
-        # Generate new keys
-        PRIVATE_KEY=$(wg genkey)
-        PUBLIC_KEY=$(echo "$PRIVATE_KEY" | wg pubkey)
-
-        # Check if host directory exists
-        if [ ! -d "hosts/$HOSTNAME" ]; then
-          echo "Directory hosts/$HOSTNAME does not exist"
-          exit 1
-        fi
-
-        # Write public key to file
-        echo "$PUBLIC_KEY" >"hosts/$HOSTNAME/wg-key.pub"
-        echo "Public key written to hosts/$HOSTNAME/wg-key.pub"
+        # Generate keys and write public key
+        PRIVATE_KEY=$(generate_wg_keys "$HOSTNAME")
 
         # Create config file
         CONFIG_DIR=$(mktemp -d)
