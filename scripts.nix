@@ -53,7 +53,7 @@
     # Generate WireGuard key pair
     generate_wg_keys() {
       local -r hostname="$1"
-      local -r output_dir="${2:-hosts/$hostname}"
+      local -r output_dir="''${2:-hosts/$hostname}"
 
       echo "Generating WireGuard keys for $hostname" >&2
       
@@ -135,6 +135,7 @@
       echo "✓"
     else
       echo "✗ failed"
+      require_hostname 2>&1 || true
       exit 1
     fi
     
