@@ -423,43 +423,6 @@ in {
           fi
         }
 
-        # Ask for password with confirmation
-        function ask_for_disk_password() {
-          while true; do
-            echo -n "Enter disk encryption password: " >&2
-            local disk_password
-            read -rs disk_password
-            echo >&2
-
-            if [ -z "$disk_password" ]; then
-              echo "Password cannot be empty. Please try again." >&2
-              continue
-            fi
-
-            echo -n "Confirm password: " >&2
-            local disk_password_confirm
-            read -rs disk_password_confirm
-            echo >&2
-
-            if [ "$disk_password" = "$disk_password_confirm" ]; then
-              break
-            fi
-            echo "Passwords do not match. Please try again." >&2
-          done
-
-          echo -n "$disk_password"
-        }
-
-        # Generate random password that can be changed later
-        function generate_disk_password() {
-          echo "Generating disk password" >&2
-
-          local disk_password
-          disk_password=$(head -c 12 /dev/urandom | base64 | tr -d '/+=' | head -c 16)
-
-          echo -n "$disk_password"
-        }
-
         function set_disk_password() {
           local generate_password
           echo -n "Auto-generate disk encryption password? [Y/n] " >&2
@@ -514,27 +477,22 @@ in {
           chmod 600 "$TEMP/$WG_KEY_PATH"
         }
 
-        function main() {
+        require_hostname "$@"
+        readonly HOSTNAME="$1"
+        validate_hostname "$HOSTNAME"
 
-          require_hostname "$@"
-          local -r hostname="$1"
-          validate_hostname "$hostname"
+        set_disk_password
 
-          set_disk_password
+        generate_wg_key "$HOSTNAME"
 
-          generate_wg_key "$hostname"
-
-          # Install NixOS to the host system with our secrets
-          nixos-anywhere \
-            --disk-encryption-keys "$REMOTE_DISK_PASSWORD_PATH" "$LOCAL_DISK_PASSWORD_PATH" \
-            --extra-files "$TEMP" \
-            --chown "$WG_KEY_FOLDER" "$WG_KEY_USER:$WG_KEY_GROUP" \
-            --chown "$WG_KEY_PATH" "$WG_KEY_USER:$WG_KEY_GROUP" \
-            --flake ".#$hostname" \
-            --target-host "root@$TARGET"
-        }
-
-        main "$@"
+        # Install NixOS to the host system with our secrets
+        nixos-anywhere \
+          --disk-encryption-keys "$REMOTE_DISK_PASSWORD_PATH" "$LOCAL_DISK_PASSWORD_PATH" \
+          --extra-files "$TEMP" \
+          --chown "$WG_KEY_FOLDER" "$WG_KEY_USER:$WG_KEY_GROUP" \
+          --chown "$WG_KEY_PATH" "$WG_KEY_USER:$WG_KEY_GROUP" \
+          --flake ".#$HOSTNAME" \
+          --target-host "root@$TARGET"
       '';
     };
 }
