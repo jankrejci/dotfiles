@@ -104,6 +104,5 @@
     nerd-fonts.dejavu-sans-mono
   ];
 
-  # Add DisplayLink to video drivers
-  services.xserver.videoDrivers = ["displaylink" "modesetting"];
+  services.xserver.videoDrivers = ["modesetting"];
 }

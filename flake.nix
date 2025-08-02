@@ -62,15 +62,6 @@
       system = "x86_64-linux";
       config = {
         allowUnfree = true;
-        # Enable support for display link devices
-        displaylink = {
-          enable = true;
-          # Use a fixed path relative to the repository
-          driverFile = ./modules/displaylink/displaylink-600.zip;
-          # Provide a fixed hash that you'll get after downloading the file
-          # Add the hash here after downloading and running nix-prefetch-url file://$(pwd)/modules/displaylink/displaylink-600.zip
-          sha256 = "1ixrklwk67w25cy77n7l0pq6j9i4bp4lkdr30kp1jsmyz8daaypw";
-        };
       };
       overlays = [
         nixgl.overlay
