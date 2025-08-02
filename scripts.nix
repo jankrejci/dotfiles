@@ -3,7 +3,7 @@
   nixos-anywhere ? null,
   ...
 }: let
-  # Helper library with usefull functions
+  # Helper library with useful functions
   lib = pkgs.writeShellScript "script-lib" ''
     require_hostname() {
       if [ $# -eq 0 ]; then
@@ -21,33 +21,6 @@
         nix eval .#hosts --apply 'hosts: builtins.attrNames hosts' --json | jq -r '.[]' | sed 's/^/  - /'
         exit 1
       fi
-    }
-
-    # Ask for password with confirmation
-    function ask_for_password() {
-      while true; do
-        echo -n "Enter key password: " >&2
-        local key_password
-        read -rs key_password
-        echo >&2
-
-        if [ -z "$key_password" ]; then
-          echo "Password cannot be empty. Please try again." >&2
-          continue
-        fi
-
-        echo -n "Confirm password: " >&2
-        local key_password_confirm
-        read -rs key_password_confirm
-        echo >&2
-
-        if [ "$key_password" = "$key_password_confirm" ]; then
-          break
-        fi
-        echo "Passwords do not match. Please try again." >&2
-      done
-
-      echo -n "$key_password"
     }
   '';
 in {
