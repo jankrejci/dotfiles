@@ -111,7 +111,62 @@
       echo -n "$disk_password"
     }
   '';
+
+  # Basic tests for script functions
+  # Run with: nix build .#scripts-tests
+  tests = pkgs.runCommand "scripts-tests" {
+    buildInputs = with pkgs; [
+      bash
+      coreutils
+      wireguard-tools
+      jq
+    ];
+  } ''
+    set -euo pipefail
+    
+    echo "=== Testing script functions ==="
+    
+    # Source the lib
+    source ${lib}
+    
+    # Test 1: require_hostname fails without args
+    echo -n "Testing require_hostname validation... "
+    if require_hostname 2>&1 | grep -q "Error: Hostname required"; then
+      echo "✓"
+    else
+      echo "✗ failed"
+      exit 1
+    fi
+    
+    # Test 2: generate_disk_password
+    echo -n "Testing generate_disk_password... "
+    password=$(generate_disk_password 2>/dev/null)
+    if [[ -n "$password" ]] && [[ "''${#password}" -eq 16 ]]; then
+      echo "✓"
+    else
+      echo "✗ failed"
+      exit 1
+    fi
+    
+    # Test 3: generate_wg_keys
+    echo -n "Testing generate_wg_keys... "
+    TEST_DIR=$(mktemp -d)
+    mkdir -p "$TEST_DIR/hosts/testhost"
+    
+    private_key=$(generate_wg_keys "testhost" "$TEST_DIR/hosts/testhost" 2>/dev/null)
+    if [[ -f "$TEST_DIR/hosts/testhost/wg-key.pub" ]] && [[ -n "$private_key" ]]; then
+      echo "✓"
+    else
+      echo "✗ failed"
+      exit 1
+    fi
+    rm -rf "$TEST_DIR"
+    
+    echo "All tests passed!"
+    touch $out
+  '';
 in {
+  inherit tests;
   add-ssh-key =
     pkgs.writeShellApplication
     {
