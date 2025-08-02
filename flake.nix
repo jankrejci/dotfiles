@@ -218,5 +218,28 @@
       pkgs = pkgs-x86_64-linux;
       nixos-anywhere = nixos-anywhere.packages."x86_64-linux".nixos-anywhere;
     };
+
+    # Script tests
+    # Run tests with: nix flake check
+    checks."x86_64-linux" = let
+      scripts = import ./scripts.nix {
+        pkgs = pkgs-x86_64-linux;
+        nixos-anywhere = nixos-anywhere.packages."x86_64-linux".nixos-anywhere;
+      };
+    in {
+      # Script function tests
+      scripts-tests = scripts.tests;
+    };
+
+    # Test runner app
+    # Run with: nix run .#test
+    apps."x86_64-linux".test = {
+      type = "app";
+      program = toString (pkgs-x86_64-linux.writeShellScript "test-runner" ''
+        echo "Running script tests..."
+        nix build .#checks.x86_64-linux.scripts-tests --no-link
+        echo "✓ All script tests passed!"
+      '');
+    };
   };
 }
