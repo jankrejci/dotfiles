@@ -96,7 +96,6 @@ with lib; {
         ./modules/users/paja/user.nix
         ./modules/disk-tpm-encryption.nix
         ./modules/desktop.nix
-        ./modules/disable-nvidia.nix
       ];
     };
 
