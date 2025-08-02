@@ -8,7 +8,7 @@
     require_hostname() {
       if [ $# -eq 0 ]; then
         echo "Error: Hostname required"
-        echo "Usage: $0 HOSTNAME"
+        echo "Usage: script HOSTNAME"
         exit 1
       fi
     }
@@ -131,11 +131,14 @@
     
     # Test 1: require_hostname fails without args
     echo -n "Testing require_hostname validation... "
-    if require_hostname 2>&1 | grep -q "Error: Hostname required"; then
+    set +e
+    output=$(require_hostname 2>&1)
+    exit_code=$?
+    set -e
+    if [[ $exit_code -eq 1 ]] && echo "$output" | grep -q "Error: Hostname required"; then
       echo "✓"
     else
       echo "✗ failed"
-      require_hostname 2>&1 || true
       exit 1
     fi
     
