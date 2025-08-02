@@ -157,4 +157,43 @@ with lib; {
       kind = "installer";
     };
   };
+
+  # Host configuration validation tests
+  # Run with: nix eval .#host-tests
+  config.host-tests = lib.runTests {
+    # Test that all hosts have required fields
+    testAllHostsHaveRequiredFields = {
+      expr = lib.all (host: 
+        host ? hostName && 
+        host ? ipAddress
+      ) (lib.attrValues config.hosts);
+      expected = true;
+    };
+
+    # Test that all IP addresses are unique
+    testUniqueIpAddresses = {
+      expr = let
+        ips = lib.map (h: h.ipAddress) (lib.attrValues config.hosts);
+        uniqueIps = lib.unique ips;
+      in lib.length ips == lib.length uniqueIps;
+      expected = true;
+    };
+
+    # Test that all IP addresses are in the correct subnet
+    testIpAddressesInSubnet = {
+      expr = lib.all (host: 
+        lib.hasPrefix "192.168.99." host.ipAddress
+      ) (lib.attrValues config.hosts);
+      expected = true;
+    };
+
+    # Test that host directories exist for NixOS hosts
+    testHostDirectoriesExist = {
+      expr = lib.all (name: 
+        let host = config.hosts.${name}; in
+        host.kind != "nixos" || builtins.pathExists (./hosts + "/${name}")
+      ) (lib.attrNames config.hosts);
+      expected = true;
+    };
+  };
 }
