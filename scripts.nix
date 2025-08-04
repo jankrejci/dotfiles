@@ -374,47 +374,11 @@ in {
           fi
         }
 
-        # Ask for password with confirmation
-        function ask_for_disk_password() {
-          while true; do
-            echo -n "Enter disk encryption password: " >&2
-            local disk_password
-            read -rs disk_password
-            echo >&2
-
-            if [ -z "$disk_password" ]; then
-              echo "Password cannot be empty. Please try again." >&2
-              continue
-            fi
-
-            echo -n "Confirm password: " >&2
-            local disk_password_confirm
-            read -rs disk_password_confirm
-            echo >&2
-
-            if [ "$disk_password" = "$disk_password_confirm" ]; then
-              break
-            fi
-            echo "Passwords do not match. Please try again." >&2
-          done
-
-          echo -n "$disk_password"
-        }
-
-        # Generate random password that can be changed later
-        function generate_disk_password() {
-          echo "Generating disk password" >&2
-
-          local disk_password
-          disk_password=$(head -c 12 /dev/urandom | base64 | tr -d '/+=' | head -c 16)
-
-          echo -n "$disk_password"
-        }
 
         function set_disk_password() {
-          local generate_password
+          local auto_generate_password
           echo -n "Auto-generate disk encryption password? [Y/n] " >&2
-          read -r generate_password
+          read -r auto_generate_password
 
           # Create temporary password file to be passed to nixos-anywhere
           local -r tmp_folder=$(mktemp -d)
@@ -422,11 +386,11 @@ in {
 
           local disk_password
           # Default to Yes if empty or starts with Y/y
-          if [[ -z "$generate_password" || "$generate_password" =~ ^[Yy] ]]; then
-            disk_password=$(generate_disk_password)
+          if [[ -z "$auto_generate_password" || "$auto_generate_password" =~ ^[Yy] ]]; then
+            disk_password=$(generate_password)
             echo "Disk password auto-generated." >&2
           else
-            disk_password=$(ask_for_disk_password)
+            disk_password=$(ask_for_password "Enter disk encryption password")
             echo "Disk password has been set." >&2
           fi
 
@@ -439,27 +403,13 @@ in {
           echo "Disk password successfully installed." >&2
         }
 
-        function generate_wg_key() {
+        function install_wg_key() {
           local -r hostname="$1"
 
-          # Generate new wireguard keys
-          echo "Generating wireguard key" >&2
-          local -r wg_private_key=$(${pkgs.wireguard-tools}/bin/wg genkey)
-          local -r wg_public_key=$(echo "$wg_private_key" | ${pkgs.wireguard-tools}/bin/wg pubkey)
+          # Generate keys using shared lib function
+          local -r wg_private_key=$(generate_wg_keys "$hostname")
 
-          # Check if host directory exists
-          local host_folder="hosts/$hostname"
-          if [ ! -d "$host_folder" ]; then
-            echo "Host directory $host_folder does not exist" >&2
-            exit 1
-          fi
-          local -r pubkey_path="$host_folder/wg-key.pub"
-
-          # Write public key to the host file
-          echo "$wg_public_key" > "$pubkey_path"
-          echo "Wireguard public key written to $pubkey_path" >&2
-
-          # Create the directory where wiregusrd expects to find the private key
+          # Create the directory where wireguard expects to find the private key
           install -d -m700 "$TEMP/$WG_KEY_FOLDER"
           echo "$wg_private_key" > "$TEMP/$WG_KEY_PATH"
           chmod 600 "$TEMP/$WG_KEY_PATH"
@@ -473,7 +423,7 @@ in {
 
           set_disk_password
 
-          generate_wg_key "$hostname"
+          install_wg_key "$hostname"
 
           # Install NixOS to the host system with our secrets
           nixos-anywhere \
