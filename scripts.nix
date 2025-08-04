@@ -5,7 +5,7 @@
 }: let
   # Helper library with usefull functions
   lib = pkgs.writeShellScript "script-lib" ''
-    require_hostname() {
+    function require_hostname() {
       if [ $# -eq 0 ]; then
         echo "Error: Hostname required"
         echo "Usage: $(basename "$0") HOSTNAME"
@@ -13,7 +13,7 @@
       fi
     }
 
-    validate_hostname() {
+    function validate_hostname() {
       local -r hostname="$1"
       if ! nix eval .#hosts."$hostname" &>/dev/null; then
         echo "Error: Unknown host '$hostname'"
