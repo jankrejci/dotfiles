@@ -434,4 +434,111 @@ in {
         main "$@"
       '';
     };
+
+  # Expose the shared library for testing
+  inherit lib;
+
+  # Tests for the shared library functions
+  script-lib-test =
+    pkgs.runCommand "script-lib-test" {
+      buildInputs = with pkgs; [
+        bash
+        wireguard-tools
+        nix
+        jq
+      ];
+    } ''
+      set -euo pipefail
+
+      # Create a test environment
+      export HOME=$(mktemp -d)
+      mkdir -p hosts/test-host
+      mkdir -p hosts/another-host
+
+      # Source the shared library
+      source ${lib}
+
+      echo "Running script library tests..."
+
+      # Test require_hostname function
+      test_require_hostname() {
+        echo "Testing require_hostname..."
+
+        # Test with no arguments (should fail)
+        set +e
+        (require_hostname >/dev/null 2>&1)
+        local exit_code=$?
+        set -e
+        if [ $exit_code -ne 1 ]; then
+          echo "ERROR: require_hostname should fail with no arguments"
+          return 1
+        fi
+
+        # Test with arguments (should pass)
+        require_hostname "test-host"
+
+        echo "✓ require_hostname tests passed"
+      }
+
+      # Test generate_wg_keys function
+      test_generate_wg_keys() {
+        echo "Testing generate_wg_keys..."
+
+        # Test with existing directory
+        local private_key
+        private_key=$(generate_wg_keys "test-host" 2>/dev/null)
+        if [ -z "$private_key" ]; then
+          echo "ERROR: generate_wg_keys should return a private key"
+          return 1
+        fi
+
+        # Check that public key file was created
+        if [ ! -f "hosts/test-host/wg-key.pub" ]; then
+          echo "ERROR: generate_wg_keys should create public key file"
+          return 1
+        fi
+
+        # Clean up test file
+        rm -f "hosts/test-host/wg-key.pub"
+
+        # Test with non-existent directory (should fail)
+        set +e
+        (generate_wg_keys "non-existent" >/dev/null 2>&1)
+        local exit_code=$?
+        set -e
+        if [ $exit_code -ne 1 ]; then
+          echo "ERROR: generate_wg_keys should fail for non-existent directory"
+          return 1
+        fi
+
+        echo "✓ generate_wg_keys tests passed"
+      }
+
+      # Test password generation
+      test_password_generation() {
+        echo "Testing password generation..."
+
+        # Test generate_password returns valid password
+        local password
+        password=$(generate_password 2>/dev/null)
+        if [ -z "$password" ]; then
+          echo "ERROR: generate_password should return a password"
+          return 1
+        fi
+        if [ ''${#password} -lt 8 ] || [ ''${#password} -gt 16 ]; then
+          echo "ERROR: generate_password should return 8-16 character password, got ''${#password}"
+          return 1
+        fi
+
+        echo "✓ password generation tests passed"
+      }
+
+      # Run all tests
+      test_require_hostname
+      test_generate_wg_keys
+      test_password_generation
+
+      echo "All tests passed!"
+      touch $out
+    '';
 }
