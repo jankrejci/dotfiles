@@ -238,24 +238,14 @@ in {
         # shellcheck source=/dev/null
         source ${lib}
 
-        if [ $# -ne 1 ]; then
-          echo "Usage: build-sdcard HOSTNAME"
-          exit 1
-        fi
+        require_hostname "$@"
         readonly HOSTNAME="$1"
+        validate_hostname "$HOSTNAME"
 
         readonly IMAGE_NAME="$HOSTNAME-sdcard"
 
-        # Create a temporary directory for the build
         echo "Generating WireGuard keys for $HOSTNAME..."
-        TMP_DIR=$(mktemp -d)
-        wg genkey > "$TMP_DIR/wg-key"
-        wg pubkey < "$TMP_DIR/wg-key" > "hosts/$HOSTNAME/wg-key.pub"
-
-        echo "Public key generated and saved to hosts/$HOSTNAME/wg-key.pub"
-        echo "Building ISO image with embedded private key..."
-
-        WG_PRIVATE_KEY=$(cat "$TMP_DIR/wg-key")
+        WG_PRIVATE_KEY=$(generate_wg_keys "$HOSTNAME")
         export WG_PRIVATE_KEY
 
         echo "Building image for host: $HOSTNAME"
@@ -268,8 +258,6 @@ in {
         echo "Image built successfully: $IMAGE_NAME"
 
         # Clean up private key
-        shred -zu "$TMP_DIR//wg-key"
-        rm -rf "$TMP_DIR"
         unset WG_PRIVATE_KEY
 
         echo "Private key securely deleted, build complete."
