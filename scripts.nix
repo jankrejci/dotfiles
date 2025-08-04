@@ -8,7 +8,7 @@
     require_hostname() {
       if [ $# -eq 0 ]; then
         echo "Error: Hostname required"
-        echo "Usage: $0 HOSTNAME"
+        echo "Usage: $(basename "$0") HOSTNAME"
         exit 1
       fi
     }
