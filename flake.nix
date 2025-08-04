@@ -218,5 +218,15 @@
       pkgs = pkgs-x86_64-linux;
       nixos-anywhere = nixos-anywhere.packages."x86_64-linux".nixos-anywhere;
     };
+
+    # Tests for script functions
+    checks."x86_64-linux" = let
+      scripts = import ./scripts.nix {
+        pkgs = pkgs-x86_64-linux;
+        nixos-anywhere = nixos-anywhere.packages."x86_64-linux".nixos-anywhere;
+      };
+    in {
+      inherit (scripts) script-lib-test;
+    };
   };
 }
