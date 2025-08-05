@@ -51,6 +51,41 @@
 
       echo -n "$password"
     }
+
+    # Generate WireGuard key pair
+    function generate_wg_keys() {
+      local -r hostname="$1"
+      local -r output_dir="''${2:-hosts/$hostname}"
+
+      echo "Generating WireGuard keys for $hostname" >&2
+
+      # Check if host directory exists
+      if [ ! -d "$output_dir" ]; then
+        echo "Directory $output_dir does not exist" >&2
+        return 1
+      fi
+
+      local -r private_key=$(wg genkey)
+      local -r public_key=$(echo "$private_key" | wg pubkey)
+
+      # Write public key to file
+      echo "$public_key" > "$output_dir/wg-key.pub"
+      echo "Public key written to $output_dir/wg-key.pub" >&2
+
+      # Return private key
+      echo "$private_key"
+    }
+
+
+    # Generate random password
+    function generate_password() {
+      echo "Generating password" >&2
+
+      local password
+      password=$(head -c 12 /dev/urandom | base64 | tr -d '/+=' | head -c 16)
+
+      echo -n "$password"
+    }
   '';
 in {
   add-ssh-key =
@@ -163,21 +198,7 @@ in {
 
         echo "Generating WireGuard configuration for $HOSTNAME with IP $IP_ADDRESS"
 
-        # Generate new keys
-        PRIVATE_KEY=$(wg genkey)
-        PUBLIC_KEY=$(echo "$PRIVATE_KEY" | wg pubkey)
-
-        # Check if host directory exists
-        if [ ! -d "hosts/$HOSTNAME" ]; then
-          echo "Directory hosts/$HOSTNAME does not exist"
-          exit 1
-        fi
-
-        # Write public key to file
-        echo "$PUBLIC_KEY" >"hosts/$HOSTNAME/wg-key.pub"
-        echo "Public key written to hosts/$HOSTNAME/wg-key.pub"
-
-        # Create config file
+        PRIVATE_KEY=$(generate_wg_keys "$HOSTNAME")
         CONFIG_DIR=$(mktemp -d)
         CONFIG_FILE="$CONFIG_DIR/wg0.conf"
         # Use echo to generate CONFIG_FILE to avoid breaking
