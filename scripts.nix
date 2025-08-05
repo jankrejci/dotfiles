@@ -25,29 +25,31 @@
 
     # Ask for password with confirmation
     function ask_for_password() {
+      local prompt="''${1:-Enter password}"
+
       while true; do
-        echo -n "Enter key password: " >&2
-        local key_password
-        read -rs key_password
+        echo -n "$prompt: " >&2
+        local password
+        read -rs password
         echo >&2
 
-        if [ -z "$key_password" ]; then
+        if [ -z "$password" ]; then
           echo "Password cannot be empty. Please try again." >&2
           continue
         fi
 
         echo -n "Confirm password: " >&2
-        local key_password_confirm
-        read -rs key_password_confirm
+        local password_confirm
+        read -rs password_confirm
         echo >&2
 
-        if [ "$key_password" = "$key_password_confirm" ]; then
+        if [ "$password" = "$password_confirm" ]; then
           break
         fi
         echo "Passwords do not match. Please try again." >&2
       done
 
-      echo -n "$key_password"
+      echo -n "$password"
     }
   '';
 in {
@@ -122,7 +124,7 @@ in {
           local -r key_name="$username-$hostname-$target"
           local -r auth_keys_path="hosts/$target/$AUTH_KEYS_FILE"
 
-          local -r key_password=$(ask_for_password)
+          local -r key_password=$(ask_for_password "Enter key password")
           local -r key_file=$(generate_ssh_keys "$key_name" "$key_password")
           export_keys "$auth_keys_path" "$key_file"
           commit_keys "$auth_keys_path" "$target" "$username" "$hostname"
