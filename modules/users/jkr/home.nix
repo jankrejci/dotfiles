@@ -18,6 +18,7 @@
     unstable.espflash # flasher utility for Espressif SoCs
     unstable.prusa-slicer # slicer for 3D printing
     unstable.trezor-suite
+    unstable.claude-code
     # unstable.kicad-small
     unstable.kicad
     gnomeExtensions.vitals
