@@ -92,8 +92,8 @@ with lib; {
       swapSize = "8G";
       extraModules = [
         nixos-hardware.nixosModules.lenovo-thinkpad-e470
-        ./modules/users/jkr/user.nix
-        ./modules/users/paja/user.nix
+        ./users/jkr.nix
+        ./users/paja.nix
         ./modules/disk-tpm-encryption.nix
         ./modules/desktop.nix
       ];
@@ -104,8 +104,8 @@ with lib; {
       device = "/dev/sda";
       swapSize = "8G";
       extraModules = [
-        ./modules/users/jkr/user.nix
-        ./modules/users/paja/user.nix
+        ./users/jkr.nix
+        ./users/paja.nix
         ./modules/disk-password-encryption.nix
         ./modules/desktop.nix
       ];
@@ -117,8 +117,8 @@ with lib; {
       swapSize = "8G";
       extraModules = [
         nixos-hardware.nixosModules.framework-13-7040-amd
-        ./modules/users/jkr/user.nix
-        ./modules/users/paja/user.nix
+        ./users/jkr.nix
+        ./users/paja.nix
         ./modules/disk-tpm-encryption.nix
         ./modules/desktop.nix
         ./modules/eset-agent.nix
