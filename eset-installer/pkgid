@@ -1,0 +1,636 @@
+{
+    "agents": {
+        "egui": {
+            "binary_path": "lib/egui",
+            "localization_domain": "eea-egui"
+        },
+        "odfeeder": {
+            "exec_argv": [
+                "lib/odfeeder"
+            ]
+        },
+        "sched": {
+            "exec_argv": [
+                "lib/sched"
+            ],
+            "group": "eset-eea-agents",
+            "user": "eset-eea-sched"
+        },
+        "vapm_wrapper": {
+            "exec_argv": [
+                "lib/vapm_wrapper"
+            ],
+            "group": "eset-eea-vapm",
+            "user": "eset-eea-vapm-wrapper"
+        }
+    },
+    "app_id": "com.eset.apps.business.eea.linux.g2",
+    "bug_url": "https://www.eset.com/support",
+    "ce_product": "eea_unix",
+    "ce_product_root": "eset.local.products.eea_unix",
+    "copyright": "2025",
+    "daemons": {
+        "confd": {
+            "accepted_nondaemon_binaries": [
+                "/opt/eset/eea/lib/oaeventd",
+                "/opt/eset/eea/bin/odscan",
+                "/opt/eset/eea/bin/quar",
+                "/opt/eset/eea/lib/odfeeder",
+                "/opt/eset/eea/lib/egui"
+            ],
+            "exec_argv": [
+                "lib/confd"
+            ],
+            "group": "eset-eea-daemons",
+            "priority": 1,
+            "start_condition": "event_accept",
+            "termination_priority": 10,
+            "unix_socks": {
+                "PLUGIN_ID_UCONFD": {
+                    "path": "confd.sock"
+                }
+            },
+            "user": "eset-eea-confd"
+        },
+        "devctld": {
+            "exec_argv": [
+                "lib/devctld"
+            ],
+            "group": "root",
+            "priority": 1,
+            "rules_file_path": "/etc/udev/rules.d/00-eset.eea.rules",
+            "start_condition": {
+                "or": [
+                    "event_on_startup",
+                    "event_sigchild"
+                ]
+            },
+            "startd_configuration": {
+                "PLUGIN_ID_UDEVCTL": {
+                    "path": "Settings.Plugins.Devctld",
+                    "protection_status": {
+                        "disabled": "DeviceControlDisabled",
+                        "enabled": "DeviceControlEnabled",
+                        "other": [
+                            "DeviceControlFunctional",
+                            "DeviceControlNonFunctional"
+                        ],
+                        "sigchild": "DeviceControlNonFunctional"
+                    }
+                }
+            },
+            "termination_priority": 30,
+            "user": "root"
+        },
+        "econnd": {
+            "exec_argv": [
+                "lib/econnd"
+            ],
+            "group": "eset-eea-daemons",
+            "priority": 1,
+            "start_condition": "event_accept",
+            "termination_priority": 30,
+            "unix_socks": {
+                "PLUGIN_ID_UECONND": {
+                    "path": "econnd.sock"
+                },
+                "PLUGIN_ID_UECONND_INTERNAL": {
+                    "path": "econnd_internal.sock"
+                }
+            },
+            "user": "eset-eea-econnd"
+        },
+        "execd": {
+            "accepted_nondaemon_binaries": [
+                "/opt/eset/eea/lib/egui",
+                "/opt/eset/eea/bin/odscan"
+            ],
+            "exec_argv": [
+                "lib/execd"
+            ],
+            "group": "root",
+            "inherit_env": [
+                "PATH"
+            ],
+            "priority": 1,
+            "start_condition": "event_accept",
+            "termination_priority": 40,
+            "unix_socks": {
+                "PLUGIN_ID_UEXECD": {
+                    "path": "execd.sock"
+                }
+            },
+            "user": "root"
+        },
+        "licensed": {
+            "exec_argv": [
+                "lib/licensed"
+            ],
+            "group": "eset-eea-daemons",
+            "priority": 1,
+            "start_condition": {
+                "or": [
+                    "event_on_startup",
+                    "event_accept"
+                ]
+            },
+            "termination_priority": 40,
+            "unix_socks": {
+                "PLUGIN_ID_ULICENSED": {
+                    "path": "licensed.sock"
+                }
+            },
+            "user": "eset-eea-licensed"
+        },
+        "logd": {
+            "accepted_nondaemon_binaries": {
+                "log_listener": [
+                    "/opt/eset/eea/sbin/lslog",
+                    "/opt/eset/eea/lib/egui"
+                ],
+                "logger": [
+                    "/opt/eset/eea/lib/oaeventd",
+                    "/opt/eset/eea/lib/odfeeder",
+                    "/opt/eset/eea/lib/egui"
+                ],
+                "notification_listener": [
+                    "/opt/eset/eea/lib/egui"
+                ],
+                "tray_icon": [
+                    "/opt/eset/eea/lib/egui"
+                ]
+            },
+            "exec_argv": [
+                "lib/logd"
+            ],
+            "group": "eset-eea-daemons",
+            "priority": 1,
+            "start_condition": {
+                "or": [
+                    "event_on_startup",
+                    "event_accept",
+                    "event_sigchild"
+                ]
+            },
+            "termination_priority": 20,
+            "unix_socks": {
+                "PLUGIN_ID_ULOGD": {
+                    "path": "logd.sock"
+                }
+            },
+            "user": "eset-eea-logd"
+        },
+        "netisd": {
+            "exec_argv": [
+                "lib/netisd"
+            ],
+            "group": "eset-eea-daemons",
+            "priority": 1,
+            "start_condition": {
+                "or": [
+                    "event_on_startup",
+                    "event_sigchild"
+                ]
+            },
+            "termination_priority": 50,
+            "user": "eset-eea-netisd"
+        },
+        "oaeventd": {
+            "exec_argv": [
+                "lib/oaeventd"
+            ],
+            "group": "root",
+            "priority": 1,
+            "start_condition": {
+                "or": [
+                    "event_on_startup",
+                    "event_sigchild"
+                ]
+            },
+            "startd_configuration": {
+                "PLUGIN_ID_UOASCAND": {
+                    "path": "Settings.Plugins.OAEventd.EnableSocks",
+                    "protection_status": {
+                        "disabled": "RTFSDisabled",
+                        "enabled": "RTFSEnabled",
+                        "other": [
+                            "RTFSWorking",
+                            "RTFSNonFunctional"
+                        ]
+                    }
+                }
+            },
+            "termination_priority": 40,
+            "user": "root"
+        },
+        "scand": {
+            "event_handlers": {
+                "crash": [
+                    "FeatureState:Crash:cloud_sandbox_integration"
+                ],
+                "start": [
+                    "FeatureState:Start:cloud_sandbox_integration"
+                ],
+                "stop": [
+                    "FeatureState:Stop:cloud_sandbox_integration"
+                ]
+            },
+            "exec_argv": [
+                "lib/scand"
+            ],
+            "features": {
+                "delivery": true,
+                "file_scanner": true,
+                "netprot_scanner": true,
+                "onaccess_scanner": "desktop",
+                "ondemand_scanner": "desktop",
+                "quarantine": true
+            },
+            "group": "eset-eea-daemons",
+            "priority": 1,
+            "start_condition": {
+                "or": [
+                    "event_on_startup",
+                    "event_sigchild"
+                ]
+            },
+            "termination_priority": 30,
+            "unix_socks": {
+                "PLUGIN_ID_UDELIVERYD": {
+                    "path": "deliveryd.sock"
+                },
+                "PLUGIN_ID_UNPSCAND": {
+                    "path": "npscand.sock"
+                },
+                "PLUGIN_ID_UOASCAND": {
+                    "path": "oascand.sock"
+                },
+                "PLUGIN_ID_UODSCAND": {
+                    "accepted_nondaemon_binaries": {
+                        "controller": [
+                            "/opt/eset/eea/lib/egui",
+                            "/opt/eset/eea/bin/odscan"
+                        ],
+                        "feeder": [
+                            "/opt/eset/eea/lib/odfeeder"
+                        ]
+                    },
+                    "path": "odscand.sock"
+                },
+                "PLUGIN_ID_UQUARD": {
+                    "accepted_nondaemon_binaries": [
+                        "/opt/eset/eea/bin/quar"
+                    ],
+                    "path": "quard.sock"
+                },
+                "PLUGIN_ID_USCAND": {
+                    "path": "scand.sock"
+                }
+            },
+            "user": "eset-eea-scand"
+        },
+        "schedd": {
+            "exec_argv": [
+                "lib/schedd"
+            ],
+            "group": "root",
+            "priority": 1,
+            "start_condition": {
+                "or": [
+                    "event_on_startup",
+                    "event_sigchild"
+                ]
+            },
+            "termination_priority": 40,
+            "unix_socks": {
+                "PLUGIN_ID_USCHEDD": {
+                    "path": "schedd.sock"
+                }
+            },
+            "user": "root"
+        },
+        "startd": {
+            "exec_argv": [
+                "sbin/startd"
+            ],
+            "group": "root",
+            "priority": 1,
+            "termination_priority": 0,
+            "unix_socks": {
+                "PLUGIN_ID_USTARTD": {
+                    "path": "startd.sock"
+                }
+            },
+            "user": "root"
+        },
+        "sysinfod": {
+            "exec_argv": [
+                "lib/sysinfod"
+            ],
+            "group": "root",
+            "priority": 1,
+            "start_condition": {
+                "or": [
+                    "event_on_startup",
+                    "event_sigchild"
+                ]
+            },
+            "termination_priority": 30,
+            "unix_socks": {
+                "PLUGIN_ID_USYSINFOD": {
+                    "path": "sysinfod.sock"
+                }
+            },
+            "user": "root"
+        },
+        "updated": {
+            "ce_auto_update_app_group": "EndpointLinux",
+            "download_64bit_modules": 1,
+            "eula_id": "com.eset.eulas.product.lg",
+            "eula_tag": "EULA-PRODUCT-LG",
+            "exec_argv": [
+                "lib/updated"
+            ],
+            "failsafe_url": "http://update.eset.com/eset_upd/businesslinux",
+            "group": "eset-eea-daemons",
+            "priority": 1,
+            "start_condition": {
+                "or": [
+                    "event_on_startup",
+                    "event_sigchild"
+                ]
+            },
+            "termination_priority": 30,
+            "unix_socks": {
+                "PLUGIN_ID_UUPDATED": {
+                    "path": "updated.sock"
+                }
+            },
+            "update_groups": [
+                "loader",
+                "core",
+                "translator",
+                "db",
+                "confeng2_era",
+                "unix_fw",
+                "protoscan",
+                "ssl",
+                "iris",
+                "vapm_linux"
+            ],
+            "user": "eset-eea-updated"
+        },
+        "utild": {
+            "exec_argv": [
+                "lib/utild"
+            ],
+            "group": "root",
+            "priority": 1,
+            "start_condition": {
+                "or": [
+                    "event_on_startup",
+                    "event_sigchild"
+                ]
+            },
+            "termination_priority": 40,
+            "unix_socks": {
+                "PLUGIN_ID_UUTILD": {
+                    "path": "utild.sock"
+                }
+            },
+            "user": "root"
+        },
+        "vapmd": {
+            "additional_groups": [
+                "eset-eea-vapm"
+            ],
+            "event_handlers": {
+                "crash": [
+                    "FeatureState:Crash:vulnerability_management",
+                    "FeatureState:Crash:patch_management"
+                ],
+                "disable": [
+                    "FeatureState:Disable:vulnerability_management",
+                    "FeatureState:Disable:patch_management"
+                ],
+                "enable": [
+                    "FeatureState:Enable:vulnerability_management"
+                ],
+                "start": [
+                    "FeatureState:Start:vulnerability_management",
+                    "FeatureState:Start:patch_management"
+                ],
+                "stop": [
+                    "FeatureState:Stop:vulnerability_management",
+                    "FeatureState:Stop:patch_management"
+                ]
+            },
+            "exec_argv": [
+                "lib/vapmd"
+            ],
+            "group": "eset-eea-daemons",
+            "priority": 1,
+            "start_condition": {
+                "or": [
+                    "event_on_startup",
+                    "event_sigchild",
+                    "event_accept"
+                ]
+            },
+            "startd_configuration": {
+                "PLUGIN_ID_UVAPMD": {
+                    "enable_path": "Settings.VulnerabilityManagement.Enabled",
+                    "protection_status": {
+                        "other": [
+                            "VulnerabilityManagementNonFunctional",
+                            "PatchManagementNonFunctional"
+                        ],
+                        "sigchild": [
+                            "VulnerabilityManagementNonFunctional",
+                            "PatchManagementNonFunctional"
+                        ]
+                    }
+                }
+            },
+            "termination_priority": 50,
+            "unix_socks": {
+                "PLUGIN_ID_UVAPMD": {
+                    "path": "vapmd.sock"
+                }
+            },
+            "user": "eset-eea-vapmd",
+            "va_supported_distros": {
+                "debian": [
+                    "12"
+                ],
+                "mint": [
+                    "21.0",
+                    "21.1",
+                    "21.2",
+                    "21.3",
+                    "22.0"
+                ],
+                "redhat": [
+                    "8",
+                    "9",
+                    "10"
+                ],
+                "ubuntu": [
+                    "20.04",
+                    "22.04",
+                    "24.04"
+                ]
+            }
+        },
+        "wapd": {
+            "accepted_nondaemon_binaries": [
+                "/opt/eset/eea/lib/user_login"
+            ],
+            "event_handlers": {
+                "crash": [
+                    "DisableWapNat",
+                    "UnloadWapKernelModule"
+                ],
+                "stop": [
+                    "UnloadWapKernelModule"
+                ]
+            },
+            "exec_argv": [
+                "lib/wapd"
+            ],
+            "group": "eset-eea-daemons",
+            "inet_socks": {
+                "PLUGIN_ID_UNETPROTD": [
+                    {
+                        "address": "127.0.0.1",
+                        "port": 0
+                    },
+                    {
+                        "address": "::1",
+                        "optional": 1,
+                        "port": 0
+                    }
+                ]
+            },
+            "priority": 1,
+            "start_condition": {
+                "or": [
+                    "event_on_startup",
+                    "event_sigchild",
+                    "event_accept"
+                ]
+            },
+            "startd_configuration": {
+                "PLUGIN_ID_UNETPROTD": {
+                    "enable_path": "Settings.Plugins.Wapd.Protoscan.WebProtectionEnabled",
+                    "protection_status": {
+                        "disabled": "WebAccessProtectionDisabled",
+                        "enabled": "WebAccessProtectionEnabled",
+                        "other": [
+                            "WebAccessProtectionFunctional",
+                            "WebAccessProtectionNonFunctional"
+                        ],
+                        "sigchild": "WebAccessProtectionNonFunctional"
+                    }
+                }
+            },
+            "startup_handlers": [
+                "LoadWapKernelModule"
+            ],
+            "termination_priority": 50,
+            "unix_socks": {
+                "PLUGIN_ID_UNETPROTD": {
+                    "path": "wapd.sock"
+                }
+            },
+            "user": "eset-eea-wapd"
+        }
+    },
+    "daemons_group": "eset-eea-daemons",
+    "help_url": "https://help.eset.com/getHelp?product=eeau",
+    "langs": [
+        "de",
+        "en",
+        "es",
+        "es_419",
+        "fr",
+        "pl",
+        "ja",
+        "uk"
+    ],
+    "package_format_extension": "bin",
+    "paths": {
+        "base_dir": "/var/opt/eset/eea/lib",
+        "bin_dir": "bin",
+        "cache_dir": "/var/opt/eset/eea/cache",
+        "ctl_dir": "ctl",
+        "dump_dir": "dumps",
+        "eei_agent_dir": "/opt/eset/eei",
+        "egui_dir": "/var/opt/eset/eea/egui",
+        "era_products_dir": "/opt/eset/RemoteAdministrator",
+        "etc_dir": "etc",
+        "internal_log_dir": "/var/log/eset/eea/internal",
+        "lib_dir": "lib",
+        "locale_dir": "locale",
+        "log_dir": "log",
+        "modules_notice_dir": "doc/modules_notice",
+        "resources_path": "etc/desktop",
+        "sbin_dir": "sbin",
+        "share_dir": "share",
+        "upd_data_dir": "/var/opt/eset/eea/updated/modules",
+        "var_dir": "/var/opt/eset/eea",
+        "varrun_dir": "/var/run/eset/eea"
+    },
+    "perseus_app_type": "ekrn",
+    "perseus_identification_tag": "eeau",
+    "product_activation_code": "113",
+    "product_additional_codes": {
+        "edtd": "323",
+        "eei": "322",
+        "plg": "10000",
+        "vapm": "341"
+    },
+    "product_category": "desktop",
+    "product_domain": "eset.com",
+    "product_features": {
+        "has_antitheft": false,
+        "has_device_control": true,
+        "has_device_misuse": false,
+        "has_email_protection": false,
+        "has_encryption": false,
+        "has_firewall": false,
+        "has_gui": true,
+        "has_mail_plugins": false,
+        "has_mail_server_protection": false,
+        "has_ms_nap": false,
+        "has_offline_help": false,
+        "has_onaccess": true,
+        "has_ondemand": true,
+        "has_parental": false,
+        "has_password_manager": false,
+        "has_payment_protection": false,
+        "has_protoscan": true,
+        "has_remote_tool": false,
+        "has_script_protection": false,
+        "has_shellext": false,
+        "has_sys_inspector": false,
+        "has_sys_rescue": false,
+        "has_update_mirror": false,
+        "has_web_access_protection": true,
+        "has_web_control": false,
+        "product_type": "endpoint"
+    },
+    "product_info": "ESET Endpoint Antivirus",
+    "product_info_long": "ESET Endpoint Antivirus for Linux",
+    "product_info_short": "ESET Endpoint Antivirus",
+    "product_name": "eea",
+    "product_provider": "eset",
+    "product_vendor": "ESET, spol. s r.o.",
+    "product_website": "www.eset.com",
+    "version": [
+        12,
+        0,
+        12,
+        0
+    ]
+}
