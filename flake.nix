@@ -98,7 +98,7 @@
       ./modules/common.nix
       ./modules/ssh.nix
       ./modules/networking.nix
-      ./modules/users/admin/user.nix
+      ./users/admin.nix
     ];
 
     # Create a reusable function to generate modules list
