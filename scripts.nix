@@ -5,15 +5,15 @@
 }: let
   # Helper library with usefull functions
   lib = pkgs.writeShellScript "script-lib" ''
-    require_hostname() {
+    function require_hostname() {
       if [ $# -eq 0 ]; then
         echo "Error: Hostname required"
-        echo "Usage: $0 HOSTNAME"
+        echo "Usage: $(basename "$0") HOSTNAME"
         exit 1
       fi
     }
 
-    validate_hostname() {
+    function validate_hostname() {
       local -r hostname="$1"
       if ! nix eval .#hosts."$hostname" &>/dev/null; then
         echo "Error: Unknown host '$hostname'"
@@ -25,29 +25,67 @@
 
     # Ask for password with confirmation
     function ask_for_password() {
+      local prompt="''${1:-Enter password}"
+
       while true; do
-        echo -n "Enter key password: " >&2
-        local key_password
-        read -rs key_password
+        echo -n "$prompt: " >&2
+        local password
+        read -rs password
         echo >&2
 
-        if [ -z "$key_password" ]; then
-          echo "Password cannot be empty. Please try again." >&2
-          continue
+        if [ -z "$password" ]; then
+          echo "WARN: Password is empty" >&2
+          echo ""
+          return
         fi
 
         echo -n "Confirm password: " >&2
-        local key_password_confirm
-        read -rs key_password_confirm
+        local password_confirm
+        read -rs password_confirm
         echo >&2
 
-        if [ "$key_password" = "$key_password_confirm" ]; then
+        if [ "$password" = "$password_confirm" ]; then
           break
         fi
         echo "Passwords do not match. Please try again." >&2
       done
 
-      echo -n "$key_password"
+      echo -n "$password"
+    }
+
+    # Generate WireGuard key pair
+    function generate_wg_keys() {
+      local -r hostname="$1"
+      local -r output_dir="''${2:-hosts/$hostname}"
+
+      echo "Generating WireGuard keys for $hostname" >&2
+
+      # Check if host directory exists
+      if [ ! -d "$output_dir" ]; then
+        echo "Directory $output_dir does not exist" >&2
+        return 1
+      fi
+
+      local -r private_key=$(wg genkey)
+      local -r public_key=$(echo "$private_key" | wg pubkey)
+
+      # Write public key to file
+      echo "$public_key" > "$output_dir/wg-key.pub"
+      echo "Public key written to $output_dir/wg-key.pub" >&2
+
+      # Return private key
+      echo "$private_key"
+    }
+
+
+    # Generate random password
+    function generate_password() {
+      echo "Generating password" >&2
+
+      local password
+      password=$(head -c 12 /dev/urandom | base64 | tr -d '/+=' | head -c 16)
+
+      echo -n "$password"
     }
   '';
 in {
@@ -122,7 +160,7 @@ in {
           local -r key_name="$username-$hostname-$target"
           local -r auth_keys_path="hosts/$target/$AUTH_KEYS_FILE"
 
-          local -r key_password=$(ask_for_password)
+          local -r key_password=$(ask_for_password "Enter key password")
           local -r key_file=$(generate_ssh_keys "$key_name" "$key_password")
           export_keys "$auth_keys_path" "$key_file"
           commit_keys "$auth_keys_path" "$target" "$username" "$hostname"
@@ -161,21 +199,7 @@ in {
 
         echo "Generating WireGuard configuration for $HOSTNAME with IP $IP_ADDRESS"
 
-        # Generate new keys
-        PRIVATE_KEY=$(wg genkey)
-        PUBLIC_KEY=$(echo "$PRIVATE_KEY" | wg pubkey)
-
-        # Check if host directory exists
-        if [ ! -d "hosts/$HOSTNAME" ]; then
-          echo "Directory hosts/$HOSTNAME does not exist"
-          exit 1
-        fi
-
-        # Write public key to file
-        echo "$PUBLIC_KEY" >"hosts/$HOSTNAME/wg-key.pub"
-        echo "Public key written to hosts/$HOSTNAME/wg-key.pub"
-
-        # Create config file
+        PRIVATE_KEY=$(generate_wg_keys "$HOSTNAME")
         CONFIG_DIR=$(mktemp -d)
         CONFIG_FILE="$CONFIG_DIR/wg0.conf"
         # Use echo to generate CONFIG_FILE to avoid breaking
@@ -215,24 +239,14 @@ in {
         # shellcheck source=/dev/null
         source ${lib}
 
-        if [ $# -ne 1 ]; then
-          echo "Usage: build-sdcard HOSTNAME"
-          exit 1
-        fi
+        require_hostname "$@"
         readonly HOSTNAME="$1"
+        validate_hostname "$HOSTNAME"
 
         readonly IMAGE_NAME="$HOSTNAME-sdcard"
 
-        # Create a temporary directory for the build
         echo "Generating WireGuard keys for $HOSTNAME..."
-        TMP_DIR=$(mktemp -d)
-        wg genkey > "$TMP_DIR/wg-key"
-        wg pubkey < "$TMP_DIR/wg-key" > "hosts/$HOSTNAME/wg-key.pub"
-
-        echo "Public key generated and saved to hosts/$HOSTNAME/wg-key.pub"
-        echo "Building ISO image with embedded private key..."
-
-        WG_PRIVATE_KEY=$(cat "$TMP_DIR/wg-key")
+        WG_PRIVATE_KEY=$(generate_wg_keys "$HOSTNAME")
         export WG_PRIVATE_KEY
 
         echo "Building image for host: $HOSTNAME"
@@ -245,8 +259,6 @@ in {
         echo "Image built successfully: $IMAGE_NAME"
 
         # Clean up private key
-        shred -zu "$TMP_DIR//wg-key"
-        rm -rf "$TMP_DIR"
         unset WG_PRIVATE_KEY
 
         echo "Private key securely deleted, build complete."
@@ -269,16 +281,8 @@ in {
 
         readonly HOSTNAME="iso"
 
-        # Create a temporary directory for the build
         echo "Generating WireGuard keys for $HOSTNAME..."
-        TMP_DIR=$(mktemp -d)
-        wg genkey > "$TMP_DIR/wg-key"
-        wg pubkey < "$TMP_DIR/wg-key" > "hosts/$HOSTNAME/wg-key.pub"
-
-        echo "Public key generated and saved to hosts/$HOSTNAME/wg-key.pub"
-        echo "Building ISO image with embedded private key..."
-
-        WG_PRIVATE_KEY=$(cat "$TMP_DIR/wg-key")
+        WG_PRIVATE_KEY=$(generate_wg_keys "$HOSTNAME")
         export WG_PRIVATE_KEY
 
         # Build the image using nixos-generators via flake output
@@ -290,8 +294,6 @@ in {
         echo "ISO image built successfully: iso-image"
 
         # Clean up private key
-        shred -zu "$TMP_DIR//wg-key"
-        rm -rf "$TMP_DIR"
         unset WG_PRIVATE_KEY
 
         echo "Private key securely deleted, build complete."
@@ -373,62 +375,21 @@ in {
           fi
         }
 
-        # Ask for password with confirmation
-        function ask_for_disk_password() {
-          while true; do
-            echo -n "Enter disk encryption password: " >&2
-            local disk_password
-            read -rs disk_password
-            echo >&2
-
-            if [ -z "$disk_password" ]; then
-              echo "Password cannot be empty. Please try again." >&2
-              continue
-            fi
-
-            echo -n "Confirm password: " >&2
-            local disk_password_confirm
-            read -rs disk_password_confirm
-            echo >&2
-
-            if [ "$disk_password" = "$disk_password_confirm" ]; then
-              break
-            fi
-            echo "Passwords do not match. Please try again." >&2
-          done
-
-          echo -n "$disk_password"
-        }
-
-        # Generate random password that can be changed later
-        function generate_disk_password() {
-          echo "Generating disk password" >&2
-
-          local disk_password
-          disk_password=$(head -c 12 /dev/urandom | base64 | tr -d '/+=' | head -c 16)
-
-          echo -n "$disk_password"
-        }
 
         function set_disk_password() {
-          local generate_password
-          echo -n "Auto-generate disk encryption password? [Y/n] " >&2
-          read -r generate_password
+          local disk_password
+          disk_password=$(ask_for_password "Enter disk encryption password (keep it empty to be autogenerated)")
+
+          if [[ -z "$disk_password" ]]; then
+            disk_password=$(generate_password)
+            echo "Disk password auto-generated." >&2
+          else
+            echo "Disk password has been set." >&2
+          fi
 
           # Create temporary password file to be passed to nixos-anywhere
           local -r tmp_folder=$(mktemp -d)
           readonly LOCAL_DISK_PASSWORD_PATH="$tmp_folder/disk-password"
-
-          local disk_password
-          # Default to Yes if empty or starts with Y/y
-          if [[ -z "$generate_password" || "$generate_password" =~ ^[Yy] ]]; then
-            disk_password=$(generate_disk_password)
-            echo "Disk password auto-generated." >&2
-          else
-            disk_password=$(ask_for_disk_password)
-            echo "Disk password has been set." >&2
-          fi
-
           echo -n "$disk_password" >"$LOCAL_DISK_PASSWORD_PATH"
           # Create the directory where TPM expects disk password during
           # the key enrollment, it will be removed after the fisrt boot
@@ -438,27 +399,13 @@ in {
           echo "Disk password successfully installed." >&2
         }
 
-        function generate_wg_key() {
+        function install_wg_key() {
           local -r hostname="$1"
 
-          # Generate new wireguard keys
-          echo "Generating wireguard key" >&2
-          local -r wg_private_key=$(${pkgs.wireguard-tools}/bin/wg genkey)
-          local -r wg_public_key=$(echo "$wg_private_key" | ${pkgs.wireguard-tools}/bin/wg pubkey)
+          # Generate keys using shared lib function
+          local -r wg_private_key=$(generate_wg_keys "$hostname")
 
-          # Check if host directory exists
-          local host_folder="hosts/$hostname"
-          if [ ! -d "$host_folder" ]; then
-            echo "Host directory $host_folder does not exist" >&2
-            exit 1
-          fi
-          local -r pubkey_path="$host_folder/wg-key.pub"
-
-          # Write public key to the host file
-          echo "$wg_public_key" > "$pubkey_path"
-          echo "Wireguard public key written to $pubkey_path" >&2
-
-          # Create the directory where wiregusrd expects to find the private key
+          # Create the directory where wireguard expects to find the private key
           install -d -m700 "$TEMP/$WG_KEY_FOLDER"
           echo "$wg_private_key" > "$TEMP/$WG_KEY_PATH"
           chmod 600 "$TEMP/$WG_KEY_PATH"
@@ -472,7 +419,7 @@ in {
 
           set_disk_password
 
-          generate_wg_key "$hostname"
+          install_wg_key "$hostname"
 
           # Install NixOS to the host system with our secrets
           nixos-anywhere \
@@ -487,4 +434,111 @@ in {
         main "$@"
       '';
     };
+
+  # Expose the shared library for testing
+  inherit lib;
+
+  # Tests for the shared library functions
+  script-lib-test =
+    pkgs.runCommand "script-lib-test" {
+      buildInputs = with pkgs; [
+        bash
+        wireguard-tools
+        nix
+        jq
+      ];
+    } ''
+      set -euo pipefail
+
+      # Create a test environment
+      export HOME=$(mktemp -d)
+      mkdir -p hosts/test-host
+      mkdir -p hosts/another-host
+
+      # Source the shared library
+      source ${lib}
+
+      echo "Running script library tests..."
+
+      # Test require_hostname function
+      test_require_hostname() {
+        echo "Testing require_hostname..."
+
+        # Test with no arguments (should fail)
+        set +e
+        (require_hostname >/dev/null 2>&1)
+        local exit_code=$?
+        set -e
+        if [ $exit_code -ne 1 ]; then
+          echo "ERROR: require_hostname should fail with no arguments"
+          return 1
+        fi
+
+        # Test with arguments (should pass)
+        require_hostname "test-host"
+
+        echo "✓ require_hostname tests passed"
+      }
+
+      # Test generate_wg_keys function
+      test_generate_wg_keys() {
+        echo "Testing generate_wg_keys..."
+
+        # Test with existing directory
+        local private_key
+        private_key=$(generate_wg_keys "test-host" 2>/dev/null)
+        if [ -z "$private_key" ]; then
+          echo "ERROR: generate_wg_keys should return a private key"
+          return 1
+        fi
+
+        # Check that public key file was created
+        if [ ! -f "hosts/test-host/wg-key.pub" ]; then
+          echo "ERROR: generate_wg_keys should create public key file"
+          return 1
+        fi
+
+        # Clean up test file
+        rm -f "hosts/test-host/wg-key.pub"
+
+        # Test with non-existent directory (should fail)
+        set +e
+        (generate_wg_keys "non-existent" >/dev/null 2>&1)
+        local exit_code=$?
+        set -e
+        if [ $exit_code -ne 1 ]; then
+          echo "ERROR: generate_wg_keys should fail for non-existent directory"
+          return 1
+        fi
+
+        echo "✓ generate_wg_keys tests passed"
+      }
+
+      # Test password generation
+      test_password_generation() {
+        echo "Testing password generation..."
+
+        # Test generate_password returns valid password
+        local password
+        password=$(generate_password 2>/dev/null)
+        if [ -z "$password" ]; then
+          echo "ERROR: generate_password should return a password"
+          return 1
+        fi
+        if [ ''${#password} -lt 8 ] || [ ''${#password} -gt 16 ]; then
+          echo "ERROR: generate_password should return 8-16 character password, got ''${#password}"
+          return 1
+        fi
+
+        echo "✓ password generation tests passed"
+      }
+
+      # Run all tests
+      test_require_hostname
+      test_generate_wg_keys
+      test_password_generation
+
+      echo "All tests passed!"
+      touch $out
+    '';
 }

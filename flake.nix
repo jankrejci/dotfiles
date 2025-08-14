@@ -98,7 +98,7 @@
       ./modules/common.nix
       ./modules/ssh.nix
       ./modules/networking.nix
-      ./modules/users/admin/user.nix
+      ./users/admin.nix
     ];
 
     # Create a reusable function to generate modules list
@@ -217,6 +217,16 @@
     packages."x86_64-linux" = import ./scripts.nix {
       pkgs = pkgs-x86_64-linux;
       nixos-anywhere = nixos-anywhere.packages."x86_64-linux".nixos-anywhere;
+    };
+
+    # Tests for script functions
+    checks."x86_64-linux" = let
+      scripts = import ./scripts.nix {
+        pkgs = pkgs-x86_64-linux;
+        nixos-anywhere = nixos-anywhere.packages."x86_64-linux".nixos-anywhere;
+      };
+    in {
+      inherit (scripts) script-lib-test;
     };
   };
 }
