@@ -76,4 +76,7 @@ in {
     Restart = "always";
     RestartSec = 5;
   };
+
+  # Basic fail2ban for defense against internal threats
+  services.fail2ban.enable = true;
 }
