@@ -125,6 +125,19 @@ with lib; {
       ];
     };
 
+    t14 = {
+      ipAddress = "192.168.99.24";
+      device = "/dev/nvme0n1";
+      swapSize = "8G";
+      extraModules = [
+        nixos-hardware.nixosModules.lenovo-thinkpad-t14-amd-gen1
+        ./users/jkr.nix
+        ./users/paja.nix
+        ./modules/disk-tpm-encryption.nix
+        ./modules/desktop.nix
+      ];
+    };
+
     ### Single chip boards ###
 
     # TODO create minimal aarch64 build to check minimal reasonable image size
