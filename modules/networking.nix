@@ -75,6 +75,9 @@ in {
         DHCP = "no";
         dns = ["192.168.99.1"];
         domains = ["~${domain}"];
+        # Don't block network startup if VPN fails
+        networkConfig.ConfigureWithoutCarrier = true;
+        linkConfig.RequiredForOnline = false;
       };
       # Enable dhcp via sysystemd.network
       # This can be overriden for servers with fixed ip
