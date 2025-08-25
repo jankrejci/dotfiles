@@ -18,7 +18,7 @@
 
     # Check if there are cached ssh keys, if not fetch it from github
     if [ ! -f "${keysPath}" ]; then
-      "${pkgs.curl}/bin/curl" "${gitRepo}/refs/heads/${gitBranch}/hosts/${config.hosts.self.hostName}/${keysFile}" > "${keysPath}"
+      "${pkgs.curl}/bin/curl" -H "Cache-Control: no-cache" "${gitRepo}/refs/heads/${gitBranch}/hosts/${config.hosts.self.hostName}/${keysFile}" > "${keysPath}"
     fi
 
     "${pkgs.coreutils}/bin/cat" "${keysPath}"
@@ -76,4 +76,7 @@ in {
     Restart = "always";
     RestartSec = 5;
   };
+
+  # Basic fail2ban for defense against internal threats
+  services.fail2ban.enable = true;
 }
