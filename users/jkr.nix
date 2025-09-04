@@ -58,8 +58,8 @@
           tokei # code statistics tool
           tealdeer # tldr help tool
           zen-browser
-          # saleae-logic-2 # logic analyzer software
-          # ghidra-bin
+          saleae-logic-2 # logic analyzer software
+          ghidra-bin
         ];
 
         fonts.fontconfig.enable = true;
