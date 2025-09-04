@@ -49,8 +49,8 @@
           unstable.prusa-slicer # slicer for 3D printing
           unstable.trezor-suite
           unstable.claude-code
-          # unstable.kicad-small
-          unstable.kicad
+          unstable.kicad-small
+          # unstable.kicad
           gnomeExtensions.vitals
           gnomeExtensions.dash-to-panel
           unstable.gnomeExtensions.unite
