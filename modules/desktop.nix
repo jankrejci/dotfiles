@@ -18,6 +18,11 @@
     };
   };
 
+  programs.appimage = {
+    enable = true;
+    binfmt = true;
+  };
+
   # Enable CUPS to print documents.
   services.printing = {
     enable = true;
