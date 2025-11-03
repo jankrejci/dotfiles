@@ -2,7 +2,9 @@
   home.packages = with pkgs; [
     ltex-ls # spell check language server
     nodePackages.bash-language-server # bash language server
-    python311Packages.python-lsp-server # python LSP server
+    python313Packages.python-lsp-server # python LSP server
+    python313Packages.pylsp-mypy
+    ruff
     slint-lsp # slint language server
     shfmt # bash file formatter
     marksman # markdown language server
@@ -85,6 +87,12 @@
             targets = "x86_64-unknown-linux-gnu";
           };
         };
+        pylsp = {
+          plugins.pylsp_mypy = {
+            enabled = true;
+            live_mode = true;
+          };
+        };
         typos = {
           command = "typos-lsp";
           environment.RUST_LOG = "info";
@@ -146,6 +154,15 @@
             unit = " ";
           };
           formatter.command = "shfmt";
+        }
+        {
+          name = "python";
+          auto-format = true;
+          formatter = {
+            command = "ruff";
+            args = ["format" "--line-length" "88" "-"];
+          };
+          language-servers = ["pylsp"];
         }
         {
           name = "nu";
