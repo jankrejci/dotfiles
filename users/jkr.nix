@@ -43,23 +43,17 @@
         ];
 
         home.packages = with pkgs; [
-          unstable.shell-gpt # cli gpt prompt
           unstable.rustup # rust install tool
           unstable.espflash # flasher utility for Espressif SoCs
-          unstable.prusa-slicer # slicer for 3D printing
           unstable.trezor-suite
           unstable.claude-code
-          unstable.kicad-small
-          # unstable.kicad
           gnomeExtensions.vitals
           gnomeExtensions.dash-to-panel
           unstable.gnomeExtensions.unite
           rshell # remote shell for MicroPython
           tokei # code statistics tool
           tealdeer # tldr help tool
-          zen-browser
           saleae-logic-2 # logic analyzer software
-          ghidra-bin
         ];
 
         fonts.fontconfig.enable = true;
