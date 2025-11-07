@@ -44,6 +44,7 @@
       "com.prusa3d.PrusaSlicer"
       "com.google.Chrome"
     ];
+    update.onActivation = true;
   };
 
   # Enable CUPS to print documents.
