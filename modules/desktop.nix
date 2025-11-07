@@ -23,7 +23,28 @@
     binfmt = true;
   };
 
-  services.flatpak.enable = true;
+  services.flatpak = {
+    enable = true;
+    # Flathub "stable" is imported as the default repo
+    remotes = [
+      {
+        name = "flathub-beta";
+        location = "https://flathub.org/beta-repo/flathub-beta.flatpakrepo";
+      }
+    ];
+    packages = [
+      {
+        appId = "org.freecad.FreeCAD";
+        origin = "flathub-beta";
+      }
+      "app.zen_browser.zen"
+      "org.mozilla.firefox"
+      "org.kicad.KiCad"
+      "org.ghidra_sre.Ghidra"
+      "com.prusa3d.PrusaSlicer"
+      "com.google.Chrome"
+    ];
+  };
 
   # Enable CUPS to print documents.
   services.printing = {

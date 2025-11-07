@@ -31,6 +31,7 @@
       url = "github:0xc000022070/zen-browser-flake";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
+    nix-flatpak.url = "github:gmodena/nix-flatpak/?ref=latest";
   };
 
   outputs = {
@@ -44,6 +45,7 @@
     disko,
     nixos-anywhere,
     zen-browser,
+    nix-flatpak,
     ...
   } @ inputs: let
     lib = nixpkgs.lib;
@@ -95,6 +97,7 @@
     baseModules = [
       home-manager.nixosModules.home-manager
       disko.nixosModules.disko
+      nix-flatpak.nixosModules.nix-flatpak
       ./modules/common.nix
       ./modules/ssh.nix
       ./modules/networking.nix
