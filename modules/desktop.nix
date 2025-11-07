@@ -87,9 +87,6 @@
     };
   };
 
-  # Install firefox.
-  programs.firefox.enable = true;
-
   # TODO make the hyprland usable
   programs.hyprland = {
     enable = true;
@@ -120,7 +117,6 @@
     ssh-to-age
     neofetch
     git
-    chromium
     sane-backends
     sane-frontends
     simple-scan

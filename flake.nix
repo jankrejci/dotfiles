@@ -26,11 +26,6 @@
       url = "github:nix-community/nixos-anywhere";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # A calmer internet, without any gimmicks
-    zen-browser = {
-      url = "github:0xc000022070/zen-browser-flake";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
-    };
     nix-flatpak.url = "github:gmodena/nix-flatpak/?ref=latest";
   };
 
@@ -44,15 +39,11 @@
     nixgl,
     disko,
     nixos-anywhere,
-    zen-browser,
     nix-flatpak,
     ...
   } @ inputs: let
     lib = nixpkgs.lib;
 
-    zen-overlay = final: prev: {
-      zen-browser = zen-browser.packages.x86_64-linux.default;
-    };
     # Two version of packages are declared both for x86_64 and aarch64 hosts
     unstable-x86_64-linux = final: _prev: {
       unstable = import nixpkgs-unstable {
@@ -68,7 +59,6 @@
       overlays = [
         nixgl.overlay
         unstable-x86_64-linux
-        zen-overlay
       ];
     };
     unstable-aarch64-linux = final: _prev: {
