@@ -186,18 +186,60 @@ in {
     };
 
     script = ''
+      set -euo pipefail
+
+      # One time password file is generated during installation for TPM enrollment
       if [ ! -f "${diskPasswordFile}" ]; then
-        echo "Password file "${diskPasswordFile}" not found, skipping TPM enrollment"
+        echo "Password file ${diskPasswordFile} not found, skipping TPM enrollment"
         exit 0
       fi
 
-      # Enroll TPM key sealed with PCR0 and PCR7 (secure boot)
-      ${pkgs.systemd}/bin/systemd-cryptenroll --wipe-slot=tpm2 "${luksDevice}"
-      ${pkgs.systemd}/bin/systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0,7 "${luksDevice}" --unlock-key-file="${diskPasswordFile}"
-      echo "TPM key enrolled to ${luksDevice}"
+      echo "Starting TPM key enrollment"
+      ${pkgs.sbctl}/bin/sbctl status
 
-      # Clean up temporary file securely
-      ${pkgs.coreutils}/bin/shred -u "${diskPasswordFile}"
+      # It is expected that secure boot keys are enrolled already.
+      if ! ${pkgs.sbctl}/bin/sbctl status | grep -qE "Setup Mode:.*Disabled"; then
+        echo "ERROR: Secure boot is still in Setup Mode"
+        exit 1
+      fi
+      echo "Secure boot in User Mode"
+
+      # Secure boot is required for PCR7 protection.
+      if ! ${pkgs.sbctl}/bin/sbctl status | grep -qE "Secure Boot:.*Enabled"; then
+        echo "ERROR: Secure boot is not enabled"
+        exit 1
+      fi
+      echo "Secure boot is enabled"
+
+      # Check if the TPM password slot is enrolled
+      if ! ${pkgs.cryptsetup}/bin/cryptsetup luksDump "${luksDevice}" | grep -qE "Key Slot [0-9]+: luks2"; then
+        echo "ERROR: No password slots found in LUKS device"
+        exit 1
+      fi
+      echo "Password slot found on LUKS device"
+
+      if ! ${pkgs.systemd}/bin/systemd-cryptenroll --wipe-slot=tpm2 "${luksDevice}"; then
+        echo "WARNING: Failed to wipe TPM slot, may not exist."
+      fi
+
+      # Enroll final TPM key sealed with PCR0 and PCR7
+      if ! ${pkgs.systemd}/bin/systemd-cryptenroll \
+        --tpm2-device=auto \
+        --tpm2-pcrs=0,7 \
+        "${luksDevice}" \
+        --unlock-key-file="${diskPasswordFile}"; then
+
+        echo "ERROR: Failed to enroll TPM key"
+        exit 1
+      fi
+      echo "TPM key key with PCR0+PCR7"
+
+      if ! ${pkgs.coreutils}/bin/shred -u "${diskPasswordFile}"; then
+        echo "ERROR: Failed to delete password file"
+        exit 1
+      fi
+      echo "Password file securely deleted"
+
     '';
   };
 }
