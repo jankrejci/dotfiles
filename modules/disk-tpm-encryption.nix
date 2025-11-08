@@ -142,7 +142,8 @@ in {
       # Create secure boot keys and enroll to uefi
       ${pkgs.sbctl}/bin/sbctl create-keys
 
-      if ${pkgs.sbctl}/bin/sbctl enroll-keys; then
+      # The --microsoft flag is a workaround for T14 gen1
+      if ${pkgs.sbctl}/bin/sbctl enroll-keys --microsoft; then
         echo "Secure boot keys has been enrolled succesfully"
       else
         echo "Failed to enroll Secure boot keys has beend already enrolled"
@@ -159,8 +160,8 @@ in {
     ${pkgs.sbctl}/bin/sbctl sign -s /boot/EFI/nixos/*bzImage.efi
     echo "Bootloader has been signed"
 
-    # This is a workaround to get provisional key enrolle during installation,
-    # enrolmennt through the activation script doesn't work, because the LUKS
+    # This is a workaround to get provisional key enrolled during installation.
+    # Enrollment through the activation script doesn't work, because the LUKS
     # partition is not ready at that time
 
     # Exit early if password file doesn't exist, it means TPM key is probably enrolled already
@@ -240,6 +241,102 @@ in {
       fi
       echo "Password file securely deleted"
 
+    '';
+  };
+
+  systemd.services."verify-security-setup" = {
+    description = "Verify secure boot and disk encryption setup";
+    wantedBy = ["multi-user.target"];
+    after = ["enroll-tpm-key.service"];
+
+    path = with pkgs; [
+      util-linux
+    ];
+
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+
+    script = ''
+      set -euo pipefail
+
+      echo "=== Security Setup Verification ==="
+      ERRORS=0
+
+      # Check secure boot keys are enrolled
+      echo -n "Checking secure boot keys enrollment... "
+      if ${pkgs.sbctl}/bin/sbctl status | grep -qE "Setup Mode:.*Disabled"; then
+        echo "OK"
+      else
+        echo "FAILED: Secure boot is still in Setup Mode"
+        ((ERRORS++))
+      fi
+
+      # Check secure boot is enabled
+      echo -n "Checking secure boot is enabled... "
+      if ${pkgs.sbctl}/bin/sbctl status | grep -qE "Secure Boot:.*Enabled"; then
+        echo "OK"
+      else
+        echo "FAILED: Secure boot is not enabled"
+        ((ERRORS++))
+      fi
+
+      # Check all bootloader images are signed
+      echo -n "Checking bootloader images are signed... "
+      UNSIGNED=$(${pkgs.sbctl}/bin/sbctl verify | grep -E "✗" || true)
+      if [ -z "$UNSIGNED" ]; then
+        echo "OK"
+      else
+        echo "FAILED: Unsigned images found:"
+        ((ERRORS++))
+      fi
+
+      # Check disk encryption is active
+      echo -n "Checking disk encryption is active... "
+      if ${pkgs.cryptsetup}/bin/cryptsetup status crypted > /dev/null 2>&1; then
+        echo "OK"
+      else
+        echo "FAILED: Encrypted device 'crypted' not found"
+        ((ERRORS++))
+      fi
+
+      # Check TPM slot is enrolled
+      echo -n "Checking TPM slot is enrolled... "
+      if ${pkgs.cryptsetup}/bin/cryptsetup luksDump "${luksDevice}" | grep -qE "systemd-tpm2"; then
+        echo "OK"
+      else
+        echo "FAILED: No TPM slot found"
+        ((ERRORS++))
+      fi
+
+      # Check TPM is using PCR7 (secure boot)
+      echo -n "Checking TPM uses PCR7 (secure boot)... "
+      TOKEN_ID=$(${pkgs.cryptsetup}/bin/cryptsetup luksDump "${luksDevice}" | grep -B1 "systemd-tpm2" | grep -oP '^\s*\K[0-9]+' | head -n1)
+      TOKEN_DATA=$(${pkgs.cryptsetup}/bin/cryptsetup token export "${luksDevice}" --token-id "$TOKEN_ID")
+      if echo "$TOKEN_DATA" | ${pkgs.jq}/bin/jq -e '.["tpm2-pcrs"] | contains([7])' > /dev/null 2>&1; then
+        echo "OK"
+      else
+        echo "FAILED: TPM not sealed with PCR7"
+        ((ERRORS++))
+      fi
+
+      # Check password slot exists for recovery
+      echo -n "Checking password recovery slot exists... "
+      if ${pkgs.systemd}/bin/systemd-cryptenroll "${luksDevice}" | grep -q "password"; then
+        echo "OK"
+      else
+        echo "FAILED: No password slots found"
+        ((ERRORS++))
+      fi
+
+      echo "==================================="
+      if [ $ERRORS -gt 0 ]; then
+        echo "FAILED: $ERRORS security checks failed"
+        exit 1
+      else
+        echo "SUCCESS: All security checks passed"
+      fi
     '';
   };
 }
