@@ -134,20 +134,36 @@ in {
   system.activationScripts."enroll-secure-boot-keys" = {
     deps = [];
     text = ''
-      if ${pkgs.sbctl}/bin/sbctl status | grep -qE "Secure Boot:.*Enabled"; then
-        echo "Secure boot is already enrolled, skipping creating keys"
+      echo -n "Checking secure boot status... "
+      if ${pkgs.sbctl}/bin/sbctl status | grep -qE "Setup Mode:.*Disabled"; then
+        echo "SKIPPING, Setup Mode disabled"
         exit 0
       fi
+      echo "OK"
 
-      # Create secure boot keys and enroll to uefi
-      ${pkgs.sbctl}/bin/sbctl create-keys
+      echo -n "Creating secure boot keys... "
+      if ! ${pkgs.sbctl}/bin/sbctl create-keys; then
+        echo "ERROR: Failed to create secure boot keys"
+        return
+      fi
+      echo "OK"
 
+      echo -n "Enrolling keys to UEFI... "
       # The --microsoft flag is a workaround for T14 gen1
-      if ${pkgs.sbctl}/bin/sbctl enroll-keys --microsoft; then
-        echo "Secure boot keys has been enrolled succesfully"
-      else
-        echo "Failed to enroll Secure boot keys has beend already enrolled"
+      if ! ${pkgs.sbctl}/bin/sbctl enroll-keys --microsoft; then
+        echo "ERROR: Failed to enroll secure boot keys"
         ${pkgs.sbctl}/bin/sbctl status
+        return
+      fi
+      echo "OK"
+
+      echo -n "Verifying enrollment... "
+      if ${pkgs.sbctl}/bin/sbctl status | grep -qE "Setup Mode:.*Disabled"; then
+        echo "Secure boot keys enrolled successfully"
+      else
+        echo "ERROR: Key enrollment verification failed"
+        ${pkgs.sbctl}/bin/sbctl status
+        return
       fi
     '';
   };
