@@ -433,10 +433,17 @@ in {
           fi
 
           echo "WARNING: Target secure boot not in Setup Mode"
-          read -r -p "Continue anyway? [Y/n] " response
-          if [[ "$response" =~ ^[Nn]$ ]]; then
-            exit 1
-          fi
+          read -r -p "Continue anyway? [y/N] " response
+
+          case "$response" in
+            y|Y)
+              ;;
+            *)
+              echo "Installation aborted"
+              exit 1
+              ;;
+          esac
+
         }
 
         function main() {
