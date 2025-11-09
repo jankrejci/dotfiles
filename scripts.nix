@@ -342,6 +342,8 @@ in {
         util-linux
         gnused
         nixos-anywhere
+        iputils
+        openssh
       ];
       text = ''
         # shellcheck source=/dev/null
@@ -411,11 +413,40 @@ in {
           chmod 600 "$TEMP/$WG_KEY_PATH"
         }
 
+        function check_target_reachable() {
+          echo -n "Checking if $TARGET is reachable... "
+
+          if ! ping -c 1 -W 2 "$TARGET" >/dev/null 2>&1; then
+            echo "FAILED"
+            exit 1
+          fi
+          echo "OK"
+        }
+
+        function check_secure_boot_setup_mode() {
+          echo -n "Checking secure boot setup mode... "
+
+          if ssh "admin@$TARGET" \
+            'sbctl status | grep -qE "Setup Mode:.*Enabled"' 2>/dev/null; then
+            echo "OK"
+            return
+          fi
+
+          echo "WARNING: Target secure boot not in Setup Mode"
+          read -r -p "Continue anyway? [Y/n] " response
+          if [[ "$response" =~ ^[Nn]$ ]]; then
+            exit 1
+          fi
+        }
+
         function main() {
 
           require_hostname "$@"
           local -r hostname="$1"
           validate_hostname "$hostname"
+
+          check_target_reachable
+          check_secure_boot_setup_mode
 
           set_disk_password
 
