@@ -212,7 +212,7 @@ in {
       echo "Secure boot is enabled"
 
       # Check if the TPM password slot is enrolled
-      if ! ${pkgs.cryptsetup}/bin/cryptsetup luksDump "${luksDevice}" | grep -qE "Key Slot [0-9]+: luks2"; then
+      if ! ${pkgs.systemd}/bin/systemd-cryptenroll "${luksDevice}" | grep -q "password"; then
         echo "ERROR: No password slots found in LUKS device"
         exit 1
       fi
