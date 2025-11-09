@@ -103,7 +103,7 @@ in {
   # `systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0,7 /dev/sda`
   # It is good practice to still have a manual password to recover partition
   # if TMP approach fails
-  boot.initrd.luks.devices."cryptroot" = {
+  boot.initrd.luks.devices."crypted" = {
     device = luksDevice;
     preLVM = true;
     allowDiscards = true;
@@ -120,11 +120,11 @@ in {
   boot.initrd.systemd.services."tpm-delay" = {
     description = "Delay before TPM decryption";
     wantedBy = ["cryptsetup.target"];
-    before = ["systemd-cryptsetup@cryptroot.service"];
+    before = ["systemd-cryptsetup@crypted.service"];
     # Prevent boot order cycle
     after = ["systemd-modules-load.service"];
-    # wantedBy = [ "systemd-cryptsetup@cryptroot.service" ];
-    # before = [ "systemd-cryptsetup@cryptroot.service" ];
+    # wantedBy = [ "systemd-cryptsetup@crypted.service" ];
+    # before = [ "systemd-cryptsetup@crypted.service" ];
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${pkgs.coreutils}/bin/sleep 5";
