@@ -12,6 +12,8 @@ in {
     useNetworkd = lib.mkForce true;
   };
 
+  services.netbird.enable = true;
+
   # Do not wait to long for interfaces to become online,
   # this is especially handy for notebooks on wifi,
   # where the eth interface is disconnected
