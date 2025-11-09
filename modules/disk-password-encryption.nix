@@ -86,7 +86,7 @@ in {
 
     initrd = {
       systemd.enable = true;
-      luks.devices."cryptroot" = {
+      luks.devices."crypted" = {
         device = luksDevice;
         preLVM = true;
         allowDiscards = true;
