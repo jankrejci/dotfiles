@@ -423,6 +423,16 @@ in {
           echo "OK"
         }
 
+        function check_ssh_connection() {
+          echo -n "Checking SSH connection to $TARGET... "
+
+          if ! ssh "admin@$TARGET" exit 2>/dev/null; then
+            echo "FAILED"
+            exit 1
+          fi
+          echo "OK"
+        }
+
         function check_secure_boot_setup_mode() {
           echo -n "Checking secure boot setup mode... "
 
@@ -453,6 +463,7 @@ in {
           validate_hostname "$hostname"
 
           check_target_reachable
+          check_ssh_connection
           check_secure_boot_setup_mode
 
           set_disk_password
