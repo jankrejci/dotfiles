@@ -52,7 +52,6 @@ jobs:
       matrix:
         script: 
           - deploy-config
-          - wireguard-config
           - build-sdcard
           - build-installer
           - nixos-install
