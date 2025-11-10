@@ -8,12 +8,17 @@
   serverDomain = config.hosts.self.hostName + "." + domain;
   grafanaPort = 3000;
 in {
-  networking.firewall.interfaces."wg0".allowedTCPPorts = [9090 grafanaPort 80 443];
+  # Allow Grafana, Prometheus, and Nginx on VPN interfaces
+  networking.firewall.interfaces = {
+    "wg0".allowedTCPPorts = [9090 grafanaPort 80 443];
+    "nb-homelab".allowedTCPPorts = [9090 grafanaPort 80 443];
+  };
 
   services.prometheus = {
     enable = true;
     retentionTime = "180d";
-    listenAddress = serverIpAddress;
+    # Listen on all interfaces, security enforced via firewall
+    listenAddress = "0.0.0.0";
     globalConfig.scrape_interval = "10s";
     scrapeConfigs = [
       {
@@ -38,7 +43,8 @@ in {
     enable = true;
     settings = {
       server = {
-        http_addr = serverIpAddress;
+        # Listen on all interfaces, security enforced via firewall
+        http_addr = "0.0.0.0";
         http_port = grafanaPort;
         domain = serverDomain;
         root_url = "http://${serverDomain}/grafana";
@@ -50,9 +56,11 @@ in {
   services.nginx = {
     enable = true;
     virtualHosts.${config.services.grafana.settings.server.domain} = {
-      listenAddresses = ["${serverDomain}"];
+      # Listen on all interfaces, security enforced via firewall
+      listenAddresses = ["0.0.0.0"];
       locations."/grafana/" = {
-        proxyPass = "http://${serverDomain}:${toString grafanaPort}";
+        # Use localhost since Grafana is on the same host as Nginx
+        proxyPass = "http://localhost:${toString grafanaPort}";
         proxyWebsockets = true;
         recommendedProxySettings = true;
       };
