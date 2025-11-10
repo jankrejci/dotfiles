@@ -137,7 +137,7 @@
 
     # Function to create a deploy node entry
     mkNode = hostName: hostConfig: {
-      hostname = "${hostName}.vpn";
+      hostname = "${hostName}.x.nb";
       sshUser = "admin";
       profiles.system = {
         user = "root";
