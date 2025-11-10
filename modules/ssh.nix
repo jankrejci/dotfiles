@@ -71,11 +71,8 @@ in {
     };
   };
 
-  # Restrict SSH access to VPN interfaces only
-  networking.firewall.interfaces = {
-    "wg0".allowedTCPPorts = [22];
-    "nb-homelab".allowedTCPPorts = [22];
-  };
+  # Restrict SSH access to VPN interface only
+  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [22];
 
   systemd.services.sshd.serviceConfig = {
     Restart = "always";
