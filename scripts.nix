@@ -313,7 +313,7 @@ in {
     };
 
   # Install nixos remotely. It is expected that the host
-  # is booted via USB stick and accesible on iso.vpn
+  # is booted via USB stick and accesible on iso.x.nb
   # `nix run .#nixos-install`
   nixos-install =
     pkgs.writeShellApplication
