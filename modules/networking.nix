@@ -3,10 +3,7 @@
   lib,
   pkgs,
   ...
-}: let
-  domain = "vpn";
-  privateKeyPath = "/var/lib/wireguard/wg-key";
-in {
+}: {
   # Avoid collision of the dhcp with the sysystemd.network
   networking = {
     useDHCP = lib.mkForce false;
@@ -86,48 +83,17 @@ in {
       MulticastDNS=no
       # Reduces noise on the network
       LLMNR=no
-      # Avoids double-caching (CoreDNS already caches)
-      Cache=no
+      # DNS caching enabled for Netbird
+      Cache=yes
       DNSSEC=allow-downgrade
     '';
   };
 
-  # Configure the wg vpn
+  # Configure systemd-networkd
   systemd.network = {
     enable = true;
-    netdevs = {
-      "10-wg0" = {
-        netdevConfig = {
-          Kind = "wireguard";
-          Name = "wg0";
-          # WG adds 80 bytes so the total frame size is 1300
-          MTUBytes = "1220";
-        };
-        wireguardConfig = {
-          PrivateKeyFile = privateKeyPath;
-        };
-        wireguardPeers = [
-          {
-            PublicKey = config.hosts.vpsfree.wgPublicKey;
-            AllowedIPs = ["192.168.99.0/24"];
-            Endpoint = "37.205.13.227:51820";
-            PersistentKeepalive = 25;
-          }
-        ];
-      };
-    };
     networks = {
-      "10-wg0" = {
-        matchConfig.Name = "wg0";
-        address = ["${config.hosts.self.ipAddress}/24"];
-        DHCP = "no";
-        dns = ["192.168.99.1"];
-        domains = ["~${domain}"];
-        # Don't block network startup if VPN fails
-        networkConfig.ConfigureWithoutCarrier = true;
-        linkConfig.RequiredForOnline = false;
-      };
-      # Enable dhcp via sysystemd.network
+      # Enable dhcp via systemd-network
       # This can be overriden for servers with fixed ip
       "98-all-ethernet" = lib.mkDefault {
         matchConfig.Type = "ether";
@@ -140,12 +106,12 @@ in {
     };
   };
 
-  # NetworkManager configuration for better OpenVPN handling
+  # NetworkManager configuration
   networking.networkmanager = {
     enable = true;
     # Don't let NetworkManager manage systemd-networkd interfaces
     # Include nb-* pattern to cover both homelab and any manually configured networks
-    unmanaged = ["wg0" "nb-*"];
+    unmanaged = ["nb-*"];
     # Enhanced DNS handling
     dns = "systemd-resolved";
     # Connection timeout and retry settings

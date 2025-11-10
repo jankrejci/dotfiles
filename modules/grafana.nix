@@ -8,11 +8,8 @@
   serverDomain = config.hosts.self.hostName + "." + domain;
   grafanaPort = 3000;
 in {
-  # Allow Grafana, Prometheus, and Nginx on VPN interfaces
-  networking.firewall.interfaces = {
-    "wg0".allowedTCPPorts = [9090 grafanaPort 80 443];
-    "nb-homelab".allowedTCPPorts = [9090 grafanaPort 80 443];
-  };
+  # Allow Grafana, Prometheus, and Nginx on VPN interface
+  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [9090 grafanaPort 80 443];
 
   services.prometheus = {
     enable = true;
