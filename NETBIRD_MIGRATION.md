@@ -18,7 +18,7 @@
 ### Phase 1: Preparation
 1. ✅ Create Netbird account at https://app.netbird.io
 2. ✅ Obtain Netbird API token for CLI automation (for generating setup keys)
-3. Update `modules/networking.nix` with Netbird configuration
+3. ✅ Update `modules/networking.nix` with Netbird configuration
 4. ✅ Update `scripts.nix` nixos-install function to:
    - Add `install_netbird_key()` function (similar to `install_wg_key()`)
    - Use Netbird API to generate one-off setup key with hostname
@@ -26,17 +26,31 @@
    - Pass to target via nixos-anywhere --extra-files
 
 ### Phase 2: Test Migration (t14)
-1. Run `nix run .#nixos-install t14`:
+1. ✅ Run `nix run .#nixos-install t14`:
    - Script generates one-off Netbird setup key via API (name="t14")
    - Setup key stored in TEMP directory at /var/lib/netbird-homelab/setup-key
    - nixos-anywhere copies TEMP to target via --extra-files
    - Netbird homelab service reads setup key on first boot and enrolls
-2. Verify Netbird connectivity (nb-homelab interface comes up)
-3. Test DNS resolution through Netbird
-4. Verify can reach other services via both wg0 and nb-homelab
-5. Confirm hostname in Netbird dashboard shows "t14"
-6. Note: Netbird IP will differ from 192.168.99.24 (100.64.0.0/10 range)
-7. Keep WireGuard running as fallback until all hosts migrated
+2. ✅ Verify Netbird connectivity (nb-homelab interface comes up)
+3. ⏭️ Test DNS resolution through Netbird (deferred to Phase 4)
+4. ✅ Verify can reach other services via both wg0 and nb-homelab
+5. ✅ Confirm hostname in Netbird dashboard shows "t14-144-136"
+6. ✅ Note: Netbird IP is 100.76.144.136/16 (differs from 192.168.99.24 as expected)
+7. ✅ Keep WireGuard running as fallback until all hosts migrated
+
+**Phase 2 Results:**
+- Enrollment successful on t14
+- Interface: nb-homelab (100.76.144.136/16)
+- FQDN: t14-144-136.netbird.cloud
+- Status: Management Connected, Signal Connected, Relays 4/4, Peers 1/2
+- Both WireGuard and Netbird running simultaneously
+- Ping connectivity confirmed from other devices
+
+**Lessons Learned:**
+- Multi-instance netbird requires `--daemon-addr unix:///var/run/netbird-homelab/sock`
+- Enrollment service must run AFTER daemon starts (`after = ["netbird-homelab.service"]`)
+- Setup key deletion must be conditional on successful enrollment (`set -euo pipefail`)
+- Service needs retry logic (`Restart = "on-failure"`, `RestartSec = 5`, `StartLimitBurst = 3`)
 
 ### Phase 3: Gradual Rollout
 1. Enroll hosts one by one using deployment script:
