@@ -25,7 +25,7 @@
    - Store setup key in TEMP directory (like WireGuard key)
    - Pass to target via nixos-anywhere --extra-files
 
-### Phase 2: Test Migration (t14)
+### Phase 2: Test Migration (t14) ✅ COMPLETED
 1. ✅ Run `nix run .#nixos-install t14`:
    - Script generates one-off Netbird setup key via API (name="t14")
    - Setup key stored in TEMP directory at /var/lib/netbird-homelab/setup-key
@@ -34,7 +34,7 @@
 2. ✅ Verify Netbird connectivity (nb-homelab interface comes up)
 3. ⏭️ Test DNS resolution through Netbird (deferred to Phase 4)
 4. ✅ Verify can reach other services via both wg0 and nb-homelab
-5. ✅ Confirm hostname in Netbird dashboard shows "t14-144-136"
+5. ⏭️ Confirm hostname in Netbird dashboard (skipped for now)
 6. ✅ Note: Netbird IP is 100.76.144.136/16 (differs from 192.168.99.24 as expected)
 7. ✅ Keep WireGuard running as fallback until all hosts migrated
 
@@ -52,13 +52,17 @@
 - Setup key deletion must be conditional on successful enrollment (`set -euo pipefail`)
 - Service needs retry logic (`Restart = "on-failure"`, `RestartSec = 5`, `StartLimitBurst = 3`)
 
-### Phase 3: Gradual Rollout
+### Phase 3: Gradual Rollout 🔄 IN PROGRESS
 1. Enroll hosts one by one using deployment script:
-   - First: t14 (test migration)
-   - Desktop hosts: thinkpad, optiplex, framework
-   - Server hosts: thinkcenter
-   - Raspberry Pi hosts: rpi4, prusa
-   - Non-NixOS hosts: nokia (manual enrollment)
+   - ✅ First: t14 (test migration)
+   - Server hosts:
+     - ✅ thinkcenter
+     - ✅ vpsfree (WireGuard server + Grafana + CoreDNS)
+   - Desktop hosts:
+     - ✅ optiplex
+     - ⏳ thinkpad
+     - ✅ framework
+   - ⏳ Raspberry Pi hosts: rpi4, prusa
 2. For each host:
    - Script generates setup key via Netbird API with matching hostname
    - Setup key injected during deployment
