@@ -172,58 +172,6 @@ in {
       '';
     };
 
-  # Generate wireguard key pair and configuration
-  # for non-NixOS system, e.g. cell phone.
-  # `nix run .#wireguard-config hostname`
-  wireguard-config =
-    pkgs.writeShellApplication
-    {
-      name = "wireguard-config";
-      runtimeInputs = with pkgs; [
-        wireguard-tools
-      ];
-      text = ''
-        # shellcheck source=/dev/null
-        source ${lib}
-
-        require_hostname "$@"
-        readonly HOSTNAME="$1"
-        validate_hostname "$HOSTNAME"
-
-        SERVER_HOSTNAME="vpsfree"
-        DOMAIN="vpn"
-
-        # Get IP address and server key using nix eval
-        IP_ADDRESS=$(nix eval --raw ".#hosts.$HOSTNAME.ipAddress")
-        SERVER_PUBKEY=$(nix eval --raw ".#hosts.$SERVER_HOSTNAME.wgPublicKey")
-
-        echo "Generating WireGuard configuration for $HOSTNAME with IP $IP_ADDRESS"
-
-        PRIVATE_KEY=$(generate_wg_keys "$HOSTNAME")
-        CONFIG_DIR=$(mktemp -d)
-        CONFIG_FILE="$CONFIG_DIR/wg0.conf"
-        # Use echo to generate CONFIG_FILE to avoid breaking
-        # of the code highlighting
-        {
-          echo "[Interface]"
-          echo "PrivateKey = $PRIVATE_KEY"
-          echo "Address = $IP_ADDRESS"
-          echo "DNS = 192.168.99.1, $DOMAIN"
-          echo
-          echo "[Peer]"
-          echo "PublicKey = $SERVER_PUBKEY"
-          echo "AllowedIPs = 192.168.99.0/24"
-          echo "Endpoint = 37.205.13.227:51820"
-        } > "$CONFIG_FILE"
-
-        # Generate QR code
-        ${pkgs.qrencode}/bin/qrencode -o "$CONFIG_DIR/wg0.png" < "$CONFIG_FILE"
-
-        echo "Configuration generated at: $CONFIG_FILE"
-        echo "QR code generated at: $CONFIG_DIR/wg0.png"
-      '';
-    };
-
   # Builds NixOS sdcard image that can be used for aarch64
   # Raspberry Pi machines.
   # `nix run .#build-sdcard hostname`

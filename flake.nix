@@ -161,7 +161,7 @@
 
     deploy.nodes = builtins.mapAttrs mkNode nixosHosts;
 
-    # TODO find a way how to do checks together with the nokia / latitude hosts
+    # TODO enable deploy-rs checks
     # This is highly advised, and will prevent many possible mistakes
     # checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) deploy-rs.lib;
 
