@@ -3,7 +3,7 @@
   lib,
   ...
 }: let
-  domain = "vpn";
+  domain = "x.nb";
   serverIpAddress = "${config.hosts.self.ipAddress}";
   serverDomain = config.hosts.self.hostName + "." + domain;
   grafanaPort = 3000;
