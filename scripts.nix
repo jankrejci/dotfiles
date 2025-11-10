@@ -344,6 +344,8 @@ in {
         nixos-anywhere
         iputils
         openssh
+        jq
+        curl
       ];
       text = ''
         # shellcheck source=/dev/null
@@ -362,6 +364,10 @@ in {
 
         readonly WG_KEY_USER="systemd-network"
         readonly WG_KEY_GROUP="systemd-network"
+
+        # Where netbird expects the setup key
+        readonly NETBIRD_KEY_FOLDER="/var/lib/netbird-homelab"
+        readonly NETBIRD_KEY_PATH="$NETBIRD_KEY_FOLDER/setup-key"
 
         # Create a temporary directory for extra files
         TEMP=$(mktemp -d)
@@ -411,6 +417,53 @@ in {
           install -d -m700 "$TEMP/$WG_KEY_FOLDER"
           echo "$wg_private_key" > "$TEMP/$WG_KEY_PATH"
           chmod 600 "$TEMP/$WG_KEY_PATH"
+        }
+
+        function install_netbird_key() {
+          local -r hostname="$1"
+
+          # Check if NETBIRD_API_TOKEN is set, prompt if not
+          if [ -z "''${NETBIRD_API_TOKEN:-}" ]; then
+            NETBIRD_API_TOKEN=$(ask_for_password "Enter Netbird API token")
+
+            if [ -z "$NETBIRD_API_TOKEN" ]; then
+              echo "ERROR: Netbird API token is required" >&2
+              exit 1
+            fi
+
+            export NETBIRD_API_TOKEN
+          fi
+
+          echo "Generating Netbird setup key for $hostname" >&2
+
+          # Generate ephemeral setup key using Netbird API
+          # Requires NETBIRD_API_TOKEN environment variable
+          local api_response
+          if ! api_response=$(curl -s -X POST https://api.netbird.io/api/setup-keys \
+            -H "Authorization: Token $NETBIRD_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data-raw "{\"name\":\"$hostname\",\"type\":\"one-off\",\"expires_in\":86400,\"auto_groups\":[],\"usage_limit\":1,\"ephemeral\":false}" 2>&1); then
+            echo "ERROR: Failed to create Netbird setup key via API" >&2
+            echo "Response: $api_response" >&2
+            exit 1
+          fi
+
+          # Extract the key from the API response
+          local -r setup_key=$(echo "$api_response" | jq -r '.key')
+
+          # Validate that we got a non-empty key
+          if [ -z "$setup_key" ] || [ "$setup_key" = "null" ]; then
+            echo "ERROR: Netbird setup key is empty or invalid" >&2
+            echo "API Response: $api_response" >&2
+            exit 1
+          fi
+
+          # Create directory for Netbird setup key
+          install -d -m755 "$TEMP/$NETBIRD_KEY_FOLDER"
+          echo "$setup_key" > "$TEMP/$NETBIRD_KEY_PATH"
+          chmod 600 "$TEMP/$NETBIRD_KEY_PATH"
+
+          echo "Netbird setup key installed for $hostname" >&2
         }
 
         function check_target_reachable() {
@@ -469,6 +522,7 @@ in {
           set_disk_password
 
           install_wg_key "$hostname"
+          install_netbird_key "$hostname"
 
           # Install NixOS to the host system with our secrets
           nixos-anywhere \
