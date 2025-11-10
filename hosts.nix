@@ -20,13 +20,6 @@ with lib; {
           description = "The hostname of the system.";
         };
 
-        wgPublicKey = mkOption {
-          type = types.str;
-          # Use nix path ./hosts to properly evaluate the full path
-          default = builtins.readFile (toString ./hosts + "/${config.hostName}/wg-key.pub");
-          description = "WireGuard public key";
-        };
-
         system = mkOption {
           type = types.str;
           default = "x86_64-linux";

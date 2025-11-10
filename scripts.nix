@@ -53,31 +53,6 @@
       echo -n "$token"
     }
 
-    # Generate WireGuard key pair
-    function generate_wg_keys() {
-      local -r hostname="$1"
-      local -r output_dir="''${2:-hosts/$hostname}"
-
-      echo "Generating WireGuard keys for $hostname" >&2
-
-      # Check if host directory exists
-      if [ ! -d "$output_dir" ]; then
-        echo "Directory $output_dir does not exist" >&2
-        return 1
-      fi
-
-      local -r private_key=$(wg genkey)
-      local -r public_key=$(echo "$private_key" | wg pubkey)
-
-      # Write public key to file
-      echo "$public_key" > "$output_dir/wg-key.pub"
-      echo "Public key written to $output_dir/wg-key.pub" >&2
-
-      # Return private key
-      echo "$private_key"
-    }
-
-
     # Generate random password
     function generate_password() {
       echo "Generating password" >&2
@@ -193,23 +168,13 @@ in {
 
         readonly IMAGE_NAME="$HOSTNAME-sdcard"
 
-        echo "Generating WireGuard keys for $HOSTNAME..."
-        WG_PRIVATE_KEY=$(generate_wg_keys "$HOSTNAME")
-        export WG_PRIVATE_KEY
-
         echo "Building image for host: $HOSTNAME"
 
         # Build the image - clean and simple
         nix build ".#image.sdcard.$HOSTNAME" \
-          --impure \
           -o "$IMAGE_NAME"
 
         echo "Image built successfully: $IMAGE_NAME"
-
-        # Clean up private key
-        unset WG_PRIVATE_KEY
-
-        echo "Private key securely deleted, build complete."
       '';
     };
 
@@ -340,12 +305,6 @@ in {
         # during the first boot and then it is erased
         readonly REMOTE_DISK_PASSWORD_FOLDER="/var/lib"
         readonly REMOTE_DISK_PASSWORD_PATH="$REMOTE_DISK_PASSWORD_FOLDER/disk-password"
-        # Where wireguard expects the key
-        readonly WG_KEY_FOLDER="/var/lib/wireguard"
-        readonly WG_KEY_PATH="$WG_KEY_FOLDER/wg-key"
-
-        readonly WG_KEY_USER="systemd-network"
-        readonly WG_KEY_GROUP="systemd-network"
 
         # Where netbird expects the setup key
         readonly NETBIRD_KEY_FOLDER="/var/lib/netbird-homelab"
@@ -387,18 +346,6 @@ in {
           cp "$LOCAL_DISK_PASSWORD_PATH" "$TEMP/$REMOTE_DISK_PASSWORD_FOLDER"
 
           echo "Disk password successfully installed." >&2
-        }
-
-        function install_wg_key() {
-          local -r hostname="$1"
-
-          # Generate keys using shared lib function
-          local -r wg_private_key=$(generate_wg_keys "$hostname")
-
-          # Create the directory where wireguard expects to find the private key
-          install -d -m700 "$TEMP/$WG_KEY_FOLDER"
-          echo "$wg_private_key" > "$TEMP/$WG_KEY_PATH"
-          chmod 600 "$TEMP/$WG_KEY_PATH"
         }
 
         function install_netbird_key() {
@@ -503,15 +450,12 @@ in {
 
           set_disk_password
 
-          install_wg_key "$hostname"
           install_netbird_key "$hostname"
 
           # Install NixOS to the host system with our secrets
           nixos-anywhere \
             --disk-encryption-keys "$REMOTE_DISK_PASSWORD_PATH" "$LOCAL_DISK_PASSWORD_PATH" \
             --extra-files "$TEMP" \
-            --chown "$WG_KEY_FOLDER" "$WG_KEY_USER:$WG_KEY_GROUP" \
-            --chown "$WG_KEY_PATH" "$WG_KEY_USER:$WG_KEY_GROUP" \
             --flake ".#$hostname" \
             --target-host "root@$TARGET"
         }
@@ -528,7 +472,6 @@ in {
     pkgs.runCommand "script-lib-test" {
       buildInputs = with pkgs; [
         bash
-        wireguard-tools
         nix
         jq
       ];
@@ -565,40 +508,6 @@ in {
         echo "✓ require_hostname tests passed"
       }
 
-      # Test generate_wg_keys function
-      test_generate_wg_keys() {
-        echo "Testing generate_wg_keys..."
-
-        # Test with existing directory
-        local private_key
-        private_key=$(generate_wg_keys "test-host" 2>/dev/null)
-        if [ -z "$private_key" ]; then
-          echo "ERROR: generate_wg_keys should return a private key"
-          return 1
-        fi
-
-        # Check that public key file was created
-        if [ ! -f "hosts/test-host/wg-key.pub" ]; then
-          echo "ERROR: generate_wg_keys should create public key file"
-          return 1
-        fi
-
-        # Clean up test file
-        rm -f "hosts/test-host/wg-key.pub"
-
-        # Test with non-existent directory (should fail)
-        set +e
-        (generate_wg_keys "non-existent" >/dev/null 2>&1)
-        local exit_code=$?
-        set -e
-        if [ $exit_code -ne 1 ]; then
-          echo "ERROR: generate_wg_keys should fail for non-existent directory"
-          return 1
-        fi
-
-        echo "✓ generate_wg_keys tests passed"
-      }
-
       # Test password generation
       test_password_generation() {
         echo "Testing password generation..."
@@ -620,7 +529,6 @@ in {
 
       # Run all tests
       test_require_hostname
-      test_generate_wg_keys
       test_password_generation
 
       echo "All tests passed!"
