@@ -157,13 +157,6 @@ with lib; {
       ];
     };
 
-    ### non-NixOS ###
-
-    nokia = {
-      ipAddress = "192.168.99.52";
-      kind = "wg-client";
-    };
-
     ### NixOS installer ###
 
     iso = {
