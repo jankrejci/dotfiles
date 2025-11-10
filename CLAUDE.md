@@ -94,6 +94,54 @@ system.activationScripts."example" = {
 };
 ```
 
+### Systemd Services
+
+**Multi-Instance Service Patterns:**
+When working with multi-instance services (e.g., `netbird.clients.<name>`):
+- Each instance gets unique socket/runtime paths (e.g., `/var/run/netbird-<name>/sock`)
+- CLI tools must explicitly specify daemon addresses: `--daemon-addr unix:///var/run/<service>-<name>/sock`
+- Create wrapper scripts or systemd services that set appropriate environment variables
+- Test that client commands can actually connect to the correct daemon instance
+
+**Oneshot Service for Enrollment/Setup:**
+Pattern for services that perform one-time setup with credentials:
+```nix
+systemd.services.service-name-enroll = {
+  description = "Enroll service with setup key";
+  wantedBy = ["multi-user.target"];
+  after = ["main-service.service"];
+  requires = ["main-service.service"];
+
+  # Only run if setup file exists
+  unitConfig.ConditionPathExists = "/path/to/setup-key";
+
+  serviceConfig = {
+    Type = "oneshot";
+    RemainAfterExit = true;
+    # Retry on failure - daemon might not be ready immediately
+    Restart = "on-failure";
+    RestartSec = 5;
+    StartLimitBurst = 3;
+    ExecStart = pkgs.writeShellScript "enroll" ''
+      set -euo pipefail  # Exit on error, keep credentials safe
+
+      # Enroll - script exits here on failure
+      command-to-enroll --key "$(cat /path/to/setup-key)"
+
+      # Only reached after successful enrollment
+      rm -f /path/to/setup-key
+    '';
+  };
+};
+```
+
+**Key Points:**
+- Use `after` and `requires` to ensure daemon is running first
+- Use `ConditionPathExists` to make service conditional
+- Use `set -euo pipefail` to exit before deleting credentials on failure
+- Add retry logic (`Restart`, `RestartSec`, `StartLimitBurst`) for timing issues
+- Delete sensitive files only after confirmed success
+
 ## Communication Style
 - Direct and concise responses
 - Skip unnecessary explanations unless asked
