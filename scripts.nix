@@ -221,7 +221,8 @@ in {
       name = "build-installer";
       runtimeInputs = with pkgs; [
         coreutils
-        wireguard-tools
+        curl
+        jq
       ];
       text = ''
         # shellcheck source=/dev/null
@@ -229,22 +230,55 @@ in {
 
         readonly HOSTNAME="iso"
 
-        echo "Generating WireGuard keys for $HOSTNAME..."
-        WG_PRIVATE_KEY=$(generate_wg_keys "$HOSTNAME")
-        export WG_PRIVATE_KEY
+        # Check if NETBIRD_API_TOKEN is set, prompt if not
+        if [ -z "''${NETBIRD_API_TOKEN:-}" ]; then
+          NETBIRD_API_TOKEN=$(ask_for_token "Netbird API token")
+
+          if [ -z "$NETBIRD_API_TOKEN" ]; then
+            echo "ERROR: Netbird API token is required" >&2
+            exit 1
+          fi
+
+          export NETBIRD_API_TOKEN
+        fi
+
+        echo "Generating Netbird setup key for $HOSTNAME..."
+
+        # Generate reusable setup key for ISO installer (ephemeral peers)
+        # ISO can be booted multiple times, each boot creates ephemeral peer
+        api_response=$(curl -s -X POST https://api.netbird.io/api/setup-keys \
+          -H "Authorization: Token $NETBIRD_API_TOKEN" \
+          -H "Content-Type: application/json" \
+          --data-raw "{\"name\":\"$HOSTNAME\",\"type\":\"reusable\",\"expires_in\":2592000,\"auto_groups\":[],\"usage_limit\":0,\"ephemeral\":true}" 2>&1) || {
+          echo "ERROR: Failed to create Netbird setup key via API" >&2
+          echo "Response: $api_response" >&2
+          exit 1
+        }
+
+        # Extract the key from the API response
+        NETBIRD_SETUP_KEY=$(echo "$api_response" | jq -r '.key')
+
+        # Validate that we got a non-empty key
+        if [ -z "$NETBIRD_SETUP_KEY" ] || [ "$NETBIRD_SETUP_KEY" = "null" ]; then
+          echo "ERROR: Netbird setup key is empty or invalid" >&2
+          echo "API Response: $api_response" >&2
+          exit 1
+        fi
+
+        export NETBIRD_SETUP_KEY
 
         # Build the image using nixos-generators via flake output
-        # Pass the temporary directory path to Nix
+        # Pass the setup key via environment variable to Nix
         nix build ".#image.installer" \
           --impure \
           -o "iso-image"
 
         echo "ISO image built successfully: iso-image"
 
-        # Clean up private key
-        unset WG_PRIVATE_KEY
+        # Clean up setup key
+        unset NETBIRD_SETUP_KEY
 
-        echo "Private key securely deleted, build complete."
+        echo "Setup key securely deleted, build complete."
       '';
     };
 
@@ -301,7 +335,7 @@ in {
 
         trap cleanup EXIT INT TERM
 
-        readonly TARGET="iso.vpn"
+        readonly TARGET="iso.x.nb"
         # The password must be persistent, it is used to enroll TPM key
         # during the first boot and then it is erased
         readonly REMOTE_DISK_PASSWORD_FOLDER="/var/lib"
