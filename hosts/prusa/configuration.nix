@@ -14,6 +14,6 @@
   # TODO add obico plugin and enable the port
   services.octoprint = {
     enable = true;
-    host = config.hosts.self.ipAddress;
+    host = "0.0.0.0";
   };
 }

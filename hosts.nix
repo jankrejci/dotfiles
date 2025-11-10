@@ -20,11 +20,6 @@ with lib; {
           description = "The hostname of the system.";
         };
 
-        ipAddress = mkOption {
-          type = types.str;
-          description = "IP address of the host";
-        };
-
         wgPublicKey = mkOption {
           type = types.str;
           # Use nix path ./hosts to properly evaluate the full path
@@ -67,7 +62,6 @@ with lib; {
   ### Servers ###
   config.hosts = {
     vpsfree = {
-      ipAddress = "192.168.99.1";
       extraModules = [
         ./modules/grafana.nix
         ./modules/vpsadminos.nix
@@ -75,7 +69,6 @@ with lib; {
     };
 
     thinkcenter = {
-      ipAddress = "192.168.99.2";
       device = "/dev/sda";
       swapSize = "8G";
       extraModules = [
@@ -86,7 +79,6 @@ with lib; {
     ### Desktops ###
 
     thinkpad = {
-      ipAddress = "192.168.99.21";
       device = "/dev/sda";
       swapSize = "8G";
       extraModules = [
@@ -99,7 +91,6 @@ with lib; {
     };
 
     optiplex = {
-      ipAddress = "192.168.99.22";
       device = "/dev/sda";
       swapSize = "8G";
       extraModules = [
@@ -111,7 +102,6 @@ with lib; {
     };
 
     framework = {
-      ipAddress = "192.168.99.23";
       device = "/dev/nvme0n1";
       swapSize = "8G";
       extraModules = [
@@ -125,7 +115,6 @@ with lib; {
     };
 
     t14 = {
-      ipAddress = "192.168.99.24";
       device = "/dev/nvme0n1";
       swapSize = "8G";
       extraModules = [
@@ -141,7 +130,6 @@ with lib; {
 
     # TODO create minimal aarch64 build to check minimal reasonable image size
     rpi4 = {
-      ipAddress = "192.168.99.31";
       system = "aarch64-linux";
       extraModules = [
         ./modules/raspberry.nix
@@ -149,7 +137,6 @@ with lib; {
     };
 
     prusa = {
-      ipAddress = "192.168.99.32";
       system = "aarch64-linux";
       extraModules = [
         ./modules/raspberry.nix
@@ -159,7 +146,6 @@ with lib; {
     ### NixOS installer ###
 
     iso = {
-      ipAddress = "192.168.99.99";
       kind = "installer";
     };
   };
