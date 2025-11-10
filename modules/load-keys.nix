@@ -1,30 +1,29 @@
 {...}: let
-  # Enviroment variable needs to be set by the install script
-  wgPrivateKey = builtins.getEnv "WG_PRIVATE_KEY";
-  wgKeySource = "/etc/wireguard/wg-key";
-  wgKeyFolder = "/var/lib/wireguard";
-  wgKeyPath = "${wgKeyFolder}/wg-key";
-  keyUser = "systemd-network";
-  keyGroup = "systemd-network";
+  # Environment variable needs to be set by the install script
+  netbirdSetupKey = builtins.getEnv "NETBIRD_SETUP_KEY";
+  setupKeySource = "/etc/netbird/setup-key";
+  setupKeyFolder = "/var/lib/netbird-homelab";
+  setupKeyPath = "${setupKeyFolder}/setup-key";
 in {
-  environment.etc."wireguard/wg-key" = {
-    text = builtins.trace "Loading host config ${wgPrivateKey}" wgPrivateKey;
+  # Embed the setup key in the ISO
+  environment.etc."netbird/setup-key" = {
+    text = builtins.trace "Loading Netbird setup key for installer" netbirdSetupKey;
     mode = "0600";
-    user = keyUser;
-    group = keyGroup;
+    user = "root";
+    group = "root";
   };
 
   # Ensure the persistent target directory exists
   systemd.tmpfiles.rules = [
-    "d ${wgKeyFolder} 0700 ${keyUser} ${keyGroup} -"
+    "d ${setupKeyFolder} 0755 root root -"
   ];
 
-  # TODO find a better way to avoid copying the key
-  # Copy the key to the persistent storage during the first boot
-  systemd.services.wireguard-key-copy = {
-    description = "Copy Wireguard Key";
+  # Copy the setup key to the persistent storage during first boot
+  # This is needed because /etc is read-only on the ISO
+  systemd.services.netbird-key-copy = {
+    description = "Copy Netbird Setup Key";
     wantedBy = ["multi-user.target"];
-    before = ["network.target"];
+    before = ["netbird-homelab.service"];
     after = ["local-fs.target"];
 
     serviceConfig = {
@@ -33,13 +32,13 @@ in {
     };
 
     script = ''
-      if [ -f "${wgKeySource}" ]; then
-        echo "Copying wireguard key from ${wgKeySource} to ${wgKeyPath}"
-        cp "${wgKeySource}" "${wgKeyPath}"
-        chmod 600 "${wgKeyPath}"
-        chown ${keyUser}:${keyGroup} "${wgKeyPath}"
+      if [ -f "${setupKeySource}" ]; then
+        echo "Copying Netbird setup key from ${setupKeySource} to ${setupKeyPath}"
+        cp "${setupKeySource}" "${setupKeyPath}"
+        chmod 600 "${setupKeyPath}"
+        chown root:root "${setupKeyPath}"
       else
-        echo "No ${wgKeySource} found, skipping copy."
+        echo "No ${setupKeySource} found, skipping copy."
       fi
     '';
   };
