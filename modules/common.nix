@@ -95,9 +95,13 @@
 
   services.prometheus.exporters.node = {
     enable = true;
-    openFirewall = true;
-    listenAddress = config.hosts.self.ipAddress;
+    # Listen on all interfaces, security enforced via firewall
+    openFirewall = false;
+    listenAddress = "0.0.0.0";
   };
+
+  # Allow node exporter on Netbird interface only
+  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [9100];
 
   systemd.services.prometheus-node-exporter.serviceConfig = {
     Restart = "always";

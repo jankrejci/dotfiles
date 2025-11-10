@@ -102,7 +102,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "up{instance=\"thinkpad.vpn:9100\", job=\"node\"}"
+              "options": "up{instance=\"thinkpad.x.nb:9100\", job=\"node\"}"
             },
             "properties": [
               {
@@ -814,12 +814,12 @@
       },
       {
         "current": {
-          "text": "vpn",
-          "value": "vpn"
+          "text": "x.nb",
+          "value": "x.nb"
         },
         "hide": 2,
         "name": "domain",
-        "query": "vpn",
+        "query": "x.nb",
         "skipUrlSync": true,
         "type": "constant"
       }
