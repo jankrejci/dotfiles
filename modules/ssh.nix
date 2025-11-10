@@ -58,18 +58,23 @@ in {
   services.openssh = {
     enable = true;
 
-    listenAddresses = [
-      {
-        addr = config.hosts.self.ipAddress;
-        port = 22;
-      }
-    ];
+    # During Netbird migration: listen on all interfaces
+    # Security enforced via firewall (only wg0 and nb-homelab allowed)
+    # After migration: can remove this comment and keep config
+    listenAddresses = [];
+
     settings = {
       PasswordAuthentication = false;
       PermitRootLogin = "no";
       AuthorizedKeysCommand = "/etc/fetch-authorized-keys";
       AuthorizedKeysCommandUser = keysUser;
     };
+  };
+
+  # Restrict SSH access to VPN interfaces only
+  networking.firewall.interfaces = {
+    "wg0".allowedTCPPorts = [22];
+    "nb-homelab".allowedTCPPorts = [22];
   };
 
   systemd.services.sshd.serviceConfig = {
