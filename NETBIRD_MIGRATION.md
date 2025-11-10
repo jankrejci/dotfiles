@@ -17,17 +17,17 @@
 
 ### Phase 1: Preparation
 1. ✅ Create Netbird account at https://app.netbird.io
-2. Obtain Netbird API token for CLI automation (for generating setup keys)
+2. ✅ Obtain Netbird API token for CLI automation (for generating setup keys)
 3. Update `modules/networking.nix` with Netbird configuration
-4. Update `scripts.nix` nixos-install function to:
+4. ✅ Update `scripts.nix` nixos-install function to:
    - Add `install_netbird_key()` function (similar to `install_wg_key()`)
-   - Use Netbird CLI to generate ephemeral setup key with hostname
+   - Use Netbird API to generate one-off setup key with hostname
    - Store setup key in TEMP directory (like WireGuard key)
    - Pass to target via nixos-anywhere --extra-files
 
 ### Phase 2: Test Migration (t14)
 1. Run `nix run .#nixos-install t14`:
-   - Script generates ephemeral Netbird setup key via CLI (name="t14")
+   - Script generates one-off Netbird setup key via API (name="t14")
    - Setup key stored in TEMP directory at /var/lib/netbird-homelab/setup-key
    - nixos-anywhere copies TEMP to target via --extra-files
    - Netbird homelab service reads setup key on first boot and enrolls
@@ -46,7 +46,7 @@
    - Raspberry Pi hosts: rpi4, prusa
    - Non-NixOS hosts: nokia (manual enrollment)
 2. For each host:
-   - Script generates setup key via Netbird CLI with matching hostname
+   - Script generates setup key via Netbird API with matching hostname
    - Setup key injected during deployment
    - Verify hostname in Netbird matches hosts.nix
    - Note IP address assigned by Netbird (may differ from hosts.nix)
@@ -108,24 +108,48 @@ Add `install_netbird_key()` function to nixos-install script:
 function install_netbird_key() {
   local -r hostname="$1"
 
-  echo "Generating Netbird setup key for $hostname (homelab network)..." >&2
+  # Check if NETBIRD_API_TOKEN is set, prompt if not
+  if [ -z "${NETBIRD_API_TOKEN:-}" ]; then
+    NETBIRD_API_TOKEN=$(ask_for_token "Netbird API token")
 
-  # Generate ephemeral setup key using Netbird CLI
-  # Requires NETBIRD_API_TOKEN environment variable for homelab account
-  local -r setup_key=$(netbird setup-key create \
-    --name "$hostname" \
-    --ephemeral \
-    --auto-approve \
-    --output-format json | jq -r '.key')
+    if [ -z "$NETBIRD_API_TOKEN" ]; then
+      echo "ERROR: Netbird API token is required" >&2
+      exit 1
+    fi
+
+    export NETBIRD_API_TOKEN
+  fi
+
+  echo "Generating Netbird setup key for $hostname" >&2
+
+  # Generate one-off setup key using Netbird API
+  # Requires NETBIRD_API_TOKEN environment variable
+  local api_response
+  if ! api_response=$(curl -s -X POST https://api.netbird.io/api/setup-keys \
+    -H "Authorization: Token $NETBIRD_API_TOKEN" \
+    -H "Content-Type: application/json" \
+    --data-raw "{\"name\":\"$hostname\",\"type\":\"one-off\",\"expires_in\":86400,\"auto_groups\":[],\"usage_limit\":1,\"ephemeral\":false}" 2>&1); then
+    echo "ERROR: Failed to create Netbird setup key via API" >&2
+    echo "Response: $api_response" >&2
+    exit 1
+  fi
+
+  # Extract the key from the API response
+  local -r setup_key=$(echo "$api_response" | jq -r '.key')
+
+  # Validate that we got a non-empty key
+  if [ -z "$setup_key" ] || [ "$setup_key" = "null" ]; then
+    echo "ERROR: Netbird setup key is empty or invalid" >&2
+    echo "API Response: $api_response" >&2
+    exit 1
+  fi
 
   # Create directory for Netbird setup key
-  # Path matches multi-instance structure: /var/lib/netbird-homelab/
-  local -r netbird_key_folder="/var/lib/netbird-homelab"
-  install -d -m755 "$TEMP/$netbird_key_folder"
-  echo "$setup_key" > "$TEMP/$netbird_key_folder/setup-key"
-  chmod 600 "$TEMP/$netbird_key_folder/setup-key"
+  install -d -m755 "$TEMP/$NETBIRD_KEY_FOLDER"
+  echo "$setup_key" > "$TEMP/$NETBIRD_KEY_PATH"
+  chmod 600 "$TEMP/$NETBIRD_KEY_PATH"
 
-  echo "Netbird setup key installed for $hostname (homelab)" >&2
+  echo "Netbird setup key installed for $hostname" >&2
 }
 ```
 
@@ -159,17 +183,18 @@ Notes:
 
 ## Setup Key Management
 
-Setup keys are generated on-demand during deployment using Netbird CLI.
+Setup keys are generated on-demand during deployment using the Netbird Management API.
 
 **Important:** The setup key is only for initial enrollment, NOT the permanent VPN key.
 
 ### Workflow
-1. Set `NETBIRD_API_TOKEN` environment variable before running nixos-install
-2. Installation script calls `netbird setup-key create` with:
-   - `--name "$hostname"` - matches hostname from hosts.nix
-   - `--ephemeral` - setup key is single-use (deleted after enrollment)
-   - `--auto-approve` - no manual approval needed
-   - Note: This creates an ephemeral setup key, but peers are PERMANENT (not ephemeral peers)
+1. Set `NETBIRD_API_TOKEN` environment variable before running nixos-install (or enter when prompted)
+2. Installation script calls Netbird API (`POST /api/setup-keys`) with:
+   - `name: "$hostname"` - matches hostname from hosts.nix
+   - `type: "one-off"` - setup key is single-use
+   - `expires_in: 86400` - expires in 24 hours
+   - `usage_limit: 1` - can only be used once
+   - `ephemeral: false` - peers are PERMANENT (not ephemeral peers)
 3. Setup key stored in TEMP directory at `/var/lib/netbird-homelab/setup-key`
 4. nixos-anywhere copies TEMP to target via `--extra-files`
 5. On first boot, Netbird service:
@@ -178,7 +203,7 @@ Setup keys are generated on-demand during deployment using Netbird CLI.
    - Auto-generates permanent WireGuard private/public key pair
    - Stores private key in `/var/lib/netbird-homelab/` (never leaves machine)
    - Sends public key to management server
-   - Deletes the setup key (ephemeral)
+   - Setup key is consumed and invalidated
 6. Machine is now permanently enrolled with its own WireGuard keys
 
 ### Benefits
@@ -190,7 +215,7 @@ Setup keys are generated on-demand during deployment using Netbird CLI.
 - Same pattern as WireGuard key handling
 
 ## Testing Checklist
-- [ ] Setup key generated successfully via Netbird CLI
+- [ ] Setup key generated successfully via Netbird API
 - [ ] Hostname in Netbird matches hosts.nix entry
 - [ ] Netbird service starts successfully
 - [ ] wt0 interface created and has IP
@@ -214,6 +239,5 @@ Total: 3-5 days with conservative testing between phases
 
 ## Prerequisites
 - Netbird account created at https://app.netbird.io
-- Netbird API token obtained (for CLI authentication)
-- `netbird` CLI tool available in deployment environment
-- Export `NETBIRD_API_TOKEN` before running `nix run .#nixos-install`
+- Netbird API token obtained (for API authentication)
+- Export `NETBIRD_API_TOKEN` before running `nix run .#nixos-install` (or enter when prompted)
