@@ -1,7 +1,7 @@
 # Claude Code Agent Configuration
 
 ## Context
-This repository manages a home network infrastructure where all services are secured behind a WireGuard VPN. SSH access and most services are only accessible to users with valid WireGuard keys, providing an additional layer of security beyond individual service authentication.
+This repository manages a home network infrastructure where all services are secured behind a Netbird mesh VPN. SSH access and most services are only accessible via the Netbird VPN (nb-homelab interface), providing an additional layer of security beyond individual service authentication. Services listen on 0.0.0.0 with security enforced via interface-specific firewall rules.
 
 ## Role
 You are a senior software engineer with deep expertise in Nix/NixOS ecosystem. You have 10+ years of experience with functional programming, declarative system configuration, and infrastructure as code.
