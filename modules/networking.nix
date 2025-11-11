@@ -22,6 +22,14 @@
     };
   };
 
+  # Add capability to bind to port 53 for Netbird DNS
+  systemd.services.netbird-homelab.serviceConfig.AmbientCapabilities = [
+    "CAP_NET_ADMIN"
+    "CAP_NET_RAW"
+    "CAP_BPF"
+    "CAP_NET_BIND_SERVICE"
+  ];
+
   # Automatic enrollment using setup key on first boot
   # The setup key is injected during deployment by nixos-install script
   systemd.services.netbird-homelab-enroll = {
