@@ -1,56 +1,62 @@
 # Dotfiles
-NixOS system defined through flake.
+NixOS homelab configuration using Nix flakes.
 
-## Bootable images
+## Architecture
 
-### USB stick for x86_64 targets 
+### Network
+Hosts connect via Netbird VPN (mesh network). Services accessible at `<hostname>.x.nb` addresses.
 
-When you boot from this stick, host connects over the VPN and is prepared to be installed.
+### Hosts
+Each host runs minimal NixOS configuration. Default user: `admin`.
 
-### SD card for aarch64 raspberries
+### Desktops
+Desktop machines use Nix for system packages and Flatpak for heavy applications (browsers, CAD tools).
 
-Insert SD card and wait for boot, now everything works out of the box! It restarts after the first boot, so the first start takes a bit longer.
+## Prepare Installation Media
 
-## Installation
-
-## Update
-
-## Handy scripts
-
-### build-installer
-```
+### USB installer (x86_64)
+```bash
 nix run .#build-installer
 ```
-Builds iso file, that can be burned on USB flash with
+Generates ISO with ephemeral Netbird setup key. Requires `NETBIRD_API_TOKEN` environment variable. Burn to USB:
+```bash
+sudo dd if=./iso-image/nixos-minimal-*.iso of=/dev/sdX bs=10M oflag=dsync status=progress; sync
 ```
-sudo dd if=./result/iso-image/nixos-minimal-...-linux.iso of=/dev/sdX bs=10MB oflag=dsync status=progress; sync
-```
-This USB stick can be used to boot x86-64 machine and NixOS can be istalled trhough it.
-Every time the script is invoked, new wireguard key pair is generated. The reason is to avoid storing
-the private key anywhere. Therefore you need to push the change and rebuild VPN server with updated public key.
+Boot target machine from USB. It connects to VPN at `iso.x.nb`.
 
-### build-sdcard
-```
+### SD card image (aarch64 Raspberry Pi)
+```bash
 nix run .#build-sdcard rpi4
 ```
-Builds image, that can be burned on sdcard
+Burn to SD card:
+```bash
+sudo dd if=./result/rpi4-sdcard/nixos-image-*.img of=/dev/sdX bs=10M oflag=dsync status=progress; sync
 ```
-sudo dd if=./result/rpi4-sdcard/nixos-image-...-linux.img of=/dev/sdX bs=10MB oflag=dsync status=progress; sync
+Insert and boot. Connects to VPN automatically. Reboots once after first boot.
+
+## Install NixOS
+
+```bash
+nix run .#nixos-install <hostname>
 ```
-This sdcard can be used to boot aarch64 Raspberry Pi machine and NixOS can be istalled trhough it.
-Every time the script is invoked, new wireguard key pair is generated. The reason is to avoid storing
-the private key anywhere. Therefore you need to push the change and rebuild VPN server with updated public key.
+Installs NixOS remotely to target machine. Requires:
+- Target booted from USB installer (accessible at `iso.x.nb`)
+- Host configuration in `hosts/<hostname>/`
 
-### generate-ssh-key
-
-### wireguard-config
-
-### deploy-config
-
-### nixos-install
-
-```
+Example:
+```bash
 nix run .#nixos-install optiplex
 ```
-You can install NixOS system using this script. It expects running Linux system reachable on iso.vpn.
-This can be achieved through booting the machine from USB stick prepared with `build-installer`
+
+## Update System
+
+```bash
+nix run .#deploy-config <hostname>
+```
+Builds configuration locally and deploys to running host.
+
+Example:
+```bash
+nix run .#deploy-config optiplex
+```
+
