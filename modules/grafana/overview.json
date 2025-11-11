@@ -757,7 +757,8 @@
             "rpi4",
             "prusa",
             "thinkpad",
-            "framework"
+            "framework",
+            "t14"
           ],
           "value": [
             "vpsfree",
@@ -765,7 +766,8 @@
             "rpi4",
             "prusa",
             "thinkpad",
-            "framework"
+            "framework",
+            "t14"
           ]
         },
         "description": "",
@@ -807,9 +809,14 @@
             "selected": true,
             "text": "framework",
             "value": "framework"
+          },
+          {
+            "selected": true,
+            "text": "t14",
+            "value": "t14"
           }
         ],
-        "query": "vpsfree, thinkcenter, rpi4, prusa, optiplex, thinkpad, framework",
+        "query": "vpsfree, thinkcenter, rpi4, prusa, optiplex, thinkpad, framework, t14",
         "type": "custom"
       },
       {
