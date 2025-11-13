@@ -80,6 +80,7 @@ with lib; {
         ./users/paja.nix
         ./modules/disk-tpm-encryption.nix
         ./modules/desktop.nix
+        ./modules/notebook.nix
       ];
     };
 
@@ -103,6 +104,7 @@ with lib; {
         ./users/paja.nix
         ./modules/disk-tpm-encryption.nix
         ./modules/desktop.nix
+        ./modules/notebook.nix
         ./modules/eset-agent.nix
       ];
     };
@@ -116,6 +118,7 @@ with lib; {
         ./users/paja.nix
         ./modules/disk-tpm-encryption.nix
         ./modules/desktop.nix
+        ./modules/notebook.nix
       ];
     };
 

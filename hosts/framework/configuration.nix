@@ -1,4 +1,4 @@
-{pkgs, ...}: {
+{...}: {
   boot = {
     kernelModules = ["kvm-amd"];
     # Better support for sleep states
@@ -10,35 +10,5 @@
     ];
   };
 
-  services.fwupd.enable = true;
   hardware.cpu.amd.updateMicrocode = true;
-
-  # Enable fingerprint reader (if available on your model)
-  services.fprintd.enable = true;
-
-  services.thermald.enable = true;
-  powerManagement.powertop.enable = true;
-
-  # Enable non-free firmware
-  hardware.enableRedistributableFirmware = true;
-
-  # Add specific firmware packages
-  hardware.firmware = with pkgs; [
-    linux-firmware
-    firmwareLinuxNonfree
-  ];
-
-  # For AMD GPU support
-  hardware.graphics.enable = true;
-
-  # For Bluetooth
-  hardware.bluetooth.enable = true;
-  services.blueman.enable = true; # Optional Bluetooth manager
-
-  services.udev.extraRules = ''
-    # Disable autosuspend for mouse devices
-    ACTION=="add", SUBSYSTEM=="usb", ATTR{product}=="*[Mm]ouse*", ATTR{power/autosuspend}="-1"
-    # Disable autosuspend for keyboard devices
-    ACTION=="add", SUBSYSTEM=="usb", ATTR{product}=="*[Kk]eyboard*", ATTR{power/autosuspend}="-1"
-  '';
 }
