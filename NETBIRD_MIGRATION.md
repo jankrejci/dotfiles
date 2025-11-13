@@ -61,7 +61,7 @@
    - ✅ framework (100.76.232.215)
    - ✅ thinkcenter (100.76.149.0) - enrolled but needs local access for deployment
    - ✅ optiplex (100.76.24.123) - enrolled but needs local access for deployment
-   - ⏳ thinkpad - not yet enrolled
+   - ⏳ e470 - not yet enrolled
    - ⏳ rpi4, prusa - not yet enrolled
 2. For each enrolled host:
    - Script generated one-off setup key via Netbird API
@@ -123,7 +123,7 @@
 
 **Remaining Tasks:**
 - Deploy updated configuration to thinkcenter and optiplex (requires local access)
-- Enroll remaining hosts: thinkpad, rpi4, prusa
+- Enroll remaining hosts: e470, rpi4, prusa
 - Clean up /var/lib/wireguard directories on deployed hosts (manual cleanup)
 - Eventually delete modules/wg-server.nix file (kept for reference)
 
