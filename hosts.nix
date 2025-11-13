@@ -66,6 +66,7 @@ with lib; {
       swapSize = "8G";
       extraModules = [
         ./modules/disk-tpm-encryption.nix
+        ./modules/immich.nix
       ];
     };
 
