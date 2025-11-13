@@ -57,6 +57,7 @@
           # Enroll with setup key, specifying the correct daemon address
           ${pkgs.netbird}/bin/netbird up \
             --daemon-addr ${daemonAddr} \
+            --hostname ${config.networking.hostName} \
             --setup-key "$(cat ${setupKeyFile})"
 
           # Only reached after successful enrollment
