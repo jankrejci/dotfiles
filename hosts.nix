@@ -71,7 +71,7 @@ with lib; {
 
     ### Desktops ###
 
-    thinkpad = {
+    e470 = {
       device = "/dev/sda";
       swapSize = "8G";
       extraModules = [

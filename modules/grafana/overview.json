@@ -102,7 +102,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "up{instance=\"thinkpad.x.nb:9100\", job=\"node\"}"
+              "options": "up{instance=\"e470.x.nb:9100\", job=\"node\"}"
             },
             "properties": [
               {
@@ -756,7 +756,7 @@
             "thinkcenter",
             "rpi4",
             "prusa",
-            "thinkpad",
+            "e470",
             "framework",
             "t14"
           ],
@@ -765,7 +765,7 @@
             "thinkcenter",
             "rpi4",
             "prusa",
-            "thinkpad",
+            "e470",
             "framework",
             "t14"
           ]
@@ -802,8 +802,8 @@
           },
           {
             "selected": true,
-            "text": "thinkpad",
-            "value": "thinkpad"
+            "text": "e470",
+            "value": "e470"
           },
           {
             "selected": true,
@@ -816,7 +816,7 @@
             "value": "t14"
           }
         ],
-        "query": "vpsfree, thinkcenter, rpi4, prusa, optiplex, thinkpad, framework, t14",
+        "query": "vpsfree, thinkcenter, rpi4, prusa, optiplex, e470, framework, t14",
         "type": "custom"
       },
       {

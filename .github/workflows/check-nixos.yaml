@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        host: [framework, thinkpad, vpsfree, optiplex, thinkcenter]
+        host: [framework, e470, vpsfree, optiplex, thinkcenter]
     steps:
       - uses: actions/checkout@v4
 
