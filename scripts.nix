@@ -5,6 +5,11 @@
 }: let
   # Helper library with usefull functions
   lib = pkgs.writeShellScript "script-lib" ''
+    function concat() {
+      local IFS=$'\n'
+      echo "$*"
+    }
+
     function require_hostname() {
       if [ $# -eq 0 ]; then
         echo "Error: Hostname required"
@@ -109,6 +114,32 @@ in {
           # Add public key to authorized keys file
           echo "Adding public key to $auth_keys_path" >&2
           cat "$key_file.pub" >> "$auth_keys_path"
+        }
+
+        function add_ssh_config_entry() {
+          local -r target="$1"
+          local -r key_file_path="$2"
+          local -r ssh_config_path="$HOME/.ssh/config"
+
+          # Create SSH config if it doesn't exist
+          touch "$ssh_config_path"
+
+          # Check if entry already exists
+          if grep -q "^Host $target\$" "$ssh_config_path"; then
+            echo "SSH config entry for $target already exists, skipping" >&2
+            return
+          fi
+
+          # Add entry to SSH config
+          echo "Adding SSH config entry for $target" >&2
+          local -r config_entry=$(concat \
+            "Host $target" \
+            "  HostName $target.x.nb" \
+            "  User admin" \
+            "  IdentityFile $key_file_path"
+          )
+
+          echo "$config_entry" >> "$ssh_config_path"
         }
 
         function commit_keys() {
