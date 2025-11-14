@@ -97,13 +97,13 @@
             sleep-inactive-battery-timeout = 3600;
           };
           "org/gnome/desktop/session" = {
-            idle-delay = 0;
+            idle-delay = 900;
           };
           "org/gnome/desktop/interface" = {
             show-battery-percentage = true;
           };
           "org/gnome/shell" = {
-            favorite-apps = ["Alacritty.desktop" "zen.desktop" "org.gnome.Nautilus.desktop"];
+            favorite-apps = ["Alacritty.desktop" "app.zen_browser.zen.desktop" "org.gnome.Nautilus.desktop"];
           };
           "org/gnome/shell/extensions/dash-to-panel" = {
             panel-positions = ''

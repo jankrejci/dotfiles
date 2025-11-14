@@ -55,12 +55,12 @@
           # Generated via dconf2nix: https://github.com/nix-commmunity/dconf2nix
           "org/gnome/desktop/input-sources" = {
             mru-sources = [
-              (mkTuple ["xkb" "us"])
               (mkTuple ["xkb" "cz+qwertz"])
+              (mkTuple ["xkb" "us"])
             ];
             sources = [
-              (mkTuple ["xkb" "us"])
               (mkTuple ["xkb" "cz+qwertz"])
+              (mkTuple ["xkb" "us"])
             ];
             xkb-options = [];
           };
@@ -72,7 +72,7 @@
             idle-dim = false;
           };
           "org/gnome/desktop/session" = {
-            idle-delay = "uint32 0";
+            idle-delay = 900;
           };
           "org/gnome/desktop/interface" = {
             show-battery-percentage = true;
@@ -82,7 +82,7 @@
           };
           "org/gnome/shell/extensions/dash-to-panel" = {
             panel-positions = ''
-              {"0":"TOP"}
+              {"0":"TOP","1":"TOP","2":"TOP","3":"TOP","IVM-12501511B1706":"TOP","BOE-0x00000000":"TOP","IVM-12381JQC00201":"TOP"}
             '';
           };
         };
