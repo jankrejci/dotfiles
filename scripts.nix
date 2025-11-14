@@ -256,6 +256,7 @@ in {
       name = "deploy-config";
       runtimeInputs = with pkgs; [
         deploy-rs
+        openssh
       ];
       text = ''
         # shellcheck source=/dev/null
@@ -274,6 +275,12 @@ in {
         deploy \
           --skip-checks \
           ".#$HOSTNAME" "$@"
+
+        # Workaround for deploy-rs issue #153: /run/current-system not updated
+        # https://github.com/serokell/deploy-rs/issues/153
+        echo "Updating /run/current-system symlink..."
+        ssh "$HOSTNAME.x.nb" "sudo ln -sfn /nix/var/nix/profiles/system /run/current-system"
+        echo "Deployment complete!"
       '';
     };
 
