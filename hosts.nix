@@ -58,6 +58,7 @@ with lib; {
       extraModules = [
         ./modules/grafana.nix
         ./modules/vpsadminos.nix
+        ./modules/dnsmasq.nix
       ];
     };
 
