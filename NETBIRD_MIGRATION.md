@@ -122,7 +122,11 @@
    - ✅ Nginx: Proxy to localhost instead of external domain
 
 **Remaining Tasks:**
-- Deploy updated configuration to thinkcenter and optiplex (requires local access)
+- Deploy updated configuration to thinkcenter (requires local access)
+  - Dedicated NVMe disk configured for Immich data at /var/lib/immich
+  - NVMe is TPM-encrypted and auto-unlocks at boot
+  - Disk already prepared and TPM-enrolled, just needs deployment
+- Deploy updated configuration to optiplex (requires local access)
 - Enroll remaining hosts: e470, rpi4, prusa
 - Clean up /var/lib/wireguard directories on deployed hosts (manual cleanup)
 - Eventually delete modules/wg-server.nix file (kept for reference)
@@ -302,6 +306,81 @@ services.prometheus.exporters.node = {
 };
 
 networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [9100];
+```
+
+### modules/immich.nix
+Immich service with dedicated TPM-encrypted NVMe disk:
+
+```nix
+{config, ...}: let
+  domain = "x.nb";
+  immichDomain = "immich.${domain}";
+  immichPort = 2283;
+  # Second disk for Immich data (NVMe)
+  # Assumes partition is already created with label "disk-immich-luks"
+  luksDevice = "/dev/disk/by-partlabel/disk-immich-luks";
+in {
+  # Allow nginx on VPN interface (proxies to Immich)
+  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [80 443];
+
+  # NVMe data disk - TPM encrypted, not touched during deployment
+  boot.initrd.luks.devices."immich-data" = {
+    device = luksDevice;
+    allowDiscards = true;
+  };
+
+  fileSystems."/var/lib/immich" = {
+    device = "/dev/mapper/immich-data";
+    fsType = "ext4";
+    options = ["defaults" "nofail"];
+  };
+
+  services.immich = {
+    enable = true;
+    # Listen on all interfaces, security enforced via firewall
+    host = "0.0.0.0";
+    port = immichPort;
+    # Media stored on dedicated NVMe disk at /var/lib/immich (default)
+  };
+
+  # Nginx reverse proxy - accessible via immich.x.nb
+  services.nginx = {
+    enable = true;
+    virtualHosts.${immichDomain} = {
+      listenAddresses = ["0.0.0.0"];
+      locations."/" = {
+        proxyPass = "http://localhost:${toString immichPort}";
+        proxyWebsockets = true;
+        recommendedProxySettings = true;
+      };
+    };
+  };
+}
+```
+
+**Disk Preparation (thinkcenter only):**
+The NVMe disk (/dev/nvme0n1) is configured as a separate TPM-encrypted volume for Immich media storage:
+
+```bash
+# 1. Partition the NVMe disk
+parted /dev/nvme0n1 -- mklabel gpt
+parted /dev/nvme0n1 -- mkpart primary 0% 100%
+sgdisk --change-name=1:disk-immich-luks /dev/nvme0n1
+
+# 2. Create LUKS encryption with temporary password
+cryptsetup luksFormat /dev/disk/by-partlabel/disk-immich-luks
+cryptsetup open /dev/disk/by-partlabel/disk-immich-luks immich-data
+
+# 3. Create filesystem
+mkfs.ext4 -L immich-data /dev/mapper/immich-data
+cryptsetup close immich-data
+
+# 4. Enroll TPM key (after reboot)
+systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0,7 /dev/disk/by-partlabel/disk-immich-luks
+
+# 5. Verify enrollment
+systemd-cryptenroll /dev/disk/by-partlabel/disk-immich-luks
+# Should show: SLOT 0 password, SLOT 1 tpm2
 ```
 
 ### hosts.nix
