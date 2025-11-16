@@ -94,6 +94,58 @@ system.activationScripts."example" = {
 };
 ```
 
+### Secondary Encrypted Disks with TPM
+
+When adding dedicated encrypted disks for specific services (e.g., Immich media storage):
+
+**Pattern:**
+- Disk is prepared manually BEFORE deployment (not managed by disko)
+- LUKS encryption with TPM auto-unlock (matching main disk security)
+- Partition labeled for easy reference (e.g., `disk-immich-luks`)
+- Mount at service-specific path or override service default location
+
+**Setup Process:**
+```bash
+# 1. Partition and label
+parted /dev/nvme0n1 -- mklabel gpt
+parted /dev/nvme0n1 -- mkpart primary 0% 100%
+sgdisk --change-name=1:disk-service-luks /dev/nvme0n1
+
+# 2. LUKS encryption
+cryptsetup luksFormat /dev/disk/by-partlabel/disk-service-luks
+cryptsetup open /dev/disk/by-partlabel/disk-service-luks service-data
+mkfs.ext4 -L service-data /dev/mapper/service-data
+cryptsetup close service-data
+
+# 3. Enroll TPM (after reboot with configuration deployed)
+systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0,7 /dev/disk/by-partlabel/disk-service-luks
+```
+
+**NixOS Configuration:**
+```nix
+{
+  # LUKS device unlocked via TPM at boot
+  boot.initrd.luks.devices."service-data" = {
+    device = "/dev/disk/by-partlabel/disk-service-luks";
+    allowDiscards = true;
+  };
+
+  # Mount the data disk
+  fileSystems."/var/lib/service" = {
+    device = "/dev/mapper/service-data";
+    fsType = "ext4";
+    options = ["defaults" "nofail"];
+  };
+}
+```
+
+**Key Points:**
+- Use consistent naming: partition label, LUKS name, filesystem label
+- Always include `nofail` mount option - system can boot without data disk
+- TPM enrollment uses same PCRs as main disk (0,7 for firmware + secure boot)
+- Keep password recovery slot (LUKS slot 0) for emergencies
+- Disk is NOT reformatted during deployment - data is preserved
+
 ### Systemd Services
 
 **Multi-Instance Service Patterns:**
