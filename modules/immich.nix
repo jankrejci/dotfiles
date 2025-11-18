@@ -1,5 +1,5 @@
 {...}: let
-  domain = "x.nb";
+  domain = "krejci.io";
   immichDomain = "immich.${domain}";
   immichPort = 2283;
   # Second disk for Immich data (NVMe)

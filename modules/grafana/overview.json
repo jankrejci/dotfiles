@@ -809,12 +809,12 @@
       },
       {
         "current": {
-          "text": "x.nb",
-          "value": "x.nb"
+          "text": "krejci.io",
+          "value": "krejci.io"
         },
         "hide": 2,
         "name": "domain",
-        "query": "x.nb",
+        "query": "krejci.io",
         "skipUrlSync": true,
         "type": "constant"
       }

@@ -137,7 +137,7 @@
 
     # Function to create a deploy node entry
     mkNode = hostName: hostConfig: {
-      hostname = "${hostName}.x.nb";
+      hostname = "${hostName}.krejci.io";
       sshUser = "admin";
       profiles.system = {
         user = "root";
