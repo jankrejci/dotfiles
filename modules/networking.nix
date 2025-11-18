@@ -50,6 +50,11 @@
       ExecStart = let
         setupKeyFile = "/var/lib/netbird-homelab/setup-key";
         daemonAddr = "unix:///var/run/netbird-homelab/sock";
+        extraDnsLabels = config.hosts.self.extraDnsLabels or [];
+        dnsLabelsArg =
+          if extraDnsLabels == []
+          then ""
+          else "--extra-dns-labels ${lib.concatStringsSep "," extraDnsLabels}";
       in
         pkgs.writeShellScript "netbird-enroll" ''
           set -euo pipefail
@@ -58,7 +63,8 @@
           ${pkgs.netbird}/bin/netbird up \
             --daemon-addr ${daemonAddr} \
             --hostname ${config.networking.hostName} \
-            --setup-key "$(cat ${setupKeyFile})"
+            --setup-key "$(cat ${setupKeyFile})" \
+            ${dnsLabelsArg}
 
           # Only reached after successful enrollment
           rm -f ${setupKeyFile}
