@@ -62,6 +62,7 @@ with lib; {
   config.hosts = {
     vpsfree = {
       extraModules = [
+        ./modules/acme.nix
         ./modules/grafana.nix
         ./modules/vpsadminos.nix
       ];
@@ -72,6 +73,7 @@ with lib; {
       swapSize = "8G";
       extraDnsLabels = ["immich"];
       extraModules = [
+        ./modules/acme.nix
         ./modules/disk-tpm-encryption.nix
         ./modules/immich.nix
       ];

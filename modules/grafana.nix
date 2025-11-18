@@ -7,8 +7,8 @@
   serverDomain = config.hosts.self.hostName + "." + domain;
   grafanaPort = 3000;
 in {
-  # Allow Grafana, Prometheus, and Nginx on VPN interface
-  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [9090 grafanaPort 80 443];
+  # Allow Grafana, Prometheus, and HTTPS on VPN interface
+  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [9090 grafanaPort 443];
 
   services.prometheus = {
     enable = true;
@@ -43,7 +43,7 @@ in {
         http_addr = "0.0.0.0";
         http_port = grafanaPort;
         domain = serverDomain;
-        root_url = "http://${serverDomain}/grafana";
+        root_url = "https://${serverDomain}/grafana";
         serve_from_sub_path = true;
       };
     };
@@ -54,6 +54,9 @@ in {
     virtualHosts.${config.services.grafana.settings.server.domain} = {
       # Listen on all interfaces, security enforced via firewall
       listenAddresses = ["0.0.0.0"];
+      # Enable HTTPS with Let's Encrypt wildcard certificate
+      forceSSL = true;
+      useACMEHost = "${domain}";
       locations."/grafana/" = {
         # Use localhost since Grafana is on the same host as Nginx
         proxyPass = "http://localhost:${toString grafanaPort}";
