@@ -134,7 +134,7 @@
 ## Final Configuration
 
 ### modules/networking.nix
-Netbird configuration with DNS capability fix:
+Netbird configuration with DNS capability fix and extra DNS labels support:
 
 ```nix
 # Netbird configuration using multi-instance support
@@ -171,13 +171,28 @@ systemd.services.netbird-homelab-enroll = {
     Restart = "on-failure";
     RestartSec = 5;
     StartLimitBurst = 3;
-    ExecStart = pkgs.writeShellScript "netbird-enroll" ''
-      set -euo pipefail
-      ${pkgs.netbird}/bin/netbird up \
-        --daemon-addr unix:///var/run/netbird-homelab/sock \
-        --setup-key "$(cat /var/lib/netbird-homelab/setup-key)"
-      rm -f /var/lib/netbird-homelab/setup-key
-    '';
+    ExecStart = let
+      setupKeyFile = "/var/lib/netbird-homelab/setup-key";
+      daemonAddr = "unix:///var/run/netbird-homelab/sock";
+      extraDnsLabels = config.hosts.self.extraDnsLabels or [];
+      dnsLabelsArg =
+        if extraDnsLabels == []
+        then ""
+        else "--extra-dns-labels ${lib.concatStringsSep "," extraDnsLabels}";
+    in
+      pkgs.writeShellScript "netbird-enroll" ''
+        set -euo pipefail
+
+        # Enroll with setup key, specifying the correct daemon address
+        ${pkgs.netbird}/bin/netbird up \
+          --daemon-addr ${daemonAddr} \
+          --hostname ${config.networking.hostName} \
+          --setup-key "$(cat ${setupKeyFile})" \
+          ${dnsLabelsArg}
+
+        # Only reached after successful enrollment
+        rm -f ${setupKeyFile}
+      '';
   };
 };
 
@@ -384,7 +399,7 @@ systemd-cryptenroll /dev/disk/by-partlabel/disk-immich-luks
 ```
 
 ### hosts.nix
-Simplified schema - removed ipAddress and wgPublicKey options:
+Simplified schema with extra DNS labels support - removed ipAddress and wgPublicKey options:
 
 ```nix
 options.hosts = mkOption {
@@ -396,10 +411,30 @@ options.hosts = mkOption {
       device = mkOption { type = types.str; };
       swapSize = mkOption { type = types.str; default = "1G"; };
       extraModules = mkOption { type = types.listOf types.path; default = []; };
+      extraDnsLabels = mkOption {
+        type = types.listOf types.str;
+        default = [];
+        description = "Extra DNS labels for Netbird (for service aliases)";
+      };
     };
   }));
 };
 ```
+
+**Example with service aliases:**
+```nix
+thinkcenter = {
+  device = "/dev/sda";
+  swapSize = "8G";
+  extraDnsLabels = ["immich"];  # Creates immich.x.nb → thinkcenter IP
+  extraModules = [
+    ./modules/disk-tpm-encryption.nix
+    ./modules/immich.nix
+  ];
+};
+```
+
+This creates the DNS alias `immich.x.nb` that resolves to thinkcenter's IP address through Netbird's embedded DNS.
 
 ## Rollback Plan
 - WireGuard configuration preserved in git history (commit before removal)
@@ -474,6 +509,75 @@ Setup keys are generated on-demand during deployment using the Netbird Managemen
 6. Setup keys must be one-off with ephemeral:false for permanent peers
 7. ISO installer needs reusable setup keys with ephemeral:true
 8. Enrolled but undeployed hosts are reachable but SSH may be refused
+9. Extra DNS labels must be applied during enrollment, not after
+10. Setup keys need "Allow Extra DNS labels" permission to use this feature
+11. Fresh enrollment required to add labels - delete peer, remove state, re-enroll
+12. Extra DNS labels work cross-platform (desktop, mobile) without custom DNS servers
+
+## Service Aliases with Extra DNS Labels
+
+Netbird's extra DNS labels feature provides native support for service aliases without requiring custom DNS servers like dnsmasq.
+
+### How It Works
+
+1. **Configuration**: Define `extraDnsLabels` in `hosts.nix` for each host
+2. **Enrollment**: Labels are registered during initial peer enrollment via `--extra-dns-labels` flag
+3. **Resolution**: Netbird's embedded DNS automatically resolves `<label>.x.nb` to the host's IP
+4. **Platform Support**: Works on all platforms (Linux, macOS, Windows, iOS, Android)
+
+### Example: Immich Service
+
+For a service like Immich running on thinkcenter:
+
+```nix
+# hosts.nix
+thinkcenter = {
+  device = "/dev/sda";
+  swapSize = "8G";
+  extraDnsLabels = ["immich"];  # Creates immich.x.nb alias
+  extraModules = [
+    ./modules/immich.nix
+  ];
+};
+```
+
+**Result:**
+- `thinkcenter.x.nb` → 100.76.109.245 (primary hostname)
+- `immich.x.nb` → 100.76.109.245 (service alias)
+
+Both resolve to the same IP, allowing users to access Immich at `http://immich.x.nb` instead of remembering the host name.
+
+### Requirements
+
+1. **Setup Key Permissions**: Create setup keys in Netbird dashboard with "Allow Extra DNS labels" enabled
+2. **Fresh Enrollment**: Extra DNS labels only apply during enrollment, not to existing peers
+3. **Configuration**: Labels must be defined in `hosts.nix` before enrollment
+4. **No Custom DNS**: Remove any custom DNS servers (like dnsmasq) - Netbird handles it natively
+
+### Adding Labels to Existing Peers
+
+To add extra DNS labels to an already-enrolled peer:
+
+1. Delete peer from Netbird dashboard
+2. On the target machine (local access):
+   ```bash
+   sudo systemctl stop netbird-homelab.service
+   sudo rm -f /var/lib/netbird-homelab/config.json
+   sudo rm -f /var/lib/netbird-homelab/state.json
+   echo '<NEW-SETUP-KEY>' | sudo tee /var/lib/netbird-homelab/setup-key
+   sudo systemctl start netbird-homelab.service
+   sleep 5
+   sudo systemctl restart netbird-homelab-enroll.service
+   ```
+3. Verify enrollment: `netbird status` should show the peer connected
+
+### Benefits
+
+- **No Custom DNS**: Eliminates need for dnsmasq or other DNS servers
+- **Cross-Platform**: Works on all Netbird clients without special configuration
+- **Declarative**: Service aliases defined in `hosts.nix` alongside host configuration
+- **Automatic**: Enrollment script reads `extraDnsLabels` and applies during setup
+- **Persistent**: Labels persist across reboots and service restarts
 
 ## Prerequisites
 - Netbird account created at https://app.netbird.io
