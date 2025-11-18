@@ -1,4 +1,4 @@
-{config, ...}: let
+{...}: let
   domain = "x.nb";
   immichDomain = "immich.${domain}";
   immichPort = 2283;
@@ -7,7 +7,7 @@
   luksDevice = "/dev/disk/by-partlabel/disk-immich-luks";
 in {
   # Allow nginx on VPN interface (proxies to Immich)
-  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [80 443];
+  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [80 443 immichPort];
 
   # NVMe data disk - TPM encrypted, not touched during deployment
   boot.initrd.luks.devices."immich-data" = {
