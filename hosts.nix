@@ -48,6 +48,12 @@ with lib; {
           default = [];
           description = "Extra NixOS modules to include";
         };
+
+        extraDnsLabels = mkOption {
+          type = types.listOf types.str;
+          default = [];
+          description = "Extra DNS labels for Netbird (for service aliases)";
+        };
       };
     }));
   };
@@ -65,6 +71,7 @@ with lib; {
     thinkcenter = {
       device = "/dev/sda";
       swapSize = "8G";
+      extraDnsLabels = ["immich"];
       extraModules = [
         ./modules/disk-tpm-encryption.nix
         ./modules/immich.nix
