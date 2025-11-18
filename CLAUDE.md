@@ -155,6 +155,39 @@ When working with multi-instance services (e.g., `netbird.clients.<name>`):
 - Create wrapper scripts or systemd services that set appropriate environment variables
 - Test that client commands can actually connect to the correct daemon instance
 
+**Netbird Extra DNS Labels:**
+Netbird supports extra DNS labels for service aliases (e.g., `immich.x.nb` → `thinkcenter.x.nb`):
+
+1. **Configuration in hosts.nix:**
+```nix
+thinkcenter = {
+  device = "/dev/sda";
+  swapSize = "8G";
+  extraDnsLabels = ["immich"];  # Creates immich.x.nb alias
+  extraModules = [...];
+};
+```
+
+2. **Enrollment script integration:**
+The `modules/networking.nix` enrollment script automatically includes `--extra-dns-labels` flag:
+```nix
+extraDnsLabels = config.hosts.self.extraDnsLabels or [];
+dnsLabelsArg =
+  if extraDnsLabels == []
+  then ""
+  else "--extra-dns-labels ${lib.concatStringsSep "," extraDnsLabels}";
+```
+
+3. **Requirements:**
+- Setup key must have "Allow Extra DNS labels" permission enabled in Netbird dashboard
+- No custom DNS server needed - Netbird's embedded DNS handles resolution
+- Works automatically on all platforms (desktop, mobile, etc.)
+
+4. **Fresh enrollment needed:**
+- Extra DNS labels only apply during initial peer enrollment
+- To add labels to existing peer: delete peer from dashboard, remove old state (`config.json`, `state.json`), re-enroll
+- Labels persist in peer config and survive reboots
+
 **Oneshot Service for Enrollment/Setup:**
 Pattern for services that perform one-time setup with credentials:
 ```nix
@@ -193,6 +226,26 @@ systemd.services.service-name-enroll = {
 - Use `set -euo pipefail` to exit before deleting credentials on failure
 - Add retry logic (`Restart`, `RestartSec`, `StartLimitBurst`) for timing issues
 - Delete sensitive files only after confirmed success
+
+## Connectivity Safety
+**CRITICAL: Never break your own access path**
+
+When working with machines accessible only via VPN (like Netbird):
+- **NEVER run `netbird down`** or stop VPN services on machines you're SSH'd into via that VPN
+- **NEVER delete the peer from dashboard** while still needing remote access
+- **NEVER reboot without ensuring changes are safe** for remote connectivity
+- **Always coordinate with user** before any operation that affects network connectivity
+- For peer re-enrollment or configuration changes that break connectivity:
+  - Save setup keys and configuration changes first
+  - Clearly communicate that user needs local/physical access
+  - Provide exact commands for user to run locally
+  - Never assume you can "fix it remotely" after breaking connectivity
+
+**Safe pattern for VPN-connected machine updates:**
+1. Test and prepare all configuration changes
+2. If changes affect VPN connectivity, inform user upfront
+3. Provide complete recovery instructions before breaking connectivity
+4. Let user execute the final connectivity-affecting steps locally
 
 ## Communication Style
 - Direct and concise responses
