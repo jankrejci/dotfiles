@@ -4,7 +4,7 @@ NixOS homelab configuration using Nix flakes.
 ## Architecture
 
 ### Network
-Hosts connect via Netbird VPN (mesh network). Services accessible at `<hostname>.x.nb` addresses.
+Hosts connect via Netbird VPN (mesh network). Services accessible at `<hostname>.<domain>` addresses.
 
 ### Hosts
 Each host runs minimal NixOS configuration. Default user: `admin`.
@@ -22,7 +22,7 @@ Generates ISO with ephemeral Netbird setup key. Requires `NETBIRD_API_TOKEN` env
 ```bash
 sudo dd if=./iso-image/nixos-minimal-*.iso of=/dev/sdX bs=10M oflag=dsync status=progress; sync
 ```
-Boot target machine from USB. It connects to VPN at `iso.x.nb`.
+Boot target machine from USB. It connects to VPN at `iso.<domain>`.
 
 ### SD card image (aarch64 Raspberry Pi)
 ```bash
@@ -40,7 +40,7 @@ Insert and boot. Connects to VPN automatically. Reboots once after first boot.
 nix run .#nixos-install <hostname>
 ```
 Installs NixOS remotely to target machine. Requires:
-- Target booted from USB installer (accessible at `iso.x.nb`)
+- Target booted from USB installer (accessible at `iso.<domain>`)
 - Host configuration in `hosts/<hostname>/`
 
 Example:

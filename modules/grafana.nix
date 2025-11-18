@@ -3,7 +3,7 @@
   lib,
   ...
 }: let
-  domain = "x.nb";
+  domain = "krejci.io";
   serverDomain = config.hosts.self.hostName + "." + domain;
   grafanaPort = 3000;
 in {
