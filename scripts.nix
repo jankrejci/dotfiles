@@ -310,13 +310,13 @@ in {
         # Workaround for deploy-rs issue #153: /run/current-system not updated
         # https://github.com/serokell/deploy-rs/issues/153
         echo "Updating /run/current-system symlink..."
-        ssh "$HOSTNAME.x.nb" "sudo ln -sfn /nix/var/nix/profiles/system /run/current-system"
+        ssh "$HOSTNAME.krejci.io" "sudo ln -sfn /nix/var/nix/profiles/system /run/current-system"
         echo "Deployment complete!"
       '';
     };
 
   # Install nixos remotely. It is expected that the host
-  # is booted via USB stick and accesible on iso.x.nb
+  # is booted via USB stick and accesible on iso.krejci.io
   # `nix run .#nixos-install`
   nixos-install =
     pkgs.writeShellApplication
@@ -338,7 +338,7 @@ in {
 
         trap cleanup EXIT INT TERM
 
-        readonly TARGET="iso.x.nb"
+        readonly TARGET="iso.krejci.io"
         # The password must be persistent, it is used to enroll TPM key
         # during the first boot and then it is erased
         readonly REMOTE_DISK_PASSWORD_FOLDER="/var/lib"

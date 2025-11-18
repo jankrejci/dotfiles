@@ -156,14 +156,14 @@ When working with multi-instance services (e.g., `netbird.clients.<name>`):
 - Test that client commands can actually connect to the correct daemon instance
 
 **Netbird Extra DNS Labels:**
-Netbird supports extra DNS labels for service aliases (e.g., `immich.x.nb` → `thinkcenter.x.nb`):
+Netbird supports extra DNS labels for service aliases (e.g., `immich.<domain>` → `thinkcenter.<domain>`):
 
 1. **Configuration in hosts.nix:**
 ```nix
 thinkcenter = {
   device = "/dev/sda";
   swapSize = "8G";
-  extraDnsLabels = ["immich"];  # Creates immich.x.nb alias
+  extraDnsLabels = ["immich"];  # Creates immich.<domain> alias
   extraModules = [...];
 };
 ```
