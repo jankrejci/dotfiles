@@ -1,7 +1,7 @@
 {...}: let
   domain = "krejci.io";
   shareDomain = "share.${domain}";
-  proxyPort = 3000;
+  proxyPort = 2283;
   publicIp = "37.205.13.227";
   publicInterface = "venet0";
 in {
