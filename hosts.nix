@@ -61,6 +61,7 @@ with lib; {
   ### Servers ###
   config.hosts = {
     vpsfree = {
+      extraDnsLabels = ["share"];
       extraModules = [
         ./modules/acme.nix
         ./modules/grafana.nix
