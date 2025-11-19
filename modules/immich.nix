@@ -6,8 +6,8 @@
   # Assumes partition is already created with label "disk-immich-luks"
   luksDevice = "/dev/disk/by-partlabel/disk-immich-luks";
 in {
-  # Allow HTTPS (web) and Immich API (mobile app) on VPN interface
-  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [443 immichPort];
+  # Allow HTTPS on VPN interface (nginx proxies to Immich for both web and mobile)
+  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [443];
 
   # NVMe data disk - TPM encrypted, not touched during deployment
   boot.initrd.luks.devices."immich-data" = {
@@ -23,8 +23,8 @@ in {
 
   services.immich = {
     enable = true;
-    # Listen on all interfaces, security enforced via firewall
-    host = "0.0.0.0";
+    # Listen on localhost only, accessed via nginx proxy
+    host = "127.0.0.1";
     port = immichPort;
     # Media stored on dedicated NVMe disk at /var/lib/immich (default)
   };
