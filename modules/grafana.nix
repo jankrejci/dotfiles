@@ -6,7 +6,7 @@
   domain = "krejci.io";
   serverDomain = config.hosts.self.hostName + "." + domain;
   grafanaPort = 3000;
-  vpnIp = "100.76.116.219";
+  vpnIp = "100.76.208.183";
   vpnInterface = "nb-homelab";
 in {
   # Allow HTTPS on VPN interface
