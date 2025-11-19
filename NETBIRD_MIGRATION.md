@@ -1,19 +1,22 @@
 # Netbird Migration Plan
 
-## Status: ✅ MIGRATION COMPLETED (WireGuard fully removed)
+## Status: ✅ MIGRATION COMPLETED (WireGuard removed, HTTPS enabled, domain migrated to krejci.io)
 
 ## Previous State (Pre-Migration)
 - Manual WireGuard mesh VPN with vpsfree (192.168.99.1) as central hub
 - 192.168.99.0/24 network with static peer configurations
 - CoreDNS on vpsfree providing *.vpn domain resolution
 - All hosts had WireGuard peer configs pointing to vpsfree:51820
+- HTTP-only services with no TLS encryption
 
 ## Current State (Post-Migration)
 - ✅ Netbird mesh VPN using hosted management service at https://app.netbird.io
-- ✅ Netbird's built-in DNS providing *.x.nb domain resolution
+- ✅ Netbird's built-in DNS providing *.krejci.io domain resolution
 - ✅ WireGuard configuration completely removed from codebase
 - ✅ All enrolled hosts accessible via Netbird VPN
-- ✅ Services (SSH, Grafana, Prometheus) secured via interface-specific firewall rules
+- ✅ All services secured with HTTPS using Let's Encrypt wildcard certificates
+- ✅ Defense in depth: services listen on localhost only, nginx as TLS termination point
+- ✅ Firewall hardened: only port 443 (HTTPS) exposed on nb-homelab interface
 
 ## Migration Steps
 
@@ -121,11 +124,50 @@
    - ✅ Prometheus node exporter: Listen on 0.0.0.0, restrict via firewall
    - ✅ Nginx: Proxy to localhost instead of external domain
 
+### Phase 6: Domain Migration to krejci.io ✅ COMPLETED
+1. ✅ Moved DNS from Namecheap to Cloudflare (free tier)
+   - Domain registration remains at Namecheap
+   - DNS hosting on Cloudflare for better API access and faster propagation
+2. ✅ Updated Netbird dashboard domain from x.nb to krejci.io
+   - Settings → Networks → Changed domain suffix
+3. ✅ Updated all code references from x.nb to krejci.io:
+   - modules/grafana.nix, modules/immich.nix: domain = "krejci.io"
+   - flake.nix: hostname = "${hostName}.krejci.io"
+   - scripts.nix: Updated all x.nb references
+   - README.md, CLAUDE.md: Changed to generic <domain> placeholders
+4. ✅ DNS propagation completed successfully
+5. ✅ All hosts accessible via new domain
+
+### Phase 7: HTTPS Migration with Let's Encrypt ✅ COMPLETED
+1. ✅ Created modules/acme.nix for Let's Encrypt wildcard certificates
+   - DNS-01 challenge using Cloudflare API
+   - Wildcard certificate for *.krejci.io + krejci.io
+   - Auto-renewal every 60 days
+2. ✅ Obtained Cloudflare API token with DNS edit permissions
+3. ✅ Stored Cloudflare token securely on hosts needing certificates:
+   - /var/lib/acme/cloudflare-api-token (mode 600, not in git)
+   - Token injected per-host during deployment
+4. ✅ Updated service configurations for HTTPS:
+   - Grafana: https://vpsfree.krejci.io/grafana/
+   - Prometheus: http://localhost:9090 (internal datasource only)
+   - Immich: https://immich.krejci.io/
+5. ✅ Implemented defense in depth security:
+   - All services listen on localhost (127.0.0.1) only
+   - Nginx as single TLS termination point on 0.0.0.0:443
+   - Firewall restricted to nb-homelab interface only
+   - Removed ports 80, 2283, 3000, 9090 from firewall
+6. ✅ Deployed to production hosts:
+   - vpsfree: Certificate acquired, Grafana HTTPS working
+   - thinkcenter: Certificate acquired, Immich HTTPS working
+
+**Certificate Details:**
+- Issuer: Let's Encrypt (E7)
+- Expires: February 17, 2026
+- Coverage: *.krejci.io and krejci.io
+- Auto-renewal: Every 60 days via systemd timer
+
 **Remaining Tasks:**
-- Deploy updated configuration to thinkcenter (requires local access)
-  - Dedicated NVMe disk configured for Immich data at /var/lib/immich
-  - NVMe is TPM-encrypted and auto-unlocks at boot
-  - Disk already prepared and TPM-enrolled, just needs deployment
+- ✅ thinkcenter deployed with HTTPS
 - Deploy updated configuration to optiplex (requires local access)
 - Enroll remaining hosts: e470, rpi4, prusa
 - Clean up /var/lib/wireguard directories on deployed hosts (manual cleanup)
@@ -269,17 +311,47 @@ services.openssh = {
 networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [22];
 ```
 
+### modules/acme.nix
+Let's Encrypt ACME configuration for wildcard certificates:
+
+```nix
+{config, ...}: {
+  security.acme = {
+    acceptTerms = true;
+    defaults = {
+      email = "admin@krejci.io";
+      dnsProvider = "cloudflare";
+      # Cloudflare API token stored in /var/lib/acme/cloudflare-api-token
+      # Token is injected per-host during installation (not in git)
+      environmentFile = "/var/lib/acme/cloudflare-api-token";
+      dnsResolver = "1.1.1.1:53";
+    };
+  };
+
+  # Wildcard certificate for *.krejci.io
+  security.acme.certs."krejci.io" = {
+    domain = "*.krejci.io";
+    extraDomainNames = ["krejci.io"];
+    group = "nginx";
+  };
+
+  systemd.tmpfiles.rules = [
+    "d /var/lib/acme 0755 acme acme -"
+  ];
+}
+```
+
 ### modules/grafana.nix
-Services listen on 0.0.0.0 with firewall restrictions:
+Services listen on localhost with nginx HTTPS proxy:
 
 ```nix
 let
-  domain = "x.nb";
+  domain = "krejci.io";
   serverDomain = config.hosts.self.hostName + "." + domain;
   grafanaPort = 3000;
 in {
-  # Allow services on VPN interface only
-  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [9090 grafanaPort 80 443];
+  # Allow HTTPS on VPN interface (nginx proxies to all services)
+  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [443];
 
   services.prometheus = {
     enable = true;
@@ -324,19 +396,19 @@ networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [9100];
 ```
 
 ### modules/immich.nix
-Immich service with dedicated TPM-encrypted NVMe disk:
+Immich service with dedicated TPM-encrypted NVMe disk and HTTPS:
 
 ```nix
-{config, ...}: let
-  domain = "x.nb";
+{...}: let
+  domain = "krejci.io";
   immichDomain = "immich.${domain}";
   immichPort = 2283;
   # Second disk for Immich data (NVMe)
   # Assumes partition is already created with label "disk-immich-luks"
   luksDevice = "/dev/disk/by-partlabel/disk-immich-luks";
 in {
-  # Allow nginx on VPN interface (proxies to Immich)
-  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [80 443];
+  # Allow HTTPS on VPN interface (nginx proxies to Immich for both web and mobile)
+  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [443];
 
   # NVMe data disk - TPM encrypted, not touched during deployment
   boot.initrd.luks.devices."immich-data" = {
@@ -352,17 +424,20 @@ in {
 
   services.immich = {
     enable = true;
-    # Listen on all interfaces, security enforced via firewall
-    host = "0.0.0.0";
+    # Listen on localhost only, accessed via nginx proxy (defense in depth)
+    host = "127.0.0.1";
     port = immichPort;
     # Media stored on dedicated NVMe disk at /var/lib/immich (default)
   };
 
-  # Nginx reverse proxy - accessible via immich.x.nb
+  # Nginx reverse proxy with HTTPS - accessible via immich.krejci.io
   services.nginx = {
     enable = true;
     virtualHosts.${immichDomain} = {
       listenAddresses = ["0.0.0.0"];
+      # Enable HTTPS with Let's Encrypt wildcard certificate
+      forceSSL = true;
+      useACMEHost = "krejci.io";
       locations."/" = {
         proxyPass = "http://localhost:${toString immichPort}";
         proxyWebsockets = true;
