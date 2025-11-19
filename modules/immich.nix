@@ -53,6 +53,10 @@ in {
       # Enable HTTPS with Let's Encrypt wildcard certificate
       forceSSL = true;
       useACMEHost = "${domain}";
+      # Allow large file uploads for photos and videos
+      extraConfig = ''
+        client_max_body_size 1G;
+      '';
       locations."/" = {
         proxyPass = "http://localhost:${toString immichPort}";
         proxyWebsockets = true;
