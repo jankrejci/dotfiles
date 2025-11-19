@@ -527,6 +527,12 @@ in {
         ssh "$TARGET" "sudo chmod 600 /var/lib/acme/cloudflare-api-token"
 
         echo "Cloudflare token successfully injected to $HOSTNAME"
+
+        # Restart ACME service to acquire certificate
+        echo "Restarting ACME service to acquire certificate..."
+        ssh "$TARGET" "sudo systemctl start acme-$DOMAIN.service"
+
+        echo "Certificate acquisition initiated. Check status with: systemctl status acme-$DOMAIN.service"
       '';
     };
 
