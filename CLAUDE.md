@@ -1,7 +1,7 @@
 # Claude Code Agent Configuration
 
 ## Context
-This repository manages a home network infrastructure where all services are secured behind a Netbird mesh VPN. SSH access and most services are only accessible via the Netbird VPN (nb-homelab interface), providing an additional layer of security beyond individual service authentication. Services listen on 0.0.0.0 with security enforced via interface-specific firewall rules.
+This repository manages a home network infrastructure where all services are secured behind a Netbird mesh VPN. SSH access and most services are only accessible via the Netbird VPN (nb-homelab interface), providing an additional layer of security beyond individual service authentication. Services use defense-in-depth security: they listen on localhost (127.0.0.1) only, with nginx as the single TLS termination point exposed on the nb-homelab interface.
 
 ## Role
 You are a senior software engineer with deep expertise in Nix/NixOS ecosystem. You have 10+ years of experience with functional programming, declarative system configuration, and infrastructure as code.
@@ -145,6 +145,99 @@ systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0,7 /dev/disk/by-partlabel/di
 - TPM enrollment uses same PCRs as main disk (0,7 for firmware + secure boot)
 - Keep password recovery slot (LUKS slot 0) for emergencies
 - Disk is NOT reformatted during deployment - data is preserved
+
+### HTTPS with Let's Encrypt and Nginx
+
+All web services use HTTPS with Let's Encrypt certificates and nginx reverse proxy following a defense-in-depth security model.
+
+**Security Architecture:**
+- Services listen on `127.0.0.1` (localhost) only - not accessible directly from network
+- Nginx reverse proxy is the single entry point, listens on `0.0.0.0:443`
+- Nginx handles TLS termination and proxies to localhost services
+- Firewall only allows port 443 on nb-homelab interface (SSH on port 22)
+- This provides defense in depth: even if firewall misconfigured, services not exposed
+
+**ACME Certificate Management:**
+- Uses Let's Encrypt with DNS-01 challenge (services not publicly accessible)
+- Wildcard certificate covers `*.<domain>` and `<domain>`
+- Cloudflare DNS provider for automated challenge response
+- API token stored per-host in `/var/lib/acme/cloudflare-api-token` (mode 600, not in git)
+- Certificates auto-renew every 60 days
+
+**Configuration Pattern (modules/acme.nix):**
+```nix
+{...}: {
+  security.acme = {
+    acceptTerms = true;
+    defaults = {
+      email = "admin@<domain>";
+      dnsProvider = "cloudflare";
+      environmentFile = "/var/lib/acme/cloudflare-api-token";
+      dnsResolver = "1.1.1.1:53";
+    };
+  };
+
+  security.acme.certs."<domain>" = {
+    domain = "*.<domain>";
+    extraDomainNames = ["<domain>"];
+    group = "nginx";
+  };
+}
+```
+
+**Service Configuration Pattern:**
+```nix
+{config, ...}: let
+  domain = "<domain>";
+  serviceDomain = "service.${domain}";
+  servicePort = 3000;
+in {
+  # Only HTTPS on VPN interface
+  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [443];
+
+  # Service listens on localhost only
+  services.myservice = {
+    enable = true;
+    host = "127.0.0.1";
+    port = servicePort;
+  };
+
+  # Nginx reverse proxy with HTTPS
+  services.nginx = {
+    enable = true;
+    virtualHosts.${serviceDomain} = {
+      listenAddresses = ["0.0.0.0"];
+      forceSSL = true;
+      useACMEHost = "${domain}";
+      locations."/" = {
+        proxyPass = "http://localhost:${toString servicePort}";
+        proxyWebsockets = true;
+        recommendedProxySettings = true;
+      };
+    };
+  };
+}
+```
+
+**Per-Host Setup:**
+1. Generate Cloudflare API token with DNS:Edit permission for the zone
+2. Store token on each host before deployment:
+   ```bash
+   sudo mkdir -p /var/lib/acme
+   sudo bash -c 'cat > /var/lib/acme/cloudflare-api-token' <<EOF
+   CLOUDFLARE_DNS_API_TOKEN=your_token_here
+   CF_ZONE_API_TOKEN=your_zone_id_here
+   EOF
+   sudo chmod 600 /var/lib/acme/cloudflare-api-token
+   ```
+3. Add `./modules/acme.nix` to host's `extraModules` in hosts.nix
+4. Deploy configuration - ACME service acquires certificate on first activation
+
+**Troubleshooting:**
+- If ACME service not found after deployment, reboot to cleanly activate systemd units
+- Check certificate status: `sudo systemctl status acme-<domain>.service`
+- View certificate details: `sudo journalctl -u acme-<domain>.service`
+- Manual renewal: `sudo systemctl start acme-<domain>.service`
 
 ### Systemd Services
 
