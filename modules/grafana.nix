@@ -7,14 +7,16 @@
   serverDomain = config.hosts.self.hostName + "." + domain;
   grafanaPort = 3000;
 in {
-  # Allow Grafana, Prometheus, and HTTPS on VPN interface
-  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [9090 grafanaPort 443];
+  # Allow HTTPS on VPN interface (nginx proxies to all services)
+  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [443];
 
   services.prometheus = {
     enable = true;
     retentionTime = "180d";
-    # Listen on all interfaces, security enforced via firewall
-    listenAddress = "0.0.0.0";
+    # Listen on localhost only, accessed via nginx proxy (defense in depth)
+    listenAddress = "127.0.0.1";
+    # Serve from subpath /prometheus/
+    extraFlags = ["--web.external-url=https://${serverDomain}/prometheus" "--web.route-prefix=/"];
     globalConfig.scrape_interval = "10s";
     scrapeConfigs = [
       {
@@ -39,8 +41,8 @@ in {
     enable = true;
     settings = {
       server = {
-        # Listen on all interfaces, security enforced via firewall
-        http_addr = "0.0.0.0";
+        # Listen on localhost only, accessed via nginx proxy (defense in depth)
+        http_addr = "127.0.0.1";
         http_port = grafanaPort;
         domain = serverDomain;
         root_url = "https://${serverDomain}/grafana";
@@ -60,6 +62,12 @@ in {
       locations."/grafana/" = {
         # Use localhost since Grafana is on the same host as Nginx
         proxyPass = "http://localhost:${toString grafanaPort}";
+        proxyWebsockets = true;
+        recommendedProxySettings = true;
+      };
+      locations."/prometheus/" = {
+        # Proxy to Prometheus (localhost only)
+        proxyPass = "http://localhost:9090";
         proxyWebsockets = true;
         recommendedProxySettings = true;
       };
