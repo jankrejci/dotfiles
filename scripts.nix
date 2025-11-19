@@ -32,6 +32,12 @@
     function ask_for_token() {
       local -r token_name="''${1:-password}"
 
+      # Check if running in interactive terminal
+      if [ ! -t 0 ]; then
+        echo "ERROR: $token_name required but not running in interactive terminal" >&2
+        exit 1
+      fi
+
       while true; do
         echo -n "Enter $token_name: " >&2
         local token
