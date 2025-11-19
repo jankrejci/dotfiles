@@ -28,13 +28,9 @@ in {
   services.nginx = {
     enable = true;
     virtualHosts.${shareDomain} = {
-      listen = [
-        {
-          addr = publicIp;
-          port = 443;
-          ssl = true;
-        }
-      ];
+      # Listen on all interfaces (public service, needs to be accessible from both
+      # public internet and VPN clients via Netbird DNS extra label)
+      listenAddresses = ["0.0.0.0"];
       # Enable HTTPS with Let's Encrypt wildcard certificate
       forceSSL = true;
       useACMEHost = "${domain}";
