@@ -59,6 +59,9 @@
         pkgs.writeShellScript "netbird-enroll" ''
           set -euo pipefail
 
+          # Down existing connection to allow re-enrollment
+          ${pkgs.netbird}/bin/netbird down --daemon-addr ${daemonAddr} 2>/dev/null || true
+
           # Enroll with setup key, specifying the correct daemon address
           ${pkgs.netbird}/bin/netbird up \
             --daemon-addr ${daemonAddr} \
