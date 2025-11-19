@@ -80,6 +80,20 @@ in {
     };
   };
 
+  services.grafana.provision.datasources.settings = {
+    apiVersion = 1;
+    datasources = [
+      {
+        name = "Prometheus";
+        type = "prometheus";
+        access = "proxy";
+        url = "http://localhost:9090";
+        isDefault = true;
+        uid = "prometheus";
+      }
+    ];
+  };
+
   services.grafana.provision.dashboards.settings = {
     apiVersion = 1;
     providers = [
