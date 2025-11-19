@@ -63,6 +63,9 @@ in {
     # After migration: can remove this comment and keep config
     listenAddresses = [];
 
+    # Don't open firewall globally - use interface-specific rules below
+    openFirewall = false;
+
     settings = {
       PasswordAuthentication = false;
       PermitRootLogin = "no";
