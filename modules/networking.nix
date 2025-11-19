@@ -87,6 +87,8 @@
   networking = {
     hostName = config.hosts.self.hostName;
     firewall.enable = true;
+    # Use nftables instead of iptables (modern, better performance)
+    nftables.enable = true;
   };
 
   services.resolved = {
