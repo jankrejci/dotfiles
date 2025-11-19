@@ -56,6 +56,7 @@
 
       echo -n "$token"
     }
+
   '';
 in {
   add-ssh-key =
@@ -481,6 +482,51 @@ in {
         }
 
         main "$@"
+      '';
+    };
+
+  # Inject Cloudflare API token to remote host for ACME certificates
+  # `nix run .#inject-cloudflare-token hostname`
+  inject-cloudflare-token =
+    pkgs.writeShellApplication
+    {
+      name = "inject-cloudflare-token";
+      runtimeInputs = with pkgs; [
+        openssh
+      ];
+      text = ''
+        # shellcheck source=/dev/null
+        source ${lib}
+
+        require_hostname "$@"
+        readonly HOSTNAME="$1"
+        validate_hostname "$HOSTNAME"
+
+        readonly DOMAIN="krejci.io"
+        readonly USER="admin"
+        readonly TARGET="$USER@$HOSTNAME.$DOMAIN"
+
+        echo "Injecting Cloudflare token to $HOSTNAME..."
+
+        # Ask for token once
+        token=$(ask_for_token "Cloudflare API token")
+
+        # Create the token file content
+        token_content=$(concat \
+          "CLOUDFLARE_DNS_API_TOKEN=$token" \
+          "CF_ZONE_API_TOKEN=$token"
+        )
+
+        # Create directory
+        ssh "$TARGET" "sudo mkdir -p /var/lib/acme"
+
+        # Write token file
+        echo "$token_content" | ssh "$TARGET" "sudo tee /var/lib/acme/cloudflare-api-token > /dev/null"
+
+        # Set permissions
+        ssh "$TARGET" "sudo chmod 600 /var/lib/acme/cloudflare-api-token"
+
+        echo "Cloudflare token successfully injected to $HOSTNAME"
       '';
     };
 
