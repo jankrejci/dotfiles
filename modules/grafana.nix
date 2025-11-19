@@ -6,7 +6,6 @@
   domain = "krejci.io";
   serverDomain = config.hosts.self.hostName + "." + domain;
   grafanaPort = 3000;
-  vpnIp = "100.76.208.183";
   vpnInterface = "nb-homelab";
 in {
   # Allow HTTPS on VPN interface
@@ -56,16 +55,16 @@ in {
   services.nginx = {
     enable = true;
     virtualHosts.${config.services.grafana.settings.server.domain} = {
-      listen = [
-        {
-          addr = vpnIp;
-          port = 443;
-          ssl = true;
-        }
-      ];
+      # Listen on all interfaces
+      listenAddresses = ["0.0.0.0"];
       # Enable HTTPS with Let's Encrypt wildcard certificate
       forceSSL = true;
       useACMEHost = "${domain}";
+      # Only allow access from Netbird VPN network
+      extraConfig = ''
+        allow 100.76.0.0/16;
+        deny all;
+      '';
       locations."/grafana/" = {
         # Use localhost since Grafana is on the same host as Nginx
         proxyPass = "http://localhost:${toString grafanaPort}";
