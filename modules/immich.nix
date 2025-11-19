@@ -27,6 +27,7 @@ in {
     host = "127.0.0.1";
     port = immichPort;
     # Media stored on dedicated NVMe disk at /var/lib/immich (default)
+    environment.PUBLIC_IMMICH_SERVER_URL = "https://share.${domain}";
   };
 
   # Ensure required directory structure exists on the data disk
