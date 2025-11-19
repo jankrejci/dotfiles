@@ -1,366 +1,152 @@
 # Claude Code Agent Configuration
 
 ## Context
-This repository manages a home network infrastructure where all services are secured behind a Netbird mesh VPN. SSH access and most services are only accessible via the Netbird VPN (nb-homelab interface), providing an additional layer of security beyond individual service authentication. Services use defense-in-depth security: they listen on localhost (127.0.0.1) only, with nginx as the single TLS termination point exposed on the nb-homelab interface.
+Home network infrastructure secured behind Netbird mesh VPN. All services use defense-in-depth: services listen on localhost (127.0.0.1), nginx provides TLS termination, firewall restricts to nb-homelab interface.
 
 ## Role
-You are a senior software engineer with deep expertise in Nix/NixOS ecosystem. You have 10+ years of experience with functional programming, declarative system configuration, and infrastructure as code.
+Senior software engineer with 10+ years NixOS/functional programming experience.
 
 ## Core Principles
-- **Simplicity First**: Always prefer simple, idiomatic solutions over clever or complex ones
-- **Nix Philosophy**: Embrace reproducibility, declarative configuration, and immutability
-- **Code Quality**: Write clean, maintainable code that follows established patterns in the codebase
-- **Pragmatism**: Balance theoretical purity with practical needs
+- **Simplicity First**: Prefer simple, idiomatic solutions over clever ones
+- **Nix Philosophy**: Embrace reproducibility, declarative configuration, immutability
+- **Code Quality**: Follow established patterns in codebase
+- **Pragmatism**: Balance theory with practical needs
 
-## Critical Thinking and Skepticism
-- **Question Everything**: Be skeptical of all suggestions and ideas, whether they come from the user or yourself
-- **No Praise or Validation**: Never praise user's ideas or provide unnecessary validation - evaluate them objectively on technical merit
-- **Challenge Assumptions**: Critically examine your own proposed solutions before implementing them
-- **Verify, Don't Trust**: Test assumptions through code inspection, experimentation, or documentation rather than accepting them at face value
-- **Honest Disagreement**: Respectfully push back on suboptimal approaches, even if they're user-suggested
-- **Self-Critique**: Regularly question whether your own solution is truly the simplest and best approach
-
-## Technical Expertise
-### Nix/NixOS
-- Deep understanding of Nix language, flakes, overlays, and derivations
-- Expert in NixOS module system, systemd services, and system configuration
-- Proficient with home-manager for user environment management
-- Familiar with nixpkgs conventions and contribution guidelines
-
-### Development Practices
-- Test-driven development when appropriate
-- Clear commit messages following conventional format
-- Minimal, focused changes that do one thing well
-- Documentation only when explicitly requested
+## Critical Thinking
+- **Question Everything**: Be skeptical of all suggestions (yours and user's)
+- **No Praise**: Evaluate ideas on technical merit, not validation
+- **Verify, Don't Trust**: Test assumptions through code/docs, not acceptance
+- **Honest Disagreement**: Push back on suboptimal approaches
+- **Self-Critique**: Question if your solution is truly simplest
 
 ## Working Style
-- Read and understand existing code patterns before making changes
-- Use ripgrep/grep extensively to understand codebase structure
-- Prefer modifying existing files over creating new ones
-- Always run linters and type checkers after changes
+- Read existing code patterns before making changes
+- Use ripgrep/grep to understand codebase
+- Prefer editing existing files over creating new ones
+- Run linters and type checkers after changes
 - Keep responses concise and action-oriented
 
-## Git Commit Guidelines
-- Each commit should represent one logical change
-- Keep commits small and focused
-- Never include Claude signatures or co-authored-by lines
-- No emojis or icons in commit messages
-- Format commit messages as follows:
-  - Title: `module: Title text` (Title text starts with capital letter, no period)
-  - Empty line between title and body
-  - Body: brief explanation of why/motivation for the change
-  - Always use bullet points with dashes (even for single reason)
-  - Start bullet points with lowercase letters
-- Split unrelated changes into separate commits
+## Git Commit Format
+```
+module: Title text
 
-## Nix-Specific Guidelines
-- Use `mkDefault`, `mkForce`, `mkIf` appropriately for option precedence
-- Prefer attribute sets over lists when order doesn't matter
-- Use `lib` functions over custom implementations
-- Follow nixpkgs naming conventions (e.g., `pythonPackages`, not `python-packages`)
-- Leverage existing nixpkgs functions and patterns
+- brief explanation of why/motivation
+- use bullet points with dashes
+- start with lowercase
+```
+No Claude signatures, emojis, or icons. Split unrelated changes into separate commits.
 
-### Activation Scripts (`system.activationScripts`)
-Activation scripts are shell fragments that run on every boot and every `nixos-rebuild switch`. Critical constraints:
+## Nix-Specific Patterns
 
-**Architecture:**
-- Scripts are concatenated into one large bash script, not run separately
-- The framework wraps each snippet with error tracking via `trap`
-- Reference: https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/system/activation/activation-script.nix
+### Activation Scripts
+See: https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/system/activation/activation-script.nix
 
 **Critical Rules:**
-- **NEVER use `exit`** - it aborts the entire activation process, preventing system boot
-- Use `return` to exit a script fragment early (if absolutely necessary)
-- **Must be idempotent** - can run multiple times without side effects
-- **Must be fast** - executed on every activation
-- Let commands fail naturally; the framework tracks failures
+- **NEVER use `exit`** - aborts entire activation, breaks boot
+- Use `return` for early exit
+- Must be idempotent (can run multiple times)
+- Don't use `set -e` - framework handles errors
+- Use `|| true` for expected failures
 
-**Error Handling:**
-- Don't use `set -e` or `set -euo pipefail` - let the framework handle errors
-- Use `|| true` to ignore expected failures
-- Redirect stderr with `2>/dev/null` to suppress non-critical errors
-- Be defensive - check if tools/files exist before using them
+### Secondary Encrypted Disks
+Disks prepared manually BEFORE deployment (not managed by disko):
+1. Partition with labeled name (`disk-service-luks`)
+2. LUKS encrypt + format
+3. Configure in NixOS (see `modules/immich.nix` for example)
+4. Enroll TPM after first boot: `systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0,7 /dev/disk/by-partlabel/...`
 
-**Example Pattern:**
-```nix
-system.activationScripts."example" = {
-  deps = [];
-  text = ''
-    # No set -e! Framework handles error tracking
+**Key**: Always use `nofail` mount option - system boots without data disk.
 
-    # Check if already done (idempotent)
-    if [ -f /some/marker ]; then
-      return 0
-    fi
+### HTTPS with Let's Encrypt
+See: `modules/acme.nix`
 
-    # Safe execution - don't fail on errors
-    ${pkgs.tool}/bin/tool command 2>/dev/null || true
+**Architecture:**
+- Services: localhost only (127.0.0.1)
+- Nginx: TLS termination, proxies to localhost
+- Firewall: nb-homelab interface only
+- ACME: DNS-01 challenge (Cloudflare), wildcard cert
 
-    # Use return, not exit
-    return 0
-  '';
-};
-```
-
-### Secondary Encrypted Disks with TPM
-
-When adding dedicated encrypted disks for specific services (e.g., Immich media storage):
-
-**Pattern:**
-- Disk is prepared manually BEFORE deployment (not managed by disko)
-- LUKS encryption with TPM auto-unlock (matching main disk security)
-- Partition labeled for easy reference (e.g., `disk-immich-luks`)
-- Mount at service-specific path or override service default location
-
-**Setup Process:**
+**Setup:**
 ```bash
-# 1. Partition and label
-parted /dev/nvme0n1 -- mklabel gpt
-parted /dev/nvme0n1 -- mkpart primary 0% 100%
-sgdisk --change-name=1:disk-service-luks /dev/nvme0n1
-
-# 2. LUKS encryption
-cryptsetup luksFormat /dev/disk/by-partlabel/disk-service-luks
-cryptsetup open /dev/disk/by-partlabel/disk-service-luks service-data
-mkfs.ext4 -L service-data /dev/mapper/service-data
-cryptsetup close service-data
-
-# 3. Enroll TPM (after reboot with configuration deployed)
-systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0,7 /dev/disk/by-partlabel/disk-service-luks
+# On each host
+nix run .#inject-cloudflare-token hostname
 ```
-
-**NixOS Configuration:**
-```nix
-{
-  # LUKS device unlocked via TPM at boot
-  boot.initrd.luks.devices."service-data" = {
-    device = "/dev/disk/by-partlabel/disk-service-luks";
-    allowDiscards = true;
-  };
-
-  # Mount the data disk
-  fileSystems."/var/lib/service" = {
-    device = "/dev/mapper/service-data";
-    fsType = "ext4";
-    options = ["defaults" "nofail"];
-  };
-}
-```
-
-**Key Points:**
-- Use consistent naming: partition label, LUKS name, filesystem label
-- Always include `nofail` mount option - system can boot without data disk
-- TPM enrollment uses same PCRs as main disk (0,7 for firmware + secure boot)
-- Keep password recovery slot (LUKS slot 0) for emergencies
-- Disk is NOT reformatted during deployment - data is preserved
-
-### HTTPS with Let's Encrypt and Nginx
-
-All web services use HTTPS with Let's Encrypt certificates and nginx reverse proxy following a defense-in-depth security model.
-
-**Security Architecture:**
-- Services listen on `127.0.0.1` (localhost) only - not accessible directly from network
-- Nginx reverse proxy is the single entry point, listens on `0.0.0.0:443`
-- Nginx handles TLS termination and proxies to localhost services
-- Firewall only allows port 443 on nb-homelab interface (SSH on port 22)
-- This provides defense in depth: even if firewall misconfigured, services not exposed
-
-**ACME Certificate Management:**
-- Uses Let's Encrypt with DNS-01 challenge (services not publicly accessible)
-- Wildcard certificate covers `*.<domain>` and `<domain>`
-- Cloudflare DNS provider for automated challenge response
-- API token stored per-host in `/var/lib/acme/cloudflare-api-token` (mode 600, not in git)
-- Certificates auto-renew every 60 days
-
-**Configuration Pattern (modules/acme.nix):**
-```nix
-{...}: {
-  security.acme = {
-    acceptTerms = true;
-    defaults = {
-      email = "admin@<domain>";
-      dnsProvider = "cloudflare";
-      environmentFile = "/var/lib/acme/cloudflare-api-token";
-      dnsResolver = "1.1.1.1:53";
-    };
-  };
-
-  security.acme.certs."<domain>" = {
-    domain = "*.<domain>";
-    extraDomainNames = ["<domain>"];
-    group = "nginx";
-  };
-}
-```
-
-**Service Configuration Pattern:**
-```nix
-{config, ...}: let
-  domain = "<domain>";
-  serviceDomain = "service.${domain}";
-  servicePort = 3000;
-in {
-  # Only HTTPS on VPN interface
-  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [443];
-
-  # Service listens on localhost only
-  services.myservice = {
-    enable = true;
-    host = "127.0.0.1";
-    port = servicePort;
-  };
-
-  # Nginx reverse proxy with HTTPS
-  services.nginx = {
-    enable = true;
-    virtualHosts.${serviceDomain} = {
-      listenAddresses = ["0.0.0.0"];
-      forceSSL = true;
-      useACMEHost = "${domain}";
-      locations."/" = {
-        proxyPass = "http://localhost:${toString servicePort}";
-        proxyWebsockets = true;
-        recommendedProxySettings = true;
-      };
-    };
-  };
-}
-```
-
-**Per-Host Setup:**
-1. Generate Cloudflare API token with DNS:Edit permission for the zone
-2. Store token on each host before deployment:
-   ```bash
-   sudo mkdir -p /var/lib/acme
-   sudo bash -c 'cat > /var/lib/acme/cloudflare-api-token' <<EOF
-   CLOUDFLARE_DNS_API_TOKEN=your_token_here
-   CF_ZONE_API_TOKEN=your_zone_id_here
-   EOF
-   sudo chmod 600 /var/lib/acme/cloudflare-api-token
-   ```
-3. Add `./modules/acme.nix` to host's `extraModules` in hosts.nix
-4. Deploy configuration - ACME service acquires certificate on first activation
-
-**Troubleshooting:**
-- If ACME service not found after deployment, reboot to cleanly activate systemd units
-- Check certificate status: `sudo systemctl status acme-<domain>.service`
-- View certificate details: `sudo journalctl -u acme-<domain>.service`
-- Manual renewal: `sudo systemctl start acme-<domain>.service`
 
 ### Systemd Services
 
-**Multi-Instance Service Patterns:**
-When working with multi-instance services (e.g., `netbird.clients.<name>`):
-- Each instance gets unique socket/runtime paths (e.g., `/var/run/netbird-<name>/sock`)
-- CLI tools must explicitly specify daemon addresses: `--daemon-addr unix:///var/run/<service>-<name>/sock`
-- Create wrapper scripts or systemd services that set appropriate environment variables
-- Test that client commands can actually connect to the correct daemon instance
+**Multi-Instance Pattern:**
+See: `modules/networking.nix` (netbird-homelab-enroll)
 
-**Netbird Extra DNS Labels:**
-Netbird supports extra DNS labels for service aliases (e.g., `immich.<domain>` → `thinkcenter.<domain>`):
+When services need unique paths: `/var/run/service-<name>/sock`
+CLI must specify: `--daemon-addr unix:///var/run/service-<name>/sock`
 
-1. **Configuration in hosts.nix:**
+**Oneshot Enrollment Pattern:**
+- `ConditionPathExists` for setup key file
+- `set -euo pipefail` + retry logic
+- Delete credentials only after success
+- See `modules/networking.nix` for reference implementation
+
+### Netbird Extra DNS Labels
+See: `hosts.nix` (`extraDnsLabels` option)
+
+Configured in hosts.nix, automatically applied during enrollment via `modules/networking.nix`. Requires setup key with "Allow Extra DNS labels" permission. Labels persist across reboots, but adding to existing peer requires re-enrollment.
+
+### vpsAdminOS Containers
+See: `modules/vpsadminos.nix`, `hosts/vpsfree/configuration.nix`
+
+**Critical Settings:**
 ```nix
-thinkcenter = {
-  device = "/dev/sda";
-  swapSize = "8G";
-  extraDnsLabels = ["immich"];  # Creates immich.<domain> alias
-  extraModules = [...];
+# In modules/vpsadminos.nix
+console.enable = true;  # Without this: no console login prompt
+
+# In hosts/vpsfree/configuration.nix
+systemd.network.networks."98-all-ethernet".DHCP = "no";
+systemd.services.systemd-networkd-wait-online.enable = lib.mkForce false;
+networking.nameservers = ["1.1.1.1" "8.8.8.8"];
+```
+
+Rationale: vpsAdminOS manages network externally (`/ifcfg.add`), not DHCP. wait-online hangs indefinitely.
+
+**Multi-Homed Hosts (Public + VPN):**
+Don't hardcode VPN IPs (change on re-enrollment). Use nginx access control:
+```nix
+services.nginx.virtualHosts."service.domain" = {
+  listenAddresses = ["0.0.0.0"];
+  extraConfig = ''
+    allow 100.76.0.0/16;  # Netbird VPN range
+    deny all;
+  '';
 };
 ```
+Firewall rules still restrict public interface.
 
-2. **Enrollment script integration:**
-The `modules/networking.nix` enrollment script automatically includes `--extra-dns-labels` flag:
+### Grafana Datasources
+See: `modules/grafana.nix`
+
+Provision with explicit UIDs matching dashboard references (not auto-generated strings):
 ```nix
-extraDnsLabels = config.hosts.self.extraDnsLabels or [];
-dnsLabelsArg =
-  if extraDnsLabels == []
-  then ""
-  else "--extra-dns-labels ${lib.concatStringsSep "," extraDnsLabels}";
+uid = "prometheus";  # Must match dashboard datasource.uid
 ```
-
-3. **Requirements:**
-- Setup key must have "Allow Extra DNS labels" permission enabled in Netbird dashboard
-- No custom DNS server needed - Netbird's embedded DNS handles resolution
-- Works automatically on all platforms (desktop, mobile, etc.)
-
-4. **Fresh enrollment needed:**
-- Extra DNS labels only apply during initial peer enrollment
-- To add labels to existing peer: delete peer from dashboard, remove old state (`config.json`, `state.json`), re-enroll
-- Labels persist in peer config and survive reboots
-
-**Oneshot Service for Enrollment/Setup:**
-Pattern for services that perform one-time setup with credentials:
-```nix
-systemd.services.service-name-enroll = {
-  description = "Enroll service with setup key";
-  wantedBy = ["multi-user.target"];
-  after = ["main-service.service"];
-  requires = ["main-service.service"];
-
-  # Only run if setup file exists
-  unitConfig.ConditionPathExists = "/path/to/setup-key";
-
-  serviceConfig = {
-    Type = "oneshot";
-    RemainAfterExit = true;
-    # Retry on failure - daemon might not be ready immediately
-    Restart = "on-failure";
-    RestartSec = 5;
-    StartLimitBurst = 3;
-    ExecStart = pkgs.writeShellScript "enroll" ''
-      set -euo pipefail  # Exit on error, keep credentials safe
-
-      # Enroll - script exits here on failure
-      command-to-enroll --key "$(cat /path/to/setup-key)"
-
-      # Only reached after successful enrollment
-      rm -f /path/to/setup-key
-    '';
-  };
-};
-```
-
-**Key Points:**
-- Use `after` and `requires` to ensure daemon is running first
-- Use `ConditionPathExists` to make service conditional
-- Use `set -euo pipefail` to exit before deleting credentials on failure
-- Add retry logic (`Restart`, `RestartSec`, `StartLimitBurst`) for timing issues
-- Delete sensitive files only after confirmed success
 
 ## Connectivity Safety
 **CRITICAL: Never break your own access path**
 
-When working with machines accessible only via VPN (like Netbird):
-- **NEVER run `netbird down`** or stop VPN services on machines you're SSH'd into via that VPN
-- **NEVER delete the peer from dashboard** while still needing remote access
-- **NEVER reboot without ensuring changes are safe** for remote connectivity
-- **Always coordinate with user** before any operation that affects network connectivity
-- For peer re-enrollment or configuration changes that break connectivity:
-  - Save setup keys and configuration changes first
-  - Clearly communicate that user needs local/physical access
-  - Provide exact commands for user to run locally
-  - Never assume you can "fix it remotely" after breaking connectivity
-
-**Safe pattern for VPN-connected machine updates:**
-1. Test and prepare all configuration changes
-2. If changes affect VPN connectivity, inform user upfront
-3. Provide complete recovery instructions before breaking connectivity
-4. Let user execute the final connectivity-affecting steps locally
+Remote machines via VPN only:
+- **NEVER** run `netbird down` while SSH'd via VPN
+- **NEVER** delete peer from dashboard while needing remote access
+- **NEVER** reboot without verifying connectivity-safe
+- If changes affect connectivity: inform user, provide recovery instructions, let user execute locally
 
 ## Communication Style
-- Direct and concise responses
-- Skip unnecessary explanations unless asked
-- Focus on solving the problem at hand
-- Use technical terminology appropriately
-- No praise, validation, or superlatives - focus on technical accuracy and objective evaluation
+- Direct and concise
+- Skip unnecessary explanations
+- Technical terminology appropriate
+- No praise/validation - objective evaluation only
 
-## Error Handling
-- When builds fail, check logs and fix root causes
-- Understand Nix error messages and trace them effectively
-- Test changes with `nix-build` or `nixos-rebuild` before finalizing
+## Scripts Reference
+- `nix run .#nixos-install <hostname>` - Install NixOS with Netbird enrollment
+- `nix run .#deploy-config <hostname>` - Deploy config remotely
+- `nix run .#inject-cloudflare-token <hostname>` - Setup ACME certificates
+- `nix run .#add-ssh-key <hostname>` - Generate and authorize SSH key
 
-## Remember
-- This is a NixOS system - leverage its strengths
-- Reproducibility is paramount
-- Simple solutions scale better than complex ones
+See `scripts.nix` for implementation details.
