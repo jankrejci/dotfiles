@@ -6,9 +6,11 @@
   domain = "krejci.io";
   serverDomain = config.hosts.self.hostName + "." + domain;
   grafanaPort = 3000;
+  vpnIp = "100.76.116.219";
+  vpnInterface = "nb-homelab";
 in {
-  # Allow HTTPS on VPN interface (nginx proxies to all services)
-  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [443];
+  # Allow HTTPS on VPN interface
+  networking.firewall.interfaces.${vpnInterface}.allowedTCPPorts = [443];
 
   services.prometheus = {
     enable = true;
@@ -54,8 +56,13 @@ in {
   services.nginx = {
     enable = true;
     virtualHosts.${config.services.grafana.settings.server.domain} = {
-      # Listen on all interfaces, security enforced via firewall
-      listenAddresses = ["0.0.0.0"];
+      listen = [
+        {
+          addr = vpnIp;
+          port = 443;
+          ssl = true;
+        }
+      ];
       # Enable HTTPS with Let's Encrypt wildcard certificate
       forceSSL = true;
       useACMEHost = "${domain}";
