@@ -542,6 +542,33 @@ in {
       '';
     };
 
+  # Validate ssh-authorized-keys.conf is parseable
+  validate-ssh-keys = pkgs.runCommand "validate-ssh-keys" {} ''
+    cd ${./.}
+
+    if [ ! -f ssh-authorized-keys.conf ]; then
+      echo "ERROR: ssh-authorized-keys.conf not found"
+      exit 1
+    fi
+
+    # Test parsing: skip comments/empty, extract hostname/user/key
+    ${pkgs.gnugrep}/bin/grep -v "^#" ssh-authorized-keys.conf | \
+      ${pkgs.gnugrep}/bin/grep -v "^[[:space:]]*$" | \
+      while IFS=, read -r host user key; do
+        # Trim whitespace
+        host=$(echo "$host" | ${pkgs.coreutils}/bin/tr -d ' \t')
+        user=$(echo "$user" | ${pkgs.coreutils}/bin/tr -d ' \t')
+
+        if [ -z "$host" ] || [ -z "$user" ] || [ -z "$key" ]; then
+          echo "ERROR: Invalid line (missing hostname, user, or key)"
+          exit 1
+        fi
+      done
+
+    echo "ssh-authorized-keys.conf is parseable"
+    touch $out
+  '';
+
   # Expose the shared library for testing
   inherit lib;
 

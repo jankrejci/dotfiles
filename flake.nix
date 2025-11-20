@@ -219,7 +219,7 @@
         nixos-anywhere = nixos-anywhere.packages."x86_64-linux".nixos-anywhere;
       };
     in {
-      inherit (scripts) script-lib-test;
+      inherit (scripts) script-lib-test validate-ssh-keys;
     };
   };
 }
