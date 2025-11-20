@@ -100,7 +100,7 @@
       hostConfig,
       additionalModules ? [],
     }: let
-      hostConfigFile = ./hosts/${hostName}/configuration.nix;
+      hostConfigFile = ./hosts/${hostName}.nix;
       hasHostConfig = builtins.pathExists hostConfigFile;
     in
       baseModules
