@@ -128,6 +128,41 @@ Provision with explicit UIDs matching dashboard references (not auto-generated s
 uid = "prometheus";  # Must match dashboard datasource.uid
 ```
 
+### Firewall Security
+See: `modules/networking.nix`, `modules/ssh.nix`
+
+**Critical Pattern:**
+```nix
+services.servicename = {
+  enable = true;
+  openFirewall = false;  # NEVER allow global access
+};
+
+# Use interface-specific rules instead
+networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [port];
+```
+
+**Why:** Many NixOS services default `openFirewall = true`, creating global rules that bypass interface restrictions. Always explicitly set `false` and use interface-specific rules.
+
+**Firewall Backend:**
+Use nftables (modern, better performance):
+```nix
+networking.nftables.enable = true;
+```
+
+**Security Auditing:**
+Verify public interfaces with targeted nmap scans:
+```bash
+# Good: specific ports
+nmap -p 22,443 <public-ip>
+
+# Avoid: full scans show false positives due to rate limiting
+nmap -p- <public-ip>  # Random filtered ports are ICMP rate limiting artifacts
+
+# For accuracy with rate limiting:
+nmap -T2 --max-rate 100 -p 1-10000 <public-ip>
+```
+
 ## Connectivity Safety
 **CRITICAL: Never break your own access path**
 
