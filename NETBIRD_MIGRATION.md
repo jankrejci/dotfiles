@@ -176,3 +176,141 @@ Domain changed from `*.vpn` to `*.krejci.io` for better organization and externa
 - Migrated DNS resolution to Netbird's built-in DNS
 
 **Migration completed:** All services now use krejci.io domain with HTTPS.
+
+## SSH Key Management Simplification
+
+**Status:** ✅ COMPLETED
+
+### Previous Approach
+- Per-host SSH key files: `hosts/{hostname}/ssh-authorized-keys.pub`
+- Fetched from GitHub via AuthorizedKeysCommand
+- 9 separate files to manage
+
+### New Approach
+- Single central file: `ssh-authorized-keys.conf` (repo root)
+- CSV format: `hostname, user, key`
+- Supports multiple keys per hostname/user (multiple lines)
+- Comments with `#`, spaces after commas allowed
+
+### Benefits
+- ✅ One file for all SSH keys (easier to manage)
+- ✅ Flake check validates format: `nix flake check`
+- ✅ Same caching mechanism (1 min cache, 5 min cleanup for revocation)
+- ✅ Standard OpenSSH key format (no command restrictions in file)
+
+### Implementation
+- Modified `modules/ssh.nix`: Parse CSV format, filter by hostname/username
+- Added `validate-ssh-keys` check in flake checks
+- Migrated 25 keys from 9 hosts to central file
+- AuthorizedKeysCommand receives username via `%u` token
+
+### Example
+```
+thinkcenter, admin, ssh-ed25519 AAAA... jkr-laptop
+vpsfree, admin, ssh-ed25519 AAAA... jkr-laptop
+vpsfree, borg, ssh-ed25519 AAAA... thinkcenter-backup
+```
+
+**Note:** For service accounts like `borg`, security is enforced via Unix file permissions (not SSH command restrictions).
+
+## Backup Infrastructure
+
+### Architecture
+```
+thinkcenter (Immich + Borg client)
+    |
+    | SSH: borg backup push
+    ↓
+vpsfree (Borg repository server)
+    |
+    | NFS mount (implementation detail)
+    ↓
+NAS (172.16.130.249:/nas/6057)
+```
+
+### Design Decisions
+
+**Push vs Pull:**
+- thinkcenter pushes backups to vpsfree (standard Borg SSH pattern)
+- vpsfree mounts NAS and serves Borg repositories
+- NAS accessible only from vpsfree network
+
+**Security:**
+- Dedicated `borg` user on vpsfree with restricted SSH access
+- SSH key restricted with `command="borg serve --restrict-to-path /mnt/nas-backup/borg-repos/immich",restrict`
+- Prevents: port forwarding, X11, arbitrary commands, access to other repos
+- Borg encryption: repokey-blake2 (passphrase stored in /root/secrets)
+
+**Backup Scope:**
+- **Included:** `/var/lib/immich` (media files), PostgreSQL database dump
+- **Excluded:** `/var/lib/immich/thumbs`, `/var/lib/immich/encoded-video` (regeneratable)
+
+**Retention Policy:**
+- Daily: 7 backups
+- Weekly: 4 backups
+- Monthly: 6 backups
+- Total coverage: ~6 months
+
+**Monitoring:**
+- Prometheus already monitors thinkcenter node
+- Backup metrics exposed via node_exporter
+- Grafana dashboards track backup success/failure
+
+### Implementation
+
+**1. vpsfree (backup server):**
+- `modules/backup-storage.nix`: NFS mount, borg user with restricted key
+- Repository path: `/mnt/nas-backup/borg-repos/immich`
+
+**2. thinkcenter (Immich host):**
+- `modules/immich.nix`: PostgreSQL dump service, Borg backup job
+- Backup schedule: Daily at 2 AM
+- Pre-hook: dump database to `/var/backup/immich-db/immich.dump`
+- Push to: `ssh://borg@vpsfree.krejci.io/mnt/nas-backup/borg-repos/immich`
+
+**3. Initialization Steps:**
+
+On vpsfree:
+```bash
+# Create borg user (via NixOS config)
+# Add thinkcenter SSH key to /var/lib/borg/.ssh/authorized_keys with restrictions
+
+# Initialize repository (one-time)
+sudo -u borg borg init --encryption=repokey-blake2 /mnt/nas-backup/borg-repos/immich
+```
+
+On thinkcenter:
+```bash
+# Generate backup SSH key
+ssh-keygen -t ed25519 -f /root/.ssh/borg-backup-key -N ""
+
+# Copy public key to vpsfree borg user (with restrictions)
+
+# Create passphrase
+openssl rand -base64 32 | sudo tee /root/secrets/borg-passphrase
+sudo chmod 600 /root/secrets/borg-passphrase
+
+# Test backup
+sudo systemctl start borgbackup-job-immich
+sudo journalctl -u borgbackup-job-immich -f
+```
+
+**4. Restore Procedure:**
+
+```bash
+# List backups
+sudo borg list ssh://borg@vpsfree.krejci.io/mnt/nas-backup/borg-repos/immich
+
+# Restore media files
+sudo borg extract ssh://borg@vpsfree.krejci.io/mnt/nas-backup/borg-repos/immich::archive-name var/lib/immich
+
+# Restore database
+sudo -u postgres pg_restore -d immich /var/backup/immich-db/immich.dump
+```
+
+### Benefits
+- Centralized storage on NAS
+- Off-host backups (thinkcenter failure doesn't lose backups)
+- Encrypted at rest and in transit
+- Deduplication and compression
+- Monitored via existing Prometheus/Grafana stack
