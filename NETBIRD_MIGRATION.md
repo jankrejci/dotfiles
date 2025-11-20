@@ -203,6 +203,36 @@ Domain changed from `*.vpn` to `*.krejci.io` for better organization and externa
 - Added `validate-ssh-keys` check in flake checks
 - Migrated 25 keys from 9 hosts to central file
 - AuthorizedKeysCommand receives username via `%u` token
+- Refactored to use `writeShellApplication` for shellcheck validation
+
+### Technical Details
+**Script Structure:**
+- `writeShellApplication` with `runtimeInputs` for explicit dependencies
+- Functions: `fetch_keys_if_needed()`, `extract_keys()`, `main()`
+- Atomic cache updates with temp files
+- Never fails (always `exit 0`) to prevent sshd crashes
+
+**Nix String Escaping:**
+Shell variables in Nix strings must use `''${variable}` to prevent Nix interpolation:
+```nix
+matched=$(grep "^''${hostname}[[:space:]]*," file)
+```
+
+**Shellcheck Compatibility:**
+- Unused variables: use `_` instead (e.g., `read -r _ user key`)
+- `|| true` not needed - grep failures handled by conditionals before they exit
+- Array syntax: always use braces `''${variable}` not `$variable`
+
+### Deployment Experience
+**fail2ban:** 10-minute IP bans after failed auth attempts (default 600s). Can lock you out during testing with wrong username. Unban with:
+```bash
+sudo fail2ban-client set sshd unbanip <ip>
+```
+
+**Testing:** Always verify script works standalone before deploying:
+```bash
+sudo /etc/fetch-authorized-keys admin
+```
 
 ### Example
 ```
