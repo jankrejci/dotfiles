@@ -89,6 +89,22 @@ listenAddresses = ["0.0.0.0"];
 extraConfig = "allow 100.76.0.0/16; deny all;";
 ```
 
+### NFS Mounts in vpsAdminOS
+**Issue:** vpsAdminOS containers don't support systemd automount units (`x-systemd.automount`).
+
+**Solution:** Use regular NFS mounts with vpsfree's recommended simple configuration:
+```nix
+fileSystems."/mnt/path" = {
+  device = "nfs-server:/path";
+  fsType = "nfs";
+  options = ["nofail"];
+};
+```
+
+**Avoid:** Additional options like `nfsvers=3`, `_netdev`, `noauto`, `x-systemd.automount` are unnecessary and may cause issues.
+
+**Reference:** See vpsfree NFS documentation and `modules/backup-storage.nix` for working example.
+
 ## Troubleshooting
 
 ### No Console Login (vpsAdminOS)
@@ -289,8 +305,11 @@ NAS (172.16.130.249:/nas/6057)
 ### Implementation
 
 **1. vpsfree (backup server):**
-- `modules/backup-storage.nix`: NFS mount, borg user with restricted key
+- `modules/backup-storage.nix`: NFS mount, borg user with nologin shell
 - Repository path: `/mnt/nas-backup/borg-repos/immich`
+- NFS mount: `172.16.130.249:/nas/6057` → `/mnt/nas-backup` (250GB)
+- SSH key restrictions configured in `ssh-authorized-keys.conf`
+- Status: ✅ DEPLOYED
 
 **2. thinkcenter (Immich host):**
 - `modules/immich.nix`: PostgreSQL dump service, Borg backup job
@@ -321,13 +340,22 @@ nix run .#deploy-config vpsfree
 
 On vpsfree (after deployment):
 ```bash
-# Test NFS mount by accessing the path (automount will trigger)
-sudo -u borg ls /mnt/nas-backup
+# Verify NFS mount is active
+df -h /mnt/nas-backup
+
+# Verify borg user and directory structure
+sudo -u borg ls -la /mnt/nas-backup/borg-repos/immich
 
 # Initialize repository (one-time)
 sudo -u borg borg init --encryption=repokey-blake2 /mnt/nas-backup/borg-repos/immich
 # Save the passphrase displayed by borg init
 ```
+
+**Note on Deployment:** If transitioning from automount to regular mount configuration, you may need to:
+1. Temporarily remove backup-storage module from hosts.nix
+2. Deploy clean configuration
+3. Reboot vpsfree to clear mount state
+4. Re-add backup-storage module and deploy again
 
 On thinkcenter:
 ```bash
