@@ -143,6 +143,18 @@ networking.nameservers = ["1.1.1.1" "8.8.8.8"];
 
 Rationale: vpsAdminOS manages network externally (`/ifcfg.add`), not DHCP. wait-online hangs indefinitely.
 
+**NFS Mounts:**
+vpsAdminOS containers don't support systemd automount units. Use simple configuration following vpsfree's recommendation:
+```nix
+fileSystems."/mnt/path" = {
+  device = "nfs-server:/path";
+  fsType = "nfs";
+  options = ["nofail"];
+};
+```
+Avoid: `x-systemd.automount`, `noauto`, `_netdev`, `nfsvers=3` - use minimal options.
+See: `modules/backup-storage.nix`
+
 **Multi-Homed Hosts (Public + VPN):**
 Don't hardcode VPN IPs (change on re-enrollment). Use nginx access control:
 ```nix
