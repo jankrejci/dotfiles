@@ -109,6 +109,27 @@ If enrollment failed, recreate setup key file and restart enroll service.
 Provision datasources with explicit UIDs matching dashboard references.
 See: `modules/grafana.nix`
 
+### Public Interface Security Audit
+Verify only intended ports are exposed on public interfaces:
+```bash
+# Scan specific ports
+nmap -p 22,443,2283 <public-ip>
+
+# Expected results:
+# - Port 22 (SSH): filtered (blocked)
+# - Port 443 (HTTPS): open (allowed)
+# - Other ports: filtered (blocked)
+```
+
+**Understanding nmap results:**
+- Full port scans (`nmap -p-`) show random filtered ports due to ICMP rate limiting
+- This is normal firewall behavior, not actual open ports
+- Use targeted scans or slow timing: `nmap -T2 --max-rate 100` for accuracy
+- See: https://unix.stackexchange.com/questions/136683/why-are-some-ports-reported-by-nmap-filtered-and-not-the-others
+
+**Critical**: All services must set `openFirewall = false` to prevent global firewall rules.
+See: `modules/ssh.nix`, `modules/networking.nix`
+
 ## Migration Timeline
 
 **Phase 1: Preparation**
@@ -136,6 +157,8 @@ See: `modules/grafana.nix`
 - Deployed Let's Encrypt wildcard certs
 - Updated all services to HTTPS
 - Hardened firewalls (localhost + nb-homelab only)
+- Enabled nftables, disabled global `openFirewall` on services
+- Verified public interface security with nmap audits
 
 **Phase 6: Cleanup**
 - Removed all WireGuard configuration
