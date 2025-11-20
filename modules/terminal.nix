@@ -2,7 +2,7 @@
   home.packages = with pkgs; [
     nerd-fonts.dejavu-sans-mono
     git-absorb # absorb git hunks within existing commits
-    gitui # terminal-ui for git
+    tig # terminal-ui for git
   ];
 
   programs.alacritty = {
