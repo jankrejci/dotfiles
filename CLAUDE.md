@@ -25,6 +25,7 @@ Senior software engineer with 10+ years NixOS/functional programming experience.
 - Prefer editing existing files over creating new ones
 - Run linters and type checkers after changes
 - Keep responses concise and action-oriented
+- **Avoid nesting**: Use guard clauses and early returns for flat, readable code
 
 ## Git Commit Format
 ```
@@ -47,6 +48,41 @@ See: https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/system/activatio
 - Must be idempotent (can run multiple times)
 - Don't use `set -e` - framework handles errors
 - Use `|| true` for expected failures
+
+### Shell Scripts with writeShellApplication
+See: `modules/ssh.nix` (fetch-authorized-keys script)
+
+Use `writeShellApplication` for shellcheck validation at build time:
+```nix
+pkgs.lib.getExe (pkgs.writeShellApplication {
+  name = "script-name";
+  runtimeInputs = with pkgs; [coreutils curl gnugrep];
+  text = ''
+    # script content
+  '';
+})
+```
+
+**Nix String Escaping:**
+- Shell variables: `''${variable}` (double single-quote prefix)
+- Nix variables: `${variable}` (normal interpolation)
+
+Example:
+```nix
+text = ''
+  hostname="example"
+  grep "^''${hostname}" file  # shell variable
+  path="${config.value}"      # nix variable
+'';
+```
+
+**Shellcheck Rules:**
+- Unused variables → use `_` (e.g., `read -r _ user key`)
+- Variable expansion → always use braces `''${variable}`
+- Expected failures → conditionals handle them
+
+**AuthorizedKeysCommand Scripts:**
+Must NEVER crash sshd - always exit 0. Handle all errors before they propagate. Use guard clauses and early returns to avoid nesting.
 
 ### Secondary Encrypted Disks
 Disks prepared manually BEFORE deployment (not managed by disko):
@@ -161,6 +197,13 @@ nmap -p- <public-ip>  # Random filtered ports are ICMP rate limiting artifacts
 
 # For accuracy with rate limiting:
 nmap -T2 --max-rate 100 -p 1-10000 <public-ip>
+```
+
+**fail2ban:**
+Default ban time: 10 minutes (600s). Failed auth attempts trigger IP bans. Unban manually:
+```bash
+sudo fail2ban-client set sshd unbanip <ip>
+sudo fail2ban-client status sshd  # check ban status
 ```
 
 ## Connectivity Safety
