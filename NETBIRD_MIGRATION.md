@@ -300,25 +300,43 @@ NAS (172.16.130.249:/nas/6057)
 
 **3. Initialization Steps:**
 
-On vpsfree:
+On thinkcenter:
 ```bash
-# Create borg user (via NixOS config)
-# Add thinkcenter SSH key to /var/lib/borg/.ssh/authorized_keys with restrictions
+# Generate backup SSH key
+sudo ssh-keygen -t ed25519 -f /root/.ssh/borg-backup-key -N ""
+sudo cat /root/.ssh/borg-backup-key.pub
+# Copy the public key output for next step
+```
+
+Add the key to ssh-authorized-keys.conf:
+```bash
+# Add this line to ssh-authorized-keys.conf in the repo
+vpsfree, borg, command="borg serve --restrict-to-path /mnt/nas-backup/borg-repos/immich",restrict ssh-ed25519 AAAA... thinkcenter-backup
+```
+
+Deploy configuration to vpsfree:
+```bash
+nix run .#deploy-config vpsfree
+```
+
+On vpsfree (after deployment):
+```bash
+# Test NFS mount by accessing the path (automount will trigger)
+sudo -u borg ls /mnt/nas-backup
 
 # Initialize repository (one-time)
 sudo -u borg borg init --encryption=repokey-blake2 /mnt/nas-backup/borg-repos/immich
+# Save the passphrase displayed by borg init
 ```
 
 On thinkcenter:
 ```bash
-# Generate backup SSH key
-ssh-keygen -t ed25519 -f /root/.ssh/borg-backup-key -N ""
-
-# Copy public key to vpsfree borg user (with restrictions)
-
-# Create passphrase
-openssl rand -base64 32 | sudo tee /root/secrets/borg-passphrase
+# Create passphrase file with the passphrase from borg init
+echo "PASSPHRASE_FROM_BORG_INIT" | sudo tee /root/secrets/borg-passphrase
 sudo chmod 600 /root/secrets/borg-passphrase
+
+# Test SSH connection (should see "borg serve" restriction message)
+sudo ssh -i /root/.ssh/borg-backup-key borg@vpsfree.krejci.io
 
 # Test backup
 sudo systemctl start borgbackup-job-immich
