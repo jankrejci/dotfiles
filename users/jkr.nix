@@ -50,6 +50,7 @@
           gnomeExtensions.vitals
           gnomeExtensions.dash-to-panel
           unstable.gnomeExtensions.unite
+          gnomeExtensions.notification-banner-reloaded
           rshell # remote shell for MicroPython
           tokei # code statistics tool
           tealdeer # tldr help tool
@@ -77,7 +78,13 @@
               "Vitals@CoreCoding.com"
               "dash-to-panel@jderose9.github.com"
               "unite-shell@hardpixel.github.com"
+              "notification-banner-reloaded@marcinjakubowski.github.com"
             ];
+          };
+          # Notification position configuration
+          "org/gnome/shell/extensions/notification-banner-reloaded" = {
+            anchor-horizontal = 1; # 0=left, 1=right, 2=center
+            anchor-vertical = 1; # 0=top, 1=bottom, 2=center
           };
           # Generated via dconf2nix: https://github.com/nix-commmunity/dconf2nix
           "org/gnome/desktop/input-sources" = {
