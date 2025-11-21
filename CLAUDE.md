@@ -168,6 +168,45 @@ services.nginx.virtualHosts."service.domain" = {
 ```
 Firewall rules still restrict public interface.
 
+### Borg Backup
+See: `modules/backup-storage.nix`, `modules/immich.nix`
+
+**Architecture:**
+- Server: NFS mount, borg user with bash shell, repository in `/mnt/nas-backup/borg-repos`
+- Client: `services.borgbackup.jobs.NAME` with SSH key authentication
+
+**Critical Configuration:**
+```nix
+users.users.borg = {
+  isSystemUser = true;
+  group = "borg";
+  shell = "${pkgs.bash}/bin/bash";  # Required for borg serve
+};
+```
+
+**Why bash shell:** Borg client executes `borg serve` via SSH on remote. Shell must allow command execution. Security via filesystem permissions (repository owned by borg user, mode 0700), not SSH command restrictions.
+
+**Repository initialization:**
+```bash
+# System users have /var/empty home, can't write config
+sudo -u borg HOME=/tmp BORG_PASSPHRASE='pass' borg init --encryption=repokey-blake2 /path/to/repo
+```
+
+**Systemd timer activation:**
+After deploying `services.borgbackup.jobs`, timer may not appear immediately. Requires reboot or systemd cache refresh. Verify:
+```bash
+systemctl list-timers | grep borgbackup
+```
+
+**Backup verification:**
+```bash
+# Check last backup
+borg list ssh://user@host/path/to/repo
+
+# Verify backup integrity
+borg check ssh://user@host/path/to/repo
+```
+
 ### Grafana Datasources
 See: `modules/grafana.nix`
 
