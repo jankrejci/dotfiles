@@ -40,6 +40,12 @@
   };
   swapDevices = [];
 
+  # Use zram for compressed swap in RAM (beneficial for memory-constrained devices)
+  zramSwap = {
+    enable = true;
+    algorithm = "zstd";
+  };
+
   # TODO find out more unused services to disable
   # Disable unneeded features
   services = {
