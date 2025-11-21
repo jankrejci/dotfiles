@@ -42,7 +42,7 @@ in {
       systemctl stop immich-server
 
       echo "Restoring files..."
-      cd / && borg-job-immich extract ::$ARCHIVE var/lib/immich var/backup/immich-db
+      cd / && borg-job-immich extract --progress ::$ARCHIVE var/lib/immich var/backup/immich-db
 
       echo "Restoring database..."
       sudo -u postgres ${config.services.postgresql.package}/bin/pg_restore -d immich --clean ${backupDir}/immich.dump
