@@ -1,4 +1,8 @@
-{pkgs, ...}: {
+{
+  config,
+  pkgs,
+  ...
+}: {
   # Enable ThinkPad ACPI support for ThinkPad features
   hardware.trackpoint = {
     enable = true;
@@ -7,6 +11,11 @@
   };
 
   hardware.cpu.intel.updateMicrocode = true;
+
+  # ThinkPad-specific kernel modules for ACPI features and power management
+  boot.initrd.availableKernelModules = ["thinkpad_acpi" "rtsx_pci_sdmmc"];
+  boot.initrd.kernelModules = ["acpi_call"];
+  boot.extraModulePackages = with config.boot.kernelPackages; [acpi_call];
 
   # ThinkPad E470 keyboard backlight
   hardware.acpilight.enable = true;
