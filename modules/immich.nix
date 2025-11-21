@@ -1,7 +1,6 @@
 {
   config,
   pkgs,
-  lib,
   ...
 }: let
   domain = "krejci.io";
@@ -164,26 +163,30 @@ in {
       };
     };
   in {
-    immich-remote = commonConfig // {
-      repo = "ssh://borg@vpsfree.krejci.io/var/lib/borg-repos/immich";
-      startAt = "02:00";
-      encryption = {
-        mode = "repokey-blake2";
-        passCommand = "cat /root/secrets/borg-passphrase-remote";
+    immich-remote =
+      commonConfig
+      // {
+        repo = "ssh://borg@vpsfree.krejci.io/var/lib/borg-repos/immich";
+        startAt = "02:00";
+        encryption = {
+          mode = "repokey-blake2";
+          passCommand = "cat /root/secrets/borg-passphrase-remote";
+        };
+        environment = {
+          BORG_RSH = "ssh -i /root/.ssh/borg-backup-key";
+        };
       };
-      environment = {
-        BORG_RSH = "ssh -i /root/.ssh/borg-backup-key";
-      };
-    };
 
-    immich-local = commonConfig // {
-      repo = "/var/lib/borg-repos/immich";
-      startAt = "03:00";
-      encryption = {
-        mode = "repokey-blake2";
-        passCommand = "cat /root/secrets/borg-passphrase-local";
+    immich-local =
+      commonConfig
+      // {
+        repo = "/var/lib/borg-repos/immich";
+        startAt = "03:00";
+        encryption = {
+          mode = "repokey-blake2";
+          passCommand = "cat /root/secrets/borg-passphrase-local";
+        };
       };
-    };
   };
 
   # Nginx reverse proxy - accessible via immich.<domain>
