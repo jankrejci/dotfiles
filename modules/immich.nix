@@ -13,23 +13,39 @@
 
   # Backup configuration
   backupDir = "/var/backup/immich-db";
-  borgRepo = "ssh://borg@vpsfree.krejci.io/mnt/nas-backup/borg-repos/immich";
 in {
   # Install borgbackup for backup operations
   environment.systemPackages = with pkgs; [
     borgbackup
     (pkgs.writeShellScriptBin "restore-immich-backup" ''
-      if [ $# -eq 0 ]; then
-        echo "Usage: restore-immich-backup ARCHIVE_NAME"
+      if [ $# -lt 2 ]; then
+        echo "Usage: restore-immich-backup <remote|local> ARCHIVE_NAME"
         echo ""
-        echo "Available backups:"
-        borg-job-immich list
+        echo "Available remote backups:"
+        borg-job-immich-remote list
+        echo ""
+        echo "Available local backups:"
+        borg-job-immich-local list
         exit 1
       fi
 
-      readonly ARCHIVE="$1"
+      readonly SOURCE="$1"
+      readonly ARCHIVE="$2"
 
-      echo "WARNING: This will restore Immich data from backup: $ARCHIVE"
+      case "$SOURCE" in
+        remote)
+          BORG_CMD="borg-job-immich-remote"
+          ;;
+        local)
+          BORG_CMD="borg-job-immich-local"
+          ;;
+        *)
+          echo "Error: Source must be 'remote' or 'local'"
+          exit 1
+          ;;
+      esac
+
+      echo "WARNING: This will restore Immich data from $SOURCE backup: $ARCHIVE"
       echo "Current data will be overwritten!"
       read -r -p "Continue? (yes/no): " confirm
 
@@ -42,7 +58,7 @@ in {
       systemctl stop immich-server
 
       echo "Restoring files..."
-      cd / && borg-job-immich extract --progress ::$ARCHIVE var/lib/immich var/backup/immich-db
+      cd / && $BORG_CMD extract --progress ::$ARCHIVE var/lib/immich var/backup/immich-db
 
       echo "Restoring database..."
       sudo -u postgres ${config.services.postgresql.package}/bin/pg_restore -d immich --clean ${backupDir}/immich.dump
@@ -62,10 +78,25 @@ in {
     allowDiscards = true;
   };
 
-  fileSystems."/var/lib/immich" = {
+  # Mount NVMe to /mnt/immich-data
+  fileSystems."/mnt/immich-data" = {
     device = "/dev/mapper/immich-data";
     fsType = "ext4";
-    options = ["defaults" "nofail"];
+    options = ["defaults"];
+  };
+
+  # Bind mount immich data
+  fileSystems."/var/lib/immich" = {
+    device = "/mnt/immich-data/immich";
+    fsType = "none";
+    options = ["bind" "x-systemd.requires=mnt-immich\\x2ddata.mount"];
+  };
+
+  # Bind mount borg repos
+  fileSystems."/var/lib/borg-repos" = {
+    device = "/mnt/immich-data/borg-repos";
+    fsType = "none";
+    options = ["bind" "x-systemd.requires=mnt-immich\\x2ddata.mount"];
   };
 
   services.immich = {
@@ -79,6 +110,11 @@ in {
 
   # Ensure required directory structure exists on the data disk
   systemd.tmpfiles.rules = [
+    # Base directories on mount point
+    "d /mnt/immich-data/immich 0755 immich immich -"
+    "d /mnt/immich-data/borg-repos 0755 root root -"
+    "d /mnt/immich-data/borg-repos/immich 0700 root root -"
+    # Immich subdirectories
     "d /var/lib/immich/upload 0755 immich immich -"
     "d /var/lib/immich/library 0755 immich immich -"
     "d /var/lib/immich/thumbs 0755 immich immich -"
@@ -105,34 +141,46 @@ in {
   };
 
   # Borg backup configuration
-  services.borgbackup.jobs.immich = {
-    paths = [
-      "/var/lib/immich"
-      backupDir
-    ];
-    exclude = [
-      "/var/lib/immich/thumbs"
-      "/var/lib/immich/encoded-video"
-    ];
-    repo = borgRepo;
-    encryption = {
-      mode = "repokey-blake2";
-      passCommand = "cat /root/secrets/borg-passphrase";
+  services.borgbackup.jobs = let
+    commonConfig = {
+      paths = [
+        "/var/lib/immich"
+        backupDir
+      ];
+      exclude = [
+        "/var/lib/immich/thumbs"
+        "/var/lib/immich/encoded-video"
+      ];
+      compression = "auto,zstd";
+      startAt = "daily";
+      persistentTimer = true;
+      preHook = ''
+        systemctl start immich-db-dump.service
+      '';
+      prune.keep = {
+        daily = 7;
+        weekly = 4;
+        monthly = 6;
+      };
     };
-    environment = {
-      BORG_RSH = "ssh -i /root/.ssh/borg-backup-key";
+  in {
+    immich-remote = commonConfig // {
+      repo = "ssh://borg@vpsfree.krejci.io/var/lib/borg-repos/immich";
+      encryption = {
+        mode = "repokey-blake2";
+        passCommand = "cat /root/secrets/borg-passphrase-remote";
+      };
+      environment = {
+        BORG_RSH = "ssh -i /root/.ssh/borg-backup-key";
+      };
     };
-    compression = "auto,zstd";
-    startAt = "daily";
-    # Run at 2 AM
-    persistentTimer = true;
-    preHook = ''
-      systemctl start immich-db-dump.service
-    '';
-    prune.keep = {
-      daily = 7;
-      weekly = 4;
-      monthly = 6;
+
+    immich-local = commonConfig // {
+      repo = "/var/lib/borg-repos/immich";
+      encryption = {
+        mode = "repokey-blake2";
+        passCommand = "cat /root/secrets/borg-passphrase-local";
+      };
     };
   };
 

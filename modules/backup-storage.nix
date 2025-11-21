@@ -7,7 +7,6 @@
   nasHost = "172.16.130.249";
   nasPath = "/nas/6057";
   mountPoint = "/mnt/nas-backup";
-  repoBasePath = "${mountPoint}/borg-repos";
 in {
   # Mount NAS storage for backup repositories
   fileSystems.${mountPoint} = {
@@ -16,10 +15,17 @@ in {
     options = ["nofail"];
   };
 
-  # Ensure base directory for borg repositories exists
+  # Bind mount borg repos from NAS
+  fileSystems."/var/lib/borg-repos" = {
+    device = "${mountPoint}/borg-repos";
+    fsType = "none";
+    options = ["bind" "x-systemd.requires=mnt-nas\\x2dbackup.mount"];
+  };
+
+  # Ensure base directory exists on NAS
   systemd.tmpfiles.rules = [
-    "d ${repoBasePath} 0755 borg borg -"
-    "d ${repoBasePath}/immich 0700 borg borg -"
+    "d ${mountPoint}/borg-repos 0755 borg borg -"
+    "d ${mountPoint}/borg-repos/immich 0700 borg borg -"
   ];
 
   # Create dedicated borg user for backup operations
@@ -37,32 +43,4 @@ in {
   environment.systemPackages = with pkgs; [
     borgbackup
   ];
-
-  # Oneshot service to initialize borg repository
-  systemd.services.borg-init-immich = {
-    description = "Initialize Borg repository for Immich backups";
-    wantedBy = ["multi-user.target"];
-    after = ["network-online.target"];
-    wants = ["network-online.target"];
-
-    # Only run if passphrase exists and repo not initialized
-    unitConfig = {
-      ConditionPathExists = [
-        "/root/secrets/borg-passphrase-env"
-        "!${repoBasePath}/immich/config"
-      ];
-    };
-
-    serviceConfig = {
-      Type = "oneshot";
-      User = "borg";
-      RemainAfterExit = true;
-      EnvironmentFile = "/root/secrets/borg-passphrase-env";
-    };
-
-    script = ''
-      ${pkgs.borgbackup}/bin/borg init --encryption=repokey-blake2 ${repoBasePath}/immich
-      echo "Borg repository initialized successfully"
-    '';
-  };
 }

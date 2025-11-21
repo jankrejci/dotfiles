@@ -543,7 +543,7 @@ in {
     };
 
   # Inject Borg passphrase to both server and client
-  # `nix run .#inject-borg-passphrase`
+  # `nix run .#inject-borg-passphrase <server-host> <client-host>`
   inject-borg-passphrase =
     pkgs.writeShellApplication
     {
@@ -555,30 +555,61 @@ in {
         # shellcheck source=/dev/null
         source ${lib}
 
-        readonly SERVER_HOST="vpsfree"
-        readonly CLIENT_HOST="thinkcenter"
+        if [ $# -ne 2 ]; then
+          echo "Usage: inject-borg-passphrase <server-host> <client-host>"
+          echo ""
+          echo "Examples:"
+          echo "  inject-borg-passphrase vpsfree thinkcenter  # remote backup"
+          echo "  inject-borg-passphrase thinkcenter thinkcenter  # local backup"
+          exit 1
+        fi
+
+        readonly SERVER_HOST="$1"
+        readonly CLIENT_HOST="$2"
         readonly DOMAIN="krejci.io"
         readonly USER="admin"
+        readonly REPO_PATH="/var/lib/borg-repos/immich"
 
-        passphrase=$(ask_for_token "Borg passphrase")
+        local TARGET="remote"
+        if [ "$SERVER_HOST" = "$CLIENT_HOST" ]; then
+          TARGET="local"
+        fi
 
-        # Inject to server (for borg init service)
-        echo "Injecting passphrase to $SERVER_HOST..."
-        server_cmd=$(concat \
-          "echo 'BORG_PASSPHRASE=$passphrase' | sudo tee /root/secrets/borg-passphrase-env > /dev/null" \
-          "sudo chmod 600 /root/secrets/borg-passphrase-env"
-        )
-        ssh "$USER@$SERVER_HOST.$DOMAIN" "$server_cmd"
+        passphrase=$(ask_for_token "Borg $TARGET passphrase")
 
-        # Inject to client (for backup job)
+        readonly SERVER_SSH="$USER@$SERVER_HOST.$DOMAIN"
+        readonly CLIENT_SSH="$USER@$CLIENT_HOST.$DOMAIN"
+
+        # Check if repository already exists
+        echo "Initializing repository on $SERVER_HOST..."
+        # Client-side expansion intended - variables resolved before SSH
+        # shellcheck disable=SC2029
+        if ssh "$SERVER_SSH" "[ -f $REPO_PATH/config ]"; then
+          echo "Repository already exists, skipping initialization"
+          exit 0
+        fi
+
+        # Initialize repository
+        # Client-side expansion intended - passphrase must not leak to logs
+        # shellcheck disable=SC2029
+        ssh "$SERVER_SSH" \
+          "export BORG_PASSPHRASE='$passphrase' && \
+           sudo -E borg init --encryption=repokey-blake2 $REPO_PATH"
+        echo "Repository initialized"
+
+        # Inject passphrase to client (for backup job)
         echo "Injecting passphrase to $CLIENT_HOST..."
-        client_cmd=$(concat \
-          "echo '$passphrase' | sudo tee /root/secrets/borg-passphrase > /dev/null" \
-          "sudo chmod 600 /root/secrets/borg-passphrase"
-        )
-        ssh "$USER@$CLIENT_HOST.$DOMAIN" "$client_cmd"
+        # Client-side expansion intended - TARGET resolved before SSH
+        # shellcheck disable=SC2029
+        echo "$passphrase" | ssh "$CLIENT_SSH" \
+          "sudo tee /root/secrets/borg-passphrase-$TARGET > /dev/null"
 
-        echo "Done! Repository will be initialized automatically on $SERVER_HOST."
+        # Client-side expansion intended - TARGET resolved before SSH
+        # shellcheck disable=SC2029
+        ssh "$CLIENT_SSH" \
+          "sudo chmod 600 /root/secrets/borg-passphrase-$TARGET"
+
+        echo "Done!"
       '';
     };
 
