@@ -314,20 +314,23 @@ NAS (172.16.130.249:/nas/6057)
 **Status:** ✅ COMPLETED (2025-11-21)
 
 **1. vpsfree (backup server):**
-- `modules/backup-storage.nix`: NFS mount with bind mount to `/var/lib/borg-repos`
-- Repository path: `/var/lib/borg-repos/immich` (symlinked to NAS)
+- Configuration inline in `hosts/vpsfree.nix`
 - NFS mount: `172.16.130.249:/nas/6057` → `/mnt/nas-backup` (250GB)
+- Bind mount: `/mnt/nas-backup/borg-repos` → `/var/lib/borg-repos`
+- Repository path: `/var/lib/borg-repos/immich` (stored on NAS)
 - Borg user has bash shell (required for `borg serve` command execution)
-- Security via filesystem permissions
+- Security via filesystem permissions (mode 0700)
 - Status: ✅ DEPLOYED
 
 **2. thinkcenter (Immich host):**
-- `modules/immich.nix`: PostgreSQL dump service, dual Borg backup jobs
-- Backup schedule: Daily at midnight (00:00)
+- Configuration in `modules/immich.nix`
+- PostgreSQL dump service + dual Borg backup jobs
+- Backup schedule: Remote at 02:00, Local at 03:00 (sequential to reduce I/O contention)
 - Pre-hook: dump database to `/var/backup/immich-db/immich.dump`
-- Remote job: `ssh://borg@vpsfree.krejci.io/var/lib/borg-repos/immich`
-- Local job: `/var/lib/borg-repos/immich`
-- Status: ✅ DEPLOYED
+- Remote job: `ssh://borg@vpsfree.krejci.io/var/lib/borg-repos/immich` → NAS
+- Local job: `/var/lib/borg-repos/immich` → thinkcenter NVMe
+- Separate passphrases: `/root/secrets/borg-passphrase-{remote,local}`
+- Status: ✅ DEPLOYED & TESTED
 
 **3. Initialization Steps:**
 
@@ -405,16 +408,22 @@ After deployment, systemd may not immediately recognize new timer units. Solutio
 Initially used `nologin` shell for security, but borg requires executing `borg serve` command on remote side. Changed to bash shell with security enforced via filesystem permissions (borg user owns `/mnt/nas-backup/borg-repos`, mode 0700).
 
 **Repository initialization automation:**
-Automated via `inject-borg-passphrase` script:
+Automated via `inject-borg-passphrase` script (in `scripts.nix`):
 - Checks if repo already exists (`/var/lib/borg-repos/immich/config`)
-- Initializes with passphrase from stdin
-- Injects passphrase to client for backup jobs
-- Eliminates manual `HOME=/tmp` workaround
+- Initializes with passphrase from stdin (repokey-blake2 encryption)
+- Injects passphrase to client at `/root/secrets/borg-passphrase-{remote,local}`
+- Early exit pattern - skips initialization if repo exists
+- Client-side variable expansion for security (passphrase never logged)
+
+**Borg key export:**
+Not required - keys stored in repository config, backed up with repository data. Dual backup strategy means key loss requires both repositories to fail simultaneously.
 
 ### Benefits
-- Centralized storage on NAS (250GB allocation)
-- Off-host backups (thinkcenter failure doesn't lose backups)
-- Encrypted at rest and in transit (repokey-blake2)
-- Deduplication and compression (~50% space savings)
+- Dual backup strategy: remote (NAS) + local (NVMe) for hardware failure resilience
+- Sequential execution (02:00 remote, 03:00 local) reduces I/O contention
+- Encrypted at rest and in transit (repokey-blake2, separate passphrases)
+- Incremental backups with deduplication (~50% compression with zstd)
+- Fast restore from either location (remote or local)
 - Monitored via existing Prometheus/Grafana stack
 - Automatic retention management (7 daily, 4 weekly, 6 monthly)
+- Restore tested and verified working from both repositories
