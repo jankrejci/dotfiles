@@ -82,6 +82,8 @@
   networking.networkmanager.enable = true;
   security.rtkit.enable = true;
   services = {
+    # Use dbus-broker for better performance
+    dbus.implementation = "broker";
     pulseaudio.enable = false;
     pipewire = {
       enable = true;
