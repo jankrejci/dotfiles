@@ -169,11 +169,36 @@ services.nginx.virtualHosts."service.domain" = {
 Firewall rules still restrict public interface.
 
 ### Borg Backup
-See: `modules/backup-storage.nix`, `modules/immich.nix`
+See: `modules/backup-storage.nix`, `modules/immich.nix`, `scripts.nix` (inject-borg-passphrase)
 
 **Architecture:**
-- Server: NFS mount, borg user with bash shell, repository in `/mnt/nas-backup/borg-repos`
-- Client: `services.borgbackup.jobs.NAME` with SSH key authentication
+- Dual backup: remote (vpsfree/NAS) + local (NVMe)
+- Unified path: `/var/lib/borg-repos/immich` on both hosts
+- Server: NFS mount with bind mount, borg user with bash shell
+- Client: `services.borgbackup.jobs.{NAME-remote,NAME-local}` with separate passphrases
+
+**Mount Structure:**
+```nix
+# thinkcenter
+fileSystems."/mnt/immich-data" = {
+  device = "/dev/mapper/immich-data";
+  fsType = "ext4";
+};
+fileSystems."/var/lib/borg-repos" = {
+  device = "/mnt/immich-data/borg-repos";
+  fsType = "none";
+  options = ["bind" "x-systemd.requires=mnt-immich\\x2ddata.mount"];
+};
+
+# vpsfree
+fileSystems."/var/lib/borg-repos" = {
+  device = "/mnt/nas-backup/borg-repos";
+  fsType = "none";
+  options = ["bind" "x-systemd.requires=mnt-nas\\x2dbackup.mount"];
+};
+```
+
+Bind mounts prevent writes if underlying storage unmounted.
 
 **Critical Configuration:**
 ```nix
@@ -187,10 +212,12 @@ users.users.borg = {
 **Why bash shell:** Borg client executes `borg serve` via SSH on remote. Shell must allow command execution. Security via filesystem permissions (repository owned by borg user, mode 0700), not SSH command restrictions.
 
 **Repository initialization:**
+Automated via `inject-borg-passphrase`:
 ```bash
-# System users have /var/empty home, can't write config
-sudo -u borg HOME=/tmp BORG_PASSPHRASE='pass' borg init --encryption=repokey-blake2 /path/to/repo
+nix run .#inject-borg-passphrase vpsfree thinkcenter  # remote
+nix run .#inject-borg-passphrase thinkcenter thinkcenter  # local
 ```
+Script checks if repo exists, initializes if needed, injects passphrase.
 
 **Systemd timer activation:**
 After deploying `services.borgbackup.jobs`, timer may not appear immediately. Requires reboot or systemd cache refresh. Verify:
@@ -200,11 +227,11 @@ systemctl list-timers | grep borgbackup
 
 **Backup verification:**
 ```bash
-# Check last backup
-borg list ssh://user@host/path/to/repo
+# Check repositories
+borg list /var/lib/borg-repos/immich
 
-# Verify backup integrity
-borg check ssh://user@host/path/to/repo
+# Verify integrity
+borg check /var/lib/borg-repos/immich
 ```
 
 ### Grafana Datasources
@@ -279,3 +306,5 @@ Remote machines via VPN only:
 - `nix run .#add-ssh-key <hostname>` - Generate and authorize SSH key
 
 See `scripts.nix` for implementation details.
+- avoid else branch whenever possible
+- if disabling shellchec allways add comment why
