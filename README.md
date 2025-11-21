@@ -60,3 +60,40 @@ Example:
 nix run .#deploy-config optiplex
 ```
 
+## Setup Immich Backup
+
+1. Generate SSH key on thinkcenter:
+   ```bash
+   ssh-keygen -t ed25519 -f /root/.ssh/borg-backup-key -N ""
+   ```
+
+2. Add public key to `ssh-authorized-keys.conf`:
+   ```
+   vpsfree, borg, ssh-ed25519 AAAA... thinkcenter-backup
+   ```
+
+3. Inject passphrase:
+   ```bash
+   nix run .#inject-borg-passphrase
+   ```
+
+4. Initialize repository on vpsfree:
+   ```bash
+   systemctl start borg-init-immich.service
+   ```
+
+**Verification:**
+```bash
+# Check repository initialized (on vpsfree)
+borg list /mnt/nas-backup/borg-repos/immich
+
+# Check backup timer scheduled (on thinkcenter)
+systemctl list-timers | grep borg
+
+# Test backup manually (on thinkcenter)
+systemctl start borgbackup-job-immich
+journalctl -u borgbackup-job-immich -f
+```
+
+Backups run daily at midnight.
+
