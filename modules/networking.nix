@@ -134,6 +134,8 @@
     unmanaged = ["nb-*"];
     # Enhanced DNS handling
     dns = "systemd-resolved";
+    # Use iwd instead of wpa_supplicant for faster Wi-Fi connection/reconnection
+    wifi.backend = "iwd";
     # Connection timeout and retry settings
     settings = {
       main = {
@@ -141,6 +143,19 @@
         rc-manager = "resolvconf";
         # Faster connection establishment
         dhcp = "dhclient";
+      };
+    };
+  };
+
+  # Enable iwd for NetworkManager backend
+  networking.wireless.iwd = {
+    enable = true;
+    settings = {
+      Network = {
+        EnableIPv6 = true;
+      };
+      Settings = {
+        AutoConnect = true;
       };
     };
   };
