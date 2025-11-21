@@ -18,6 +18,40 @@ in {
   # Install borgbackup for backup operations
   environment.systemPackages = with pkgs; [
     borgbackup
+    (pkgs.writeShellScriptBin "restore-immich-backup" ''
+      if [ $# -eq 0 ]; then
+        echo "Usage: restore-immich-backup ARCHIVE_NAME"
+        echo ""
+        echo "Available backups:"
+        borg-job-immich list
+        exit 1
+      fi
+
+      readonly ARCHIVE="$1"
+
+      echo "WARNING: This will restore Immich data from backup: $ARCHIVE"
+      echo "Current data will be overwritten!"
+      read -r -p "Continue? (yes/no): " confirm
+
+      if [ "$confirm" != "yes" ]; then
+        echo "Restore cancelled"
+        exit 0
+      fi
+
+      echo "Stopping Immich..."
+      systemctl stop immich-server
+
+      echo "Restoring files..."
+      cd / && borg-job-immich extract ::$ARCHIVE var/lib/immich var/backup/immich-db
+
+      echo "Restoring database..."
+      sudo -u postgres ${config.services.postgresql.package}/bin/pg_restore -d immich --clean ${backupDir}/immich.dump
+
+      echo "Starting Immich..."
+      systemctl start immich-server
+
+      echo "Restore complete!"
+    '')
   ];
   # Allow HTTPS on VPN interface (nginx proxies to Immich for both web and mobile)
   networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [443];
