@@ -64,7 +64,6 @@ with lib; {
       extraDnsLabels = ["share"];
       extraModules = [
         ./modules/acme.nix
-        ./modules/backup-storage.nix
         ./modules/grafana.nix
         ./modules/immich-public-proxy.nix
         ./modules/vpsadminos.nix
