@@ -134,6 +134,8 @@
     unmanaged = ["nb-*"];
     # Enhanced DNS handling
     dns = "systemd-resolved";
+    # Use iwd instead of wpa_supplicant for faster Wi-Fi connection/reconnection
+    wifi.backend = "iwd";
     # Connection timeout and retry settings
     settings = {
       main = {
