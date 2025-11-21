@@ -166,6 +166,7 @@ in {
   in {
     immich-remote = commonConfig // {
       repo = "ssh://borg@vpsfree.krejci.io/var/lib/borg-repos/immich";
+      startAt = "02:00";
       encryption = {
         mode = "repokey-blake2";
         passCommand = "cat /root/secrets/borg-passphrase-remote";
@@ -177,6 +178,7 @@ in {
 
     immich-local = commonConfig // {
       repo = "/var/lib/borg-repos/immich";
+      startAt = "03:00";
       encryption = {
         mode = "repokey-blake2";
         passCommand = "cat /root/secrets/borg-passphrase-local";
