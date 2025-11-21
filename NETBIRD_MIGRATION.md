@@ -263,29 +263,36 @@ vpsfree, borg, ssh-ed25519 AAAA... thinkcenter-backup
 
 ### Architecture
 ```
-thinkcenter (Immich + Borg client)
+thinkcenter (Immich + dual Borg backups)
     |
-    | SSH: borg backup push
+    +---> Local: /var/lib/borg-repos/immich (NVMe)
+    |
+    | SSH: remote borg backup push
     ↓
 vpsfree (Borg repository server)
     |
-    | NFS mount (implementation detail)
+    | NFS mount
     ↓
 NAS (172.16.130.249:/nas/6057)
 ```
 
 ### Design Decisions
 
-**Push vs Pull:**
-- thinkcenter pushes backups to vpsfree (standard Borg SSH pattern)
-- vpsfree mounts NAS and serves Borg repositories
-- NAS accessible only from vpsfree network
+**Dual Backup Strategy:**
+- **Remote:** thinkcenter → vpsfree → NAS (offsite protection)
+- **Local:** thinkcenter → NVMe (fast recovery)
+- Both jobs run daily with separate passphrases
+- Identical retention policies
+
+**Mount Structure:**
+- thinkcenter: `/dev/mapper/immich-data` → `/mnt/immich-data` → bind mounts to `/var/lib/{immich,borg-repos}`
+- vpsfree: `172.16.130.249:/nas/6057` → `/mnt/nas-backup` → bind mount to `/var/lib/borg-repos`
+- Bind mounts with `x-systemd.requires` prevent writes if underlying storage unmounted
 
 **Security:**
-- Dedicated `borg` user on vpsfree with restricted SSH access
-- SSH key restricted with `command="borg serve --restrict-to-path /mnt/nas-backup/borg-repos/immich",restrict`
-- Prevents: port forwarding, X11, arbitrary commands, access to other repos
-- Borg encryption: repokey-blake2 (passphrase stored in /root/secrets)
+- Dedicated `borg` user on vpsfree with bash shell
+- SSH key authentication (no command restrictions - security via filesystem permissions)
+- Borg encryption: repokey-blake2 (separate passphrases for remote/local)
 
 **Backup Scope:**
 - **Included:** `/var/lib/immich` (media files), PostgreSQL database dump
@@ -298,7 +305,7 @@ NAS (172.16.130.249:/nas/6057)
 - Total coverage: ~6 months
 
 **Monitoring:**
-- Prometheus already monitors thinkcenter node
+- Prometheus monitors thinkcenter node
 - Backup metrics exposed via node_exporter
 - Grafana dashboards track backup success/failure
 
@@ -307,33 +314,30 @@ NAS (172.16.130.249:/nas/6057)
 **Status:** ✅ COMPLETED (2025-11-21)
 
 **1. vpsfree (backup server):**
-- `modules/backup-storage.nix`: NFS mount, borg user with bash shell
-- Repository path: `/mnt/nas-backup/borg-repos/immich`
+- `modules/backup-storage.nix`: NFS mount with bind mount to `/var/lib/borg-repos`
+- Repository path: `/var/lib/borg-repos/immich` (symlinked to NAS)
 - NFS mount: `172.16.130.249:/nas/6057` → `/mnt/nas-backup` (250GB)
 - Borg user has bash shell (required for `borg serve` command execution)
-- Security via filesystem permissions (borg user owns /mnt/nas-backup/borg-repos)
+- Security via filesystem permissions
 - Status: ✅ DEPLOYED
 
 **2. thinkcenter (Immich host):**
-- `modules/immich.nix`: PostgreSQL dump service, Borg backup job
+- `modules/immich.nix`: PostgreSQL dump service, dual Borg backup jobs
 - Backup schedule: Daily at midnight (00:00)
 - Pre-hook: dump database to `/var/backup/immich-db/immich.dump`
-- Push to: `ssh://borg@vpsfree.krejci.io/mnt/nas-backup/borg-repos/immich`
+- Remote job: `ssh://borg@vpsfree.krejci.io/var/lib/borg-repos/immich`
+- Local job: `/var/lib/borg-repos/immich`
 - Status: ✅ DEPLOYED
 
 **3. Initialization Steps:**
 
-On thinkcenter:
+Generate SSH key on thinkcenter:
 ```bash
-# Generate backup SSH key
 sudo ssh-keygen -t ed25519 -f /root/.ssh/borg-backup-key -N ""
-sudo cat /root/.ssh/borg-backup-key.pub
-# Copy the public key output for next step
 ```
 
-Add the key to ssh-authorized-keys.conf (security via filesystem permissions, not SSH restrictions):
-```bash
-# Add this line to ssh-authorized-keys.conf in the repo
+Add public key to `ssh-authorized-keys.conf`:
+```
 vpsfree, borg, ssh-ed25519 AAAA... thinkcenter-backup
 ```
 
@@ -343,42 +347,37 @@ nix run .#deploy-config vpsfree
 nix run .#deploy-config thinkcenter
 ```
 
-On vpsfree (initialize repository):
+Inject passphrases and initialize repositories (from framework):
 ```bash
-# Verify NFS mount is active
-df -h /mnt/nas-backup
+# Remote backup (initializes on vpsfree, injects passphrase to thinkcenter)
+nix run .#inject-borg-passphrase vpsfree thinkcenter
 
-# Initialize repository (one-time, needs HOME and passphrase)
-sudo -u borg HOME=/tmp BORG_PASSPHRASE='your-passphrase' borg init --encryption=repokey-blake2 /mnt/nas-backup/borg-repos/immich
+# Local backup (initializes on thinkcenter, injects passphrase to thinkcenter)
+nix run .#inject-borg-passphrase thinkcenter thinkcenter
 ```
 
-On thinkcenter:
+Verify and test:
 ```bash
-# Create passphrase file (use same passphrase from borg init)
-sudo mkdir -p /root/secrets
-echo "your-passphrase" | sudo tee /root/secrets/borg-passphrase
-sudo chmod 600 /root/secrets/borg-passphrase
+# Check repositories initialized
+ssh vpsfree.krejci.io "borg list /var/lib/borg-repos/immich"
+ssh thinkcenter.krejci.io "borg list /var/lib/borg-repos/immich"
 
-# Test SSH connection (should see "This account is currently not available")
-sudo ssh -i /root/.ssh/borg-backup-key borg@vpsfree.krejci.io
-# This is expected - borg protocol works despite nologin message
-
-# Test backup
-sudo systemctl start borgbackup-job-immich
-sudo journalctl -u borgbackup-job-immich -f
+# Test backup manually
+ssh thinkcenter.krejci.io "sudo systemctl start borgbackup-job-immich-remote"
+ssh thinkcenter.krejci.io "sudo systemctl start borgbackup-job-immich-local"
 ```
 
 **4. Restore Procedure:**
 
 ```bash
-# List backups
-sudo borg list ssh://borg@vpsfree.krejci.io/mnt/nas-backup/borg-repos/immich
+# List available backups
+restore-immich-backup
 
-# Restore media files
-sudo borg extract ssh://borg@vpsfree.krejci.io/mnt/nas-backup/borg-repos/immich::archive-name var/lib/immich
+# Restore from remote backup
+restore-immich-backup remote thinkcenter-immich-2025-11-21T09:09:45
 
-# Restore database
-sudo -u postgres pg_restore -d immich /var/backup/immich-db/immich.dump
+# Restore from local backup
+restore-immich-backup local thinkcenter-immich-2025-11-21T09:09:45
 ```
 
 ### Deployment Experience
@@ -389,17 +388,28 @@ sudo -u postgres pg_restore -d immich /var/backup/immich-db/immich.dump
 - Uploaded (compressed): 18.3 GB
 - Compression ratio: ~51% with zstd
 
+**Mount structure migration (2025-11-21):**
+Migrated from direct mounts to bind mount architecture:
+1. Stopped services
+2. Reorganized data: moved `/var/lib/immich/*` → `/var/lib/immich/immich/`, created `/var/lib/immich/borg-repos/`
+3. Deployed new configuration with bind mounts
+4. Rebooted to activate new fstab entries
+5. Verified bind mounts active with `x-systemd.requires` dependencies
+
+Result: Services can't write to `/var/lib/{immich,borg-repos}` if NVMe/NFS unmounted.
+
 **Systemd timer activation:**
 After deployment, systemd may not immediately recognize new timer units. Solution: reboot the host or wait for next boot cycle. Timer files exist in `/run/current-system/etc/systemd/system/` but systemd needs to reload its unit cache.
 
 **Borg user shell requirement:**
 Initially used `nologin` shell for security, but borg requires executing `borg serve` command on remote side. Changed to bash shell with security enforced via filesystem permissions (borg user owns `/mnt/nas-backup/borg-repos`, mode 0700).
 
-**Repository initialization gotcha:**
-Borg user (system user with `/var/empty` home) cannot write config. Use `HOME=/tmp` during `borg init`:
-```bash
-sudo -u borg HOME=/tmp BORG_PASSPHRASE='...' borg init --encryption=repokey-blake2 /path/to/repo
-```
+**Repository initialization automation:**
+Automated via `inject-borg-passphrase` script:
+- Checks if repo already exists (`/var/lib/borg-repos/immich/config`)
+- Initializes with passphrase from stdin
+- Injects passphrase to client for backup jobs
+- Eliminates manual `HOME=/tmp` workaround
 
 ### Benefits
 - Centralized storage on NAS (250GB allocation)
