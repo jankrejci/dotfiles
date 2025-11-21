@@ -24,6 +24,8 @@
   boot = {
     kernelModules = lib.mkDefault ["kvm-intel"];
     extraModulePackages = [];
+    # Use tmpfs for /tmp (RAM-based, fast, auto-cleanup on reboot)
+    tmp.useTmpfs = true;
     initrd = {
       availableKernelModules = [
         "nvme"
@@ -45,6 +47,11 @@
         "dm-cache-smq"
       ];
     };
+  };
+
+  # Redirect nix builds to /var/tmp (disk) to avoid filling RAM
+  systemd.services.nix-daemon = {
+    environment.TMPDIR = "/var/tmp";
   };
 
   time.timeZone = "Europe/Prague";
