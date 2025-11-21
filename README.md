@@ -72,37 +72,39 @@ nix run .#deploy-config optiplex
    vpsfree, borg, ssh-ed25519 AAAA... thinkcenter-backup
    ```
 
-3. Inject passphrase:
+3. Inject passphrases and initialize repositories:
    ```bash
-   nix run .#inject-borg-passphrase
-   ```
+   # Remote backup (initializes repo on vpsfree, injects passphrase to thinkcenter)
+   nix run .#inject-borg-passphrase vpsfree thinkcenter
 
-4. Initialize repository on vpsfree:
-   ```bash
-   systemctl start borg-init-immich.service
+   # Local backup (initializes repo on thinkcenter, injects passphrase to thinkcenter)
+   nix run .#inject-borg-passphrase thinkcenter thinkcenter
    ```
 
 **Verification:**
 ```bash
-# Check repository initialized (on vpsfree)
-borg list /mnt/nas-backup/borg-repos/immich
+# Check repository initialized
+borg list /var/lib/borg-repos/immich
 
-# Check backup timer scheduled (on thinkcenter)
+# Check backup timers scheduled
 systemctl list-timers | grep borg
 
-# Test backup manually (on thinkcenter)
-systemctl start borgbackup-job-immich
-journalctl -u borgbackup-job-immich -f
+# Test backup manually
+systemctl start borgbackup-job-immich-remote
+systemctl start borgbackup-job-immich-local
 ```
 
-Backups run daily at midnight.
+Backups run daily at midnight. Both remote (to vpsfree/NAS) and local (to NVMe) backups run simultaneously.
 
 **Restore from backup:**
 ```bash
 # List available backups (on thinkcenter)
 restore-immich-backup
 
-# Restore specific backup (on thinkcenter)
-restore-immich-backup thinkcenter-immich-2025-11-21T09:09:45
+# Restore from remote backup (on thinkcenter)
+restore-immich-backup remote thinkcenter-immich-2025-11-21T09:09:45
+
+# Restore from local backup (on thinkcenter)
+restore-immich-backup local thinkcenter-immich-2025-11-21T09:09:45
 ```
 
