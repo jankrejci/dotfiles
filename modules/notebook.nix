@@ -18,7 +18,7 @@
 
   # Enable temperature management daemon
   services.thermald.enable = true;
-  # Enable powertop autotuning
+  # Enable powertop autotuning (complements power-profiles-daemon)
   powerManagement.powertop.enable = true;
 
   hardware.bluetooth.enable = true;
