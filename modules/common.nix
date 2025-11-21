@@ -54,6 +54,9 @@
     environment.TMPDIR = "/var/tmp";
   };
 
+  # Enable periodic SSD trim for performance and longevity
+  services.fstrim.enable = true;
+
   time.timeZone = "Europe/Prague";
   console.keyMap = "us";
 
