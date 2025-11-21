@@ -1,11 +1,24 @@
-{...}: let
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}: let
   domain = "krejci.io";
   immichDomain = "immich.${domain}";
   immichPort = 2283;
   # Second disk for Immich data (NVMe)
   # Assumes partition is already created with label "disk-immich-luks"
   luksDevice = "/dev/disk/by-partlabel/disk-immich-luks";
+
+  # Backup configuration
+  backupDir = "/var/backup/immich-db";
+  borgRepo = "ssh://borg@vpsfree.krejci.io/mnt/nas-backup/borg-repos/immich";
 in {
+  # Install borgbackup for backup operations
+  environment.systemPackages = with pkgs; [
+    borgbackup
+  ];
   # Allow HTTPS on VPN interface (nginx proxies to Immich for both web and mobile)
   networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [443];
 
@@ -44,7 +57,50 @@ in {
     "f /var/lib/immich/profile/.immich 0644 immich immich -"
     "f /var/lib/immich/encoded-video/.immich 0644 immich immich -"
     "f /var/lib/immich/backups/.immich 0644 immich immich -"
+    "d ${backupDir} 0700 postgres postgres -"
   ];
+
+  # PostgreSQL database dump service
+  systemd.services.immich-db-dump = {
+    description = "Dump Immich PostgreSQL database";
+    serviceConfig = {
+      Type = "oneshot";
+      User = "postgres";
+      ExecStart = "${config.services.postgresql.package}/bin/pg_dump -Fc -f ${backupDir}/immich.dump immich";
+    };
+  };
+
+  # Borg backup configuration
+  services.borgbackup.jobs.immich = {
+    paths = [
+      "/var/lib/immich"
+      backupDir
+    ];
+    exclude = [
+      "/var/lib/immich/thumbs"
+      "/var/lib/immich/encoded-video"
+    ];
+    repo = borgRepo;
+    encryption = {
+      mode = "repokey-blake2";
+      passCommand = "cat /root/secrets/borg-passphrase";
+    };
+    environment = {
+      BORG_RSH = "ssh -i /root/.ssh/borg-backup-key";
+    };
+    compression = "auto,zstd";
+    startAt = "daily";
+    # Run at 2 AM
+    persistentTimer = true;
+    preHook = ''
+      systemctl start immich-db-dump.service
+    '';
+    prune.keep = {
+      daily = 7;
+      weekly = 4;
+      monthly = 6;
+    };
+  };
 
   # Nginx reverse proxy - accessible via immich.<domain>
   services.nginx = {
