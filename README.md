@@ -97,3 +97,12 @@ journalctl -u borgbackup-job-immich -f
 
 Backups run daily at midnight.
 
+**Restore from backup:**
+```bash
+# List available backups (on thinkcenter)
+restore-immich-backup
+
+# Restore specific backup (on thinkcenter)
+restore-immich-backup thinkcenter-immich-2025-11-21T09:09:45
+```
+
