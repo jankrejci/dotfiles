@@ -112,5 +112,10 @@
     RestartSec = 5;
   };
 
+  # Common directory for storing root secrets
+  systemd.tmpfiles.rules = [
+    "d /root/secrets 0700 root root -"
+  ];
+
   system.stateVersion = "24.11"; # Did you read the comment?
 }

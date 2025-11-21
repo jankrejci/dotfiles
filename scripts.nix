@@ -542,6 +542,46 @@ in {
       '';
     };
 
+  # Inject Borg passphrase to both server and client
+  # `nix run .#inject-borg-passphrase`
+  inject-borg-passphrase =
+    pkgs.writeShellApplication
+    {
+      name = "inject-borg-passphrase";
+      runtimeInputs = with pkgs; [
+        openssh
+      ];
+      text = ''
+        # shellcheck source=/dev/null
+        source ${lib}
+
+        readonly SERVER_HOST="vpsfree"
+        readonly CLIENT_HOST="thinkcenter"
+        readonly DOMAIN="krejci.io"
+        readonly USER="admin"
+
+        passphrase=$(ask_for_token "Borg passphrase")
+
+        # Inject to server (for borg init service)
+        echo "Injecting passphrase to $SERVER_HOST..."
+        server_cmd=$(concat \
+          "echo 'BORG_PASSPHRASE=$passphrase' | sudo tee /root/secrets/borg-passphrase-env > /dev/null" \
+          "sudo chmod 600 /root/secrets/borg-passphrase-env"
+        )
+        ssh "$USER@$SERVER_HOST.$DOMAIN" "$server_cmd"
+
+        # Inject to client (for backup job)
+        echo "Injecting passphrase to $CLIENT_HOST..."
+        client_cmd=$(concat \
+          "echo '$passphrase' | sudo tee /root/secrets/borg-passphrase > /dev/null" \
+          "sudo chmod 600 /root/secrets/borg-passphrase"
+        )
+        ssh "$USER@$CLIENT_HOST.$DOMAIN" "$client_cmd"
+
+        echo "Done! Repository will be initialized automatically on $SERVER_HOST."
+      '';
+    };
+
   # Validate ssh-authorized-keys.conf is parseable
   validate-ssh-keys = pkgs.runCommand "validate-ssh-keys" {} ''
     cd ${./.}
