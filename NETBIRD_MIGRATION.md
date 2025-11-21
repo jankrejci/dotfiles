@@ -304,18 +304,22 @@ NAS (172.16.130.249:/nas/6057)
 
 ### Implementation
 
+**Status:** ✅ COMPLETED (2025-11-21)
+
 **1. vpsfree (backup server):**
-- `modules/backup-storage.nix`: NFS mount, borg user with nologin shell
+- `modules/backup-storage.nix`: NFS mount, borg user with bash shell
 - Repository path: `/mnt/nas-backup/borg-repos/immich`
 - NFS mount: `172.16.130.249:/nas/6057` → `/mnt/nas-backup` (250GB)
-- SSH key restrictions configured in `ssh-authorized-keys.conf`
+- Borg user has bash shell (required for `borg serve` command execution)
+- Security via filesystem permissions (borg user owns /mnt/nas-backup/borg-repos)
 - Status: ✅ DEPLOYED
 
 **2. thinkcenter (Immich host):**
 - `modules/immich.nix`: PostgreSQL dump service, Borg backup job
-- Backup schedule: Daily at 2 AM
+- Backup schedule: Daily at midnight (00:00)
 - Pre-hook: dump database to `/var/backup/immich-db/immich.dump`
 - Push to: `ssh://borg@vpsfree.krejci.io/mnt/nas-backup/borg-repos/immich`
+- Status: ✅ DEPLOYED
 
 **3. Initialization Steps:**
 
@@ -327,44 +331,37 @@ sudo cat /root/.ssh/borg-backup-key.pub
 # Copy the public key output for next step
 ```
 
-Add the key to ssh-authorized-keys.conf:
+Add the key to ssh-authorized-keys.conf (security via filesystem permissions, not SSH restrictions):
 ```bash
 # Add this line to ssh-authorized-keys.conf in the repo
-vpsfree, borg, command="borg serve --restrict-to-path /mnt/nas-backup/borg-repos/immich",restrict ssh-ed25519 AAAA... thinkcenter-backup
+vpsfree, borg, ssh-ed25519 AAAA... thinkcenter-backup
 ```
 
-Deploy configuration to vpsfree:
+Deploy configuration:
 ```bash
 nix run .#deploy-config vpsfree
+nix run .#deploy-config thinkcenter
 ```
 
-On vpsfree (after deployment):
+On vpsfree (initialize repository):
 ```bash
 # Verify NFS mount is active
 df -h /mnt/nas-backup
 
-# Verify borg user and directory structure
-sudo -u borg ls -la /mnt/nas-backup/borg-repos/immich
-
-# Initialize repository (one-time)
-sudo -u borg borg init --encryption=repokey-blake2 /mnt/nas-backup/borg-repos/immich
-# Save the passphrase displayed by borg init
+# Initialize repository (one-time, needs HOME and passphrase)
+sudo -u borg HOME=/tmp BORG_PASSPHRASE='your-passphrase' borg init --encryption=repokey-blake2 /mnt/nas-backup/borg-repos/immich
 ```
-
-**Note on Deployment:** If transitioning from automount to regular mount configuration, you may need to:
-1. Temporarily remove backup-storage module from hosts.nix
-2. Deploy clean configuration
-3. Reboot vpsfree to clear mount state
-4. Re-add backup-storage module and deploy again
 
 On thinkcenter:
 ```bash
-# Create passphrase file with the passphrase from borg init
-echo "PASSPHRASE_FROM_BORG_INIT" | sudo tee /root/secrets/borg-passphrase
+# Create passphrase file (use same passphrase from borg init)
+sudo mkdir -p /root/secrets
+echo "your-passphrase" | sudo tee /root/secrets/borg-passphrase
 sudo chmod 600 /root/secrets/borg-passphrase
 
-# Test SSH connection (should see "borg serve" restriction message)
+# Test SSH connection (should see "This account is currently not available")
 sudo ssh -i /root/.ssh/borg-backup-key borg@vpsfree.krejci.io
+# This is expected - borg protocol works despite nologin message
 
 # Test backup
 sudo systemctl start borgbackup-job-immich
@@ -384,9 +381,30 @@ sudo borg extract ssh://borg@vpsfree.krejci.io/mnt/nas-backup/borg-repos/immich:
 sudo -u postgres pg_restore -d immich /var/backup/immich-db/immich.dump
 ```
 
+### Deployment Experience
+
+**Initial backup (2025-11-21):**
+- Duration: 17 minutes
+- Data processed: 37 GB
+- Uploaded (compressed): 18.3 GB
+- Compression ratio: ~51% with zstd
+
+**Systemd timer activation:**
+After deployment, systemd may not immediately recognize new timer units. Solution: reboot the host or wait for next boot cycle. Timer files exist in `/run/current-system/etc/systemd/system/` but systemd needs to reload its unit cache.
+
+**Borg user shell requirement:**
+Initially used `nologin` shell for security, but borg requires executing `borg serve` command on remote side. Changed to bash shell with security enforced via filesystem permissions (borg user owns `/mnt/nas-backup/borg-repos`, mode 0700).
+
+**Repository initialization gotcha:**
+Borg user (system user with `/var/empty` home) cannot write config. Use `HOME=/tmp` during `borg init`:
+```bash
+sudo -u borg HOME=/tmp BORG_PASSPHRASE='...' borg init --encryption=repokey-blake2 /path/to/repo
+```
+
 ### Benefits
-- Centralized storage on NAS
+- Centralized storage on NAS (250GB allocation)
 - Off-host backups (thinkcenter failure doesn't lose backups)
-- Encrypted at rest and in transit
-- Deduplication and compression
+- Encrypted at rest and in transit (repokey-blake2)
+- Deduplication and compression (~50% space savings)
 - Monitored via existing Prometheus/Grafana stack
+- Automatic retention management (7 daily, 4 weekly, 6 monthly)

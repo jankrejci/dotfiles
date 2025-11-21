@@ -26,7 +26,7 @@ in {
   users.users.borg = {
     isSystemUser = true;
     group = "borg";
-    shell = "${pkgs.shadow}/bin/nologin";
+    shell = "${pkgs.bash}/bin/bash";
   };
 
   users.groups.borg = {};
