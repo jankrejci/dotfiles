@@ -82,7 +82,7 @@ in {
         enable = true;
         # Avoid too many bootloader generations
         # that can consume all the /boot partition space
-        configurationLimit = 3;
+        configurationLimit = 10;
         # Disable boot menu editing
         editor = false;
       };
