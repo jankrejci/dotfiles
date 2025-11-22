@@ -104,7 +104,13 @@ in {
     host = "127.0.0.1";
     port = immichPort;
     # Media stored on dedicated NVMe disk at /var/lib/immich (default)
-    environment.PUBLIC_IMMICH_SERVER_URL = "https://share.${domain}";
+    environment = {
+      PUBLIC_IMMICH_SERVER_URL = "https://share.${domain}";
+      # Enable Prometheus metrics
+      IMMICH_TELEMETRY_INCLUDE = "all";
+      IMMICH_API_METRICS_PORT = "8081";
+      IMMICH_MICROSERVICES_METRICS_PORT = "8082";
+    };
   };
 
   # Ensure required directory structure exists on the data disk
