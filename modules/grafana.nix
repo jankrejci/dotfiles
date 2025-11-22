@@ -35,6 +35,22 @@ in {
           }
         ];
       }
+      {
+        job_name = "immich-api";
+        static_configs = [
+          {
+            targets = ["thinkcenter.${domain}:8081"];
+          }
+        ];
+      }
+      {
+        job_name = "immich-microservices";
+        static_configs = [
+          {
+            targets = ["thinkcenter.${domain}:8082"];
+          }
+        ];
+      }
     ];
   };
 
