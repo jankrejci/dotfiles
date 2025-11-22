@@ -1,10 +1,42 @@
-{pkgs, ...}: {
+{
+  lib,
+  pkgs,
+  ...
+}: {
   imports = [
     ./probe-rs.nix # udev rules for the probe-rs
   ];
 
   # Enable cross compilation support. It is needed to build aarch64 images.
   boot.binfmt.emulatedSystems = ["aarch64-linux"];
+
+  # Hide boot messages with splash screen
+  boot = {
+    consoleLogLevel = 0;
+    initrd.verbose = false;
+    kernelParams = [
+      "quiet"
+      "loglevel=3"
+      "boot.shell_on_fail"
+      "splash"
+      # Completely hide systemd status messages for flicker-free boot
+      "rd.systemd.show_status=false"
+      "systemd.show_status=false"
+      "rd.udev.log_level=3"
+      "udev.log_level=3"
+      # Disable cursor blinking on VT console
+      "vt.global_cursor_default=0"
+      # Use native amdgpu driver instead of simpledrm for Plymouth
+      # Prevents simpledrm from claiming framebuffer and delaying amdgpu takeover
+      "plymouth.use-simpledrm=0"
+    ];
+    plymouth = {
+      enable = true;
+      # bgrt theme with native amdgpu driver loaded in initrd (see hosts/framework.nix)
+      theme = "bgrt";
+    };
+    loader.timeout = lib.mkForce 0;
+  };
 
   services.xserver = {
     # Enable the X11 windowing system.

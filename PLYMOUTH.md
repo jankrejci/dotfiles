@@ -76,6 +76,11 @@ kernelParams = [
 - Root cause: `fbcon=nodefer` prevents Plymouth from grabbing framebuffer, `loglevel=3` still shows warnings/errors
 - Iteration 2: Changed to `loglevel=0` and removed `fbcon=nodefer` - splash screen works, messages suppressed
 - Iteration 3: Added `plymouth.use-simpledrm=0` - forces native amdgpu driver instead of simpledrm
+- Iteration 4: Added `console=tty2` to redirect kernel messages away from Plymouth's tty1 - **Plymouth rendered but was not visible on screen**
+- Root cause: `console=tty2` redirects the visible console to tty2, but Plymouth uses tty1, resulting in blank screen
+- Iteration 5: Removed `console=tty2` - testing in progress
+
+**CRITICAL: Do NOT use `console=ttyN` parameter** - Plymouth uses tty1 and needs it to be the active console. Redirecting console output prevents Plymouth from being visible.
 
 **Note:** Do NOT use `fbcon=nodefer` (prevents Plymouth from working) or `fbcon=map:1` (disables console entirely).
 
@@ -190,20 +195,25 @@ If external monitor shows wrong resolution, try:
 **After modifying plymouth configuration, test the boot process:**
 
 ```bash
-# 1. Rebuild and switch to new configuration
-sudo nixos-rebuild switch
+# 1. Rebuild boot configuration (faster than switch, changes take effect on reboot)
+sudo nixos-rebuild boot
 
 # 2. Reboot to test plymouth behavior
 sudo reboot
 
-# 3. After reboot, check plymouth debug log for issues
-sudo cat /var/log/plymouth-debug.log | grep -E "(renderD|simpledrm|amdgpu|error|fail)" -i
+# 3. After reboot, check if plymouth showed on screen during boot (visual confirmation)
 
-# 4. Check kernel messages for driver loading sequence
+# 4. Check plymouth debug log to verify rendering occurred
+sudo cat /var/log/plymouth-debug.log | grep -E "(showing splash|renderD|simpledrm|amdgpu|error|fail)" -i
+
+# 5. Check kernel messages for driver loading sequence
 sudo dmesg | grep -E "(simpledrm|amdgpu|drm)" | head -40
 
-# 5. Verify amdgpu loaded early in initrd (should be < 3 seconds)
+# 6. Verify amdgpu loaded early in initrd (should be ~2-3 seconds)
 sudo dmesg | grep "amdgpu.*modesetting enabled"
+
+# 7. Check plymouth service status (USR1 signal is normal - means successful completion)
+sudo journalctl -b -u plymouth-start.service
 ```
 
 **Expected behavior with `plymouth.use-simpledrm=0`:**
