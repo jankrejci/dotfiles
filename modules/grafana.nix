@@ -19,6 +19,32 @@ in {
     # Serve from subpath /prometheus/
     extraFlags = ["--web.external-url=https://${serverDomain}/prometheus" "--web.route-prefix=/"];
     globalConfig.scrape_interval = "10s";
+    rules = [
+      ''
+        groups:
+          - name: immich
+            rules:
+              - alert: ImmichDown
+                expr: up{job=~"immich-.*"} == 0
+                for: 5m
+                annotations:
+                  summary: "Immich service {{ $labels.job }} is down"
+
+          - name: backup
+            rules:
+              - alert: BorgBackupFailed
+                expr: node_systemd_unit_state{name=~"borgbackup-job-.*",state="failed"} == 1
+                for: 1m
+                annotations:
+                  summary: "Borg backup job {{ $labels.name }} failed on {{ $labels.instance }}"
+
+              - alert: BorgBackupNotRunning
+                expr: time() - node_systemd_timer_last_trigger_seconds{name=~"borgbackup-job-.*"} > 86400
+                for: 1h
+                annotations:
+                  summary: "Borg backup {{ $labels.name }} has not run in 24h on {{ $labels.instance }}"
+      ''
+    ];
     scrapeConfigs = [
       {
         job_name = "node";
