@@ -150,4 +150,9 @@ in {
     source = ./grafana/overview.json;
     mode = "0644";
   };
+
+  environment.etc."grafana/dashboards/immich.json" = {
+    source = ./grafana/immich.json;
+    mode = "0644";
+  };
 }
