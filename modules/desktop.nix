@@ -10,31 +10,32 @@
   # Enable cross compilation support. It is needed to build aarch64 images.
   boot.binfmt.emulatedSystems = ["aarch64-linux"];
 
-  # Hide boot messages with splash screen
+  # Plymouth boot splash - press Space/ESC during splash to show boot menu
   boot = {
     consoleLogLevel = 0;
     initrd.verbose = false;
     kernelParams = [
       "quiet"
-      "loglevel=3"
+      # Suppress all kernel messages except emergencies (0=emergency only)
+      "loglevel=0"
       "boot.shell_on_fail"
       "splash"
-      # Completely hide systemd status messages for flicker-free boot
+      # Hide systemd status messages for flicker-free boot
       "rd.systemd.show_status=false"
       "systemd.show_status=false"
       "rd.udev.log_level=3"
       "udev.log_level=3"
-      # Disable cursor blinking on VT console
+      # Disable cursor blink on console
       "vt.global_cursor_default=0"
-      # Use native amdgpu driver instead of simpledrm for Plymouth
-      # Prevents simpledrm from claiming framebuffer and delaying amdgpu takeover
+      # Skip simpledrm, use native amdgpu directly (avoids driver handoff delay)
       "plymouth.use-simpledrm=0"
     ];
     plymouth = {
       enable = true;
-      # bgrt theme with native amdgpu driver loaded in initrd (see hosts/framework.nix)
+      # Requires amdgpu in initrd.kernelModules (see hosts/framework.nix)
       theme = "bgrt";
     };
+    # Hide boot menu by default (press Space/ESC to show)
     loader.timeout = lib.mkForce 0;
   };
 
