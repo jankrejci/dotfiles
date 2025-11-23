@@ -7,6 +7,8 @@
   serverDomain = config.hosts.self.hostName + "." + domain;
   grafanaPort = 3000;
   vpnInterface = "nb-homelab";
+  immichApiMetricsPort = 8081;
+  immichMicroservicesMetricsPort = 8082;
 in {
   # Allow HTTPS on VPN interface
   networking.firewall.interfaces.${vpnInterface}.allowedTCPPorts = [443];
@@ -65,7 +67,7 @@ in {
         job_name = "immich-api";
         static_configs = [
           {
-            targets = ["thinkcenter.${domain}:8081"];
+            targets = ["thinkcenter.${domain}:${toString immichApiMetricsPort}"];
           }
         ];
       }
@@ -73,7 +75,7 @@ in {
         job_name = "immich-microservices";
         static_configs = [
           {
-            targets = ["thinkcenter.${domain}:8082"];
+            targets = ["thinkcenter.${domain}:${toString immichMicroservicesMetricsPort}"];
           }
         ];
       }
