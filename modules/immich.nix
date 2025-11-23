@@ -6,6 +6,8 @@
   domain = "krejci.io";
   immichDomain = "immich.${domain}";
   immichPort = 2283;
+  apiMetricsPort = 8081;
+  microservicesMetricsPort = 8082;
   # Second disk for Immich data (NVMe)
   # Assumes partition is already created with label "disk-immich-luks"
   luksDevice = "/dev/disk/by-partlabel/disk-immich-luks";
@@ -69,7 +71,8 @@ in {
     '')
   ];
   # Allow HTTPS on VPN interface (nginx proxies to Immich for both web and mobile)
-  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [443];
+  # Allow metrics ports for Prometheus scraping
+  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [443 apiMetricsPort microservicesMetricsPort];
 
   # NVMe data disk - TPM encrypted, not touched during deployment
   boot.initrd.luks.devices."immich-data" = {
@@ -108,8 +111,8 @@ in {
       PUBLIC_IMMICH_SERVER_URL = "https://share.${domain}";
       # Enable Prometheus metrics
       IMMICH_TELEMETRY_INCLUDE = "all";
-      IMMICH_API_METRICS_PORT = "8081";
-      IMMICH_MICROSERVICES_METRICS_PORT = "8082";
+      IMMICH_API_METRICS_PORT = toString apiMetricsPort;
+      IMMICH_MICROSERVICES_METRICS_PORT = toString microservicesMetricsPort;
     };
   };
 
