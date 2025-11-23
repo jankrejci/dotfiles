@@ -153,8 +153,8 @@ in {
     mode = "0644";
   };
 
-  environment.etc."grafana/dashboards/immich.json" = {
-    source = ./grafana/immich.json;
+  environment.etc."grafana/dashboards/immich-backup.json" = {
+    source = ./grafana/immich-backup.json;
     mode = "0644";
   };
 }
