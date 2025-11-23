@@ -29,6 +29,8 @@
       "vt.global_cursor_default=0"
       # Skip simpledrm, use native amdgpu directly (avoids driver handoff delay)
       "plymouth.use-simpledrm=0"
+      # Enable Plymouth debug logging
+      "plymouth.debug"
     ];
     plymouth = {
       enable = true;
@@ -39,11 +41,28 @@
     loader.timeout = lib.mkForce 0;
   };
 
+  # Fix Plymouth keyboard input by setting XKB config path
+  systemd.services.plymouth-start.environment = {
+    XKB_CONFIG_ROOT = "${pkgs.xkeyboard_config}/share/X11/xkb";
+  };
+
+  # Improve Plymouth to GDM handoff (reduce black screen with external monitors)
+  systemd.services.display-manager = {
+    # Remove plymouth-quit from conflicts so Plymouth stays visible during handoff
+    # NOTE: Cannot use after/wants with plymouth-quit-wait - creates circular dependency
+    # (plymouth-quit-wait waits for boot completion, which requires display-manager)
+    conflicts = lib.mkForce ["shutdown.target" "getty@tty7.service"];
+  };
+
   services.xserver = {
     # Enable the X11 windowing system.
     enable = true;
     # Enable the GNOME Desktop Environment.
-    displayManager.gdm.enable = true;
+    displayManager.gdm = {
+      enable = true;
+      # Keep Plymouth running until GDM is ready (smoother handoff)
+      wayland = true;
+    };
     desktopManager.gnome.enable = true;
     # Configure keymap in X11
     xkb = {
