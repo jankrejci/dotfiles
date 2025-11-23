@@ -1,5 +1,8 @@
 # Claude Code Agent Configuration
 
+## Startup Instructions
+**IMPORTANT**: On session start, if PLYMOUTH.md exists, read it immediately for active debugging context.
+
 ## Context
 Home network infrastructure secured behind Netbird mesh VPN. All services use defense-in-depth: services listen on localhost (127.0.0.1), nginx provides TLS termination, firewall restricts to nb-homelab interface.
 
