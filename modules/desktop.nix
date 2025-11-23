@@ -10,7 +10,18 @@
   # Enable cross compilation support. It is needed to build aarch64 images.
   boot.binfmt.emulatedSystems = ["aarch64-linux"];
 
-  # Plymouth boot splash - press Space/ESC during splash to show boot menu
+  # Plymouth boot splash configuration
+  # Requirements:
+  # - boot.initrd.systemd.enable = true (set in disk-tpm-encryption.nix)
+  # - boot.initrd.kernelModules = ["amdgpu"] (set in hosts/framework.nix)
+  #
+  # Press Space/ESC during splash to show boot menu
+  #
+  # Troubleshooting:
+  # - plymouth --ping                          # check if running
+  # - sudo journalctl -b -u plymouth-start.service
+  # - sudo journalctl -b | grep -i plymouth
+  # - sudo dmesg | grep -i drm                 # check graphics init
   boot = {
     consoleLogLevel = 0;
     initrd.verbose = false;
@@ -29,8 +40,8 @@
       "vt.global_cursor_default=0"
       # Skip simpledrm, use native amdgpu directly (avoids driver handoff delay)
       "plymouth.use-simpledrm=0"
-      # Enable Plymouth debug logging
-      "plymouth.debug"
+      # Debug logging (uncomment for troubleshooting)
+      # "plymouth.debug"
     ];
     plymouth = {
       enable = true;
@@ -42,6 +53,8 @@
   };
 
   # Fix Plymouth keyboard input by setting XKB config path
+  # NOTE: xkbcommon will still log an ERROR about the default path, but keyboard
+  # input works correctly - the error is harmless (xkbcommon tries default first)
   systemd.services.plymouth-start.environment = {
     XKB_CONFIG_ROOT = "${pkgs.xkeyboard_config}/share/X11/xkb";
   };
