@@ -71,6 +71,9 @@
           "org/gnome/desktop/sound" = {
             allow-volume-above-100-percent = true;
           };
+          "org/gnome/settings-daemon/plugins/media-keys" = {
+            mic-mute = ["XF86AudioMicMute"];
+          };
           "org/gnome/shell" = {
             disable-user-extensions = false;
             # `gnome-extensions list` for a list
