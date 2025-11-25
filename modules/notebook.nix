@@ -34,5 +34,9 @@
     ACTION=="add", SUBSYSTEM=="usb", ATTR{product}=="*[Mm]ouse*", ATTR{power/autosuspend}="-1"
     # Disable autosuspend for keyboard devices
     ACTION=="add", SUBSYSTEM=="usb", ATTR{product}=="*[Kk]eyboard*", ATTR{power/autosuspend}="-1"
+    # Disable autosuspend for Logitech Unifying Receivers (wireless mice/keyboards)
+    ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="046d", ATTR{idProduct}=="c52b", ATTR{power/autosuspend}="-1"
+    # Disable autosuspend for USB Receiver devices (generic wireless receivers)
+    ACTION=="add", SUBSYSTEM=="usb", ATTR{product}=="*[Rr]eceiver*", ATTR{power/autosuspend}="-1"
   '';
 }
