@@ -63,6 +63,64 @@
       echo -n "$token"
     }
 
+    # Generate Netbird setup key via API
+    # Usage: generate_netbird_key hostname [allow_extra_dns_labels]
+    function generate_netbird_key() {
+      local -r hostname="$1"
+      local -r allow_extra_dns_labels="''${2:-false}"
+
+      if [ -z "''${NETBIRD_API_TOKEN:-}" ]; then
+        echo "NETBIRD_API_TOKEN not found in environment" >&2
+        NETBIRD_API_TOKEN=$(ask_for_token "Netbird API token")
+        export NETBIRD_API_TOKEN
+      fi
+
+      if [ -z "$NETBIRD_API_TOKEN" ]; then
+        echo "ERROR: Netbird API token is required" >&2
+        exit 1
+      fi
+
+      echo "Generating Netbird setup key for $hostname (allow_extra_dns_labels=$allow_extra_dns_labels)" >&2
+
+      local request_body
+      request_body=$(jq -n \
+        --arg name "$hostname" \
+        --argjson expires_in 86400 \
+        --argjson usage_limit 1 \
+        --argjson ephemeral false \
+        --arg key_type "one-off" \
+        --argjson allow_extra_dns "$allow_extra_dns_labels" \
+        '{
+          name: $name,
+          type: $key_type,
+          expires_in: $expires_in,
+          auto_groups: [],
+          usage_limit: $usage_limit,
+          ephemeral: $ephemeral,
+          allow_extra_dns_labels: $allow_extra_dns
+        }')
+
+      local api_response
+      if ! api_response=$(curl -s -X POST https://api.netbird.io/api/setup-keys \
+        -H "Authorization: Token $NETBIRD_API_TOKEN" \
+        -H "Content-Type: application/json" \
+        --data-raw "$request_body" 2>&1); then
+        echo "ERROR: Failed to create Netbird setup key via API" >&2
+        echo "Response: $api_response" >&2
+        exit 1
+      fi
+
+      local -r setup_key=$(echo "$api_response" | jq -r '.key')
+
+      if [ -z "$setup_key" ] || [ "$setup_key" = "null" ]; then
+        echo "ERROR: Netbird setup key is empty or invalid" >&2
+        echo "API Response: $api_response" >&2
+        exit 1
+      fi
+
+      echo -n "$setup_key"
+    }
+
   '';
 in {
   add-ssh-key =
@@ -378,41 +436,16 @@ in {
         function install_netbird_key() {
           local -r hostname="$1"
 
-          # Check if NETBIRD_API_TOKEN is set, prompt if not
-          if [ -z "''${NETBIRD_API_TOKEN:-}" ]; then
-            NETBIRD_API_TOKEN=$(ask_for_token "Netbird API token")
+          # Check if host has extra DNS labels configured
+          local extra_dns_labels
+          extra_dns_labels=$(nix eval ".#hosts.$hostname.extraDnsLabels" --json 2>/dev/null | jq -r 'length')
 
-            if [ -z "$NETBIRD_API_TOKEN" ]; then
-              echo "ERROR: Netbird API token is required" >&2
-              exit 1
-            fi
-
-            export NETBIRD_API_TOKEN
+          local allow_extra_dns="false"
+          if [ "$extra_dns_labels" -gt 0 ]; then
+            allow_extra_dns="true"
           fi
 
-          echo "Generating Netbird setup key for $hostname" >&2
-
-          # Generate ephemeral setup key using Netbird API
-          # Requires NETBIRD_API_TOKEN environment variable
-          local api_response
-          if ! api_response=$(curl -s -X POST https://api.netbird.io/api/setup-keys \
-            -H "Authorization: Token $NETBIRD_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            --data-raw "{\"name\":\"$hostname\",\"type\":\"one-off\",\"expires_in\":86400,\"auto_groups\":[],\"usage_limit\":1,\"ephemeral\":false}" 2>&1); then
-            echo "ERROR: Failed to create Netbird setup key via API" >&2
-            echo "Response: $api_response" >&2
-            exit 1
-          fi
-
-          # Extract the key from the API response
-          local -r setup_key=$(echo "$api_response" | jq -r '.key')
-
-          # Validate that we got a non-empty key
-          if [ -z "$setup_key" ] || [ "$setup_key" = "null" ]; then
-            echo "ERROR: Netbird setup key is empty or invalid" >&2
-            echo "API Response: $api_response" >&2
-            exit 1
-          fi
+          local -r setup_key=$(generate_netbird_key "$hostname" "$allow_extra_dns")
 
           # Create directory for Netbird setup key
           install -d -m755 "$TEMP/$NETBIRD_KEY_FOLDER"
@@ -542,6 +575,109 @@ in {
       '';
     };
 
+  # Re-enroll Netbird with new setup key (for adding extra DNS labels)
+  # `nix run .#reenroll-netbird hostname`
+  reenroll-netbird =
+    pkgs.writeShellApplication
+    {
+      name = "reenroll-netbird";
+      runtimeInputs = with pkgs; [
+        coreutils
+        openssh
+        curl
+        jq
+      ];
+      text = ''
+        # shellcheck source=/dev/null
+        source ${lib}
+
+        readonly DOMAIN="krejci.io"
+        readonly NETBIRD_KEY_PATH="/var/lib/netbird-homelab/setup-key"
+
+        function inject_setup_key() {
+          local -r target="$1"
+          local -r setup_key="$2"
+
+          echo "Injecting setup key..."
+          # shellcheck disable=SC2029 # NETBIRD_KEY_PATH intentionally expands on client side
+          echo "$setup_key" | ssh "$target" "sudo tee $NETBIRD_KEY_PATH > /dev/null"
+          # shellcheck disable=SC2029 # NETBIRD_KEY_PATH intentionally expands on client side
+          ssh "$target" "sudo chmod 600 $NETBIRD_KEY_PATH"
+        }
+
+        function prepare_peer_removal() {
+          local -r hostname="$1"
+
+          echo ""
+          echo "NEXT STEPS:"
+          echo "1. Open Netbird dashboard and find peer '$hostname'"
+          echo "2. When ready, press Enter to trigger enrollment"
+          echo "3. You will have 60 seconds to remove the old peer"
+          echo "4. Connection will be lost after triggering"
+          echo ""
+          read -r -p "Press Enter when ready to trigger enrollment..." _
+        }
+
+        function trigger_enrollment() {
+          local -r target="$1"
+          local -r hostname="$2"
+
+          echo "Triggering enrollment service..."
+          ssh "$target" "sudo systemd-run --on-active=60 systemctl start netbird-homelab-enroll.service" || true
+
+          echo ""
+          echo "Enrollment will start in 60 seconds."
+          echo ""
+          echo "Remove old peer '$hostname' from dashboard NOW"
+          echo ""
+          read -r -p "Press Enter after removing peer..." _
+        }
+
+        function wait_for_host() {
+          local -r target="$1"
+
+          echo "Waiting for host to come back online..."
+
+          local attempts=0
+          local max_attempts=30
+
+          while [ $attempts -lt $max_attempts ]; do
+            if ssh -o ConnectTimeout=2 -o BatchMode=yes "$target" "exit" 2>/dev/null; then
+              echo "Host is back online!"
+              return 0
+            fi
+
+            attempts=$((attempts + 1))
+            echo -n "."
+            sleep 2
+          done
+
+          echo ""
+          echo "ERROR: Host did not come back online within $((max_attempts * 2)) seconds"
+          return 1
+        }
+
+        function main() {
+          require_hostname "$@"
+          local -r hostname="$1"
+          validate_hostname "$hostname"
+
+          local -r target="admin@$hostname.$DOMAIN"
+
+          local -r setup_key=$(generate_netbird_key "$hostname" true)
+          inject_setup_key "$target" "$setup_key"
+          prepare_peer_removal "$hostname"
+          trigger_enrollment "$target" "$hostname"
+          wait_for_host "$target"
+
+          echo ""
+          echo "Re-enrollment complete! Verify new peer in dashboard."
+        }
+
+        main "$@"
+      '';
+    };
+
   # Inject Borg passphrase to both server and client
   # `nix run .#inject-borg-passphrase <server-host> <client-host>`
   inject-borg-passphrase =
@@ -610,6 +746,68 @@ in {
           "sudo chmod 600 /root/secrets/borg-passphrase-$TARGET"
 
         echo "Done!"
+      '';
+    };
+
+  # Inject ntfy token to Grafana
+  # `nix run .#inject-ntfy-token hostname`
+  inject-ntfy-token =
+    pkgs.writeShellApplication
+    {
+      name = "inject-ntfy-token";
+      runtimeInputs = with pkgs; [
+        openssh
+        coreutils
+        openssl
+      ];
+      text = ''
+        # shellcheck source=/dev/null
+        source ${lib}
+
+        require_hostname "$@"
+        readonly HOSTNAME="$1"
+        validate_hostname "$HOSTNAME"
+
+        readonly DOMAIN="krejci.io"
+        readonly USER="admin"
+        readonly TARGET="$USER@$HOSTNAME.$DOMAIN"
+
+        echo "Setting up ntfy authentication for $HOSTNAME..."
+
+        # Create/update ntfy user (generates random password, only tokens used for auth)
+        echo "Creating ntfy user 'grafana'..."
+        password=$(openssl rand -base64 32)
+        ssh "$TARGET" "printf '%s\n%s\n' '$password' '$password' | sudo ntfy user add --role=admin grafana 2>&1 || true"
+
+        # Generate token
+        echo "Generating ntfy token..."
+        token=$(ssh "$TARGET" "sudo ntfy token add grafana" | grep -oP 'token \K[^ ]+')
+
+        if [ -z "$token" ]; then
+          echo "ERROR: Failed to generate token"
+          exit 1
+        fi
+
+        echo "Token generated: $token"
+
+        # Create YAML config file for alertmanager-ntfy
+        echo "Creating token configuration..."
+        ssh "$TARGET" "sudo mkdir -p /var/lib/grafana/secrets"
+        yaml_content=$(concat \
+          "ntfy:" \
+          "  auth:" \
+          "    token: $token"
+        )
+        echo "$yaml_content" | ssh "$TARGET" "sudo tee /var/lib/grafana/secrets/ntfy-token.yaml > /dev/null"
+        ssh "$TARGET" "sudo chmod 600 /var/lib/grafana/secrets/ntfy-token.yaml"
+        ssh "$TARGET" "sudo chown root:root /var/lib/grafana/secrets/ntfy-token.yaml"
+
+        # Restart alertmanager-ntfy
+        echo "Restarting alertmanager-ntfy..."
+        ssh "$TARGET" "sudo systemctl restart alertmanager-ntfy.service 2>/dev/null || echo 'Service will start on next deployment'"
+
+        echo "✓ ntfy token successfully configured for $HOSTNAME"
+        echo "✓ Prometheus alerts will now be forwarded to ntfy"
       '';
     };
 
