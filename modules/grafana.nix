@@ -63,7 +63,17 @@ in {
     ];
   };
 
-  systemd.services.grafana.serviceConfig.EnvironmentFile = "/var/lib/grafana/secrets/ntfy-token-env";
+  systemd.services.grafana = {
+    serviceConfig.EnvironmentFile = "/var/lib/grafana/secrets/ntfy-token-env";
+    restartTriggers = [
+      (builtins.toJSON config.services.grafana.settings)
+      (builtins.toJSON config.services.grafana.provision.datasources.settings)
+      (builtins.toJSON config.services.grafana.provision.dashboards.settings)
+      (builtins.toJSON config.services.grafana.provision.alerting.rules.path)
+      (builtins.toJSON config.services.grafana.provision.alerting.contactPoints.settings)
+      (builtins.toJSON config.services.grafana.provision.alerting.policies.settings)
+    ];
+  };
 
   services.grafana = {
     enable = true;
