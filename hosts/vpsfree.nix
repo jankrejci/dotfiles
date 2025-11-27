@@ -3,6 +3,7 @@
   pkgs,
   ...
 }: let
+  thinkCenterPublicKey = lib.fileContents ../wireguard-keys/thinkcenter-public;
   nasHost = "172.16.130.249";
   nasPath = "/nas/6057";
   mountPoint = "/mnt/nas-backup";
@@ -61,4 +62,33 @@ in {
   environment.systemPackages = with pkgs; [
     borgbackup
   ];
+
+  # WireGuard tunnel to thinkcenter for NetBird self-hosted
+  # vpsfree (public gateway) <- thinkcenter (behind NAT)
+  networking.firewall.allowedUDPPorts = [51820];
+
+  systemd.network.netdevs."50-wg-thinkcenter" = {
+    netdevConfig = {
+      Kind = "wireguard";
+      Name = "wg-thinkcenter";
+    };
+    wireguardConfig = {
+      PrivateKeyFile = "/root/secrets/wg-vpsfree-private";
+      ListenPort = 51820;
+    };
+    wireguardPeers = [
+      {
+        PublicKey = thinkCenterPublicKey;
+        AllowedIPs = ["10.100.0.1/32"];
+        PersistentKeepalive = 25;
+      }
+    ];
+  };
+
+  systemd.network.networks."50-wg-thinkcenter" = {
+    matchConfig.Name = "wg-thinkcenter";
+    address = ["10.100.0.2/30"];
+    networkConfig.DHCP = "no";
+  };
 }
+

@@ -570,12 +570,12 @@ in {
         readonly USER="admin"
         readonly REPO_PATH="/var/lib/borg-repos/immich"
 
-        local TARGET="remote"
+        passphrase=$(ask_for_token "Borg passphrase")
+
+        TARGET="remote"
         if [ "$SERVER_HOST" = "$CLIENT_HOST" ]; then
           TARGET="local"
         fi
-
-        passphrase=$(ask_for_token "Borg $TARGET passphrase")
 
         readonly SERVER_SSH="$USER@$SERVER_HOST.$DOMAIN"
         readonly CLIENT_SSH="$USER@$CLIENT_HOST.$DOMAIN"
@@ -610,6 +610,98 @@ in {
           "sudo chmod 600 /root/secrets/borg-passphrase-$TARGET"
 
         echo "Done!"
+      '';
+    };
+
+  # Generate and inject WireGuard keys for NetBird tunnel
+  # `nix run .#inject-wireguard-keys <hostname>`
+  inject-wireguard-keys =
+    pkgs.writeShellApplication
+    {
+      name = "inject-wireguard-keys";
+      runtimeInputs = with pkgs; [
+        wireguard-tools
+        openssh
+        coreutils
+      ];
+      text = ''
+        # shellcheck source=/dev/null
+        source ${lib}
+
+        set -euo pipefail
+
+        readonly DOMAIN="krejci.io"
+        readonly USER="admin"
+        readonly KEYS_DIR="wireguard-keys"
+
+        generate_keypair() {
+          local private public
+          private=$(wg genkey)
+          public=$(echo "$private" | wg pubkey)
+          echo "$private"
+          echo "$public"
+        }
+
+        write_public_key() {
+          local hostname="$1"
+          local public_key="$2"
+          echo -n "$public_key" > "$KEYS_DIR/$hostname-public"
+        }
+
+        inject_private_key() {
+          local target="$1"
+          local private_key="$2"
+          local key_path="$3"
+
+          echo "$private_key" | ssh "$target" \
+            "sudo tee $key_path > /dev/null"
+          ssh "$target" \
+            "sudo chmod 600 $key_path"
+        }
+
+        validate_keys() {
+          local target="$1"
+          local hostname="$2"
+          local key_path="$3"
+          local public_key_file="$KEYS_DIR/$hostname-public"
+
+          if [ ! -f "$public_key_file" ]; then
+            echo "ERROR: Public key file not found: $public_key_file"
+            return 1
+          fi
+
+          if ! ssh "$target" "sudo test -f $key_path"; then
+            echo "ERROR: Private key not found on remote host: $key_path"
+            return 1
+          fi
+
+          echo "Validation successful: keys in place"
+        }
+
+        main() {
+          require_hostname "$@"
+          readonly HOSTNAME="$1"
+          validate_hostname "$HOSTNAME"
+
+          readonly TARGET="$USER@$HOSTNAME.$DOMAIN"
+          readonly WG_KEY_PATH="/root/secrets/wg-$HOSTNAME-private"
+
+          echo "Generating WireGuard keypair for $HOSTNAME..."
+          read -r private_key public_key < <(generate_keypair)
+
+          echo "Public key: $public_key"
+          echo "Writing to $KEYS_DIR/$HOSTNAME-public"
+          write_public_key "$HOSTNAME" "$public_key"
+
+          echo "Injecting private key to $HOSTNAME:$WG_KEY_PATH"
+          inject_private_key "$TARGET" "$private_key" "$WG_KEY_PATH"
+
+          validate_keys "$TARGET" "$HOSTNAME" "$WG_KEY_PATH"
+
+          echo "Done! Keys generated and injected for $HOSTNAME."
+        }
+
+        main "$@"
       '';
     };
 
