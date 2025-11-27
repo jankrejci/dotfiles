@@ -134,37 +134,58 @@ in {
   system.activationScripts."enroll-secure-boot-keys" = {
     deps = [];
     text = ''
-      echo -n "Checking secure boot status... "
-      if ${pkgs.sbctl}/bin/sbctl status | grep -qE "Setup Mode:.*Disabled"; then
-        echo "SKIPPING, Setup Mode disabled"
-        exit 0
-      fi
-      echo "OK"
+      check_setup_mode() {
+        echo -n "Checking secure boot status... "
+        if ${pkgs.sbctl}/bin/sbctl status | grep -qE "Setup Mode:.*Disabled"; then
+          echo "SKIPPING, Setup Mode disabled"
+          return 1
+        fi
+        echo "OK"
+      }
 
-      echo -n "Creating secure boot keys... "
-      if ! ${pkgs.sbctl}/bin/sbctl create-keys; then
-        echo "ERROR: Failed to create secure boot keys"
-        return
-      fi
-      echo "OK"
+      create_keys() {
+        echo -n "Creating secure boot keys... "
+        if ! ${pkgs.sbctl}/bin/sbctl create-keys; then
+          echo "ERROR: Failed to create secure boot keys"
+          return 1
+        fi
+        echo "OK"
+      }
 
-      echo -n "Enrolling keys to UEFI... "
-      # The --microsoft flag is a workaround for T14 gen1
-      if ! ${pkgs.sbctl}/bin/sbctl enroll-keys --microsoft; then
-        echo "ERROR: Failed to enroll secure boot keys"
-        ${pkgs.sbctl}/bin/sbctl status
-        return
-      fi
-      echo "OK"
+      enroll_keys_to_uefi() {
+        echo -n "Enrolling keys to UEFI... "
+        # The --microsoft flag is a workaround for T14 gen1
+        if ! ${pkgs.sbctl}/bin/sbctl enroll-keys --microsoft; then
+          echo "ERROR: Failed to enroll secure boot keys"
+          ${pkgs.sbctl}/bin/sbctl status
+          return 1
+        fi
+        echo "OK"
+      }
 
-      echo -n "Verifying enrollment... "
-      if ${pkgs.sbctl}/bin/sbctl status | grep -qE "Setup Mode:.*Disabled"; then
+      verify_enrollment() {
+        echo -n "Verifying enrollment... "
+        if ! ${pkgs.sbctl}/bin/sbctl status | grep -qE "Setup Mode:.*Disabled"; then
+          echo "ERROR: Key enrollment verification failed"
+          ${pkgs.sbctl}/bin/sbctl status
+          return 1
+        fi
         echo "Secure boot keys enrolled successfully"
-      else
-        echo "ERROR: Key enrollment verification failed"
-        ${pkgs.sbctl}/bin/sbctl status
-        return
-      fi
+      }
+
+      enroll_keys() {
+        # Guard clauses: each step must succeed or we return early
+        # The || return pattern allows clean early exit without nesting
+        check_setup_mode || return
+        create_keys || return
+        enroll_keys_to_uefi || return
+        verify_enrollment || return
+      }
+
+      # Run enrollment but don't fail activation if it fails
+      # The || true ensures this script never aborts the entire system activation
+      # which would prevent /etc updates and break deployments
+      enroll_keys || true
     '';
   };
 

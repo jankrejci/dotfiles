@@ -43,11 +43,37 @@ No Claude signatures, emojis, or icons. Split unrelated changes into separate co
 See: https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/system/activation/activation-script.nix
 
 **Critical Rules:**
-- **NEVER use `exit`** - aborts entire activation, breaks boot
-- Use `return` for early exit
+- **NEVER use `exit`** - aborts entire activation, breaks boot, prevents /etc updates
+- Wrap logic in functions and use `return` for early exit (|| return pattern)
+- Call main function with `|| true` to prevent activation failure
 - Must be idempotent (can run multiple times)
 - Don't use `set -e` - framework handles errors
 - Use `|| true` for expected failures
+
+**Pattern:**
+```bash
+system.activationScripts.example = {
+  text = ''
+    check_condition() {
+      # Guard clause pattern
+      if condition_not_met; then
+        return 1
+      fi
+      # do work
+    }
+
+    main() {
+      check_condition || return
+      # more steps
+    }
+
+    # Run but don't fail entire activation
+    main || true
+  '';
+};
+```
+
+See: `modules/disk-tpm-encryption.nix` (enroll-secure-boot-keys)
 
 ### Shell Scripts with writeShellApplication
 See: `modules/ssh.nix` (fetch-authorized-keys script)
