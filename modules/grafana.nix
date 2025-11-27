@@ -19,7 +19,7 @@ in {
     # Listen on localhost only, accessed via nginx proxy (defense in depth)
     listenAddress = "127.0.0.1";
     # Serve from subpath /prometheus/
-    extraFlags = ["--web.external-url=https://${serverDomain}/prometheus" "--web.route-prefix=/"];
+    extraFlags = ["--web.external-url=https://${serverDomain}/prometheus" "--web.route-prefix=/prometheus"];
     globalConfig.scrape_interval = "10s";
     scrapeConfigs = [
       {
@@ -73,15 +73,14 @@ in {
         http_addr = "127.0.0.1";
         http_port = grafanaPort;
         domain = serverDomain;
-        root_url = "https://${serverDomain}/grafana";
-        serve_from_sub_path = true;
+        root_url = "https://${serverDomain}";
       };
     };
   };
 
   services.nginx = {
     enable = true;
-    virtualHosts.${config.services.grafana.settings.server.domain} = {
+    virtualHosts.${serverDomain} = {
       # Listen on all interfaces
       listenAddresses = ["0.0.0.0"];
       # Enable HTTPS with Let's Encrypt wildcard certificate
@@ -92,7 +91,7 @@ in {
         allow 100.76.0.0/16;
         deny all;
       '';
-      locations."/grafana/" = {
+      locations."/" = {
         # Use localhost since Grafana is on the same host as Nginx
         proxyPass = "http://localhost:${toString grafanaPort}";
         proxyWebsockets = true;
@@ -114,7 +113,7 @@ in {
         name = "Prometheus";
         type = "prometheus";
         access = "proxy";
-        url = "http://localhost:9090";
+        url = "http://localhost:9090/prometheus";
         isDefault = true;
         uid = "prometheus";
       }
