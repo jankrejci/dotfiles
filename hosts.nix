@@ -61,12 +61,10 @@ with lib; {
   ### Servers ###
   config.hosts = {
     vpsfree = {
-      extraDnsLabels = ["share" "ntfy"];
+      extraDnsLabels = ["share"];
       extraModules = [
         ./modules/acme.nix
-        ./modules/grafana.nix
         ./modules/immich-public-proxy.nix
-        ./modules/ntfy.nix
         ./modules/vpsadminos.nix
       ];
     };
@@ -74,11 +72,13 @@ with lib; {
     thinkcenter = {
       device = "/dev/sda";
       swapSize = "8G";
-      extraDnsLabels = ["immich"];
+      extraDnsLabels = ["immich" "grafana" "ntfy"];
       extraModules = [
         ./modules/acme.nix
         ./modules/disk-tpm-encryption.nix
+        ./modules/grafana.nix
         ./modules/immich.nix
+        ./modules/ntfy.nix
       ];
     };
 
