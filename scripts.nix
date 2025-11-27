@@ -599,10 +599,30 @@ in {
           local -r setup_key="$2"
 
           echo "Injecting setup key..."
+
+          # Inject the key
           # shellcheck disable=SC2029 # NETBIRD_KEY_PATH intentionally expands on client side
-          echo "$setup_key" | ssh "$target" "sudo tee $NETBIRD_KEY_PATH > /dev/null"
+          if ! echo "$setup_key" | ssh "$target" "sudo tee $NETBIRD_KEY_PATH > /dev/null"; then
+            echo "ERROR: Failed to inject setup key via SSH" >&2
+            echo "Check SSH connection and sudo permissions" >&2
+            exit 1
+          fi
+
+          # Set permissions
           # shellcheck disable=SC2029 # NETBIRD_KEY_PATH intentionally expands on client side
-          ssh "$target" "sudo chmod 600 $NETBIRD_KEY_PATH"
+          if ! ssh "$target" "sudo chmod 600 $NETBIRD_KEY_PATH"; then
+            echo "ERROR: Failed to set permissions on setup key" >&2
+            exit 1
+          fi
+
+          # Verify the key was injected
+          # shellcheck disable=SC2029 # NETBIRD_KEY_PATH intentionally expands on client side
+          if ! ssh "$target" "sudo test -f $NETBIRD_KEY_PATH"; then
+            echo "ERROR: Setup key file does not exist after injection" >&2
+            exit 1
+          fi
+
+          echo "Setup key injected and verified successfully"
         }
 
         function prepare_peer_removal() {
@@ -623,10 +643,17 @@ in {
           local -r hostname="$2"
 
           echo "Triggering enrollment service..."
-          ssh "$target" "sudo systemd-run --on-active=60 systemctl start netbird-homelab-enroll.service" || true
 
-          echo ""
-          echo "Enrollment will start in 60 seconds."
+          # Try to trigger enrollment - may fail if connection is already lost
+          if ! ssh "$target" "sudo systemd-run --on-active=60 systemctl start netbird-homelab-enroll.service" 2>/dev/null; then
+            echo "WARNING: Could not trigger enrollment via SSH (connection may be lost)"
+            echo "The enrollment service should start automatically on next boot"
+            echo ""
+            read -r -p "Press Enter to continue..." _
+            return 0
+          fi
+
+          echo "Enrollment scheduled to start in 60 seconds"
           echo ""
           echo "Remove old peer '$hostname' from dashboard NOW"
           echo ""
@@ -637,23 +664,33 @@ in {
           local -r target="$1"
 
           echo "Waiting for host to come back online..."
+          echo "(This may take up to 2 minutes)"
 
           local attempts=0
-          local max_attempts=30
+          local max_attempts=60  # 2 minutes total
 
           while [ $attempts -lt $max_attempts ]; do
             if ssh -o ConnectTimeout=2 -o BatchMode=yes "$target" "exit" 2>/dev/null; then
+              echo ""
               echo "Host is back online!"
               return 0
             fi
 
             attempts=$((attempts + 1))
-            echo -n "."
+
+            # Show elapsed time every 10 attempts, otherwise show dot
+            local progress="."
+            if [ $((attempts % 10)) -eq 0 ]; then
+              progress=" $((attempts * 2))s"
+            fi
+            echo -n "$progress"
+
             sleep 2
           done
 
           echo ""
           echo "ERROR: Host did not come back online within $((max_attempts * 2)) seconds"
+          echo "Check the host's console or Netbird dashboard to verify enrollment status"
           return 1
         }
 
