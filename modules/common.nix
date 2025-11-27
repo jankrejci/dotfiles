@@ -57,16 +57,6 @@
   # Enable periodic SSD trim for performance and longevity
   services.fstrim.enable = true;
 
-  # Fix /run/current-system symlink after activation (deploy-rs issue #153)
-  system.activationScripts.fixCurrentSystemSymlink = {
-    text = ''
-      if [ -L /run/current-system ]; then
-        ln -sfn /nix/var/nix/profiles/system /run/current-system
-      fi
-    '';
-    deps = [];
-  };
-
   time.timeZone = "Europe/Prague";
   console.keyMap = "us";
 
