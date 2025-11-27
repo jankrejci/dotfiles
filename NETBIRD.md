@@ -52,19 +52,28 @@ Independent of Netbird (no circular dependency). Tunnel on 10.100.0.0/30:
 - vpsfree: 10.100.0.2
 - thinkcenter: 10.100.0.1
 
-**Configuration notes:**
-- Generate WireGuard keypairs with `wg genkey`
-- Store private keys in sops
-- Configure persistent keepalive (25 seconds)
-- Firewall: allow UDP 51820 on both hosts
-- vpsfree endpoint: `<vpsfree-public-ip>:51820`
-- thinkcenter: no endpoint (behind NAT, responds to vpsfree)
+**Implementation:**
+- Configured via systemd-networkd in `hosts/thinkcenter.nix` and `hosts/vpsfree.nix`
+- Public keys stored in `wireguard-keys/` directory (tracked in git)
+- Private keys in `/root/secrets/wg-{hostname}-private` (injected via script)
+- Endpoint: `wg.krejci.io:51820` (DNS name, must resolve to vpsfree public IP)
+- Persistent keepalive: 25 seconds
+- Firewall: UDP 51820 allowed on both hosts
+
+**Key generation and injection:**
+```bash
+nix run .#inject-wireguard-keys thinkcenter
+nix run .#inject-wireguard-keys vpsfree
+git add wireguard-keys/ && git commit -m "wireguard: Update public keys"
+```
 
 ### 2. DNS Configuration
 
-Add DNS record: `netbird.krejci.io  A  <vpsfree-public-ip>`
+Add DNS records:
+- `netbird.krejci.io  A  <vpsfree-public-ip>` - for NetBird management/dashboard
+- `wg.krejci.io  A  <vpsfree-public-ip>` - for WireGuard tunnel endpoint
 
-Verify: `dig netbird.krejci.io +short`
+Verify: `dig netbird.krejci.io +short && dig wg.krejci.io +short`
 
 ### 3. Google OAuth Application
 
