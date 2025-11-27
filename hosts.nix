@@ -61,11 +61,12 @@ with lib; {
   ### Servers ###
   config.hosts = {
     vpsfree = {
-      extraDnsLabels = ["share"];
+      extraDnsLabels = ["share" "ntfy"];
       extraModules = [
         ./modules/acme.nix
         ./modules/grafana.nix
         ./modules/immich-public-proxy.nix
+        ./modules/ntfy.nix
         ./modules/vpsadminos.nix
       ];
     };
