@@ -21,32 +21,6 @@ in {
     # Serve from subpath /prometheus/
     extraFlags = ["--web.external-url=https://${serverDomain}/prometheus" "--web.route-prefix=/"];
     globalConfig.scrape_interval = "10s";
-    rules = [
-      ''
-        groups:
-          - name: immich
-            rules:
-              - alert: ImmichDown
-                expr: up{job=~"immich-.*"} == 0
-                for: 5m
-                annotations:
-                  summary: "Immich service {{ $labels.job }} is down"
-
-          - name: backup
-            rules:
-              - alert: BorgBackupFailed
-                expr: node_systemd_unit_state{name=~"borgbackup-job-.*",state="failed"} == 1
-                for: 1m
-                annotations:
-                  summary: "Borg backup job {{ $labels.name }} failed on {{ $labels.instance }}"
-
-              - alert: BorgBackupNotRunning
-                expr: time() - node_systemd_timer_last_trigger_seconds{name=~"borgbackup-job-.*"} > 86400
-                for: 1h
-                annotations:
-                  summary: "Borg backup {{ $labels.name }} has not run in 24h on {{ $labels.instance }}"
-      ''
-    ];
     scrapeConfigs = [
       {
         job_name = "node";
@@ -70,6 +44,13 @@ in {
             targets = ["thinkcenter.${domain}:${toString immichApiMetricsPort}"];
           }
         ];
+        relabel_configs = [
+          {
+            source_labels = ["__address__"];
+            regex = "([^.]+)\\..*";
+            target_label = "host";
+          }
+        ];
       }
       {
         job_name = "immich-microservices";
@@ -81,6 +62,8 @@ in {
       }
     ];
   };
+
+  systemd.services.grafana.serviceConfig.EnvironmentFile = "/var/lib/grafana/secrets/ntfy-token-env";
 
   services.grafana = {
     enable = true;
@@ -148,13 +131,46 @@ in {
     ];
   };
 
-  environment.etc."grafana/dashboards/overview.json" = {
-    source = ./grafana/overview.json;
-    mode = "0644";
+  services.grafana.provision.alerting = {
+    rules.path = ./grafana/alerts;
+
+    contactPoints.settings = {
+      apiVersion = 1;
+      contactPoints = [
+        {
+          orgId = 1;
+          name = "ntfy";
+          receivers = [
+            {
+              uid = "ntfy-webhook";
+              type = "webhook";
+              disableResolveMessage = false;
+              settings = {
+                url = "http://localhost:2586/grafana-alerts?template=grafana";
+                httpMethod = "POST";
+                authorization_scheme = "Bearer";
+                authorization_credentials = "$NTFY_TOKEN";
+              };
+            }
+          ];
+        }
+      ];
+    };
+
+    policies.settings = {
+      apiVersion = 1;
+      policies = [
+        {
+          orgId = 1;
+          receiver = "ntfy";
+          group_by = ["alertname"];
+          group_wait = "30s";
+          group_interval = "5m";
+          repeat_interval = "12h";
+        }
+      ];
+    };
   };
 
-  environment.etc."grafana/dashboards/immich-backup.json" = {
-    source = ./grafana/immich-backup.json;
-    mode = "0644";
-  };
+  environment.etc."grafana/dashboards".source = ./grafana/dashboards;
 }
