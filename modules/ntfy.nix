@@ -20,10 +20,9 @@ in {
       listen-http = "127.0.0.1:${toString ntfyPort}";
       base-url = "https://${ntfyDomain}";
 
-      # Authentication: deny all by default, require tokens for publishing
-      auth-default-access = "deny-all";
-      # Allow anyone to subscribe (read), but publishing requires auth
-      # This allows the Android app to subscribe without auth
+      # Authentication: read-only by default, publishing requires tokens
+      auth-default-access = "read-only";
+      # Grafana user can publish via token, everyone else can read
       auth-file = "/var/lib/ntfy-sh/user.db";
 
       # Template directory for custom webhook formatting
