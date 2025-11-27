@@ -814,6 +814,7 @@ in {
         # Create/update ntfy user (generates random password, only tokens used for auth)
         echo "Creating ntfy user 'grafana'..."
         password=$(openssl rand -base64 32)
+        # shellcheck disable=SC2029 # password intentionally expands on client side
         ssh "$TARGET" "printf '%s\n%s\n' '$password' '$password' | sudo ntfy user add --role=admin grafana 2>&1 || true"
 
         # Generate token
@@ -827,9 +828,16 @@ in {
 
         echo "Token generated: $token"
 
-        # Create YAML config file for alertmanager-ntfy
+        # Create configuration files
         echo "Creating token configuration..."
         ssh "$TARGET" "sudo mkdir -p /var/lib/grafana/secrets"
+
+        # Create environment file for Grafana
+        echo "NTFY_TOKEN=$token" | ssh "$TARGET" "sudo tee /var/lib/grafana/secrets/ntfy-token-env > /dev/null"
+        ssh "$TARGET" "sudo chmod 600 /var/lib/grafana/secrets/ntfy-token-env"
+        ssh "$TARGET" "sudo chown root:root /var/lib/grafana/secrets/ntfy-token-env"
+
+        # Create YAML config file for alertmanager-ntfy
         yaml_content=$(concat \
           "ntfy:" \
           "  auth:" \
@@ -839,12 +847,13 @@ in {
         ssh "$TARGET" "sudo chmod 600 /var/lib/grafana/secrets/ntfy-token.yaml"
         ssh "$TARGET" "sudo chown root:root /var/lib/grafana/secrets/ntfy-token.yaml"
 
-        # Restart alertmanager-ntfy
-        echo "Restarting alertmanager-ntfy..."
-        ssh "$TARGET" "sudo systemctl restart alertmanager-ntfy.service 2>/dev/null || echo 'Service will start on next deployment'"
+        # Restart services
+        echo "Restarting services..."
+        ssh "$TARGET" "sudo systemctl restart grafana.service 2>/dev/null || echo 'Grafana will start on next deployment'"
+        ssh "$TARGET" "sudo systemctl restart alertmanager-ntfy.service 2>/dev/null || echo 'alertmanager-ntfy will start on next deployment'"
 
         echo "✓ ntfy token successfully configured for $HOSTNAME"
-        echo "✓ Prometheus alerts will now be forwarded to ntfy"
+        echo "✓ Grafana and Prometheus alerts will now use ntfy"
       '';
     };
 
