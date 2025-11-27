@@ -4,7 +4,7 @@
   ...
 }: let
   domain = "krejci.io";
-  serverDomain = config.hosts.self.hostName + "." + domain;
+  serverDomain = "grafana." + domain;
   grafanaPort = 3000;
   vpnInterface = "nb-homelab";
   immichApiMetricsPort = 8081;
