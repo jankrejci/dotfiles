@@ -87,7 +87,7 @@ in {
     settings = {
       server = {
         # Listen on localhost only, accessed via nginx proxy (defense in depth)
-        http_addr = "localhost";
+        http_addr = "127.0.0.1";
         http_port = grafanaPort;
         domain = serverDomain;
         root_url = "https://${serverDomain}";
