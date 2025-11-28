@@ -1,12 +1,12 @@
 apiVersion: 1
 groups:
   - orgId: 1
-    name: Immich
+    name: Backend
     folder: Services
     interval: 10s
     rules:
-      - uid: immich_api_down
-        title: Immich API
+      - uid: nginx_down
+        title: Nginx
         condition: C
         data:
           - refId: A
@@ -15,7 +15,51 @@ groups:
               to: 0
             datasourceUid: prometheus
             model:
-              expr: up{job="immich-api"}
+              expr: node_systemd_unit_state{name="nginx.service",state="failed"}
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              expression: A
+              reducer: last
+              refId: B
+              type: reduce
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [C]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              expression: B
+              refId: C
+              type: threshold
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 5m
+        labels:
+          severity: critical
+      - uid: postgres_down
+        title: PostgreSQL
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: up{job="postgres"}
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
@@ -49,8 +93,8 @@ groups:
         for: 5m
         labels:
           severity: critical
-      - uid: immich_microservices_down
-        title: Immich Microservices
+      - uid: redis_down
+        title: Redis
         condition: C
         data:
           - refId: A
@@ -59,7 +103,7 @@ groups:
               to: 0
             datasourceUid: prometheus
             model:
-              expr: up{job="immich-microservices"}
+              expr: up{job="redis"}
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
@@ -89,94 +133,6 @@ groups:
               refId: C
               type: threshold
         noDataState: Alerting
-        execErrState: Alerting
-        for: 5m
-        labels:
-          severity: critical
-      - uid: immich_backup_local_failed
-        title: Immich Local Backup
-        condition: C
-        data:
-          - refId: A
-            relativeTimeRange:
-              from: 600
-              to: 0
-            datasourceUid: prometheus
-            model:
-              expr: node_systemd_unit_state{name="borgbackup-job-immich-local.service",state="failed"}
-              refId: A
-              intervalMs: 1000
-              maxDataPoints: 43200
-          - refId: B
-            datasourceUid: __expr__
-            model:
-              expression: A
-              reducer: last
-              refId: B
-              type: reduce
-          - refId: C
-            datasourceUid: __expr__
-            model:
-              conditions:
-                - evaluator:
-                    params: [0]
-                    type: gt
-                  operator:
-                    type: and
-                  query:
-                    params: [C]
-                  reducer:
-                    params: []
-                    type: last
-                  type: query
-              expression: B
-              refId: C
-              type: threshold
-        noDataState: OK
-        execErrState: Alerting
-        for: 5m
-        labels:
-          severity: critical
-      - uid: immich_backup_remote_failed
-        title: Immich Remote Backup
-        condition: C
-        data:
-          - refId: A
-            relativeTimeRange:
-              from: 600
-              to: 0
-            datasourceUid: prometheus
-            model:
-              expr: node_systemd_unit_state{name="borgbackup-job-immich-remote.service",state="failed"}
-              refId: A
-              intervalMs: 1000
-              maxDataPoints: 43200
-          - refId: B
-            datasourceUid: __expr__
-            model:
-              expression: A
-              reducer: last
-              refId: B
-              type: reduce
-          - refId: C
-            datasourceUid: __expr__
-            model:
-              conditions:
-                - evaluator:
-                    params: [0]
-                    type: gt
-                  operator:
-                    type: and
-                  query:
-                    params: [C]
-                  reducer:
-                    params: []
-                    type: last
-                  type: query
-              expression: B
-              refId: C
-              type: threshold
-        noDataState: OK
         execErrState: Alerting
         for: 5m
         labels:
