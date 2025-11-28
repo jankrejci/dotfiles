@@ -13,6 +13,7 @@ in {
   # Allow HTTPS on VPN interface
   networking.firewall.interfaces.${vpnInterface}.allowedTCPPorts = [443];
 
+
   services.prometheus = {
     enable = true;
     retentionTime = "180d";
@@ -24,11 +25,7 @@ in {
     scrapeConfigs = [
       {
         job_name = "prometheus";
-        static_configs = [
-          {
-            targets = ["localhost:9090"];
-          }
-        ];
+        static_configs = [{targets = ["localhost:9090"];}];
         metrics_path = "/prometheus/metrics";
       }
       {
@@ -48,26 +45,27 @@ in {
       }
       {
         job_name = "immich-api";
-        static_configs = [
-          {
-            targets = ["thinkcenter.${domain}:${toString immichApiMetricsPort}"];
-          }
-        ];
-        relabel_configs = [
-          {
-            source_labels = ["__address__"];
-            regex = "([^.]+)\\..*";
-            target_label = "host";
-          }
-        ];
+        static_configs = [{targets = ["localhost:${toString immichApiMetricsPort}"];}];
       }
       {
         job_name = "immich-microservices";
-        static_configs = [
-          {
-            targets = ["thinkcenter.${domain}:${toString immichMicroservicesMetricsPort}"];
-          }
-        ];
+        static_configs = [{targets = ["localhost:${toString immichMicroservicesMetricsPort}"];}];
+      }
+      {
+        job_name = "ntfy";
+        static_configs = [{targets = ["localhost:9091"];}];
+      }
+      {
+        job_name = "postgres";
+        static_configs = [{targets = ["localhost:9187"];}];
+      }
+      {
+        job_name = "redis";
+        static_configs = [{targets = ["localhost:9121"];}];
+      }
+      {
+        job_name = "nginx";
+        static_configs = [{targets = ["localhost:9113"];}];
       }
     ];
   };
@@ -89,7 +87,7 @@ in {
     settings = {
       server = {
         # Listen on localhost only, accessed via nginx proxy (defense in depth)
-        http_addr = "127.0.0.1";
+        http_addr = "localhost";
         http_port = grafanaPort;
         domain = serverDomain;
         root_url = "https://${serverDomain}";
