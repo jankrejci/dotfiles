@@ -23,6 +23,15 @@ in {
     globalConfig.scrape_interval = "10s";
     scrapeConfigs = [
       {
+        job_name = "prometheus";
+        static_configs = [
+          {
+            targets = ["localhost:9090"];
+          }
+        ];
+        metrics_path = "/prometheus/metrics";
+      }
+      {
         job_name = "node";
         static_configs = [
           {
