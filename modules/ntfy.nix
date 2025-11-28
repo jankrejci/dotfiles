@@ -27,6 +27,9 @@ in {
 
       # Template directory for custom webhook formatting
       template-dir = "/var/lib/ntfy-sh/templates";
+
+      # Expose Prometheus metrics on localhost only
+      metrics-listen-http = "localhost:9091";
     };
   };
 
