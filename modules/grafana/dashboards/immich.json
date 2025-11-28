@@ -36,32 +36,46 @@
             {
               "options": {
                 "0": {
-                  "color": "red",
-                  "index": 0,
+                  "index": 2,
                   "text": "Down"
                 },
                 "1": {
-                  "color": "green",
                   "index": 1,
                   "text": "Up"
                 }
               },
               "type": "value"
+            },
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "index": 0,
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
             }
           ],
+          "noValue": "0",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "rgba(50, 172, 45, 0.97)",
                 "value": null
               },
               {
-                "color": "green",
+                "color": "semi-dark-red",
+                "value": 0
+              },
+              {
+                "color": "semi-dark-green",
                 "value": 1
               }
             ]
-          }
+          },
+          "unit": "none"
         }
       },
       "gridPos": {
@@ -82,11 +96,20 @@
           ],
           "fields": "",
           "values": false
-        }
+        },
+        "text": {
+          "valueSize": 50
+        },
+        "textMode": "value",
+        "wideLayout": true
       },
-      "pluginVersion": "10.0.0",
+      "pluginVersion": "11.3.4",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "up{job=\"immich-api\"}",
           "refId": "A"
         }
@@ -108,32 +131,46 @@
             {
               "options": {
                 "0": {
-                  "color": "red",
-                  "index": 0,
+                  "index": 2,
                   "text": "Down"
                 },
                 "1": {
-                  "color": "green",
                   "index": 1,
                   "text": "Up"
                 }
               },
               "type": "value"
+            },
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "index": 0,
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
             }
           ],
+          "noValue": "0",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "rgba(50, 172, 45, 0.97)",
                 "value": null
               },
               {
-                "color": "green",
+                "color": "semi-dark-red",
+                "value": 0
+              },
+              {
+                "color": "semi-dark-green",
                 "value": 1
               }
             ]
-          }
+          },
+          "unit": "none"
         }
       },
       "gridPos": {
@@ -154,11 +191,20 @@
           ],
           "fields": "",
           "values": false
-        }
+        },
+        "text": {
+          "valueSize": 50
+        },
+        "textMode": "value",
+        "wideLayout": true
       },
-      "pluginVersion": "10.0.0",
+      "pluginVersion": "11.3.4",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "up{job=\"immich-microservices\"}",
           "refId": "A"
         }
@@ -180,32 +226,46 @@
             {
               "options": {
                 "0": {
-                  "color": "green",
                   "index": 1,
                   "text": "OK"
                 },
                 "1": {
-                  "color": "red",
-                  "index": 0,
+                  "index": 2,
                   "text": "Failed"
                 }
               },
               "type": "value"
+            },
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "index": 0,
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
             }
           ],
+          "noValue": "0",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "rgba(50, 172, 45, 0.97)",
                 "value": null
               },
               {
-                "color": "red",
+                "color": "semi-dark-green",
+                "value": 0
+              },
+              {
+                "color": "semi-dark-red",
                 "value": 1
               }
             ]
-          }
+          },
+          "unit": "none"
         }
       },
       "gridPos": {
@@ -226,11 +286,20 @@
           ],
           "fields": "",
           "values": false
-        }
+        },
+        "text": {
+          "valueSize": 50
+        },
+        "textMode": "value",
+        "wideLayout": true
       },
-      "pluginVersion": "10.0.0",
+      "pluginVersion": "11.3.4",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "node_systemd_unit_state{name=\"borgbackup-job-immich-remote.service\",state=\"failed\"}",
           "refId": "A"
         }
@@ -252,32 +321,46 @@
             {
               "options": {
                 "0": {
-                  "color": "green",
                   "index": 1,
                   "text": "OK"
                 },
                 "1": {
-                  "color": "red",
-                  "index": 0,
+                  "index": 2,
                   "text": "Failed"
                 }
               },
               "type": "value"
+            },
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "index": 0,
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
             }
           ],
+          "noValue": "0",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "rgba(50, 172, 45, 0.97)",
                 "value": null
               },
               {
-                "color": "red",
+                "color": "semi-dark-green",
+                "value": 0
+              },
+              {
+                "color": "semi-dark-red",
                 "value": 1
               }
             ]
-          }
+          },
+          "unit": "none"
         }
       },
       "gridPos": {
@@ -298,11 +381,20 @@
           ],
           "fields": "",
           "values": false
-        }
+        },
+        "text": {
+          "valueSize": 50
+        },
+        "textMode": "value",
+        "wideLayout": true
       },
-      "pluginVersion": "10.0.0",
+      "pluginVersion": "11.3.4",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "expr": "node_systemd_unit_state{name=\"borgbackup-job-immich-local.service\",state=\"failed\"}",
           "refId": "A"
         }
