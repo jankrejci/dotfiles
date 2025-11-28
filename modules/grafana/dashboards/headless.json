@@ -739,10 +739,14 @@
       {
         "current": {
           "text": [
+            "thinkcenter",
+            "vpsfree",
             "prusa",
             "rpi4"
           ],
           "value": [
+            "thinkcenter",
+            "vpsfree",
             "prusa",
             "rpi4"
           ]
@@ -754,6 +758,16 @@
         "options": [
           {
             "selected": true,
+            "text": "thinkcenter",
+            "value": "thinkcenter"
+          },
+          {
+            "selected": true,
+            "text": "vpsfree",
+            "value": "vpsfree"
+          },
+          {
+            "selected": true,
             "text": "prusa",
             "value": "prusa"
           },
@@ -763,7 +777,7 @@
             "value": "rpi4"
           }
         ],
-        "query": "vpsfree, thinkcenter, prusa, rpi4",
+        "query": "thinkcenter, vpsfree, prusa, rpi4",
         "type": "custom"
       },
       {
