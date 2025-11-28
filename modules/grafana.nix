@@ -13,7 +13,6 @@ in {
   # Allow HTTPS on VPN interface
   networking.firewall.interfaces.${vpnInterface}.allowedTCPPorts = [443];
 
-
   services.prometheus = {
     enable = true;
     retentionTime = "180d";
@@ -45,27 +44,57 @@ in {
       }
       {
         job_name = "immich-api";
-        static_configs = [{targets = ["localhost:${toString immichApiMetricsPort}"];}];
+        static_configs = [
+          {
+            targets = ["localhost:${toString immichApiMetricsPort}"];
+            labels = {host = "thinkcenter";};
+          }
+        ];
       }
       {
         job_name = "immich-microservices";
-        static_configs = [{targets = ["localhost:${toString immichMicroservicesMetricsPort}"];}];
+        static_configs = [
+          {
+            targets = ["localhost:${toString immichMicroservicesMetricsPort}"];
+            labels = {host = "thinkcenter";};
+          }
+        ];
       }
       {
         job_name = "ntfy";
-        static_configs = [{targets = ["localhost:9091"];}];
+        static_configs = [
+          {
+            targets = ["localhost:9091"];
+            labels = {host = "thinkcenter";};
+          }
+        ];
       }
       {
         job_name = "postgres";
-        static_configs = [{targets = ["localhost:9187"];}];
+        static_configs = [
+          {
+            targets = ["localhost:9187"];
+            labels = {host = "thinkcenter";};
+          }
+        ];
       }
       {
         job_name = "redis";
-        static_configs = [{targets = ["localhost:9121"];}];
+        static_configs = [
+          {
+            targets = ["localhost:9121"];
+            labels = {host = "thinkcenter";};
+          }
+        ];
       }
       {
         job_name = "nginx";
-        static_configs = [{targets = ["localhost:9113"];}];
+        static_configs = [
+          {
+            targets = ["localhost:9113"];
+            labels = {host = "thinkcenter";};
+          }
+        ];
       }
     ];
   };
