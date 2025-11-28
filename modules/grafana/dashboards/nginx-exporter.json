@@ -50,6 +50,7 @@
   },
   "description": "Official dashboard for NGINX Prometheus exporter for https://github.com/nginxinc/nginx-prometheus-exporter",
   "editable": true,
+  "folderTitle": "Services",
   "gnetId": 12708,
   "graphTooltip": 0,
   "id": null,
