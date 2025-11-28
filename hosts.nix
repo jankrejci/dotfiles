@@ -7,11 +7,7 @@ with lib; {
   options.hosts = mkOption {
     description = "A set of defined hosts";
     # Explicitly pass `name`
-    type = types.attrsOf (types.submodule ({
-      config,
-      name,
-      ...
-    }: {
+    type = types.attrsOf (types.submodule ({name, ...}: {
       options = {
         hostName = mkOption {
           type = types.str;
