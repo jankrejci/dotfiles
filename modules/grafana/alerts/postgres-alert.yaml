@@ -15,7 +15,7 @@ groups:
               to: 0
             datasourceUid: prometheus
             model:
-              expr: up{job="postgres"}
+              expr: pg_up{job="postgres"}
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200

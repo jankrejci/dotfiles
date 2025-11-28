@@ -15,7 +15,7 @@ groups:
               to: 0
             datasourceUid: prometheus
             model:
-              expr: up{job="redis"}
+              expr: redis_up{job="redis"}
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
