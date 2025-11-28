@@ -110,8 +110,12 @@ in {
 
   # Grant redis exporter access to redis socket
   users.users.redis-exporter = {
+    isSystemUser = true;
+    group = "redis-exporter";
     extraGroups = ["redis-immich"];
   };
+
+  users.groups.redis-exporter = {};
 
   # NVMe data disk - TPM encrypted, not touched during deployment
   boot.initrd.luks.devices."immich-data" = {
