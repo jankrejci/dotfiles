@@ -61,6 +61,7 @@
   "description": "Redis Dashboard for Prometheus Redis Exporter 1.x",
   "editable": true,
   "fiscalYearStartMonth": 0,
+  "folderTitle": "Services",
   "gnetId": 763,
   "graphTooltip": 1,
   "id": null,
