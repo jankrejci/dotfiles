@@ -24,8 +24,9 @@
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
+  "folderTitle": "Infrastructure",
   "graphTooltip": 1,
-  "id": 5,
+  "id": null,
   "links": [],
   "panels": [
     {
@@ -734,28 +735,18 @@
   "preload": false,
   "refresh": "1m",
   "schemaVersion": 40,
-  "tags": [],
+  "tags": ["infrastructure"],
   "templating": {
     "list": [
       {
         "current": {
           "text": [
-            "vpsfree",
-            "thinkcenter",
-            "rpi4",
             "prusa",
-            "e470",
-            "framework",
-            "t14"
+            "rpi4"
           ],
           "value": [
-            "vpsfree",
-            "thinkcenter",
-            "rpi4",
             "prusa",
-            "e470",
-            "framework",
-            "t14"
+            "rpi4"
           ]
         },
         "description": "",
@@ -765,46 +756,16 @@
         "options": [
           {
             "selected": true,
-            "text": "vpsfree",
-            "value": "vpsfree"
-          },
-          {
-            "selected": true,
-            "text": "thinkcenter",
-            "value": "thinkcenter"
+            "text": "prusa",
+            "value": "prusa"
           },
           {
             "selected": true,
             "text": "rpi4",
             "value": "rpi4"
-          },
-          {
-            "selected": true,
-            "text": "prusa",
-            "value": "prusa"
-          },
-          {
-            "selected": false,
-            "text": "optiplex",
-            "value": "optiplex"
-          },
-          {
-            "selected": true,
-            "text": "e470",
-            "value": "e470"
-          },
-          {
-            "selected": true,
-            "text": "framework",
-            "value": "framework"
-          },
-          {
-            "selected": true,
-            "text": "t14",
-            "value": "t14"
           }
         ],
-        "query": "vpsfree, thinkcenter, rpi4, prusa, optiplex, e470, framework, t14",
+        "query": "prusa, rpi4",
         "type": "custom"
       },
       {
@@ -826,7 +787,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Overview",
-  "version": 4,
+  "title": "Headless",
+  "uid": "infrastructure-headless",
+  "version": 1,
   "weekStart": ""
 }
