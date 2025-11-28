@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   pkgs,
   ...
@@ -116,6 +117,19 @@
 
   # Allow node exporter on Netbird interface only
   networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [9100];
+
+  # Nginx proxy for node-exporter (VPN-only HTTPS access)
+  services.nginx.virtualHosts."grafana.krejci.io" = lib.mkIf config.services.nginx.enable {
+    locations."/node-exporter/" = {
+      proxyPass = "http://localhost:9100/";
+      recommendedProxySettings = true;
+      # Only allow access from Netbird VPN network
+      extraConfig = ''
+        allow 100.76.0.0/16;
+        deny all;
+      '';
+    };
+  };
 
   systemd.services.prometheus-node-exporter.serviceConfig = {
     Restart = "always";
