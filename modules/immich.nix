@@ -6,6 +6,10 @@
   domain = "krejci.io";
   immichDomain = "immich.${domain}";
   immichPort = 2283;
+  # Immich listens on internal ports, nginx proxies to standard ports with compression
+  apiMetricsInternalPort = 18081;
+  microservicesMetricsInternalPort = 18082;
+  # Standard Immich metrics ports (nginx with gzip)
   apiMetricsPort = 8081;
   microservicesMetricsPort = 8082;
   # Second disk for Immich data (NVMe)
@@ -71,8 +75,43 @@ in {
     '')
   ];
   # Allow HTTPS on VPN interface (nginx proxies to Immich for both web and mobile)
-  # Allow metrics ports for Prometheus scraping
+  # Allow metrics ports for Prometheus scraping (nginx with gzip compression)
   networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [443 apiMetricsPort microservicesMetricsPort];
+
+  # Prometheus exporters for Immich dependencies
+  services.prometheus.exporters = {
+    postgres = {
+      enable = true;
+      port = 9187;
+      listenAddress = "localhost";
+      openFirewall = false;
+      runAsLocalSuperUser = true;
+    };
+
+    redis = {
+      enable = true;
+      port = 9121;
+      listenAddress = "localhost";
+      openFirewall = false;
+      extraFlags = ["--redis.addr=unix:///run/redis-immich/redis.sock"];
+    };
+
+    nginx = {
+      enable = true;
+      port = 9113;
+      listenAddress = "localhost";
+      openFirewall = false;
+      scrapeUri = "http://localhost/nginx_status";
+    };
+  };
+
+  # Enable nginx status page for prometheus exporter
+  services.nginx.statusPage = true;
+
+  # Grant redis exporter access to redis socket
+  users.users.redis-exporter = {
+    extraGroups = ["redis-immich"];
+  };
 
   # NVMe data disk - TPM encrypted, not touched during deployment
   boot.initrd.luks.devices."immich-data" = {
@@ -104,15 +143,15 @@ in {
   services.immich = {
     enable = true;
     # Listen on localhost only, accessed via nginx proxy
-    host = "127.0.0.1";
+    host = "localhost";
     port = immichPort;
     # Media stored on dedicated NVMe disk at /var/lib/immich (default)
     environment = {
       PUBLIC_IMMICH_SERVER_URL = "https://share.${domain}";
-      # Enable Prometheus metrics
+      # Enable Prometheus metrics (bind to localhost via IMMICH_HOST)
       IMMICH_TELEMETRY_INCLUDE = "all";
-      IMMICH_API_METRICS_PORT = toString apiMetricsPort;
-      IMMICH_MICROSERVICES_METRICS_PORT = toString microservicesMetricsPort;
+      IMMICH_API_METRICS_PORT = toString apiMetricsInternalPort;
+      IMMICH_MICROSERVICES_METRICS_PORT = toString microservicesMetricsInternalPort;
     };
   };
 
@@ -214,6 +253,43 @@ in {
         proxyPass = "http://localhost:${toString immichPort}";
         proxyWebsockets = true;
         recommendedProxySettings = true;
+      };
+    };
+    # Metrics endpoints with gzip compression (standard Immich ports)
+    virtualHosts."metrics-api" = {
+      serverName = null;
+      listen = [
+        {
+          addr = "0.0.0.0";
+          port = apiMetricsPort;
+        }
+      ];
+      locations."/" = {
+        proxyPass = "http://localhost:${toString apiMetricsInternalPort}";
+        extraConfig = ''
+          gzip on;
+          gzip_types text/plain;
+          gzip_proxied any;
+          gzip_min_length 1000;
+        '';
+      };
+    };
+    virtualHosts."metrics-microservices" = {
+      serverName = null;
+      listen = [
+        {
+          addr = "0.0.0.0";
+          port = microservicesMetricsPort;
+        }
+      ];
+      locations."/" = {
+        proxyPass = "http://localhost:${toString microservicesMetricsInternalPort}";
+        extraConfig = ''
+          gzip on;
+          gzip_types text/plain;
+          gzip_proxied any;
+          gzip_min_length 1000;
+        '';
       };
     };
   };
