@@ -31,8 +31,11 @@
       jkr = {
         pkgs,
         lib,
+        osConfig,
         ...
-      }: {
+      }: let
+        hostname = osConfig.networking.hostName;
+      in {
         home.username = "jkr";
         home.homeDirectory = "/home/jkr";
 
@@ -61,6 +64,32 @@
 
         home.sessionVariables = {
           EDITOR = "hx";
+        };
+
+        programs.ssh = {
+          enable = true;
+          matchBlocks = {
+            thinkcenter = {
+              hostname = "thinkcenter.krejci.io";
+              user = "admin";
+              identityFile = "~/.ssh/jkr-${hostname}-thinkcenter";
+            };
+            optiplex = {
+              hostname = "optiplex.krejci.io";
+              user = "admin";
+              identityFile = "~/.ssh/jkr-${hostname}-optiplex";
+            };
+            vpsfree = {
+              hostname = "vpsfree.krejci.io";
+              user = "admin";
+              identityFile = "~/.ssh/jkr-${hostname}-vpsfree";
+            };
+            framework = {
+              hostname = "framework.krejci.io";
+              user = "admin";
+              identityFile = "~/.ssh/jkr-${hostname}-framework";
+            };
+          };
         };
 
         # TODO add more configurations for power management and for panel position
