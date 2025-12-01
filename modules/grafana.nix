@@ -96,6 +96,15 @@ in {
           }
         ];
       }
+      {
+        job_name = "wireguard";
+        static_configs = [
+          {
+            targets = ["localhost:9586"];
+            labels = {host = "thinkcenter";};
+          }
+        ];
+      }
     ];
   };
 
