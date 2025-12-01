@@ -73,6 +73,7 @@ with lib; {
         ./modules/acme.nix
         ./modules/disk-tpm-encryption.nix
         ./modules/grafana.nix
+        ./modules/health-check.nix
         ./modules/immich.nix
         ./modules/jellyfin.nix
         ./modules/ntfy.nix

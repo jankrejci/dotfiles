@@ -128,6 +128,7 @@
           "prometheus.service:Prometheus"
           "grafana.service:Grafana"
           "ntfy-sh.service:Ntfy"
+          "jellyfin.service:Jellyfin"
         )
 
         for entry in "''${services[@]}"; do
