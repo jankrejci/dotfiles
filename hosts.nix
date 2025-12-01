@@ -68,12 +68,13 @@ with lib; {
     thinkcenter = {
       device = "/dev/sda";
       swapSize = "8G";
-      extraDnsLabels = ["immich" "grafana" "ntfy"];
+      extraDnsLabels = ["immich" "grafana" "ntfy" "jellyfin"];
       extraModules = [
         ./modules/acme.nix
         ./modules/disk-tpm-encryption.nix
         ./modules/grafana.nix
         ./modules/immich.nix
+        ./modules/jellyfin.nix
         ./modules/ntfy.nix
       ];
     };
