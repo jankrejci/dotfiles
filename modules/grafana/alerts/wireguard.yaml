@@ -6,7 +6,7 @@ groups:
     interval: 1m
     rules:
       - uid: wireguard_tunnel_down
-        title: WireGuard Tunnel Down
+        title: WireGuard Tunnel
         condition: C
         data:
           - refId: A
@@ -18,9 +18,13 @@ groups:
               expr: wireguard_latest_handshake_delay_seconds{interface="wg0"}
               refId: A
           - refId: B
-            relativeTimeRange:
-              from: 300
-              to: 0
+            datasourceUid: __expr__
+            model:
+              expression: A
+              reducer: last
+              refId: B
+              type: reduce
+          - refId: C
             datasourceUid: __expr__
             model:
               conditions:
@@ -32,33 +36,11 @@ groups:
                     type: and
                   query:
                     params:
-                      - A
-                  type: query
-              datasource:
-                type: __expr__
-                uid: __expr__
-              expression: A
-              refId: B
-              type: threshold
-          - refId: C
-            relativeTimeRange:
-              from: 300
-              to: 0
-            datasourceUid: __expr__
-            model:
-              conditions:
-                - evaluator:
-                    params: []
-                    type: gt
-                  operator:
-                    type: and
-                  query:
-                    params:
                       - C
+                  reducer:
+                    params: []
+                    type: last
                   type: query
-              datasource:
-                type: __expr__
-                uid: __expr__
               expression: B
               refId: C
               type: threshold
@@ -66,8 +48,8 @@ groups:
         execErrState: Alerting
         for: 5m
         annotations:
-          summary: WireGuard tunnel to vpsfree has no recent handshake
-          description: "Last handshake was {{ $values.A.Value }} seconds ago (threshold: 180s)"
+          summary: "WireGuard tunnel wg0 has no recent handshake ({{ humanizeDuration $values.B.Value }}s ago, threshold: 3m)"
         labels:
           severity: critical
           component: wireguard
+          host: thinkcenter
