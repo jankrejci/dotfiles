@@ -129,6 +129,7 @@
           "grafana.service:Grafana"
           "ntfy-sh.service:Ntfy"
           "jellyfin.service:Jellyfin"
+          "acme-krejci.io.service:ACME"
         )
 
         for entry in "''${services[@]}"; do

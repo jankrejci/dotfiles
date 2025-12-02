@@ -24,7 +24,7 @@
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "folderTitle": "Infrastructure",
+  "folderTitle": "Infra",
   "graphTooltip": 1,
   "id": null,
   "links": [],
@@ -733,18 +733,28 @@
   "preload": false,
   "refresh": "1m",
   "schemaVersion": 40,
-  "tags": ["infrastructure"],
+  "tags": [
+    "infrastructure"
+  ],
   "templating": {
     "list": [
       {
         "current": {
           "text": [
+            "thinkcenter",
+            "vpsfree",
+            "prusa",
+            "rpi4",
             "framework",
             "t14",
             "e470",
             "optiplex"
           ],
           "value": [
+            "thinkcenter",
+            "vpsfree",
+            "prusa",
+            "rpi4",
             "framework",
             "t14",
             "e470",
@@ -756,6 +766,26 @@
         "multi": true,
         "name": "host",
         "options": [
+          {
+            "selected": true,
+            "text": "thinkcenter",
+            "value": "thinkcenter"
+          },
+          {
+            "selected": true,
+            "text": "vpsfree",
+            "value": "vpsfree"
+          },
+          {
+            "selected": true,
+            "text": "prusa",
+            "value": "prusa"
+          },
+          {
+            "selected": true,
+            "text": "rpi4",
+            "value": "rpi4"
+          },
           {
             "selected": true,
             "text": "framework",
@@ -777,7 +807,7 @@
             "value": "optiplex"
           }
         ],
-        "query": "framework, t14, e470, optiplex",
+        "query": "thinkcenter, vpsfree, prusa, rpi4, framework, t14, e470, optiplex",
         "type": "custom"
       },
       {
@@ -799,8 +829,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Desktops",
-  "uid": "desktops",
+  "title": "Hosts",
+  "uid": "hosts",
   "version": 1,
   "weekStart": ""
 }
