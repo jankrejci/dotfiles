@@ -27,6 +27,7 @@
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
+    backupFileExtension = "backup";
     users = {
       jkr = {
         pkgs,
@@ -66,36 +67,6 @@
           EDITOR = "hx";
         };
 
-        programs.ssh = {
-          enable = true;
-          enableDefaultConfig = false;
-          matchBlocks = {
-            "*" = {
-              identitiesOnly = true;
-              addKeysToAgent = "yes";
-            };
-            thinkcenter = {
-              hostname = "thinkcenter.krejci.io";
-              user = "admin";
-              identityFile = "~/.ssh/jkr-${hostname}-thinkcenter";
-            };
-            optiplex = {
-              hostname = "optiplex.krejci.io";
-              user = "admin";
-              identityFile = "~/.ssh/jkr-${hostname}-optiplex";
-            };
-            vpsfree = {
-              hostname = "vpsfree.krejci.io";
-              user = "admin";
-              identityFile = "~/.ssh/jkr-${hostname}-vpsfree";
-            };
-            framework = {
-              hostname = "framework.krejci.io";
-              user = "admin";
-              identityFile = "~/.ssh/jkr-${hostname}-framework";
-            };
-          };
-        };
 
         # TODO add more configurations for power management and for panel position
         dconf.settings = with lib.hm.gvariant; {
