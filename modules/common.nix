@@ -73,17 +73,18 @@
 
   # Common system packages
   environment.systemPackages = with pkgs; [
-    curl
     bash
-    unzip
-    wget
+    bash-completion
     coreutils
-    rsync
+    curl
     jq
-    vim
-    usbutils
-    pciutils
     lshw
+    pciutils
+    rsync
+    unzip
+    usbutils
+    vim
+    wget
     bat # cat clone with wings
     eza # ls replacement
     fd # find relplacement
@@ -135,6 +136,24 @@
   systemd.tmpfiles.rules = [
     "d /root/secrets 0700 root root -"
   ];
+
+  # Shell aliases for all users (bash)
+  environment.shellAliases = {
+    sc = "systemctl";
+    ssc = "sudo systemctl";
+    jc = "journalctl";
+  };
+
+  # Enable bash completion
+  programs.bash.completion.enable = true;
+
+  # Completion for aliases - source completions and register for aliases
+  programs.bash.interactiveShellInit = ''
+    source /run/current-system/sw/share/bash-completion/completions/systemctl
+    source /run/current-system/sw/share/bash-completion/completions/journalctl
+    complete -F _systemctl sc ssc
+    complete -F _journalctl jc
+  '';
 
   system.stateVersion = "24.11"; # Did you read the comment?
 }
