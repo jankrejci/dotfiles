@@ -70,17 +70,20 @@
   services.xserver = {
     # Enable the X11 windowing system.
     enable = true;
-    # Enable the GNOME Desktop Environment.
-    displayManager.gdm = {
-      enable = true;
-      # Keep Plymouth running until GDM is ready (smoother handoff)
-      wayland = true;
-    };
-    desktopManager.gnome.enable = true;
     # Configure keymap in X11
     xkb = {
       layout = "us";
     };
+  };
+
+  # Enable the GNOME Desktop Environment
+  services.desktopManager.gnome.enable = true;
+
+  # Display manager
+  services.displayManager.gdm = {
+    enable = true;
+    # Keep Plymouth running until GDM is ready (smoother handoff)
+    wayland = true;
   };
 
   programs.appimage = {
@@ -179,7 +182,6 @@
     vlc
     solaar
     rofi
-    rofi-wayland
     eww
     powertop
     tlp

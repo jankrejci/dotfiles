@@ -2,7 +2,6 @@
   # Device driver packages
   hardware.firmware = with pkgs; [
     linux-firmware
-    firmwareLinuxNonfree
   ];
 
   # For better hardware compatibility

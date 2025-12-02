@@ -14,15 +14,16 @@ in {
   # vpsAdminOS containers don't support tmpfs on /tmp with systemd mount namespacing
   boot.tmp.useTmpfs = lib.mkForce false;
 
-  systemd.extraConfig = ''
-    DefaultTimeoutStartSec=900s
-  '';
+  systemd.settings.Manager.DefaultTimeoutStartSec = "900s";
 
   # Avoid collision between networking and vpsadminos module
   systemd.network.networks."98-all-ethernet".DHCP = "no";
 
   # Disable wait-online - network is managed by vpsAdminOS host, not systemd-networkd
   systemd.services.systemd-networkd-wait-online.enable = lib.mkForce false;
+
+  # Disable systemd-hostnamed - fails in container trying to access /sys/firmware/acpi
+  systemd.services.systemd-hostnamed.enable = lib.mkForce false;
 
   # There is no DHCP, so fixed dns is needed
   networking.nameservers = ["1.1.1.1" "8.8.8.8"];
