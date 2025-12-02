@@ -24,7 +24,7 @@
   hardware.graphics = {
     extraPackages = with pkgs; [
       intel-media-driver
-      vaapiIntel
+      intel-vaapi-driver
       libvdpau-va-gl
     ];
   };
@@ -35,10 +35,8 @@
   ];
 
   # Configure power button behavior
-  services.logind = {
-    lidSwitch = "suspend";
-    extraConfig = ''
-      HandlePowerKey=suspend
-    '';
+  services.logind.settings.Login = {
+    HandleLidSwitch = "suspend";
+    HandlePowerKey = "suspend";
   };
 }

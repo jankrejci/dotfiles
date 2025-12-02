@@ -8,11 +8,6 @@
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
 
-  system.switch = {
-    enable = false;
-    enableNg = true;
-  };
-
   # Consider users with the root access trustfull enough
   # to allow changes in the nix store
   nix.settings.trusted-users = ["@wheel"];

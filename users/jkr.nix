@@ -68,7 +68,12 @@
 
         programs.ssh = {
           enable = true;
+          enableDefaultConfig = false;
           matchBlocks = {
+            "*" = {
+              identitiesOnly = true;
+              addKeysToAgent = "yes";
+            };
             thinkcenter = {
               hostname = "thinkcenter.krejci.io";
               user = "admin";
