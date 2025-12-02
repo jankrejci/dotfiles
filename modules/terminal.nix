@@ -78,6 +78,9 @@
       lt = "exa -T -L2";
       g = "git";
       cd = "z";
+      sc = "systemctl";
+      ssc = "sudo systemctl";
+      jc = "journalctl";
     };
   };
 
