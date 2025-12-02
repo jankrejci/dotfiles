@@ -1,12 +1,12 @@
 apiVersion: 1
 groups:
   - orgId: 1
-    name: Wireguard
-    folder: Services
+    name: Vpsfree
+    folder: Infra
     interval: 1m
     rules:
-      - uid: wireguard_tunnel_down
-        title: WireGuard Tunnel
+      - uid: vpsfree_host_down
+        title: Vpsfree Host
         condition: C
         data:
           - refId: A
@@ -15,7 +15,7 @@ groups:
               to: 0
             datasourceUid: prometheus
             model:
-              expr: wireguard_latest_handshake_delay_seconds{interface="wg0"}
+              expr: up{instance="vpsfree.krejci.io:9100", job="node"}
               refId: A
           - refId: B
             datasourceUid: __expr__
@@ -30,8 +30,8 @@ groups:
               conditions:
                 - evaluator:
                     params:
-                      - 180
-                    type: gt
+                      - 1
+                    type: lt
                   operator:
                     type: and
                   query:
@@ -48,8 +48,7 @@ groups:
         execErrState: Alerting
         for: 5m
         annotations:
-          summary: "WireGuard tunnel wg0 has no recent handshake ({{ humanizeDuration $values.B.Value }}s ago, threshold: 3m)"
+          summary: "vpsfree host is down"
         labels:
           severity: critical
-          component: wireguard
-          host: thinkcenter
+          host: vpsfree

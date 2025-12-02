@@ -1,22 +1,24 @@
 apiVersion: 1
 groups:
   - orgId: 1
-    name: Wireguard
+    name: ACME
     folder: Services
-    interval: 1m
+    interval: 10s
     rules:
-      - uid: wireguard_tunnel_down
-        title: WireGuard Tunnel
+      - uid: acme_down
+        title: ACME
         condition: C
         data:
           - refId: A
             relativeTimeRange:
-              from: 300
+              from: 600
               to: 0
             datasourceUid: prometheus
             model:
-              expr: wireguard_latest_handshake_delay_seconds{interface="wg0"}
+              expr: node_systemd_unit_state{name="acme-krejci.io.service",state="failed"}
               refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
           - refId: B
             datasourceUid: __expr__
             model:
@@ -29,14 +31,12 @@ groups:
             model:
               conditions:
                 - evaluator:
-                    params:
-                      - 180
+                    params: [0]
                     type: gt
                   operator:
                     type: and
                   query:
-                    params:
-                      - C
+                    params: [C]
                   reducer:
                     params: []
                     type: last
@@ -47,9 +47,5 @@ groups:
         noDataState: Alerting
         execErrState: Alerting
         for: 5m
-        annotations:
-          summary: "WireGuard tunnel wg0 has no recent handshake ({{ humanizeDuration $values.B.Value }}s ago, threshold: 3m)"
         labels:
           severity: critical
-          component: wireguard
-          host: thinkcenter
