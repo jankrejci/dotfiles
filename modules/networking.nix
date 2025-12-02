@@ -136,6 +136,8 @@
     dns = "systemd-resolved";
     # Use iwd instead of wpa_supplicant for faster Wi-Fi connection/reconnection
     wifi.backend = "iwd";
+    # OpenVPN plugin for GUI-configured VPN connections
+    plugins = [pkgs.networkmanager-openvpn];
     # Connection timeout and retry settings
     settings = {
       main = {
