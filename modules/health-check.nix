@@ -127,6 +127,8 @@
           "nginx.service:Nginx"
           "prometheus.service:Prometheus"
           "grafana.service:Grafana"
+          "loki.service:Loki"
+          "promtail.service:Promtail"
           "ntfy-sh.service:Ntfy"
           "jellyfin.service:Jellyfin"
           "acme-krejci.io.service:ACME"
