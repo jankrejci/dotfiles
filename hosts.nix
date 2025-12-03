@@ -77,6 +77,7 @@ with lib; {
         ./modules/immich.nix
         ./modules/jellyfin.nix
         ./modules/ntfy.nix
+        ./modules/prometheus.nix
       ];
     };
 
