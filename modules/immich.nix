@@ -3,15 +3,12 @@
   pkgs,
   ...
 }: let
+  immich-server = config.serviceConfig.immich;
+  immich-microservices = config.serviceConfig.immich-microservices;
   domain = "krejci.io";
-  immichDomain = "immich.${domain}";
-  immichPort = 2283;
-  # Immich listens on internal ports, nginx proxies to standard ports with compression
-  apiMetricsInternalPort = 18081;
-  microservicesMetricsInternalPort = 18082;
-  # Standard Immich metrics ports (nginx with gzip)
-  apiMetricsPort = 8081;
-  microservicesMetricsPort = 8082;
+  immichDomain = "${immich-server.subdomain}.${domain}";
+  httpsPort = 443;
+
   # Second disk for Immich data (NVMe)
   # Assumes partition is already created with label "disk-immich-luks"
   luksDevice = "/dev/disk/by-partlabel/disk-immich-luks";
@@ -75,33 +72,32 @@ in {
     '')
   ];
   # Allow HTTPS on VPN interface (nginx proxies to Immich for both web and mobile)
-  # Allow metrics ports for Prometheus scraping (nginx with gzip compression)
-  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [443 apiMetricsPort microservicesMetricsPort];
+  networking.firewall.interfaces."${immich-server.interface}".allowedTCPPorts = [httpsPort];
 
   # Prometheus exporters for Immich dependencies
   services.prometheus.exporters = {
     postgres = {
       enable = true;
-      port = 9187;
-      listenAddress = "localhost";
+      port = config.serviceConfig.postgres.metricsPort;
+      listenAddress = "127.0.0.1";
       openFirewall = false;
       runAsLocalSuperUser = true;
     };
 
     redis = {
       enable = true;
-      port = 9121;
-      listenAddress = "localhost";
+      port = config.serviceConfig.redis.metricsPort;
+      listenAddress = "127.0.0.1";
       openFirewall = false;
       extraFlags = ["--redis.addr=unix:///run/redis-immich/redis.sock"];
     };
 
     nginx = {
       enable = true;
-      port = 9113;
-      listenAddress = "localhost";
+      port = config.serviceConfig.nginx.metricsPort;
+      listenAddress = "127.0.0.1";
       openFirewall = false;
-      scrapeUri = "http://localhost/nginx_status";
+      scrapeUri = "http://127.0.0.1/nginx_status";
     };
   };
 
@@ -146,16 +142,16 @@ in {
 
   services.immich = {
     enable = true;
-    # Listen on localhost only, accessed via nginx proxy
-    host = "localhost";
-    port = immichPort;
+    # Listen on 127.0.0.1 only, accessed via nginx proxy
+    host = "127.0.0.1";
+    port = immich-server.port;
     # Media stored on dedicated NVMe disk at /var/lib/immich (default)
     environment = {
       PUBLIC_IMMICH_SERVER_URL = "https://share.${domain}";
-      # Enable Prometheus metrics (bind to localhost via IMMICH_HOST)
+      # Enable Prometheus metrics on 127.0.0.1
       IMMICH_TELEMETRY_INCLUDE = "all";
-      IMMICH_API_METRICS_PORT = toString apiMetricsInternalPort;
-      IMMICH_MICROSERVICES_METRICS_PORT = toString microservicesMetricsInternalPort;
+      IMMICH_API_METRICS_PORT = toString immich-server.metricsPort;
+      IMMICH_MICROSERVICES_METRICS_PORT = toString immich-microservices.metricsPort;
     };
   };
 
@@ -254,46 +250,9 @@ in {
         client_max_body_size 1G;
       '';
       locations."/" = {
-        proxyPass = "http://localhost:${toString immichPort}";
+        proxyPass = "http://127.0.0.1:${toString immich-server.port}";
         proxyWebsockets = true;
         recommendedProxySettings = true;
-      };
-    };
-    # Metrics endpoints with gzip compression (standard Immich ports)
-    virtualHosts."metrics-api" = {
-      serverName = null;
-      listen = [
-        {
-          addr = "0.0.0.0";
-          port = apiMetricsPort;
-        }
-      ];
-      locations."/" = {
-        proxyPass = "http://localhost:${toString apiMetricsInternalPort}";
-        extraConfig = ''
-          gzip on;
-          gzip_types text/plain;
-          gzip_proxied any;
-          gzip_min_length 1000;
-        '';
-      };
-    };
-    virtualHosts."metrics-microservices" = {
-      serverName = null;
-      listen = [
-        {
-          addr = "0.0.0.0";
-          port = microservicesMetricsPort;
-        }
-      ];
-      locations."/" = {
-        proxyPass = "http://localhost:${toString microservicesMetricsInternalPort}";
-        extraConfig = ''
-          gzip on;
-          gzip_types text/plain;
-          gzip_proxied any;
-          gzip_min_length 1000;
-        '';
       };
     };
   };

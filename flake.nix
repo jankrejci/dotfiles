@@ -76,9 +76,9 @@
     # All hosts defined in hosts.nix
     hosts =
       (lib.evalModules {
-        modules = [./hosts.nix];
+        modules = [./hosts.nix ./services.nix];
         specialArgs = {inherit nixos-hardware;};
-      }).config.hosts;
+      }).config.hostConfig;
 
     # Full NixOS hosts only, used for the deploy-rs
     nixosHosts = lib.filterAttrs (hostName: hostConfig: hostConfig.kind == "nixos") hosts;
@@ -106,8 +106,8 @@
       baseModules
       ++ (lib.optional hasHostConfig
         (builtins.trace "Loading ${hostName} config ${hostConfigFile}" hostConfigFile))
-      # Ensure the hosts module is always imported, inject host config
-      ++ [./hosts.nix ({...}: {hosts.self = hostConfig;})]
+      # Ensure the hosts and services modules are always imported, inject host config
+      ++ [./hosts.nix ./services.nix ({...}: {hostConfig.self = hostConfig;})]
       ++ hostConfig.extraModules or []
       ++ additionalModules;
 

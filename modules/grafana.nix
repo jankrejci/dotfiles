@@ -3,13 +3,13 @@
   lib,
   ...
 }: let
+  services = config.serviceConfig;
   domain = "krejci.io";
-  serverDomain = "grafana." + domain;
-  grafanaPort = 3000;
-  vpnInterface = "nb-homelab";
+  serverDomain = "${services.grafana.subdomain}.${domain}";
+  httpsPort = 443;
 in {
   # Allow HTTPS on VPN interface
-  networking.firewall.interfaces.${vpnInterface}.allowedTCPPorts = [443];
+  networking.firewall.interfaces."${services.grafana.interface}".allowedTCPPorts = [httpsPort];
 
   systemd.services.grafana = {
     serviceConfig.EnvironmentFile = "/var/lib/grafana/secrets/ntfy-token-env";
@@ -27,9 +27,9 @@ in {
     enable = true;
     settings = {
       server = {
-        # Localhost only - accessed via nginx proxy (defense in depth)
+        # 127.0.0.1 only - accessed via nginx proxy (defense in depth)
         http_addr = "127.0.0.1";
-        http_port = grafanaPort;
+        http_port = services.grafana.port;
         domain = serverDomain;
         root_url = "https://${serverDomain}";
       };
@@ -48,13 +48,13 @@ in {
         deny all;
       '';
       locations."/" = {
-        proxyPass = "http://localhost:${toString grafanaPort}";
+        proxyPass = "http://127.0.0.1:${toString services.grafana.port}";
         proxyWebsockets = true;
         recommendedProxySettings = true;
       };
       # Prometheus UI accessible at /prometheus/
       locations."/prometheus/" = {
-        proxyPass = "http://localhost:9090";
+        proxyPass = "http://127.0.0.1:${toString services.prometheus.port}";
         proxyWebsockets = true;
         recommendedProxySettings = true;
       };
@@ -89,7 +89,7 @@ in {
               type = "webhook";
               disableResolveMessage = false;
               settings = {
-                url = "http://localhost:2586/grafana-alerts?template=grafana";
+                url = "http://127.0.0.1:${toString services.ntfy.port}/grafana-alerts?template=grafana";
                 httpMethod = "POST";
                 authorization_scheme = "Bearer";
                 authorization_credentials = "$NTFY_TOKEN";
