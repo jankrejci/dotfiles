@@ -3,24 +3,22 @@
   lib,
   ...
 }: let
+  service = config.serviceConfig;
   domain = "krejci.io";
-  serverDomain = "grafana." + domain;
-  immichApiMetricsPort = 8081;
-  immichMicroservicesMetricsPort = 8082;
 in {
   services.prometheus = {
     enable = true;
     # Keep metrics for 6 months
     retentionTime = "180d";
-    # Localhost only - accessed via nginx proxy (defense in depth)
+    # 127.0.0.1 only - accessed via nginx proxy (defense in depth)
     listenAddress = "127.0.0.1";
     # Serve from subpath /prometheus/ (shares domain with Grafana)
-    extraFlags = ["--web.external-url=https://${serverDomain}/prometheus" "--web.route-prefix=/prometheus"];
+    extraFlags = ["--web.external-url=https://${service.grafana.subdomain}.${domain}/prometheus" "--web.route-prefix=/prometheus"];
     globalConfig.scrape_interval = "10s";
     scrapeConfigs = [
       {
         job_name = "prometheus";
-        static_configs = [{targets = ["localhost:9090"];}];
+        static_configs = [{targets = ["127.0.0.1:${toString service.prometheus.port}"];}];
         metrics_path = "/prometheus/metrics";
       }
       {
@@ -29,9 +27,8 @@ in {
         static_configs = [
           {
             targets = let
-              nodeExporterPort = "9100";
-              makeTarget = hostName: hostConfig: hostName + "." + domain + ":" + nodeExporterPort;
-              nixosHosts = lib.filterAttrs (_: hostConfig: hostConfig.kind == "nixos") config.hosts;
+              makeTarget = hostName: _: "${hostName}.${domain}:${toString service.node-exporter.metricsPort}";
+              nixosHosts = lib.filterAttrs (_: hostConfig: hostConfig.kind == "nixos") config.hostConfig;
             in
               lib.mapAttrsToList makeTarget nixosHosts;
           }
@@ -41,7 +38,7 @@ in {
         job_name = "immich-api";
         static_configs = [
           {
-            targets = ["localhost:${toString immichApiMetricsPort}"];
+            targets = ["127.0.0.1:${toString service.immich.metricsPort}"];
             labels = {host = "thinkcenter";};
           }
         ];
@@ -50,7 +47,7 @@ in {
         job_name = "immich-microservices";
         static_configs = [
           {
-            targets = ["localhost:${toString immichMicroservicesMetricsPort}"];
+            targets = ["127.0.0.1:${toString service.immich-microservices.metricsPort}"];
             labels = {host = "thinkcenter";};
           }
         ];
@@ -59,7 +56,7 @@ in {
         job_name = "ntfy";
         static_configs = [
           {
-            targets = ["localhost:9091"];
+            targets = ["127.0.0.1:${toString service.ntfy.metricsPort}"];
             labels = {host = "thinkcenter";};
           }
         ];
@@ -68,7 +65,7 @@ in {
         job_name = "postgres";
         static_configs = [
           {
-            targets = ["localhost:9187"];
+            targets = ["127.0.0.1:${toString service.postgres.metricsPort}"];
             labels = {host = "thinkcenter";};
           }
         ];
@@ -77,7 +74,7 @@ in {
         job_name = "redis";
         static_configs = [
           {
-            targets = ["localhost:9121"];
+            targets = ["127.0.0.1:${toString service.redis.metricsPort}"];
             labels = {host = "thinkcenter";};
           }
         ];
@@ -86,7 +83,7 @@ in {
         job_name = "nginx";
         static_configs = [
           {
-            targets = ["localhost:9113"];
+            targets = ["127.0.0.1:${toString service.nginx.metricsPort}"];
             labels = {host = "thinkcenter";};
           }
         ];
@@ -95,7 +92,7 @@ in {
         job_name = "wireguard";
         static_configs = [
           {
-            targets = ["localhost:9586"];
+            targets = ["127.0.0.1:${toString service.wireguard.metricsPort}"];
             labels = {host = "thinkcenter";};
           }
         ];
@@ -109,7 +106,7 @@ in {
       name = "Prometheus";
       type = "prometheus";
       access = "proxy";
-      url = "http://localhost:9090/prometheus";
+      url = "http://127.0.0.1:${toString service.prometheus.port}/prometheus";
       isDefault = true;
       # Fixed UID for dashboard references (see CLAUDE.md)
       uid = "prometheus";

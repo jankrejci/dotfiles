@@ -50,7 +50,7 @@
       ExecStart = let
         setupKeyFile = "/var/lib/netbird-homelab/setup-key";
         daemonAddr = "unix:///var/run/netbird-homelab/sock";
-        extraDnsLabels = config.hosts.self.extraDnsLabels or [];
+        extraDnsLabels = config.hostConfig.self.extraDnsLabels or [];
         dnsLabelsArg =
           if extraDnsLabels == []
           then ""
@@ -85,7 +85,7 @@
   };
 
   networking = {
-    hostName = config.hosts.self.hostName;
+    hostName = config.hostConfig.self.hostName;
     firewall.enable = true;
     # Use nftables instead of iptables (modern, better performance)
     nftables.enable = true;

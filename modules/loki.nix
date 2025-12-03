@@ -3,8 +3,7 @@
   pkgs,
   ...
 }: let
-  lokiPort = 3100;
-  promtailPort = 9080;
+  services = config.serviceConfig;
   lokiDataDir = "/var/lib/loki";
 in {
   # Loki: log aggregation system (like Prometheus but for logs)
@@ -16,8 +15,8 @@ in {
       auth_enabled = false;
 
       server = {
-        http_listen_port = lokiPort;
-        # Localhost only - defense in depth, accessed via Grafana
+        http_listen_port = services.loki.port;
+        # 127.0.0.1 only - defense in depth, accessed via Grafana
         http_listen_address = "127.0.0.1";
       };
 
@@ -82,7 +81,7 @@ in {
     enable = true;
     configuration = {
       server = {
-        http_listen_port = promtailPort;
+        http_listen_port = services.promtail.port;
         http_listen_address = "127.0.0.1";
         # Disable gRPC (not needed, conflicts with loki's default 9095)
         grpc_listen_port = 0;
@@ -93,7 +92,7 @@ in {
 
       # Where to send logs
       clients = [
-        {url = "http://127.0.0.1:${toString lokiPort}/loki/api/v1/push";}
+        {url = "http://127.0.0.1:${toString services.loki.port}/loki/api/v1/push";}
       ];
 
       scrape_configs = [
@@ -135,7 +134,7 @@ in {
       name = "Loki";
       type = "loki";
       access = "proxy";
-      url = "http://127.0.0.1:${toString lokiPort}";
+      url = "http://127.0.0.1:${toString services.loki.port}";
       # Fixed UID for dashboard references (see CLAUDE.md)
       uid = "loki";
       jsonData = {

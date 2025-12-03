@@ -3,21 +3,21 @@
   pkgs,
   ...
 }: let
+  ntfy = config.serviceConfig.ntfy;
   domain = "krejci.io";
-  ntfyDomain = "ntfy." + domain;
-  ntfyPort = 2586;
-  vpnInterface = "nb-homelab";
+  ntfyDomain = "${ntfy.subdomain}.${domain}";
+  httpsPort = 443;
 in {
   # Allow HTTPS on VPN interface only
-  networking.firewall.interfaces.${vpnInterface}.allowedTCPPorts = [443];
+  networking.firewall.interfaces."${ntfy.interface}".allowedTCPPorts = [httpsPort];
 
   # Use unstable ntfy-sh for template support (requires >= 2.14.0)
   services.ntfy-sh = {
     enable = true;
     package = pkgs.unstable.ntfy-sh;
     settings = {
-      # Listen on localhost only, accessed via nginx proxy (defense in depth)
-      listen-http = "127.0.0.1:${toString ntfyPort}";
+      # Listen on 127.0.0.1 only, accessed via nginx proxy (defense in depth)
+      listen-http = "127.0.0.1:${toString ntfy.port}";
       base-url = "https://${ntfyDomain}";
 
       # Authentication: read-only by default, publishing requires tokens
@@ -28,8 +28,8 @@ in {
       # Template directory for custom webhook formatting
       template-dir = "/var/lib/ntfy-sh/templates";
 
-      # Expose Prometheus metrics on localhost only
-      metrics-listen-http = "localhost:9091";
+      # Expose Prometheus metrics on 127.0.0.1 only
+      metrics-listen-http = "127.0.0.1:${toString ntfy.metricsPort}";
     };
   };
 
@@ -53,7 +53,7 @@ in {
         deny all;
       '';
       locations."/" = {
-        proxyPass = "http://localhost:${toString ntfyPort}";
+        proxyPass = "http://127.0.0.1:${toString ntfy.port}";
         proxyWebsockets = true;
         recommendedProxySettings = true;
       };

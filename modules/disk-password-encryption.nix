@@ -11,7 +11,7 @@ in {
     disk = {
       main = {
         type = "disk";
-        device = config.hosts.self.device;
+        device = config.hostConfig.self.device;
         content = {
           type = "gpt";
           partitions = {
@@ -58,7 +58,7 @@ in {
             };
           };
           swap = {
-            size = config.hosts.self.swapSize;
+            size = config.hostConfig.self.swapSize;
             content = {
               type = "swap";
               discardPolicy = "both";

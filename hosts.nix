@@ -4,7 +4,7 @@
   ...
 }:
 with lib; {
-  options.hosts = mkOption {
+  options.hostConfig = mkOption {
     description = "A set of defined hosts";
     # Explicitly pass `name`
     type = types.attrsOf (types.submodule ({name, ...}: {
@@ -55,7 +55,7 @@ with lib; {
   };
 
   ### Servers ###
-  config.hosts = {
+  config.hostConfig = {
     vpsfree = {
       extraDnsLabels = ["share" "wg" "netbird"];
       extraModules = [

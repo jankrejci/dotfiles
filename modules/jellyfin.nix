@@ -19,12 +19,13 @@
   pkgs,
   ...
 }: let
+  jellyfin = config.serviceConfig.jellyfin;
   domain = "krejci.io";
-  jellyfinDomain = "jellyfin.${domain}";
-  jellyfinPort = 8096;
+  jellyfinDomain = "${jellyfin.subdomain}.${domain}";
+  httpsPort = 443;
 in {
   # Allow HTTPS on VPN interface
-  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [443];
+  networking.firewall.interfaces."${jellyfin.interface}".allowedTCPPorts = [httpsPort];
 
   # Bind mount jellyfin data from NVMe disk
   fileSystems."/var/lib/jellyfin" = {
@@ -73,7 +74,7 @@ in {
         client_max_body_size 10G;
       '';
       locations."/" = {
-        proxyPass = "http://localhost:${toString jellyfinPort}";
+        proxyPass = "http://127.0.0.1:${toString jellyfin.port}";
         proxyWebsockets = true;
         recommendedProxySettings = true;
       };
