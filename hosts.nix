@@ -76,6 +76,7 @@ with lib; {
         ./modules/health-check.nix
         ./modules/immich.nix
         ./modules/jellyfin.nix
+        ./modules/loki.nix
         ./modules/ntfy.nix
         ./modules/prometheus.nix
       ];
