@@ -332,5 +332,32 @@ Remote machines via VPN only:
 - `nix run .#add-ssh-key <hostname>` - Generate and authorize SSH key
 
 See `scripts.nix` for implementation details.
-- avoid else branch whenever possible
-- if disabling shellchec allways add comment why
+
+## Shell Script Style
+
+**Guard Clauses:**
+Use `|| { }` pattern for early exits instead of nested if-else:
+```bash
+# Good: guard clause
+key_password=$(ask_for_token "key password") || {
+  error "Failed to get key password"
+  exit 1
+}
+
+# Avoid: nested if
+if ! key_password=$(ask_for_token "key password"); then
+  error "Failed to get key password"
+  exit 1
+fi
+```
+
+For simple cases where the function already logs errors:
+```bash
+validate_hostname "$HOSTNAME" || exit 1
+```
+
+**General Rules:**
+- Avoid else branches whenever possible
+- If disabling shellcheck, always add comment explaining why
+- Use `local -r` for immutable local variables
+- Helper functions should `exit 1` on fatal errors (avoids boilerplate at call sites)
