@@ -57,7 +57,7 @@ with lib; {
   ### Servers ###
   config.hostConfig = {
     vpsfree = {
-      extraDnsLabels = ["share" "wg" "netbird"];
+      extraDnsLabels = ["test" "share"];
       extraModules = [
         ./modules/acme.nix
         ./modules/immich-public-proxy.nix

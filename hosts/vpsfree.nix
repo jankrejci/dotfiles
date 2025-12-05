@@ -1,8 +1,10 @@
 {
   lib,
   pkgs,
+  config,
   ...
 }: let
+  domain = "krejci.io";
   thinkCenterPublicKey = lib.fileContents ../wireguard-keys/thinkcenter-public;
   nasHost = "172.16.130.249";
   nasPath = "/nas/6057";
@@ -90,5 +92,20 @@ in {
     matchConfig.Name = "wg0";
     address = ["10.100.0.2/30"];
     networkConfig.DHCP = "no";
+  };
+
+  # Test endpoint for Netbird Networks DNS testing
+  # Only accessible via nb-homelab interface
+  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [443];
+
+  services.nginx.virtualHosts."test.${domain}" = {
+    listenAddresses = ["0.0.0.0"];
+    forceSSL = true;
+    useACMEHost = domain;
+    extraConfig = ''
+      allow 100.76.0.0/16;
+      deny all;
+    '';
+    locations."/".return = "200 'Hello from vpsfree test endpoint'";
   };
 }

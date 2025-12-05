@@ -1,16 +1,16 @@
 # Jellyfin media server
 #
-# Server accessible at https://jellyfin.krejci.io (VPN only)
+# Server accessible at https://jellyfin.nb.krejci.io (VPN only)
 # Media stored on secondary NVMe disk at /mnt/immich-data/jellyfin
 #
 # Setup:
-# 1. After deployment, complete initial setup wizard at https://jellyfin.krejci.io
+# 1. After deployment, complete initial setup wizard at https://jellyfin.nb.krejci.io
 # 2. Create Movies library with path: /var/lib/jellyfin/media/movies
 # 3. Enable hardware transcoding: Dashboard → Playback → Intel Quick Sync Video (QSV)
 # 4. Enable metrics: Dashboard → Advanced → Metrics → Enable Prometheus
 #
 # Upload media files:
-#   scp movie.mp4 admin@thinkcenter.krejci.io:/var/lib/jellyfin/media/movies/
+#   scp movie.mp4 admin@thinkcenter.nb.krejci.io:/var/lib/jellyfin/media/movies/
 #
 # Files automatically get correct group ownership (jellyfin) via setgid bit.
 # Scan library after upload: Dashboard → Libraries → Scan Library
