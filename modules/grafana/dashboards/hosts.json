@@ -812,12 +812,12 @@
       },
       {
         "current": {
-          "text": "krejci.io",
-          "value": "krejci.io"
+          "text": "nb.krejci.io",
+          "value": "nb.krejci.io"
         },
         "hide": 2,
         "name": "domain",
-        "query": "krejci.io",
+        "query": "nb.krejci.io",
         "skipUrlSync": true,
         "type": "constant"
       }
