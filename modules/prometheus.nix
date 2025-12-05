@@ -4,7 +4,7 @@
   ...
 }: let
   service = config.serviceConfig;
-  domain = "krejci.io";
+  domain = "nb.krejci.io";
 in {
   services.prometheus = {
     enable = true;
