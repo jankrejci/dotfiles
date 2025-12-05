@@ -214,7 +214,7 @@ in {
     immich-remote =
       commonConfig
       // {
-        repo = "ssh://borg@vpsfree.krejci.io/var/lib/borg-repos/immich";
+        repo = "ssh://borg@vpsfree.nb.krejci.io/var/lib/borg-repos/immich";
         startAt = "02:00";
         encryption = {
           mode = "repokey-blake2";

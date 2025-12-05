@@ -469,7 +469,7 @@ in {
         # shellcheck source=/dev/null
         source ${lib}
 
-        readonly DOMAIN="krejci.io"
+        readonly DOMAIN="nb.krejci.io"
 
         function main() {
           local -r hostname=$(require_and_validate_hostname "$@")
@@ -492,7 +492,7 @@ in {
     };
 
   # Install nixos remotely. It is expected that the host
-  # is booted via USB stick and accesible on iso.krejci.io
+  # is booted via USB stick and accesible on iso.nb.krejci.io
   # `nix run .#nixos-install`
   nixos-install =
     pkgs.writeShellApplication
@@ -514,7 +514,7 @@ in {
 
         trap cleanup EXIT INT TERM
 
-        readonly TARGET="root@iso.krejci.io"
+        readonly TARGET="root@iso.nb.krejci.io"
         # The password must be persistent, it is used to enroll TPM key
         # during the first boot and then it is erased
         readonly REMOTE_DISK_PASSWORD_FOLDER="/var/lib"
@@ -557,16 +557,7 @@ in {
 
         function install_netbird_key() {
           local -r hostname="$1"
-
-          # Check if host has extra DNS labels configured
-          local extra_dns_labels
-          extra_dns_labels=$(nix eval ".#hosts.$hostname.extraDnsLabels" --json 2>/dev/null | jq -r 'length')
-
-          local extra_flags=""
-          [ "$extra_dns_labels" -gt 0 ] && extra_flags="--allow-extra-dns"
-
-          # shellcheck disable=SC2086 # extra_flags intentionally word-split
-          local -r setup_key=$(generate_netbird_key "$hostname" $extra_flags)
+          local -r setup_key=$(generate_netbird_key "$hostname")
 
           # Create directory for Netbird setup key
           install -d -m755 "$TEMP/$NETBIRD_KEY_FOLDER"
@@ -633,7 +624,7 @@ in {
         # shellcheck source=/dev/null
         source ${lib}
 
-        readonly DOMAIN="krejci.io"
+        readonly DOMAIN="nb.krejci.io"
         readonly TOKEN_PATH="/var/lib/acme/cloudflare-api-token"
 
         function main() {
@@ -683,7 +674,7 @@ in {
         # shellcheck source=/dev/null
         source ${lib}
 
-        readonly DOMAIN="krejci.io"
+        readonly DOMAIN="nb.krejci.io"
         readonly NETBIRD_KEY_PATH="/var/lib/netbird-homelab/setup-key"
 
         function prepare_peer_removal() {
@@ -753,15 +744,7 @@ in {
 
           require_ssh_reachable "$target"
 
-          # Check if host has extra DNS labels configured
-          local extra_dns_labels
-          extra_dns_labels=$(nix eval ".#hosts.$hostname.extraDnsLabels" --json 2>/dev/null | jq -r 'length')
-
-          local extra_flags=""
-          [ "$extra_dns_labels" -gt 0 ] && extra_flags="--allow-extra-dns"
-
-          # shellcheck disable=SC2086 # extra_flags intentionally word-split
-          local -r setup_key=$(generate_netbird_key "$hostname" $extra_flags)
+          local -r setup_key=$(generate_netbird_key "$hostname")
           inject_secret \
             --target "$target" \
             --path "$NETBIRD_KEY_PATH" \
@@ -790,7 +773,7 @@ in {
         # shellcheck source=/dev/null
         source ${lib}
 
-        readonly DOMAIN="krejci.io"
+        readonly DOMAIN="nb.krejci.io"
         readonly REPO_PATH="/var/lib/borg-repos/immich"
 
         function init_repository() {
@@ -865,7 +848,7 @@ in {
         # shellcheck source=/dev/null
         source ${lib}
 
-        readonly DOMAIN="krejci.io"
+        readonly DOMAIN="nb.krejci.io"
         readonly TOKEN_ENV_PATH="/var/lib/grafana/secrets/ntfy-token-env"
         readonly TOKEN_YAML_PATH="/var/lib/grafana/secrets/ntfy-token.yaml"
 
