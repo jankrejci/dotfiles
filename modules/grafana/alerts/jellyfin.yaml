@@ -52,3 +52,4 @@ groups:
           description: "Jellyfin systemd service state is not active on thinkcenter"
         labels:
           severity: critical
+          host: thinkcenter

@@ -49,6 +49,7 @@ groups:
         for: 5m
         labels:
           severity: critical
+          host: thinkcenter
       - uid: promtail_down
         title: Promtail
         condition: C
@@ -93,3 +94,4 @@ groups:
         for: 5m
         labels:
           severity: warning
+          host: thinkcenter

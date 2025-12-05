@@ -49,3 +49,4 @@ groups:
         for: 5m
         labels:
           severity: critical
+          host: thinkcenter
