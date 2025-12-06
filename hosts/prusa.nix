@@ -1,4 +1,7 @@
 {config, ...}: {
+  # Add kernel parameter to help with SD initialization on Zero 2 W
+  boot.kernelParams = ["sdhci.debug_quirks2=4"];
+
   # TODO Find out a way how to do this hack properly
   #
   # To boot the raspberry device succesfully with an uart device connected,
