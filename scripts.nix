@@ -394,23 +394,53 @@ in {
       name = "build-sdcard";
       runtimeInputs = with pkgs; [
         coreutils
-        wireguard-tools
+        curl
+        jq
       ];
       text = ''
         # shellcheck source=/dev/null
         source ${lib}
+
+        function ask_wifi_credentials() {
+          read -r -p "Configure WiFi? [y/N] " response
+          case "$response" in
+            y|Y)
+              ;;
+            *)
+              info "Skipping WiFi configuration"
+              return
+              ;;
+          esac
+
+          WIFI_SSID=$(ask_for_token "WiFi SSID")
+          export WIFI_SSID
+
+          WIFI_PASSWORD=$(ask_for_token "WiFi password")
+          export WIFI_PASSWORD
+
+          info "WiFi credentials set for $WIFI_SSID"
+        }
 
         function main() {
           local -r hostname=$(require_and_validate_hostname "$@")
 
           local -r image_name="$hostname-sdcard"
 
+          NETBIRD_SETUP_KEY=$(generate_netbird_key "$hostname")
+          export NETBIRD_SETUP_KEY
+
+          ask_wifi_credentials
+
           info "Building image for host: $hostname"
 
           nix build ".#image.sdcard.$hostname" \
+            --impure \
             -o "$image_name"
 
           info "Image built successfully: $image_name"
+
+          unset NETBIRD_SETUP_KEY WIFI_SSID WIFI_PASSWORD
+          info "Secrets cleared, build complete"
         }
 
         main "$@"
