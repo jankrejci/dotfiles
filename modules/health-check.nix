@@ -116,7 +116,7 @@
       }
 
       main() {
-        check_host "vpsfree" "10.100.0.2"
+        check_host "vpsfree" "192.168.99.2"
         check_wireguard "wg0"
 
         local services=(
