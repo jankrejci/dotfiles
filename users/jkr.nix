@@ -67,7 +67,6 @@
           EDITOR = "hx";
         };
 
-
         # TODO add more configurations for power management and for panel position
         dconf.settings = with lib.hm.gvariant; {
           "org/gnome/desktop/interface" = {

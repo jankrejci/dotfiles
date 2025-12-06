@@ -146,9 +146,11 @@
     serviceHosts = config.hostConfig.self.serviceHosts or {};
     domain = "krejci.io";
   in
-    lib.mapAttrs' (name: ip:
-      lib.nameValuePair ip ["${name}.${domain}"]
-    ) serviceHosts;
+    lib.mapAttrs' (
+      name: ip:
+        lib.nameValuePair ip ["${name}.${domain}"]
+    )
+    serviceHosts;
 
   # NetworkManager configuration
   networking.networkmanager = {
