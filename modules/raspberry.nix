@@ -34,7 +34,7 @@
   # Override sd-card module configuration
   fileSystems = {
     "/" = {
-      device = "/dev/disk/by-label/NIXOS-SD";
+      device = "/dev/disk/by-label/NIXOS_SD";
       fsType = "ext4";
     };
   };
