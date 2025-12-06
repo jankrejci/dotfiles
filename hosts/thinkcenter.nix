@@ -37,7 +37,7 @@ in {
     wireguardPeers = [
       {
         PublicKey = vpsfreePublicKey;
-        AllowedIPs = ["10.100.0.2/32"];
+        AllowedIPs = ["192.168.99.2/32"];
         Endpoint = "wg.krejci.io:51821";
         PersistentKeepalive = 25;
       }
@@ -46,7 +46,7 @@ in {
 
   systemd.network.networks."50-wg0" = {
     matchConfig.Name = "wg0";
-    address = ["10.100.0.1/30"];
+    address = ["192.168.99.1/24"];
     networkConfig.DHCP = "no";
   };
 }
