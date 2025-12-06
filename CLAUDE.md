@@ -37,6 +37,24 @@ module: Title text
 ```
 No Claude signatures, emojis, or icons. Split unrelated changes into separate commits.
 
+## Git Branch Cleanup
+Before merging, clean up branch history:
+- One logical change per commit
+- Squash duplicate/related changes together
+- Drop commits that are immediately superseded
+- Concise descriptions (bullet points for motivation)
+
+**Interactive Rebase:**
+```bash
+# Use GIT_SEQUENCE_EDITOR for scripted rebase
+GIT_SEQUENCE_EDITOR='script.sh' git rebase -i origin/main
+```
+
+**Common Operations:**
+- `pick` - keep commit as-is
+- `squash` - combine with previous commit
+- `drop` - remove commit entirely (e.g., adds code later removed)
+
 ## Nix-Specific Patterns
 
 ### Activation Scripts
