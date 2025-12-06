@@ -173,7 +173,6 @@
           hostConfig = hosts.iso;
           additionalModules = [
             "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-            ./modules/load-keys.nix
             ({...}: {
               isoImage.makeEfiBootable = true;
               isoImage.makeUsbBootable = true;
