@@ -6,6 +6,7 @@
   ntfy = config.serviceConfig.ntfy;
   domain = "krejci.io";
   ntfyDomain = "${ntfy.subdomain}.${domain}";
+  serviceIP = config.hostConfig.self.serviceHosts.ntfy;
   httpsPort = 443;
 in {
   # Allow HTTPS on VPN interface only
@@ -39,11 +40,13 @@ in {
     "L+ /var/lib/ntfy-sh/templates/grafana.yml - - - - ${./ntfy/grafana.yml}"
   ];
 
+  # Wait for services interface before binding
+  systemd.services.nginx.after = ["sys-subsystem-net-devices-services.device"];
+
   services.nginx = {
     enable = true;
     virtualHosts.${ntfyDomain} = {
-      # Listen on all interfaces
-      listenAddresses = ["0.0.0.0"];
+      listenAddresses = [serviceIP];
       # Enable HTTPS with Let's Encrypt wildcard certificate
       forceSSL = true;
       useACMEHost = "${domain}";

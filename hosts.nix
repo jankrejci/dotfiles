@@ -45,10 +45,10 @@ with lib; {
           description = "Extra NixOS modules to include";
         };
 
-        extraDnsLabels = mkOption {
-          type = types.listOf types.str;
-          default = [];
-          description = "Extra DNS labels for Netbird (for service aliases)";
+        serviceHosts = mkOption {
+          type = types.attrsOf types.str;
+          default = {};
+          description = "Service hostname to IP mapping for internal DNS (e.g., immich = \"10.20.30.1\")";
         };
       };
     }));
@@ -57,7 +57,9 @@ with lib; {
   ### Servers ###
   config.hostConfig = {
     vpsfree = {
-      extraDnsLabels = ["test" "share"];
+      serviceHosts = {
+        share = "192.168.92.1";
+      };
       extraModules = [
         ./modules/acme.nix
         ./modules/immich-public-proxy.nix
@@ -68,7 +70,12 @@ with lib; {
     thinkcenter = {
       device = "/dev/sda";
       swapSize = "8G";
-      extraDnsLabels = ["immich" "grafana" "ntfy" "jellyfin"];
+      serviceHosts = {
+        immich = "192.168.91.1";
+        grafana = "192.168.91.2";
+        jellyfin = "192.168.91.3";
+        ntfy = "192.168.91.4";
+      };
       extraModules = [
         ./modules/acme.nix
         ./modules/disk-tpm-encryption.nix

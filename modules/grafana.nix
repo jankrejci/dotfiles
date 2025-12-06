@@ -6,6 +6,7 @@
   services = config.serviceConfig;
   domain = "krejci.io";
   serverDomain = "${services.grafana.subdomain}.${domain}";
+  serviceIP = config.hostConfig.self.serviceHosts.grafana;
   httpsPort = 443;
 in {
   # Allow HTTPS on VPN interface
@@ -36,10 +37,13 @@ in {
     };
   };
 
+  # Wait for services interface before binding
+  systemd.services.nginx.after = ["sys-subsystem-net-devices-services.device"];
+
   services.nginx = {
     enable = true;
     virtualHosts.${serverDomain} = {
-      listenAddresses = ["0.0.0.0"];
+      listenAddresses = [serviceIP];
       forceSSL = true;
       useACMEHost = "${domain}";
       # Only allow access from Netbird VPN network

@@ -7,6 +7,7 @@
   immich-microservices = config.serviceConfig.immich-microservices;
   domain = "krejci.io";
   immichDomain = "${immich-server.subdomain}.${domain}";
+  serviceIP = config.hostConfig.self.serviceHosts.immich;
   httpsPort = 443;
 
   # Second disk for Immich data (NVMe)
@@ -237,11 +238,14 @@ in {
       };
   };
 
+  # Wait for services interface before binding
+  systemd.services.nginx.after = ["sys-subsystem-net-devices-services.device"];
+
   # Nginx reverse proxy - accessible via immich.<domain>
   services.nginx = {
     enable = true;
     virtualHosts.${immichDomain} = {
-      listenAddresses = ["0.0.0.0"];
+      listenAddresses = [serviceIP];
       # Enable HTTPS with Let's Encrypt wildcard certificate
       forceSSL = true;
       useACMEHost = "${domain}";
