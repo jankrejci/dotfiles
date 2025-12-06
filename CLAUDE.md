@@ -148,11 +148,6 @@ CLI must specify: `--daemon-addr unix:///var/run/service-<name>/sock`
 - Delete credentials only after success
 - See `modules/networking.nix` for reference implementation
 
-### Netbird Extra DNS Labels
-See: `hosts.nix` (`extraDnsLabels` option)
-
-Configured in hosts.nix, automatically applied during enrollment via `modules/networking.nix`. Requires setup key with "Allow Extra DNS labels" permission. Labels persist across reboots, but adding to existing peer requires re-enrollment.
-
 ### vpsAdminOS Containers
 See: `modules/vpsadminos.nix`, `hosts/vpsfree/configuration.nix`
 

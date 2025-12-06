@@ -22,6 +22,7 @@
   jellyfin = config.serviceConfig.jellyfin;
   domain = "krejci.io";
   jellyfinDomain = "${jellyfin.subdomain}.${domain}";
+  serviceIP = config.hostConfig.self.serviceHosts.jellyfin;
   httpsPort = 443;
 in {
   # Allow HTTPS on VPN interface
@@ -59,11 +60,14 @@ in {
     "d /var/lib/jellyfin/media/movies 2775 jellyfin jellyfin -"
   ];
 
+  # Wait for services interface before binding
+  systemd.services.nginx.after = ["sys-subsystem-net-devices-services.device"];
+
   # Nginx reverse proxy
   services.nginx = {
     enable = true;
     virtualHosts.${jellyfinDomain} = {
-      listenAddresses = ["0.0.0.0"];
+      listenAddresses = [serviceIP];
       # Enable HTTPS with Let's Encrypt wildcard certificate
       forceSSL = true;
       useACMEHost = "${domain}";

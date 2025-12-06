@@ -73,10 +73,6 @@
   # this is especially handy for notebooks on wifi,
   # where the eth interface is disconnected
   boot.initrd.systemd.network.wait-online.enable = false;
-  systemd.network.wait-online = {
-    anyInterface = true;
-    timeout = 10;
-  };
 
   networking = {
     hostName = config.hostConfig.self.hostName;
@@ -104,9 +100,34 @@
   };
 
   # Configure systemd-networkd
-  systemd.network = {
+  systemd.network = let
+    serviceHosts = config.hostConfig.self.serviceHosts or {};
+    serviceIPs = lib.attrValues serviceHosts;
+    hasServices = serviceHosts != {};
+  in {
     enable = true;
+
+    wait-online = {
+      anyInterface = true;
+      timeout = 10;
+    };
+
+    # Dummy interface for service IPs (Netbird routes these subnets to the host)
+    netdevs."30-services" = lib.mkIf hasServices {
+      netdevConfig = {
+        Kind = "dummy";
+        Name = "services";
+      };
+    };
+
     networks = {
+      # Service IPs on dummy interface
+      "30-services" = lib.mkIf hasServices {
+        matchConfig.Name = "services";
+        address = map (ip: "${ip}/24") serviceIPs;
+        networkConfig.DHCP = "no";
+      };
+
       # Enable dhcp via systemd-network
       # This can be overriden for servers with fixed ip
       "98-all-ethernet" = lib.mkDefault {
@@ -119,6 +140,15 @@
       };
     };
   };
+
+  # Local DNS resolution for service hostnames
+  networking.hosts = let
+    serviceHosts = config.hostConfig.self.serviceHosts or {};
+    domain = "krejci.io";
+  in
+    lib.mapAttrs' (name: ip:
+      lib.nameValuePair ip ["${name}.${domain}"]
+    ) serviceHosts;
 
   # NetworkManager configuration
   networking.networkmanager = {
@@ -155,56 +185,4 @@
       };
     };
   };
-
-  # =============================================================================
-  # Internal DNS Resolution for extraDnsLabels
-  # =============================================================================
-  #
-  # When a host has extraDnsLabels (e.g., ["immich" "grafana"]), those labels
-  # are configured as Netbird Networks resources with per-group access control.
-  # The routing peer resolves DNS queries for these domains to its VPN IP.
-  #
-  # This service updates /etc/hosts when nb-homelab comes up, adding entries
-  # like: 100.76.x.y immich.krejci.io grafana.krejci.io
-  #
-  # Note: nb.krejci.io zone is handled by Netbird peer DNS automatically.
-  # =============================================================================
-
-  systemd.services.update-internal-dns = let
-    extraDnsLabels = config.hostConfig.self.extraDnsLabels or [];
-    dnsZone = "krejci.io";
-    domains = map (label: "${label}.${dnsZone}") extraDnsLabels;
-    marker = "# netbird-internal-dns";
-    script = pkgs.writeShellScript "update-internal-dns" ''
-      set -euo pipefail
-
-      # Wait for interface to be fully up
-      sleep 2
-
-      # Get VPN IP from interface
-      vpn_ip=$(${pkgs.iproute2}/bin/ip -4 addr show nb-homelab | ${pkgs.gnugrep}/bin/grep -oP 'inet \K[0-9.]+')
-      if [[ -z "$vpn_ip" ]]; then
-        echo "Failed to get VPN IP from nb-homelab"
-        exit 1
-      fi
-
-      # Remove old entries and add new ones
-      ${pkgs.gnugrep}/bin/grep -v "${marker}" /etc/hosts > /etc/hosts.tmp || true
-      echo "$vpn_ip ${lib.concatStringsSep " " domains} ${marker}" >> /etc/hosts.tmp
-      mv /etc/hosts.tmp /etc/hosts
-
-      echo "Updated /etc/hosts: $vpn_ip -> ${lib.concatStringsSep ", " domains}"
-    '';
-  in
-    lib.mkIf (extraDnsLabels != []) {
-      description = "Update /etc/hosts with internal DNS entries for extraDnsLabels";
-      after = ["netbird-homelab.service"];
-      requires = ["netbird-homelab.service"];
-      wantedBy = ["multi-user.target"];
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        ExecStart = script;
-      };
-    };
 }
