@@ -1,45 +1,30 @@
-{...}: let
-  # Environment variable needs to be set by the install script
+# Inject keys directly into SD card images during build.
+# Environment variables are set by build-sdcard script.
+{lib, ...}: let
   netbirdSetupKey = builtins.getEnv "NETBIRD_SETUP_KEY";
-  setupKeySource = "/etc/netbird/setup-key";
-  setupKeyFolder = "/var/lib/netbird-homelab";
-  setupKeyPath = "${setupKeyFolder}/setup-key";
+  setupKeyPath = "/var/lib/netbird-homelab/setup-key";
+
+  wifiSsid = builtins.getEnv "WIFI_SSID";
+  wifiPassword = builtins.getEnv "WIFI_PASSWORD";
+  hasWifi = wifiSsid != "" && wifiPassword != "";
 in {
-  # Embed the setup key in the ISO
-  environment.etc."netbird/setup-key" = {
-    text = builtins.trace "Loading Netbird setup key for installer" netbirdSetupKey;
-    mode = "0600";
-    user = "root";
-    group = "root";
-  };
+  sdImage.populateRootCommands =
+    builtins.trace "Injecting keys into SD image" ''
+      mkdir -p ./files/var/lib/netbird-homelab
+      echo -n '${netbirdSetupKey}' > "./files${setupKeyPath}"
+      chmod 600 "./files${setupKeyPath}"
+    ''
+    + lib.optionalString hasWifi (
+      builtins.trace "Injecting WiFi credentials for ${wifiSsid}" ''
+        mkdir -p ./files/var/lib/iwd
+        cat > "./files/var/lib/iwd/${wifiSsid}.psk" << 'EOF'
+        [Security]
+        Passphrase=${wifiPassword}
 
-  # Ensure the persistent target directory exists
-  systemd.tmpfiles.rules = [
-    "d ${setupKeyFolder} 0755 root root -"
-  ];
-
-  # Copy the setup key to the persistent storage during first boot
-  # This is needed because /etc is read-only on the ISO
-  systemd.services.netbird-key-copy = {
-    description = "Copy Netbird Setup Key";
-    wantedBy = ["multi-user.target"];
-    before = ["netbird-homelab.service"];
-    after = ["local-fs.target"];
-
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-    };
-
-    script = ''
-      if [ -f "${setupKeySource}" ]; then
-        echo "Copying Netbird setup key from ${setupKeySource} to ${setupKeyPath}"
-        cp "${setupKeySource}" "${setupKeyPath}"
-        chmod 600 "${setupKeyPath}"
-        chown root:root "${setupKeyPath}"
-      else
-        echo "No ${setupKeySource} found, skipping copy."
-      fi
-    '';
-  };
+        [Settings]
+        AutoConnect=true
+        EOF
+        chmod 600 "./files/var/lib/iwd/${wifiSsid}.psk"
+      ''
+    );
 }
