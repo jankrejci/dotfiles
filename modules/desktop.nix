@@ -147,7 +147,11 @@
     openFirewall = true;
   };
 
-  networking.networkmanager.enable = true;
+  networking.networkmanager = {
+    enable = true;
+    # OpenVPN plugin for GUI-configured VPN connections. Has GTK dependency.
+    plugins = [pkgs.networkmanager-openvpn];
+  };
   security.rtkit.enable = true;
   services = {
     # Use dbus-broker for better performance
@@ -195,6 +199,13 @@
     simple-scan
     avahi
     probe-rs-tools
+    # Tools also in headless.nix - desktops need them too
+    nmap
+    wireguard-tools
+    nix-tree
+    sops
+    sbctl
+    lshw
   ];
 
   fonts.packages = with pkgs; [

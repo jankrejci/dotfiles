@@ -152,9 +152,9 @@
     )
     serviceHosts;
 
-  # NetworkManager configuration
+  # NetworkManager disabled by default for headless systems, enabled in desktop.nix
   networking.networkmanager = {
-    enable = true;
+    enable = lib.mkDefault false;
     # Don't let NetworkManager manage systemd-networkd interfaces
     # Include nb-* pattern to cover both homelab and any manually configured networks
     unmanaged = ["nb-*"];
@@ -162,8 +162,6 @@
     dns = "systemd-resolved";
     # Use iwd instead of wpa_supplicant for faster Wi-Fi connection/reconnection
     wifi.backend = "iwd";
-    # OpenVPN plugin for GUI-configured VPN connections
-    plugins = [pkgs.networkmanager-openvpn];
     # Connection timeout and retry settings
     settings = {
       main = {
@@ -175,7 +173,7 @@
     };
   };
 
-  # Enable iwd for NetworkManager backend
+  # iwd for wifi, used by both NetworkManager and standalone systemd-networkd
   networking.wireless.iwd = {
     enable = true;
     settings = {

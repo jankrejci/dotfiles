@@ -59,6 +59,8 @@
           tokei # code statistics tool
           tealdeer # tldr help tool
           saleae-logic-2 # logic analyzer software
+          gcc # C compiler
+          gnumake # build tool
         ];
 
         fonts.fontconfig.enable = true;
