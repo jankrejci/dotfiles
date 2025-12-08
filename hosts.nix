@@ -16,16 +16,16 @@ with lib; {
           description = "The hostname of the system.";
         };
 
-        system = mkOption {
-          type = types.str;
-          default = "x86_64-linux";
-          description = "System architecture";
-        };
-
         kind = mkOption {
           type = types.str;
           default = "nixos";
-          description = "System architecture";
+          description = "Host kind: nixos or installer";
+        };
+
+        isRpi = mkOption {
+          type = types.bool;
+          default = false;
+          description = "Whether this is a Raspberry Pi host";
         };
 
         device = mkOption {
@@ -61,6 +61,7 @@ with lib; {
         share = "192.168.92.1";
       };
       extraModules = [
+        ./modules/headless.nix
         ./modules/acme.nix
         ./modules/immich-public-proxy.nix
         ./modules/vpsadminos.nix
@@ -77,6 +78,7 @@ with lib; {
         ntfy = "192.168.91.4";
       };
       extraModules = [
+        ./modules/headless.nix
         ./modules/acme.nix
         ./modules/disk-tpm-encryption.nix
         ./modules/grafana.nix
@@ -146,16 +148,21 @@ with lib; {
 
     # TODO create minimal aarch64 build to check minimal reasonable image size
     rpi4 = {
-      system = "aarch64-linux";
+      isRpi = true;
       extraModules = [
         ./modules/raspberry.nix
       ];
     };
 
     prusa = {
-      system = "aarch64-linux";
+      isRpi = true;
+      serviceHosts = {
+        octoprint = "192.168.93.1";
+      };
       extraModules = [
         ./modules/raspberry.nix
+        ./modules/acme.nix
+        ./modules/octoprint.nix
       ];
     };
 
