@@ -394,23 +394,52 @@ in {
       name = "build-sdcard";
       runtimeInputs = with pkgs; [
         coreutils
-        wireguard-tools
+        curl
+        jq
       ];
       text = ''
         # shellcheck source=/dev/null
         source ${lib}
 
+        function ask_wifi_credentials() {
+          read -r -p "Configure WiFi? [y/N] " response
+          case "$response" in
+            y|Y)
+              ;;
+            *)
+              info "Skipping WiFi configuration"
+              return
+              ;;
+          esac
+
+          WIFI_SSID=$(ask_for_token "WiFi SSID")
+          export WIFI_SSID
+
+          WIFI_PASSWORD=$(ask_for_token "WiFi password")
+          export WIFI_PASSWORD
+
+          info "WiFi credentials set for $WIFI_SSID"
+        }
+
         function main() {
           local -r hostname=$(require_and_validate_hostname "$@")
-
           local -r image_name="$hostname-sdcard"
+
+          NETBIRD_SETUP_KEY=$(generate_netbird_key "$hostname")
+          export NETBIRD_SETUP_KEY
+
+          ask_wifi_credentials
 
           info "Building image for host: $hostname"
 
           nix build ".#image.sdcard.$hostname" \
+            --impure \
             -o "$image_name"
 
           info "Image built successfully: $image_name"
+
+          unset NETBIRD_SETUP_KEY WIFI_SSID WIFI_PASSWORD
+          info "Secrets cleared, build complete"
         }
 
         main "$@"
@@ -624,12 +653,13 @@ in {
         # shellcheck source=/dev/null
         source ${lib}
 
-        readonly DOMAIN="nb.krejci.io"
+        readonly DOMAIN="krejci.io"
+        readonly PEER_DOMAIN="nb.krejci.io"
         readonly TOKEN_PATH="/var/lib/acme/cloudflare-api-token"
 
         function main() {
           local -r hostname=$(require_and_validate_hostname "$@")
-          local -r target="admin@$hostname.$DOMAIN"
+          local -r target="admin@$hostname.$PEER_DOMAIN"
 
           require_ssh_reachable "$target"
 
@@ -649,6 +679,7 @@ in {
           info "Cloudflare token successfully injected to $hostname"
 
           info "Restarting ACME service to acquire certificate"
+          # shellcheck disable=SC2029 # DOMAIN intentionally expands on client side
           ssh "$target" "sudo systemctl start acme-$DOMAIN.service"
 
           info "Certificate acquisition initiated. Check status with: systemctl status acme-$DOMAIN.service"
@@ -811,8 +842,8 @@ in {
 
           # Check if repository already exists
           info "Checking repository on $server_host"
-          # shellcheck disable=SC2029
           local repo_exists=false
+          # shellcheck disable=SC2029 # REPO_PATH intentionally expands on client side
           ssh "$server_target" "[ -f $REPO_PATH/config ]" && repo_exists=true
 
           if [ "$repo_exists" = false ]; then
