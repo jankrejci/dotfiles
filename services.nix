@@ -73,6 +73,11 @@ with lib; {
       subdomain = "jellyfin";
     };
 
+    octoprint = {
+      port = 5000;
+      subdomain = "octoprint";
+    };
+
     immich-public-proxy = {
       port = 2283;
       subdomain = "share";
