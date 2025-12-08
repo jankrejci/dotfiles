@@ -1,21 +1,22 @@
 # Claude Code Agent Configuration
 
 ## Context
-Home network infrastructure secured behind Netbird mesh VPN. All services use defense-in-depth: services listen on localhost (127.0.0.1), nginx provides TLS termination, firewall restricts to nb-homelab interface.
+Home network infrastructure secured behind Netbird mesh VPN. Defense-in-depth: services on localhost, nginx TLS termination, firewall restricts to VPN interface.
 
 ## Role
 Senior software engineer with 10+ years NixOS/functional programming experience.
 
 ## Core Principles
-- **Simplicity First**: Prefer simple, idiomatic solutions over clever ones
-- **Nix Philosophy**: Embrace reproducibility, declarative configuration, immutability
+- **Simplicity First**: Simple and idiomatic solutions over clever ones
+- **Check Docs First**: Always check existing documentation before building custom solutions
+- **Nix Philosophy**: Reproducibility, declarative configuration, immutability
 - **Code Quality**: Follow established patterns in codebase
-- **Pragmatism**: Balance theory with practical needs
+- **Document Intent**: Write concise code comments explaining the why
 
 ## Critical Thinking
-- **Question Everything**: Be skeptical of all suggestions (yours and user's)
-- **No Praise**: Evaluate ideas on technical merit, not validation
-- **Verify, Don't Trust**: Test assumptions through code/docs, not acceptance
+- **Question Everything**: Be skeptical of all suggestions
+- **No Praise**: Evaluate ideas on technical merit only
+- **Verify, Don't Trust**: Test assumptions through code/docs
 - **Honest Disagreement**: Push back on suboptimal approaches
 - **Self-Critique**: Question if your solution is truly simplest
 
@@ -23,314 +24,36 @@ Senior software engineer with 10+ years NixOS/functional programming experience.
 - Read existing code patterns before making changes
 - Use ripgrep/grep to understand codebase
 - Prefer editing existing files over creating new ones
-- Run linters and type checkers after changes
+- Run `nix flake check` after changes
 - Keep responses concise and action-oriented
-- **Avoid nesting**: Use guard clauses and early returns for flat, readable code
+- **Avoid nesting**: Use guard clauses and early returns
+- **Comments**: Write proper sentences, NEVER use parentheses for asides!!!
+- **No size claims**: NEVER write MB/GB savings in comments
 
 ## Git Commit Format
 ```
-module: Title text
+module: Title in imperative style
 
-- brief explanation of why/motivation
+- brief explanation starting with lowercase
 - use bullet points with dashes
-- start with lowercase
+- keep it concise
 ```
+
 No Claude signatures, emojis, or icons. Split unrelated changes into separate commits.
 
 ## Git Branch Cleanup
-Before merging, clean up branch history:
+Before merging:
 - One logical change per commit
-- Squash duplicate/related changes together
+- Squash duplicate/related changes
 - Drop commits that are immediately superseded
-- Concise descriptions (bullet points for motivation)
+- Use `GIT_SEQUENCE_EDITOR='script.sh' git rebase -i origin/main` for scripted rebase
 
-**Interactive Rebase:**
-```bash
-# Use GIT_SEQUENCE_EDITOR for scripted rebase
-GIT_SEQUENCE_EDITOR='script.sh' git rebase -i origin/main
-```
-
-**Common Operations:**
-- `pick` - keep commit as-is
-- `squash` - combine with previous commit
-- `drop` - remove commit entirely (e.g., adds code later removed)
-
-## Nix-Specific Patterns
-
-### Activation Scripts
-See: https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/system/activation/activation-script.nix
-
-**Critical Rules:**
-- **NEVER use `exit`** - aborts entire activation, breaks boot, prevents /etc updates
-- Wrap logic in functions and use `return` for early exit (|| return pattern)
-- Call main function with `|| true` to prevent activation failure
-- Must be idempotent (can run multiple times)
-- Don't use `set -e` - framework handles errors
-- Use `|| true` for expected failures
-
-**Pattern:**
-```bash
-system.activationScripts.example = {
-  text = ''
-    check_condition() {
-      # Guard clause pattern
-      if condition_not_met; then
-        return 1
-      fi
-      # do work
-    }
-
-    main() {
-      check_condition || return
-      # more steps
-    }
-
-    # Run but don't fail entire activation
-    main || true
-  '';
-};
-```
-
-See: `modules/disk-tpm-encryption.nix` (enroll-secure-boot-keys)
-
-### Shell Scripts with writeShellApplication
-See: `modules/ssh.nix` (fetch-authorized-keys script)
-
-Use `writeShellApplication` for shellcheck validation at build time:
-```nix
-pkgs.lib.getExe (pkgs.writeShellApplication {
-  name = "script-name";
-  runtimeInputs = with pkgs; [coreutils curl gnugrep];
-  text = ''
-    # script content
-  '';
-})
-```
-
-**Nix String Escaping:**
-- Shell variables: `''${variable}` (double single-quote prefix)
-- Nix variables: `${variable}` (normal interpolation)
-
-Example:
-```nix
-text = ''
-  hostname="example"
-  grep "^''${hostname}" file  # shell variable
-  path="${config.value}"      # nix variable
-'';
-```
-
-**Shellcheck Rules:**
-- Unused variables → use `_` (e.g., `read -r _ user key`)
-- Variable expansion → always use braces `''${variable}`
-- Expected failures → conditionals handle them
-
-**AuthorizedKeysCommand Scripts:**
-Must NEVER crash sshd - always exit 0. Handle all errors before they propagate. Use guard clauses and early returns to avoid nesting.
-
-### Secondary Encrypted Disks
-Disks prepared manually BEFORE deployment (not managed by disko):
-1. Partition with labeled name (`disk-service-luks`)
-2. LUKS encrypt + format
-3. Configure in NixOS (see `modules/immich.nix` for example)
-4. Enroll TPM after first boot: `systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0,7 /dev/disk/by-partlabel/...`
-
-**Key**: Always use `nofail` mount option - system boots without data disk.
-
-### HTTPS with Let's Encrypt
-See: `modules/acme.nix`
-
-**Architecture:**
-- Services: localhost only (127.0.0.1)
-- Nginx: TLS termination, proxies to localhost
-- Firewall: nb-homelab interface only
-- ACME: DNS-01 challenge (Cloudflare), wildcard cert
-
-**Setup:**
-```bash
-# On each host
-nix run .#inject-cloudflare-token hostname
-```
-
-### Systemd Services
-
-**Multi-Instance Pattern:**
-See: `modules/networking.nix` (netbird-homelab-enroll)
-
-When services need unique paths: `/var/run/service-<name>/sock`
-CLI must specify: `--daemon-addr unix:///var/run/service-<name>/sock`
-
-**Oneshot Enrollment Pattern:**
-- `ConditionPathExists` for setup key file
-- `set -euo pipefail` + retry logic
-- Delete credentials only after success
-- See `modules/networking.nix` for reference implementation
-
-### vpsAdminOS Containers
-See: `modules/vpsadminos.nix`, `hosts/vpsfree/configuration.nix`
-
-**Critical Settings:**
-```nix
-# In modules/vpsadminos.nix
-console.enable = true;  # Without this: no console login prompt
-
-# In hosts/vpsfree/configuration.nix
-systemd.network.networks."98-all-ethernet".DHCP = "no";
-systemd.services.systemd-networkd-wait-online.enable = lib.mkForce false;
-networking.nameservers = ["1.1.1.1" "8.8.8.8"];
-```
-
-Rationale: vpsAdminOS manages network externally (`/ifcfg.add`), not DHCP. wait-online hangs indefinitely.
-
-**NFS Mounts:**
-vpsAdminOS containers don't support systemd automount units. Use simple configuration following vpsfree's recommendation:
-```nix
-fileSystems."/mnt/path" = {
-  device = "nfs-server:/path";
-  fsType = "nfs";
-  options = ["nofail"];
-};
-```
-Avoid: `x-systemd.automount`, `noauto`, `_netdev`, `nfsvers=3` - use minimal options.
-See: `modules/backup-storage.nix`
-
-**Multi-Homed Hosts (Public + VPN):**
-Don't hardcode VPN IPs (change on re-enrollment). Use nginx access control:
-```nix
-services.nginx.virtualHosts."service.domain" = {
-  listenAddresses = ["0.0.0.0"];
-  extraConfig = ''
-    allow 100.76.0.0/16;  # Netbird VPN range
-    deny all;
-  '';
-};
-```
-Firewall rules still restrict public interface.
-
-### Borg Backup
-See: `modules/backup-storage.nix`, `modules/immich.nix`, `scripts.nix` (inject-borg-passphrase)
-
-**Architecture:**
-- Dual backup: remote (vpsfree/NAS) + local (NVMe)
-- Unified path: `/var/lib/borg-repos/immich` on both hosts
-- Server: NFS mount with bind mount, borg user with bash shell
-- Client: `services.borgbackup.jobs.{NAME-remote,NAME-local}` with separate passphrases
-
-**Mount Structure:**
-```nix
-# thinkcenter
-fileSystems."/mnt/immich-data" = {
-  device = "/dev/mapper/immich-data";
-  fsType = "ext4";
-};
-fileSystems."/var/lib/borg-repos" = {
-  device = "/mnt/immich-data/borg-repos";
-  fsType = "none";
-  options = ["bind" "x-systemd.requires=mnt-immich\\x2ddata.mount"];
-};
-
-# vpsfree
-fileSystems."/var/lib/borg-repos" = {
-  device = "/mnt/nas-backup/borg-repos";
-  fsType = "none";
-  options = ["bind" "x-systemd.requires=mnt-nas\\x2dbackup.mount"];
-};
-```
-
-Bind mounts prevent writes if underlying storage unmounted.
-
-**Critical Configuration:**
-```nix
-users.users.borg = {
-  isSystemUser = true;
-  group = "borg";
-  shell = "${pkgs.bash}/bin/bash";  # Required for borg serve
-};
-```
-
-**Why bash shell:** Borg client executes `borg serve` via SSH on remote. Shell must allow command execution. Security via filesystem permissions (repository owned by borg user, mode 0700), not SSH command restrictions.
-
-**Repository initialization:**
-Automated via `inject-borg-passphrase`:
-```bash
-nix run .#inject-borg-passphrase vpsfree thinkcenter  # remote
-nix run .#inject-borg-passphrase thinkcenter thinkcenter  # local
-```
-Script checks if repo exists, initializes if needed, injects passphrase.
-
-**Systemd timer activation:**
-After deploying `services.borgbackup.jobs`, timer may not appear immediately. Requires reboot or systemd cache refresh. Verify:
-```bash
-systemctl list-timers | grep borgbackup
-```
-
-**Backup verification:**
-```bash
-# Check repositories
-borg list /var/lib/borg-repos/immich
-
-# Verify integrity
-borg check /var/lib/borg-repos/immich
-```
-
-### Grafana Datasources
-See: `modules/grafana.nix`
-
-Provision with explicit UIDs matching dashboard references (not auto-generated strings):
-```nix
-uid = "prometheus";  # Must match dashboard datasource.uid
-```
-
-### Firewall Security
-See: `modules/networking.nix`, `modules/ssh.nix`
-
-**Critical Pattern:**
-```nix
-services.servicename = {
-  enable = true;
-  openFirewall = false;  # NEVER allow global access
-};
-
-# Use interface-specific rules instead
-networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [port];
-```
-
-**Why:** Many NixOS services default `openFirewall = true`, creating global rules that bypass interface restrictions. Always explicitly set `false` and use interface-specific rules.
-
-**Firewall Backend:**
-Use nftables (modern, better performance):
-```nix
-networking.nftables.enable = true;
-```
-
-**Security Auditing:**
-Verify public interfaces with targeted nmap scans:
-```bash
-# Good: specific ports
-nmap -p 22,443 <public-ip>
-
-# Avoid: full scans show false positives due to rate limiting
-nmap -p- <public-ip>  # Random filtered ports are ICMP rate limiting artifacts
-
-# For accuracy with rate limiting:
-nmap -T2 --max-rate 100 -p 1-10000 <public-ip>
-```
-
-**fail2ban:**
-Default ban time: 10 minutes (600s). Failed auth attempts trigger IP bans. Unban manually:
-```bash
-sudo fail2ban-client set sshd unbanip <ip>
-sudo fail2ban-client status sshd  # check ban status
-```
-
-## Connectivity Safety
-**CRITICAL: Never break your own access path**
-
-Remote machines via VPN only:
-- **NEVER** run `netbird down` while SSH'd via VPN
-- **NEVER** delete peer from dashboard while needing remote access
-- **NEVER** reboot without verifying connectivity-safe
-- If changes affect connectivity: inform user, provide recovery instructions, let user execute locally
+## Shell Script Style
+- Use `|| { }` pattern for guard clauses instead of nested if-else
+- Avoid else branches whenever possible
+- If disabling shellcheck, always add comment explaining why
+- Use `local -r` for immutable local variables
+- Helper functions should `exit 1` on fatal errors
 
 ## Communication Style
 - Direct and concise
@@ -338,39 +61,15 @@ Remote machines via VPN only:
 - Technical terminology appropriate
 - No praise/validation - objective evaluation only
 
-## Scripts Reference
-- `nix run .#nixos-install <hostname>` - Install NixOS with Netbird enrollment
+## Connectivity Safety
+**CRITICAL: Never break your own access path**
+
+Remote machines via VPN only:
+- NEVER run `netbird down` while SSH'd via VPN
+- NEVER delete peer from dashboard while needing remote access
+- If changes affect connectivity: inform user, let them execute locally
+
+## Scripts
+See `scripts.nix` for available commands. Key ones:
 - `nix run .#deploy-config <hostname>` - Deploy config remotely
-- `nix run .#inject-cloudflare-token <hostname>` - Setup ACME certificates
-- `nix run .#add-ssh-key <hostname>` - Generate and authorize SSH key
-
-See `scripts.nix` for implementation details.
-
-## Shell Script Style
-
-**Guard Clauses:**
-Use `|| { }` pattern for early exits instead of nested if-else:
-```bash
-# Good: guard clause
-key_password=$(ask_for_token "key password") || {
-  error "Failed to get key password"
-  exit 1
-}
-
-# Avoid: nested if
-if ! key_password=$(ask_for_token "key password"); then
-  error "Failed to get key password"
-  exit 1
-fi
-```
-
-For simple cases where the function already logs errors:
-```bash
-validate_hostname "$HOSTNAME" || exit 1
-```
-
-**General Rules:**
-- Avoid else branches whenever possible
-- If disabling shellcheck, always add comment explaining why
-- Use `local -r` for immutable local variables
-- Helper functions should `exit 1` on fatal errors (avoids boilerplate at call sites)
+- `nix run .#build-sdcard <hostname>` - Build RPi SD card image
