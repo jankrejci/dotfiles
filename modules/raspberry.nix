@@ -21,7 +21,7 @@
   # Overlays for RPi builds:
   # 1. ffmpeg: Use RPi-optimized headless variant from nixos-raspberrypi cache.
   # 2. python3: Source from standard nixpkgs to hit cache.nixos.org.
-  # 3. u-boot: Disable boot delay to skip keyboard wait during boot.
+  # 3. u-boot: Disable "Hit any key" prompt before loading extlinux.
   #
   # nixos-raspberrypi uses nvmd/nixpkgs fork that doesn't match cache.nixos.org.
   # By overlaying from standard nixpkgs, derivation hashes match the cache.
@@ -30,9 +30,9 @@
       (final: prev: {
         ffmpeg = final.rpi.ffmpeg-headless;
       })
-      # Disable U-Boot keyboard input wait during boot.
-      # Default bootdelay=2 waits for keypress which delays boot and can hang
-      # on headless systems. -2 skips autoboot delay entirely.
+      # Disable U-Boot "Hit any key" prompt. Default bootdelay=2 waits for keypress.
+      # -2 skips autoboot delay entirely. Combined with boot.loader.timeout=0
+      # for extlinux menu, this gives instant boot on headless systems.
       (final: prev: {
         ubootRaspberryPi_64bit = prev.ubootRaspberryPi_64bit.override {
           extraConfig = ''
@@ -48,6 +48,10 @@
         # Don't overlay octoprint so it uses our ffmpeg-headless overlay.
       })
     ];
+
+  # Skip boot menu on headless systems. Default 5 second timeout is unnecessary
+  # when there's only one generation and no keyboard attached.
+  boot.loader.timeout = 0;
 
   # Add password for the admin user to be able to log in from local console
   users.users.admin.hashedPassword = "$y$j9T$8qLqeoP/jNv9rFtFfyljl1$S/GqBaFaaCIluY88qW9app4APK49d9wFI.5CmfFnwH/";
@@ -114,9 +118,6 @@
     info.enable = false;
     nixos.enable = false;
   };
-
-  # Disable nix daemon since RPi is deployed via deploy-rs, not local rebuilds.
-  nix.enable = false;
 
   # Override default packages to keep only rsync for file transfers.
   environment.defaultPackages = lib.mkForce [pkgs.rsync];
