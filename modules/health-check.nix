@@ -3,8 +3,7 @@
   pkgs,
   ...
 }: let
-  domain = "krejci.io";
-  ntfyDomain = "ntfy.${domain}";
+  ntfyPort = config.serviceConfig.ntfy.port;
   ntfyTopic = "system-health";
 
   healthCheckScript = pkgs.writeShellApplication {
@@ -76,13 +75,23 @@
         local job=$1
         local name=$2
         local max_age_hours=48
+        local service="borgbackup-job-$job.service"
 
         systemctl is-enabled --quiet "borgbackup-job-$job.timer" || {
           push_message "❌ Backup $name disabled"
           return 0
         }
 
-        last_run=$(systemctl show "borgbackup-job-$job.service" -p ActiveEnterTimestamp --value)
+        # Check if last run failed
+        local result
+        result=$(systemctl show "$service" -p Result --value)
+        if [ "$result" != "success" ] && [ -n "$result" ]; then
+          push_message "❌ Backup $name failed"
+          return 0
+        fi
+
+        # Check if backup is stale
+        last_run=$(systemctl show "$service" -p ActiveEnterTimestamp --value)
         if [ -z "$last_run" ] || [ "$last_run" = "n/a" ]; then
           return 0
         fi
@@ -96,7 +105,7 @@
         age_hours=$(( (current_epoch - last_run_epoch) / 3600 ))
 
         if [ "$age_hours" -gt "$max_age_hours" ]; then
-          push_message "❌ Backup $name ($age_hours h)"
+          push_message "❌ Backup $name stale ($age_hours h)"
         fi
         return 0
       }
@@ -107,7 +116,7 @@
         local priority=$3
         local tags=$4
 
-        printf "%b" "$message" | curl -s -X POST "https://${ntfyDomain}/${ntfyTopic}" \
+        printf "%b" "$message" | curl -s -X POST "http://127.0.0.1:${toString ntfyPort}/${ntfyTopic}" \
           -H "Authorization: Bearer $NTFY_TOKEN" \
           -H "Title: $title" \
           -H "Priority: $priority" \
