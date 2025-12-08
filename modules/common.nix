@@ -71,14 +71,14 @@
     };
   };
 
-  # Common system packages
+  # Common system packages - minimal set for all hosts including RPi
+  # Server-specific tools are in headless.nix, desktop tools in desktop.nix
   environment.systemPackages = with pkgs; [
     bash
     bash-completion
     coreutils
     curl
     jq
-    lshw
     pciutils
     rsync
     unzip
@@ -87,21 +87,13 @@
     wget
     bat # cat clone with wings
     eza # ls replacement
-    fd # find relplacement
+    fd # find replacement
     fzf # cli fuzzy finder
     zoxide # smarter cd command
     ripgrep # search tool
-    nmap # network mapper
     htop # interactive process viewer
-    wireguard-tools
     dig # DNS lookup utility
-    sops
     tcpdump
-    nix-tree
-    gitMinimal
-    sbctl
-    gcc
-    gnumake
   ];
 
   services.prometheus.exporters.node = {
