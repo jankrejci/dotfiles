@@ -97,7 +97,14 @@
     algorithm = "zstd";
   };
 
-  # TODO find out more unused services to disable
+  # Fix tmpfiles config that references non-existent 'sudo' group.
+  # Use 'wheel' instead for debug filesystem access.
+  systemd.tmpfiles.settings."10-kernel-debug"."/sys/kernel/debug".d = {
+    mode = "0750";
+    user = "root";
+    group = "wheel";
+  };
+
   # Disable unneeded features
   services = {
     avahi.enable = false;
@@ -106,9 +113,13 @@
     journald.extraConfig = "Storage=volatile";
   };
 
-  # TODO Turn off BT properly, it still emmits some errors
-  # I dont need the bluetooth so far
+  # Disable Bluetooth to free ttyAMA0 for serial devices like GPS, 3D printers.
   hardware.bluetooth.enable = false;
+  boot.blacklistedKernelModules = ["hci_uart"];
+  hardware.raspberry-pi.config.all.dt-overlays.disable-bt = {
+    enable = true;
+    params = {};
+  };
 
   # Disable documentation since RPi is deployed remotely.
   documentation = {
@@ -131,7 +142,10 @@
   hardware.enableRedistributableFirmware = lib.mkForce false;
 
   # Add only the firmware needed for RPi WiFi.
-  hardware.firmware = [pkgs.raspberrypiWirelessFirmware];
+  hardware.firmware = with pkgs; [
+    raspberrypiWirelessFirmware
+    wireless-regdb
+  ];
 
   # Disable installer tools since config changes are deployed remotely via deploy-rs.
   system.disableInstallerTools = true;
