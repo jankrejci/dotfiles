@@ -2,9 +2,54 @@
   lib,
   pkgs,
   ...
-}: {
+}: let
+  # Environment variable set by build-installer script
+  netbirdSetupKey = builtins.getEnv "NETBIRD_SETUP_KEY";
+  setupKeySource = "/etc/netbird/setup-key";
+  setupKeyFolder = "/var/lib/netbird-homelab";
+  setupKeyPath = "${setupKeyFolder}/setup-key";
+in {
   # Add password for the admin user to be able to log in from local console
   users.users.admin.hashedPassword = "$y$j9T$8qLqeoP/jNv9rFtFfyljl1$S/GqBaFaaCIluY88qW9app4APK49d9wFI.5CmfFnwH/";
+
+  # Embed the setup key in the ISO. The ISO uses read-only squashfs,
+  # so we place it in /etc and copy to /var/lib on boot.
+  environment.etc."netbird/setup-key" = {
+    text = builtins.trace "Loading Netbird setup key for ISO installer" netbirdSetupKey;
+    mode = "0600";
+    user = "root";
+    group = "root";
+  };
+
+  # Ensure the persistent target directory exists
+  systemd.tmpfiles.rules = [
+    "d ${setupKeyFolder} 0755 root root -"
+  ];
+
+  # Copy the setup key from squashfs /etc to tmpfs /var/lib on boot.
+  # Netbird expects the key in /var/lib which is on tmpfs in the live ISO.
+  systemd.services.netbird-key-copy = {
+    description = "Copy Netbird Setup Key";
+    wantedBy = ["multi-user.target"];
+    before = ["netbird-homelab.service"];
+    after = ["local-fs.target"];
+
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+
+    script = ''
+      if [ -f "${setupKeySource}" ]; then
+        echo "Copying Netbird setup key from ${setupKeySource} to ${setupKeyPath}"
+        cp "${setupKeySource}" "${setupKeyPath}"
+        chmod 600 "${setupKeyPath}"
+        chown root:root "${setupKeyPath}"
+      else
+        echo "No ${setupKeySource} found, skipping copy."
+      fi
+    '';
+  };
 
   # Allow nixos-anywhere to login as root for installation
   services.openssh.settings.PermitRootLogin = lib.mkForce "yes";
