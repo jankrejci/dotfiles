@@ -1,6 +1,13 @@
 {
   description = "NixOS multi host configuration";
 
+  # Binary cache for nixos-raspberrypi packages like ffmpeg-headless and kernel.
+  # Applies to all nix commands including nix build and nix eval.
+  nixConfig = {
+    extra-substituters = ["https://nixos-raspberrypi.cachix.org"];
+    extra-trusted-public-keys = ["nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="];
+  };
+
   inputs = {
     # Most of packages are fetched from the stable channel
     nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
@@ -27,6 +34,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-flatpak.url = "github:gmodena/nix-flatpak/?ref=latest";
+    # Raspberry Pi NixOS support with RPi kernel and proper config.txt generation.
+    # Using main branch to match binary cache which is built from latest.
+    nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi";
   };
 
   outputs = {
@@ -40,6 +50,7 @@
     disko,
     nixos-anywhere,
     nix-flatpak,
+    nixos-raspberrypi,
     ...
   } @ inputs: let
     lib = nixpkgs.lib;
@@ -71,6 +82,14 @@
       system = "aarch64-linux";
       config.allowUnfree = true;
       overlays = [unstable-aarch64-linux];
+    };
+
+    # Cached aarch64 packages from standard nixpkgs for RPi overlay.
+    # nixos-raspberrypi uses a custom nixpkgs fork that doesn't match cache.nixos.org.
+    # We overlay Python and other packages from this cached instance.
+    cachedPkgs-aarch64 = import nixpkgs {
+      system = "aarch64-linux";
+      config.allowUnfree = true;
     };
 
     # All hosts defined in hosts.nix
@@ -111,28 +130,18 @@
       ++ hostConfig.extraModules or []
       ++ additionalModules;
 
-    # The main unit creating nixosConfiguration for a given host configuration
+    # Create nixosConfiguration for regular x86_64 hosts.
     mkSystem = {
       hostName,
       hostConfig,
       additionalModules ? [],
     }:
       lib.nixosSystem {
-        system = hostConfig.system;
+        system = "x86_64-linux";
         specialArgs = {inherit inputs;};
         modules =
-          mkModulesList
-          {
-            inherit hostName hostConfig additionalModules;
-          }
-          ++ [
-            ({...}: {
-              nixpkgs.pkgs =
-                if hostConfig.system == "aarch64-linux"
-                then pkgs-aarch64-linux
-                else pkgs-x86_64-linux;
-            })
-          ];
+          mkModulesList {inherit hostName hostConfig additionalModules;}
+          ++ [({...}: {nixpkgs.pkgs = pkgs-x86_64-linux;})];
       };
 
     # Function to create a deploy node entry
@@ -141,9 +150,19 @@
       sshUser = "admin";
       profiles.system = {
         user = "root";
-        path = deploy-rs.lib.${hostConfig.system}.activate.nixos self.nixosConfigurations.${hostName};
+        path =
+          deploy-rs.lib.${
+            if hostConfig.isRpi
+            then "aarch64-linux"
+            else "x86_64-linux"
+          }.activate.nixos
+          self.nixosConfigurations.${hostName};
       };
     };
+
+    # Split hosts into regular and RPi
+    rpiHosts = lib.filterAttrs (_: hostConfig: hostConfig.isRpi) nixosHosts;
+    regularHosts = lib.filterAttrs (_: hostConfig: !hostConfig.isRpi) nixosHosts;
   in {
     formatter = {
       x86_64-linux = pkgs-x86_64-linux.alejandra;
@@ -152,12 +171,20 @@
 
     # Generate nixosConfiguration for all hosts
     nixosConfigurations =
-      builtins.mapAttrs
-      (hostName: hostConfig:
-        mkSystem {
-          inherit hostName hostConfig;
-        })
-      nixosHosts;
+      # Regular x86_64 hosts use lib.nixosSystem.
+      (builtins.mapAttrs
+        (hostName: hostConfig: mkSystem {inherit hostName hostConfig;})
+        regularHosts)
+      # RPi hosts use nixos-raspberrypi.lib.nixosSystem with custom nixpkgs fork.
+      # The fork has RPi boot loader patches and can't use standard nixpkgs.
+      # We pass cachedPkgs-aarch64 to overlay Python and other slow-to-build packages.
+      // (builtins.mapAttrs
+        (hostName: hostConfig:
+          nixos-raspberrypi.lib.nixosSystem {
+            specialArgs = {inherit inputs nixos-raspberrypi cachedPkgs-aarch64;};
+            modules = mkModulesList {inherit hostName hostConfig;};
+          })
+        rpiHosts);
 
     deploy.nodes = builtins.mapAttrs mkNode nixosHosts;
 
@@ -173,7 +200,6 @@
           hostConfig = hosts.iso;
           additionalModules = [
             "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-            ./modules/load-keys.nix
             ({...}: {
               isoImage.makeEfiBootable = true;
               isoImage.makeUsbBootable = true;
@@ -184,21 +210,31 @@
       in
         installerSystem.config.system.build.isoImage;
 
-      # Generate SD card image for raspberry pi
+      # Generate SD card image for raspberry pi as final bootable system.
+      # Uses nixosSystem with sd-image module directly, not nixosInstaller.
+      # This produces a smaller image without installer profile bloat.
+      # TODO: Consider adding a generic RPi installer image similar to ISO installer
+      # that can be used to bootstrap any RPi host.
       sdcard =
         lib.genAttrs
-        (builtins.attrNames (lib.filterAttrs
-          (hostName: hostConfig: hostConfig.system == "aarch64-linux")
-          hosts))
-        (hostName:
-          (self.nixosConfigurations.${hostName}.extendModules {
-            modules = [
-              "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
-              ./modules/load-keys.nix
-              ({...}: {
-                sdImage.compressImage = false;
-              })
-            ];
+        (builtins.attrNames rpiHosts)
+        (hostName: let
+          hostConfig = hosts.${hostName};
+        in
+          (nixos-raspberrypi.lib.nixosSystem {
+            specialArgs = {inherit inputs nixos-raspberrypi cachedPkgs-aarch64;};
+            modules =
+              mkModulesList {inherit hostName hostConfig;}
+              ++ [
+                nixos-raspberrypi.nixosModules.sd-image
+                ./modules/load-keys.nix
+({lib, ...}: {
+                  sdImage.compressImage = false;
+                  # Reduce firmware partition from 1GB to 256MB for initial image.
+                  # 1GB is for multi-generation boot, but fresh install only has one.
+                  sdImage.firmwareSize = lib.mkForce 256;
+                })
+              ];
           }).config.system.build.sdImage);
     };
 
