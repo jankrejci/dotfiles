@@ -48,7 +48,8 @@ in {
     "d ${mountPoint}/borg-repos/immich 0700 borg borg -"
   ];
 
-  # Create dedicated borg user for backup operations
+  # Borg user needs bash shell because borg client executes `borg serve` via SSH.
+  # Security is via filesystem permissions, not SSH command restrictions.
   users.users.borg = {
     isSystemUser = true;
     group = "borg";
