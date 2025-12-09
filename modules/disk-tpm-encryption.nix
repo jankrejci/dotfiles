@@ -131,26 +131,34 @@ in {
     };
   };
 
-  system.activationScripts."enroll-secure-boot-keys" = {
-    deps = [];
-    text = ''
-      check_setup_mode() {
-        echo -n "Checking secure boot status... "
-        if ${pkgs.sbctl}/bin/sbctl status | grep -qE "Setup Mode:.*Disabled"; then
-          echo "SKIPPING, Setup Mode disabled"
-          return 1
-        fi
-        echo "OK"
-      }
+  # Enroll secure boot keys on first boot when system is in Setup Mode.
+  # This must run before enroll-tpm-key service.
+  systemd.services."enroll-secure-boot-keys" = {
+    description = "Enroll secure boot keys to UEFI";
+    wantedBy = ["multi-user.target"];
+    before = ["enroll-tpm-key.service"];
 
-      create_keys() {
-        echo -n "Creating secure boot keys... "
-        if ! ${pkgs.sbctl}/bin/sbctl create-keys; then
-          echo "ERROR: Failed to create secure boot keys"
-          return 1
-        fi
-        echo "OK"
-      }
+    path = with pkgs; [
+      sbctl
+      e2fsprogs
+    ];
+
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+
+    script = ''
+      set -euo pipefail
+
+      # Skip if already enrolled
+      if sbctl status | grep -qE "Setup Mode:.*Disabled"; then
+        echo "Setup Mode disabled, secure boot keys already enrolled"
+        exit 0
+      fi
+
+      echo "Creating secure boot keys..."
+      sbctl create-keys
 
       set_efi_vars() {
         # EFI variables have immutable flag set by default for safety.
@@ -164,48 +172,29 @@ in {
         local efivars="/sys/firmware/efi/efivars"
         for var in "$efivars"/PK-* "$efivars"/KEK-* "$efivars"/db-* "$efivars"/dbx-*; do
           if [ -f "$var" ]; then
-            ${pkgs.e2fsprogs}/bin/chattr "$chattr_flag" "$var" 2>/dev/null || true
+            chattr "$chattr_flag" "$var" 2>/dev/null || true
           fi
         done
       }
 
-      enroll_keys_to_uefi() {
-        echo -n "Enrolling keys to UEFI... "
-        set_efi_vars --mutable
-        # The --microsoft flag is a workaround for T14 gen1
-        if ! ${pkgs.sbctl}/bin/sbctl enroll-keys --microsoft; then
-          echo "ERROR: Failed to enroll secure boot keys"
-          set_efi_vars --immutable
-          ${pkgs.sbctl}/bin/sbctl status
-          return 1
-        fi
+      echo "Enrolling keys to UEFI..."
+      set_efi_vars --mutable
+      # The --microsoft flag is a workaround for T14 gen1
+      if ! sbctl enroll-keys --microsoft; then
         set_efi_vars --immutable
-        echo "OK"
-      }
+        echo "ERROR: Failed to enroll secure boot keys"
+        sbctl status
+        exit 1
+      fi
+      set_efi_vars --immutable
 
-      verify_enrollment() {
-        echo -n "Verifying enrollment... "
-        if ! ${pkgs.sbctl}/bin/sbctl status | grep -qE "Setup Mode:.*Disabled"; then
-          echo "ERROR: Key enrollment verification failed"
-          ${pkgs.sbctl}/bin/sbctl status
-          return 1
-        fi
-        echo "Secure boot keys enrolled successfully"
-      }
-
-      enroll_keys() {
-        # Guard clauses: each step must succeed or we return early
-        # The || return pattern allows clean early exit without nesting
-        check_setup_mode || return
-        create_keys || return
-        enroll_keys_to_uefi || return
-        verify_enrollment || return
-      }
-
-      # Run enrollment but don't fail activation if it fails
-      # The || true ensures this script never aborts the entire system activation
-      # which would prevent /etc updates and break deployments
-      enroll_keys || true
+      echo "Verifying enrollment..."
+      if ! sbctl status | grep -qE "Setup Mode:.*Disabled"; then
+        echo "ERROR: Key enrollment verification failed"
+        sbctl status
+        exit 1
+      fi
+      echo "Secure boot keys enrolled successfully"
     '';
   };
 
