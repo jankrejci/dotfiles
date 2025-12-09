@@ -198,62 +198,81 @@ in {
     '';
   };
 
-  # Sign bootloader with each bootloader build
-  # and enroll TPM key during the installation
+  # Enroll provisional TPM key during installation.
+  # This allows first boot to unlock without password while secure boot keys
+  # are not yet enrolled. Only PCR0 is used since PCR7 requires secure boot.
   boot.loader.systemd-boot.extraInstallCommands = ''
     set -euo pipefail
 
-    echo -n "Signing bootloader files... "
-    ${pkgs.sbctl}/bin/sbctl sign -s /boot/EFI/systemd/systemd-bootx64.efi
-    ${pkgs.sbctl}/bin/sbctl sign -s /boot/EFI/BOOT/BOOTX64.EFI
-
-    # Sign all kernel images
-    for kernel in /boot/EFI/nixos/*bzImage.efi; do
-      if [ -f "$kernel" ]; then
-        ${pkgs.sbctl}/bin/sbctl sign -s "$kernel"
-      fi
-    done
-
-    # Verify signatures
-    if ${pkgs.sbctl}/bin/sbctl verify 2>&1 | grep -q "✗"; then
-      echo "FAILED"
-      ${pkgs.sbctl}/bin/sbctl verify
-      exit 1
-    fi
-    echo "OK"
-
-    # This is a workaround to get provisional key enrolled during installation.
-    # Enrollment through the activation script doesn't work, because the LUKS
-    # partition is not ready at that time
-
-    # Exit early if password file doesn't exist, it means TPM key is probably enrolled already
-    echo -n "Checking presence of the password file ... "
+    # Exit early if password file doesn't exist, TPM key is probably enrolled already
     if [ ! -f "${diskPasswordFile}" ]; then
-      echo "NOT FOUND, skipping TPM enrollment"
+      echo "Password file not found, skipping provisional TPM enrollment"
       exit 0
     fi
-    echo "OK"
 
     # Check if TPM slot already exists
-    echo -n "Checking if the TPM slot is empty ... "
     if ${pkgs.systemd}/bin/systemd-cryptenroll "${luksDevice}" | grep -q tpm2; then
-      echo "FAILED skipping provisional enrollment"
+      echo "TPM slot already exists, skipping provisional enrollment"
       exit 0
     fi
-    echo "OK"
 
     # Temporarily enroll TPM key sealed with PCR0 only for the first boot
-    echo -n "Enrolling provisional TPM key (PCR0 only) for first boot... "
-    if ! ${pkgs.systemd}/bin/systemd-cryptenroll \
+    echo "Enrolling provisional TPM key (PCR0 only) for first boot..."
+    ${pkgs.systemd}/bin/systemd-cryptenroll \
       --tpm2-device=auto \
       --tpm2-pcrs=0 \
       "${luksDevice}" \
-      --unlock-key-file="${diskPasswordFile}"; then
-      echo "FAILED"
-      exit 1
-    fi
-    echo "OK"
+      --unlock-key-file="${diskPasswordFile}"
   '';
+
+  # Sign bootloader files after secure boot keys are enrolled.
+  # Restarts on each deploy to sign any new kernel/bootloader files.
+  systemd.services."sign-bootloader" = {
+    description = "Sign bootloader files for secure boot";
+    wantedBy = ["multi-user.target"];
+    after = ["enroll-secure-boot-keys.service"];
+    before = ["enroll-tpm-key.service"];
+    restartTriggers = [config.system.nixos.label];
+
+    path = with pkgs; [
+      sbctl
+    ];
+
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+
+    script = ''
+      set -euo pipefail
+
+      # Skip if secure boot keys not enrolled yet
+      if sbctl status | grep -qE "Setup Mode:.*Enabled"; then
+        echo "Setup Mode enabled, skipping bootloader signing"
+        exit 0
+      fi
+
+      echo "Signing bootloader files..."
+      sbctl sign -s /boot/EFI/systemd/systemd-bootx64.efi
+      sbctl sign -s /boot/EFI/BOOT/BOOTX64.EFI
+
+      # Sign all kernel images
+      for kernel in /boot/EFI/nixos/*bzImage.efi; do
+        if [ -f "$kernel" ]; then
+          sbctl sign -s "$kernel"
+        fi
+      done
+
+      # Verify signatures
+      echo "Verifying signatures..."
+      if sbctl verify 2>&1 | grep -q "✗"; then
+        echo "ERROR: Unsigned bootloader images found"
+        sbctl verify
+        exit 1
+      fi
+      echo "All bootloader files signed successfully"
+    '';
+  };
 
   # Final TPM key enrollment
   systemd.services."enroll-tpm-key" = {
