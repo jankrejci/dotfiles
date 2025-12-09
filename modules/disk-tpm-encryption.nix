@@ -141,6 +141,7 @@ in {
     path = with pkgs; [
       sbctl
       e2fsprogs
+      systemd
     ];
 
     serviceConfig = {
@@ -195,6 +196,11 @@ in {
         exit 1
       fi
       echo "Secure boot keys enrolled successfully"
+
+      # Reboot to activate secure boot. The firmware should auto-enable it after
+      # keys are enrolled, or user needs to enable it manually in UEFI.
+      echo "Rebooting to activate secure boot..."
+      systemctl reboot
     '';
   };
 
@@ -279,10 +285,19 @@ in {
     description = "Enroll TPM key for disk encryption";
     wantedBy = ["multi-user.target"];
 
+    path = with pkgs; [
+      sbctl
+      systemd
+      coreutils
+    ];
+
+    unitConfig = {
+      ConditionPathExists = "!/run/initramfs";
+    };
+
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ConditionPathExists = "!/run/initramfs";
     };
 
     script = ''
@@ -295,35 +310,35 @@ in {
       fi
 
       echo "Starting TPM key enrollment"
-      ${pkgs.sbctl}/bin/sbctl status
+      sbctl status
 
       # It is expected that secure boot keys are enrolled already.
-      if ! ${pkgs.sbctl}/bin/sbctl status | grep -qE "Setup Mode:.*Disabled"; then
+      if ! sbctl status | grep -qE "Setup Mode:.*Disabled"; then
         echo "ERROR: Secure boot is still in Setup Mode"
         exit 1
       fi
       echo "Secure boot in User Mode"
 
       # Secure boot is required for PCR7 protection.
-      if ! ${pkgs.sbctl}/bin/sbctl status | grep -qE "Secure Boot:.*Enabled"; then
+      if ! sbctl status | grep -qE "Secure Boot:.*Enabled"; then
         echo "ERROR: Secure boot is not enabled"
         exit 1
       fi
       echo "Secure boot is enabled"
 
       # Check if the TPM password slot is enrolled
-      if ! ${pkgs.systemd}/bin/systemd-cryptenroll "${luksDevice}" | grep -q "password"; then
+      if ! systemd-cryptenroll "${luksDevice}" | grep -q "password"; then
         echo "ERROR: No password slots found in LUKS device"
         exit 1
       fi
       echo "Password slot found on LUKS device"
 
-      if ! ${pkgs.systemd}/bin/systemd-cryptenroll --wipe-slot=tpm2 "${luksDevice}"; then
+      if ! systemd-cryptenroll --wipe-slot=tpm2 "${luksDevice}"; then
         echo "WARNING: Failed to wipe TPM slot, may not exist."
       fi
 
       # Enroll final TPM key sealed with PCR0 and PCR7
-      if ! ${pkgs.systemd}/bin/systemd-cryptenroll \
+      if ! systemd-cryptenroll \
         --tpm2-device=auto \
         --tpm2-pcrs=0,7 \
         "${luksDevice}" \
@@ -332,14 +347,13 @@ in {
         echo "ERROR: Failed to enroll TPM key"
         exit 1
       fi
-      echo "TPM key key with PCR0+PCR7"
+      echo "TPM key enrolled with PCR0+PCR7"
 
-      if ! ${pkgs.coreutils}/bin/shred -u "${diskPasswordFile}"; then
+      if ! shred -u "${diskPasswordFile}"; then
         echo "ERROR: Failed to delete password file"
         exit 1
       fi
       echo "Password file securely deleted"
-
     '';
   };
 
@@ -349,6 +363,10 @@ in {
     after = ["enroll-tpm-key.service"];
 
     path = with pkgs; [
+      sbctl
+      cryptsetup
+      systemd
+      jq
       util-linux
     ];
 
@@ -365,7 +383,7 @@ in {
 
       # Check secure boot keys are enrolled
       echo -n "Checking secure boot keys enrollment... "
-      if ${pkgs.sbctl}/bin/sbctl status | grep -qE "Setup Mode:.*Disabled"; then
+      if sbctl status | grep -qE "Setup Mode:.*Disabled"; then
         echo "OK"
       else
         echo "FAILED: Secure boot is still in Setup Mode"
@@ -374,7 +392,7 @@ in {
 
       # Check secure boot is enabled
       echo -n "Checking secure boot is enabled... "
-      if ${pkgs.sbctl}/bin/sbctl status | grep -qE "Secure Boot:.*Enabled"; then
+      if sbctl status | grep -qE "Secure Boot:.*Enabled"; then
         echo "OK"
       else
         echo "FAILED: Secure boot is not enabled"
@@ -383,7 +401,7 @@ in {
 
       # Check all bootloader images are signed
       echo -n "Checking bootloader images are signed... "
-      UNSIGNED=$(${pkgs.sbctl}/bin/sbctl verify | grep -E "✗" || true)
+      UNSIGNED=$(sbctl verify | grep -E "✗" || true)
       if [ -z "$UNSIGNED" ]; then
         echo "OK"
       else
@@ -393,7 +411,7 @@ in {
 
       # Check disk encryption is active
       echo -n "Checking disk encryption is active... "
-      if ${pkgs.cryptsetup}/bin/cryptsetup status crypted > /dev/null 2>&1; then
+      if cryptsetup status crypted > /dev/null 2>&1; then
         echo "OK"
       else
         echo "FAILED: Encrypted device 'crypted' not found"
@@ -402,7 +420,7 @@ in {
 
       # Check TPM slot is enrolled
       echo -n "Checking TPM slot is enrolled... "
-      if ${pkgs.cryptsetup}/bin/cryptsetup luksDump "${luksDevice}" | grep -qE "systemd-tpm2"; then
+      if cryptsetup luksDump "${luksDevice}" | grep -qE "systemd-tpm2"; then
         echo "OK"
       else
         echo "FAILED: No TPM slot found"
@@ -411,9 +429,9 @@ in {
 
       # Check TPM is using PCR7 (secure boot)
       echo -n "Checking TPM uses PCR7 (secure boot)... "
-      TOKEN_ID=$(${pkgs.cryptsetup}/bin/cryptsetup luksDump "${luksDevice}" | grep -B1 "systemd-tpm2" | grep -oP '^\s*\K[0-9]+' | head -n1)
-      TOKEN_DATA=$(${pkgs.cryptsetup}/bin/cryptsetup token export "${luksDevice}" --token-id "$TOKEN_ID")
-      if echo "$TOKEN_DATA" | ${pkgs.jq}/bin/jq -e '.["tpm2-pcrs"] | contains([7])' > /dev/null 2>&1; then
+      TOKEN_ID=$(cryptsetup luksDump "${luksDevice}" | grep -B1 "systemd-tpm2" | grep -oP '^\s*\K[0-9]+' | head -n1)
+      TOKEN_DATA=$(cryptsetup token export "${luksDevice}" --token-id "$TOKEN_ID")
+      if echo "$TOKEN_DATA" | jq -e '.["tpm2-pcrs"] | contains([7])' > /dev/null 2>&1; then
         echo "OK"
       else
         echo "FAILED: TPM not sealed with PCR7"
@@ -422,7 +440,7 @@ in {
 
       # Check password slot exists for recovery
       echo -n "Checking password recovery slot exists... "
-      if ${pkgs.systemd}/bin/systemd-cryptenroll "${luksDevice}" | grep -q "password"; then
+      if systemd-cryptenroll "${luksDevice}" | grep -q "password"; then
         echo "OK"
       else
         echo "FAILED: No password slots found"
