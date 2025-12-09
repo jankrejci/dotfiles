@@ -152,14 +152,34 @@ in {
         echo "OK"
       }
 
+      set_efi_vars() {
+        # EFI variables have immutable flag set by default for safety.
+        # We need to remove it before we can enroll secure boot keys.
+        local chattr_flag
+        case "$1" in
+          --immutable) chattr_flag="+i" ;;
+          --mutable)   chattr_flag="-i" ;;
+          *)           echo "Usage: set_efi_vars --immutable|--mutable"; return 1 ;;
+        esac
+        local efivars="/sys/firmware/efi/efivars"
+        for var in "$efivars"/PK-* "$efivars"/KEK-* "$efivars"/db-* "$efivars"/dbx-*; do
+          if [ -f "$var" ]; then
+            ${pkgs.e2fsprogs}/bin/chattr "$chattr_flag" "$var" 2>/dev/null || true
+          fi
+        done
+      }
+
       enroll_keys_to_uefi() {
         echo -n "Enrolling keys to UEFI... "
+        set_efi_vars --mutable
         # The --microsoft flag is a workaround for T14 gen1
         if ! ${pkgs.sbctl}/bin/sbctl enroll-keys --microsoft; then
           echo "ERROR: Failed to enroll secure boot keys"
+          set_efi_vars --immutable
           ${pkgs.sbctl}/bin/sbctl status
           return 1
         fi
+        set_efi_vars --immutable
         echo "OK"
       }
 
