@@ -228,7 +228,7 @@
               ++ [
                 nixos-raspberrypi.nixosModules.sd-image
                 ./modules/load-keys.nix
-({lib, ...}: {
+                ({lib, ...}: {
                   sdImage.compressImage = false;
                   # Reduce firmware partition from 1GB to 256MB for initial image.
                   # 1GB is for multi-generation boot, but fresh install only has one.
@@ -254,8 +254,30 @@
         pkgs = pkgs-x86_64-linux;
         nixos-anywhere = nixos-anywhere.packages."x86_64-linux".nixos-anywhere;
       };
+      # Test bcm2711 overlay workaround produces correct config.txt.
+      # BCM2711 firmware skips overlays followed by empty dtoverlay= lines.
+      rpi4-overlay-test = pkgs-x86_64-linux.runCommand "rpi4-overlay-test" {} ''
+        config='${self.nixosConfigurations.prusa.config.hardware.raspberry-pi.config-generated}'
+
+        # Overlays must be present
+        echo "$config" | grep -q 'dtoverlay=disable-bt' || { echo "FAIL: disable-bt missing"; exit 1; }
+        echo "$config" | grep -q 'dtoverlay=vc4-kms-v3d' || { echo "FAIL: vc4-kms-v3d missing"; exit 1; }
+
+        # Must NOT have pattern: dtoverlay=<name> followed by dtoverlay= (empty).
+        # This pattern causes bcm2711 firmware to skip the overlay.
+        if echo "$config" | grep -Pzo 'dtoverlay=(disable-bt|vc4-kms-v3d)\n(dtparam=[^\n]*\n)*dtoverlay=\n' >/dev/null; then
+          echo "FAIL: overlay followed by empty dtoverlay= line"
+          echo "Config:"
+          echo "$config"
+          exit 1
+        fi
+
+        echo "OK: bcm2711 overlay workaround effective"
+        touch $out
+      '';
     in {
       inherit (scripts) script-lib-test validate-ssh-keys;
+      inherit rpi4-overlay-test;
     };
   };
 }
