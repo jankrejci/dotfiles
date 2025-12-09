@@ -1,6 +1,6 @@
 {
   pkgs,
-  nixos-anywhere ? null,
+  nixos-anywhere,
   ...
 }: let
   # Helper library with useful functions
