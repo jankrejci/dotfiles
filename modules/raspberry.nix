@@ -91,6 +91,14 @@
     fsType = "ext4";
   };
 
+  # Firmware partition for config.txt and bootloader. Uses automount to avoid
+  # keeping FAT32 mounted unnecessarily. deploy-config updates this partition.
+  fileSystems."/boot/firmware" = {
+    device = "/dev/disk/by-label/FIRMWARE";
+    fsType = "vfat";
+    options = ["noatime" "noauto" "x-systemd.automount" "x-systemd.idle-timeout=1min"];
+  };
+
   # Use zram for compressed swap in RAM (beneficial for memory-constrained devices)
   zramSwap = {
     enable = true;
@@ -114,12 +122,21 @@
   };
 
   # Disable Bluetooth to free ttyAMA0 for serial devices like GPS, 3D printers.
+  # On RPi4 this restores PL011 UART to GPIO 14/15 and creates /dev/ttyAMA0.
   hardware.bluetooth.enable = false;
   boot.blacklistedKernelModules = ["hci_uart"];
-  hardware.raspberry-pi.config.all.dt-overlays.disable-bt = {
-    enable = true;
-    params = {};
-  };
+
+  # BCM2711 firmware bug: empty dtoverlay= lines cause preceding overlay to be
+  # skipped. nixos-raspberrypi's dt-overlays adds dtoverlay= after each overlay
+  # per RPi docs, but bcm2711 firmware mishandles this. bcm2837 works fine.
+  # Workaround: disable dt-overlays mechanism and use extra-config directly.
+  # See: vclog shows overlay not loaded despite correct config.txt syntax.
+  hardware.raspberry-pi.config.all.dt-overlays.vc4-kms-v3d.enable = lib.mkForce false;
+  hardware.raspberry-pi.extra-config = ''
+    [all]
+    dtoverlay=disable-bt
+    dtoverlay=vc4-kms-v3d
+  '';
 
   # Disable documentation since RPi is deployed remotely.
   documentation = {
