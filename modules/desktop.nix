@@ -206,7 +206,16 @@
     sops
     sbctl
     lshw
+    # GNOME extensions installed system-wide, enabled per-user via dconf
+    gnomeExtensions.appindicator
+    gnomeExtensions.vitals
+    gnomeExtensions.dash-to-panel
+    unstable.gnomeExtensions.unite
+    gnomeExtensions.notification-banner-reloaded
   ];
+
+  # Required for AppIndicator tray icons
+  services.udev.packages = [pkgs.gnome-settings-daemon];
 
   fonts.packages = with pkgs; [
     nerd-fonts.dejavu-sans-mono

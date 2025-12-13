@@ -21,8 +21,7 @@
   powerManagement.powertop.enable = true;
 
   hardware.bluetooth.enable = true;
-  # Optional Bluetooth manager
-  services.blueman.enable = true;
+  # GNOME has built-in bluetooth support, blueman not needed
 
   # Enable fingerprint reader (if available on your model)
   services.fprintd.enable = true;
