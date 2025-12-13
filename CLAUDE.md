@@ -41,12 +41,29 @@ module: Title in imperative style
 
 No Claude signatures, emojis, or icons. Split unrelated changes into separate commits.
 
+**NEVER push to remote.** User will push when ready.
+
 ## Git Branch Cleanup
-Before merging:
+Before merging, consolidate the branch into clean logical commits:
+
+**Cleanup Process:**
+1. Create backup: `git branch backup-branch`
+2. Soft reset: `git reset --soft origin/main`
+3. Unstage all: `git reset HEAD -- .`
+4. Commit in logical groups by file/feature
+5. Verify: `nix flake check`
+
+**Principles:**
 - One logical change per commit
 - Squash duplicate/related changes
 - Drop commits that are immediately superseded
-- Use `GIT_SEQUENCE_EDITOR='script.sh' git rebase -i origin/main` for scripted rebase
+- Preserve struggle documentation in code comments, not commit history
+- When commits are interleaved across files, soft reset is cleaner than rebase
+
+**For scripted rebase** when commits are not interleaved:
+```bash
+GIT_SEQUENCE_EDITOR='script.sh' git rebase -i origin/main
+```
 
 ## Shell Script Style
 - Use `|| { }` pattern for guard clauses instead of nested if-else
@@ -60,6 +77,7 @@ Before merging:
 - Skip unnecessary explanations
 - Technical terminology appropriate
 - No praise/validation - objective evaluation only
+- **No weasel words**: Never use "likely", "probably", "might be". Either you know the cause from evidence or you don't know. Say "I don't know" when uncertain.
 
 ## Connectivity Safety
 **CRITICAL: Never break your own access path**
@@ -73,3 +91,4 @@ Remote machines via VPN only:
 See `scripts.nix` for available commands. Key ones:
 - `nix run .#deploy-config <hostname>` - Deploy config remotely
 - `nix run .#build-sdcard <hostname>` - Build RPi SD card image
+
