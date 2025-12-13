@@ -158,6 +158,7 @@ with lib; {
       isRpi = true;
       serviceHosts = {
         octoprint = "192.168.93.1";
+        webcam = "192.168.93.2";
       };
       extraModules = [
         ./modules/raspberry.nix
