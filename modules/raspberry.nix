@@ -58,7 +58,8 @@
 
   # Raspberry Pi utilities (vcgencmd for temperature, throttling, etc.)
   # With raspberry-pi-nix, vcgencmd works because the RPi kernel has vcio driver
-  environment.systemPackages = [pkgs.libraspberrypi];
+  # iw is for WiFi diagnostics and TX power adjustment
+  environment.systemPackages = [pkgs.libraspberrypi pkgs.iw];
 
   # Allow video group to access VideoCore interface
   services.udev.extraRules = ''
@@ -67,7 +68,7 @@
   '';
 
   # Define proper wifi channels
-  boot.extraModprobeConfig = lib.mkDefault ''
+  boot.extraModprobeConfig = ''
     options cfg80211 ieee80211_regdom=CZ
   '';
 
@@ -99,11 +100,15 @@
     options = ["noatime" "noauto" "x-systemd.automount" "x-systemd.idle-timeout=1min"];
   };
 
-  # Use zram for compressed swap in RAM (beneficial for memory-constrained devices)
-  zramSwap = {
-    enable = true;
-    algorithm = "zstd";
-  };
+  # Use file-based swap. Zram compresses RAM into itself which doesn't help
+  # when actually out of memory. File swap on SD is slower but provides real
+  # additional memory capacity.
+  swapDevices = [
+    {
+      device = "/swapfile";
+      size = 1024;
+    }
+  ];
 
   # Fix tmpfiles config that references non-existent 'sudo' group.
   # Use 'wheel' instead for debug filesystem access.
