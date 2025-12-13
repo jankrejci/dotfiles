@@ -8,6 +8,9 @@
   camera-streamer = pkgs.callPackage ../pkgs/camera-streamer.nix {};
   webcamIP = config.hostConfig.self.serviceHosts.webcam;
 in {
+  # RPi Zero 2 W with OctoPrint and camera streaming.
+  # Note: deploy-rs may fail due to nix daemon crashes on this device.
+  # Manual workaround: nix copy + ssh activate directly.
   imports = [inputs.nixos-raspberrypi.nixosModules.raspberry-pi-02.base];
 
   # SD card stability on Zero 2 W
