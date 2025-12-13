@@ -62,6 +62,7 @@ with lib; {
       };
       extraModules = [
         ./modules/headless.nix
+        ./modules/netbird-homelab.nix
         ./modules/acme.nix
         ./modules/immich-public-proxy.nix
         ./modules/vpsadminos.nix
@@ -79,6 +80,7 @@ with lib; {
       };
       extraModules = [
         ./modules/headless.nix
+        ./modules/netbird-homelab.nix
         ./modules/acme.nix
         ./modules/disk-tpm-encryption.nix
         ./modules/grafana.nix
@@ -100,6 +102,7 @@ with lib; {
         nixos-hardware.nixosModules.lenovo-thinkpad-e470
         ./users/jkr.nix
         ./users/paja.nix
+        ./modules/netbird-user.nix
         ./modules/disk-tpm-encryption.nix
         ./modules/desktop.nix
         ./modules/notebook.nix
@@ -112,6 +115,7 @@ with lib; {
       extraModules = [
         ./users/jkr.nix
         ./users/paja.nix
+        ./modules/netbird-user.nix
         ./modules/disk-password-encryption.nix
         ./modules/desktop.nix
       ];
@@ -124,6 +128,7 @@ with lib; {
         nixos-hardware.nixosModules.framework-13-7040-amd
         ./users/jkr.nix
         ./users/paja.nix
+        ./modules/netbird-user.nix
         ./modules/disk-tpm-encryption.nix
         ./modules/desktop.nix
         ./modules/notebook.nix
@@ -138,6 +143,7 @@ with lib; {
         nixos-hardware.nixosModules.lenovo-thinkpad-t14-amd-gen1
         ./users/jkr.nix
         ./users/paja.nix
+        ./modules/netbird-user.nix
         ./modules/disk-tpm-encryption.nix
         ./modules/desktop.nix
         ./modules/notebook.nix
@@ -151,6 +157,7 @@ with lib; {
       isRpi = true;
       extraModules = [
         ./modules/raspberry.nix
+        ./modules/netbird-homelab.nix
       ];
     };
 
@@ -162,6 +169,7 @@ with lib; {
       };
       extraModules = [
         ./modules/raspberry.nix
+        ./modules/netbird-homelab.nix
         ./modules/acme.nix
         ./modules/octoprint.nix
       ];

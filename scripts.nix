@@ -84,6 +84,15 @@
       info "Hostname '$hostname' validated"
     }
 
+    # Check if host uses netbird-homelab for setup key enrollment.
+    # Desktops use netbird-user with SSO login and do not need setup keys.
+    function host_needs_netbird_key() {
+      local -r hostname="$1"
+      local modules
+      modules=$(nix eval ".#hosts.$hostname.extraModules" --json 2>/dev/null) || return 1
+      echo "$modules" | jq -e 'any(. | tostring; contains("netbird-homelab"))' >/dev/null
+    }
+
     # Require and validate hostname, echo it on success
     # Usage: local -r hostname=$(require_and_validate_hostname "$@")
     function require_and_validate_hostname() {
@@ -627,7 +636,8 @@ in {
 
           set_disk_password
 
-          install_netbird_key "$hostname"
+          # Desktops use netbird-user with SSO login, no setup key needed
+          host_needs_netbird_key "$hostname" && install_netbird_key "$hostname"
 
           # Install NixOS to the host system with our secrets
           nixos-anywhere \
