@@ -70,6 +70,7 @@
       overlays = [
         nixgl.overlay
         unstable-x86_64-linux
+        (import ./pkgs/netbird-ui-white-icons.nix)
       ];
     };
     unstable-aarch64-linux = final: _prev: {
