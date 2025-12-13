@@ -493,6 +493,7 @@ in {
       runtimeInputs = with pkgs; [
         deploy-rs
         openssh
+        nix
       ];
       text = ''
         # shellcheck source=/dev/null
