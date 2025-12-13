@@ -34,9 +34,8 @@ Senior software engineer with 10+ years NixOS/functional programming experience.
 ```
 module: Title in imperative style
 
-- brief explanation starting with lowercase
-- use bullet points with dashes
-- keep it concise
+- explain why, not what (code shows what)
+- keep message proportional to change importance
 ```
 
 No Claude signatures, emojis, or icons. Split unrelated changes into separate commits.
@@ -59,6 +58,7 @@ Before merging, consolidate the branch into clean logical commits:
 - Drop commits that are immediately superseded
 - Preserve struggle documentation in code comments, not commit history
 - When commits are interleaved across files, soft reset is cleaner than rebase
+- Always separate CLAUDE.md changes from code commits
 
 **For scripted rebase** when commits are not interleaved:
 ```bash
@@ -87,8 +87,41 @@ Remote machines via VPN only:
 - NEVER delete peer from dashboard while needing remote access
 - If changes affect connectivity: inform user, let them execute locally
 
+## Netbird Architecture
+Two-tier VPN setup for different access patterns:
+
+**System client** (`netbird-homelab`, port 51820):
+- Setup key enrollment, always running as system service
+- For infrastructure: SSH, monitoring, node scraping
+- Machine-based policies, no expiration
+- Module: `modules/netbird-homelab.nix`
+- Used by: servers via headless.nix, RPi via raspberry.nix
+
+**User client** (`netbird-user`, port 51821):
+- Runs as systemd user service on desktops
+- SSO login via tray UI, user-based policies
+- Module: `modules/netbird-user.nix`
+- Used by: desktops via desktop.nix
+- User must authenticate via tray UI before VPN works
+
+**Module structure:**
+- `networking.nix` - general networking, no netbird config
+- `netbird-homelab.nix` - system client for servers/RPi
+- `netbird-user.nix` - user client for desktops
+
+**Limitation:** Cannot run both clients simultaneously due to routing table conflict.
+See: https://github.com/netbirdio/netbird/issues/2023
+
+### Declarative Configuration
+
+Declarative Netbird API management was prototyped but abandoned for now. The approach
+worked but had a fundamental limitation: peer IDs change on re-enrollment, making
+automatic group membership sync impractical. Manual dashboard management is simpler
+until Netbird supports stable peer identifiers or setup-key-based group assignment.
+
+Future work: revisit when Netbird adds stable identifiers or setup key groups feature.
+
 ## Scripts
 See `scripts.nix` for available commands. Key ones:
 - `nix run .#deploy-config <hostname>` - Deploy config remotely
 - `nix run .#build-sdcard <hostname>` - Build RPi SD card image
-
