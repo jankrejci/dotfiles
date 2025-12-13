@@ -51,10 +51,6 @@
           unstable.espflash # flasher utility for Espressif SoCs
           unstable.trezor-suite
           unstable.claude-code
-          gnomeExtensions.vitals
-          gnomeExtensions.dash-to-panel
-          unstable.gnomeExtensions.unite
-          gnomeExtensions.notification-banner-reloaded
           rshell # remote shell for MicroPython
           tokei # code statistics tool
           tealdeer # tldr help tool
@@ -67,6 +63,15 @@
 
         home.sessionVariables = {
           EDITOR = "hx";
+        };
+
+        xdg.mimeApps = {
+          enable = true;
+          defaultApplications = {
+            "x-scheme-handler/http" = "app.zen_browser.zen.desktop";
+            "x-scheme-handler/https" = "app.zen_browser.zen.desktop";
+            "text/html" = "app.zen_browser.zen.desktop";
+          };
         };
 
         # TODO add more configurations for power management and for panel position
@@ -88,12 +93,18 @@
               "dash-to-panel@jderose9.github.com"
               "unite-shell@hardpixel.github.com"
               "notification-banner-reloaded@marcinjakubowski.github.com"
+              "appindicatorsupport@rgcjonas.gmail.com"
             ];
           };
           # Notification position configuration
           "org/gnome/shell/extensions/notification-banner-reloaded" = {
             anchor-horizontal = 1; # 0=left, 1=right, 2=center
             anchor-vertical = 1; # 0=top, 1=bottom, 2=center
+          };
+          # AppIndicator tray position: place icons near system status area
+          "org/gnome/shell/extensions/appindicator" = {
+            tray-pos = "right";
+            tray-order = mkInt32 10;
           };
           # Generated via dconf2nix: https://github.com/nix-commmunity/dconf2nix
           "org/gnome/desktop/input-sources" = {

@@ -24,18 +24,18 @@
     useGlobalPkgs = true;
     useUserPackages = true;
     users = {
-      paja = {
-        pkgs,
-        lib,
-        ...
-      }: {
+      paja = {lib, ...}: {
         home.username = "paja";
         home.homeDirectory = "/home/paja";
 
-        home.packages = with pkgs; [
-          gnomeExtensions.vitals
-          gnomeExtensions.dash-to-panel
-        ];
+        xdg.mimeApps = {
+          enable = true;
+          defaultApplications = {
+            "x-scheme-handler/http" = "firefox.desktop";
+            "x-scheme-handler/https" = "firefox.desktop";
+            "text/html" = "firefox.desktop";
+          };
+        };
 
         dconf.settings = with lib.hm.gvariant; {
           "org/gnome/desktop/interface" = {
@@ -50,6 +50,7 @@
             enabled-extensions = [
               "Vitals@CoreCoding.com"
               "dash-to-panel@jderose9.github.com"
+              "appindicatorsupport@rgcjonas.gmail.com"
             ];
           };
           # Generated via dconf2nix: https://github.com/nix-commmunity/dconf2nix
