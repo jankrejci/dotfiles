@@ -13,13 +13,16 @@ in {
   services.prometheus.exporters.wireguard = {
     enable = true;
     port = 9586;
+    listenAddress = "127.0.0.1";
     openFirewall = false;
     latestHandshakeDelay = true;
     verbose = false;
   };
 
-  # Allow WireGuard exporter on Netbird interface only
-  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [9586];
+  # Wireguard metrics endpoint via common metrics vhost
+  services.nginx.virtualHosts."metrics".locations."/metrics/wireguard" = {
+    proxyPass = "http://127.0.0.1:9586/metrics";
+  };
 
   # WireGuard tunnel to vpsfree for NetBird self-hosted
   # thinkcenter (behind NAT) -> vpsfree (public gateway)
