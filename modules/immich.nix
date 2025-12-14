@@ -3,12 +3,18 @@
   pkgs,
   ...
 }: let
-  immich-server = config.serviceConfig.immich;
-  immich-microservices = config.serviceConfig.immich-microservices;
-  domain = "krejci.io";
-  immichDomain = "${immich-server.subdomain}.${domain}";
-  serviceIP = config.hostConfig.self.serviceHosts.immich;
-  httpsPort = 443;
+  services = config.serviceConfig;
+  host = config.hostConfig.self;
+  domain = services.global.domain;
+  immichDomain = "${services.immich.subdomain}.${domain}";
+  httpsPort = services.https.port;
+
+  # Internal metrics ports for exporters
+  immichApiMetricsPort = 8081;
+  immichMicroservicesMetricsPort = 8082;
+  postgresMetricsPort = 9187;
+  redisMetricsPort = 9121;
+  nginxMetricsPort = 9113;
 
   # Second disk for Immich data (NVMe)
   # Assumes partition is already created with label "disk-immich-luks"
@@ -73,13 +79,13 @@ in {
     '')
   ];
   # Allow HTTPS on VPN interface (nginx proxies to Immich for both web and mobile)
-  networking.firewall.interfaces."${immich-server.interface}".allowedTCPPorts = [httpsPort];
+  networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [httpsPort];
 
   # Prometheus exporters for Immich dependencies
   services.prometheus.exporters = {
     postgres = {
       enable = true;
-      port = config.serviceConfig.postgres.metricsPort;
+      port = postgresMetricsPort;
       listenAddress = "127.0.0.1";
       openFirewall = false;
       runAsLocalSuperUser = true;
@@ -87,7 +93,7 @@ in {
 
     redis = {
       enable = true;
-      port = config.serviceConfig.redis.metricsPort;
+      port = redisMetricsPort;
       listenAddress = "127.0.0.1";
       openFirewall = false;
       extraFlags = ["--redis.addr=unix:///run/redis-immich/redis.sock"];
@@ -95,7 +101,7 @@ in {
 
     nginx = {
       enable = true;
-      port = config.serviceConfig.nginx.metricsPort;
+      port = nginxMetricsPort;
       listenAddress = "127.0.0.1";
       openFirewall = false;
       scrapeUri = "http://127.0.0.1/nginx_status";
@@ -145,14 +151,14 @@ in {
     enable = true;
     # Listen on 127.0.0.1 only, accessed via nginx proxy
     host = "127.0.0.1";
-    port = immich-server.port;
+    port = services.immich.port;
     # Media stored on dedicated NVMe disk at /var/lib/immich (default)
     environment = {
       PUBLIC_IMMICH_SERVER_URL = "https://share.${domain}";
       # Enable Prometheus metrics on 127.0.0.1
       IMMICH_TELEMETRY_INCLUDE = "all";
-      IMMICH_API_METRICS_PORT = toString immich-server.metricsPort;
-      IMMICH_MICROSERVICES_METRICS_PORT = toString immich-microservices.metricsPort;
+      IMMICH_API_METRICS_PORT = toString immichApiMetricsPort;
+      IMMICH_MICROSERVICES_METRICS_PORT = toString immichMicroservicesMetricsPort;
     };
   };
 
@@ -245,7 +251,7 @@ in {
   services.nginx = {
     enable = true;
     virtualHosts.${immichDomain} = {
-      listenAddresses = [serviceIP];
+      listenAddresses = [host.services.immich.ip];
       # Enable HTTPS with Let's Encrypt wildcard certificate
       forceSSL = true;
       useACMEHost = "${domain}";
@@ -254,10 +260,18 @@ in {
         client_max_body_size 1G;
       '';
       locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString immich-server.port}";
+        proxyPass = "http://127.0.0.1:${toString services.immich.port}";
         proxyWebsockets = true;
         recommendedProxySettings = true;
       };
+    };
+    # Immich and infrastructure metrics via unified metrics proxy
+    virtualHosts."metrics".locations = {
+      "/metrics/immich".proxyPass = "http://127.0.0.1:${toString immichApiMetricsPort}/metrics";
+      "/metrics/immich-microservices".proxyPass = "http://127.0.0.1:${toString immichMicroservicesMetricsPort}/metrics";
+      "/metrics/postgres".proxyPass = "http://127.0.0.1:${toString postgresMetricsPort}/metrics";
+      "/metrics/redis".proxyPass = "http://127.0.0.1:${toString redisMetricsPort}/metrics";
+      "/metrics/nginx".proxyPass = "http://127.0.0.1:${toString nginxMetricsPort}/metrics";
     };
   };
 }

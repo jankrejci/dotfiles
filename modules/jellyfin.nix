@@ -14,19 +14,13 @@
 #
 # Files automatically get correct group ownership (jellyfin) via setgid bit.
 # Scan library after upload: Dashboard → Libraries → Scan Library
-{
-  config,
-  pkgs,
-  ...
-}: let
-  jellyfin = config.serviceConfig.jellyfin;
-  domain = "krejci.io";
-  jellyfinDomain = "${jellyfin.subdomain}.${domain}";
-  serviceIP = config.hostConfig.self.serviceHosts.jellyfin;
-  httpsPort = 443;
+{config, ...}: let
+  services = config.serviceConfig;
+  host = config.hostConfig.self;
+  jellyfinDomain = "${services.jellyfin.subdomain}.${services.global.domain}";
 in {
   # Allow HTTPS on VPN interface
-  networking.firewall.interfaces."${jellyfin.interface}".allowedTCPPorts = [httpsPort];
+  networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [services.https.port];
 
   # Bind mount jellyfin data from NVMe disk
   fileSystems."/var/lib/jellyfin" = {
@@ -67,18 +61,14 @@ in {
   services.nginx = {
     enable = true;
     virtualHosts.${jellyfinDomain} = {
-      listenAddresses = [serviceIP];
+      listenAddresses = [host.services.jellyfin.ip];
       # Enable HTTPS with Let's Encrypt wildcard certificate
       forceSSL = true;
-      useACMEHost = "${domain}";
-      # Only allow access from Netbird VPN network
-      extraConfig = ''
-        allow 100.76.0.0/16;
-        deny all;
-        client_max_body_size 10G;
-      '';
+      useACMEHost = "${services.global.domain}";
+      # Allow large media file uploads
+      extraConfig = "client_max_body_size 10G;";
       locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString jellyfin.port}";
+        proxyPass = "http://127.0.0.1:${toString services.jellyfin.port}";
         proxyWebsockets = true;
         recommendedProxySettings = true;
       };
