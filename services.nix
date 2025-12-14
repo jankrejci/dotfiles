@@ -16,10 +16,10 @@ with lib; {
           description = "Subdomain (e.g., 'grafana' for grafana.domain)";
         };
 
-        metricsPort = mkOption {
-          type = types.nullOr types.port;
+        domain = mkOption {
+          type = types.nullOr types.str;
           default = null;
-          description = "Prometheus metrics port";
+          description = "Base domain for services";
         };
 
         interface = mkOption {
@@ -32,6 +32,23 @@ with lib; {
   };
 
   config.serviceConfig = {
+    # Global configuration
+    global = {
+      domain = "krejci.io";
+    };
+
+    https = {
+      port = 443;
+    };
+
+    metrics = {
+      port = 9999;
+    };
+
+    netbird = {
+      interface = "nb-homelab";
+    };
+
     # Core services
     grafana = {
       port = 3000;
@@ -54,18 +71,11 @@ with lib; {
     immich = {
       port = 2283;
       subdomain = "immich";
-      metricsPort = 8081;
-    };
-
-    immich-microservices = {
-      port = 2283;
-      metricsPort = 8082;
     };
 
     ntfy = {
       port = 2586;
       subdomain = "ntfy";
-      metricsPort = 9091;
     };
 
     jellyfin = {
@@ -82,27 +92,6 @@ with lib; {
       port = 2283;
       subdomain = "share";
       interface = "venet0";
-    };
-
-    # Prometheus exporters
-    node-exporter = {
-      metricsPort = 9100;
-    };
-
-    postgres = {
-      metricsPort = 9187;
-    };
-
-    redis = {
-      metricsPort = 9121;
-    };
-
-    nginx = {
-      metricsPort = 9113;
-    };
-
-    wireguard = {
-      metricsPort = 9586;
     };
   };
 }
