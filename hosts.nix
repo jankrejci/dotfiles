@@ -45,10 +45,15 @@ with lib; {
           description = "Extra NixOS modules to include";
         };
 
-        serviceHosts = mkOption {
-          type = types.attrsOf types.str;
+        services = mkOption {
+          type = types.attrsOf (types.submodule {
+            options.ip = mkOption {
+              type = types.str;
+              description = "IP address for the service";
+            };
+          });
           default = {};
-          description = "Service hostname to IP mapping for internal DNS (e.g., immich = \"10.20.30.1\")";
+          description = "Service definitions with IP addresses for internal DNS";
         };
       };
     }));
@@ -57,8 +62,8 @@ with lib; {
   ### Servers ###
   config.hostConfig = {
     vpsfree = {
-      serviceHosts = {
-        share = "192.168.92.1";
+      services = {
+        share.ip = "192.168.92.1";
       };
       extraModules = [
         ./modules/headless.nix
@@ -72,11 +77,11 @@ with lib; {
     thinkcenter = {
       device = "/dev/sda";
       swapSize = "8G";
-      serviceHosts = {
-        immich = "192.168.91.1";
-        grafana = "192.168.91.2";
-        jellyfin = "192.168.91.3";
-        ntfy = "192.168.91.4";
+      services = {
+        immich.ip = "192.168.91.1";
+        grafana.ip = "192.168.91.2";
+        jellyfin.ip = "192.168.91.3";
+        ntfy.ip = "192.168.91.4";
       };
       extraModules = [
         ./modules/headless.nix
@@ -163,9 +168,9 @@ with lib; {
 
     prusa = {
       isRpi = true;
-      serviceHosts = {
-        octoprint = "192.168.93.1";
-        webcam = "192.168.93.2";
+      services = {
+        octoprint.ip = "192.168.93.1";
+        webcam.ip = "192.168.93.2";
       };
       extraModules = [
         ./modules/raspberry.nix
