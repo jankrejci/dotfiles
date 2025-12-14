@@ -3,7 +3,9 @@
   lib,
   pkgs,
   ...
-}: {
+}: let
+  services = config.serviceConfig;
+in {
   nix.settings.experimental-features = ["nix-command" "flakes"];
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
@@ -99,16 +101,17 @@
   services.prometheus.exporters.node = {
     enable = true;
     openFirewall = false;
-    # Listen on all interfaces, access restricted via firewall to nb-homelab
-    listenAddress = "0.0.0.0";
+    listenAddress = "127.0.0.1";
   };
-
-  # Allow node exporter on Netbird interface only
-  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [9100];
 
   systemd.services.prometheus-node-exporter.serviceConfig = {
     Restart = "always";
     RestartSec = 5;
+  };
+
+  # Node exporter metrics via unified metrics proxy
+  services.nginx.virtualHosts."metrics".locations."/metrics/node" = {
+    proxyPass = "http://127.0.0.1:9100/metrics";
   };
 
   # Common directory for storing root secrets
