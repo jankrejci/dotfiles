@@ -1,22 +1,24 @@
 apiVersion: 1
 groups:
   - orgId: 1
-    name: Vpsfree
-    folder: Infra
-    interval: 1m
+    name: Immich
+    folder: Services
+    interval: 10s
     rules:
-      - uid: vpsfree_host_down
-        title: Vpsfree Host
+      - uid: immich_down
+        title: Immich
         condition: C
         data:
           - refId: A
             relativeTimeRange:
-              from: 300
+              from: 600
               to: 0
             datasourceUid: prometheus
             model:
-              expr: up{instance="vpsfree.nb.krejci.io:9999", job="node"}
+              expr: up{job="immich"}
               refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
           - refId: B
             datasourceUid: __expr__
             model:
@@ -29,14 +31,12 @@ groups:
             model:
               conditions:
                 - evaluator:
-                    params:
-                      - 1
+                    params: [1]
                     type: lt
                   operator:
                     type: and
                   query:
-                    params:
-                      - C
+                    params: [C]
                   reducer:
                     params: []
                     type: last
@@ -47,8 +47,6 @@ groups:
         noDataState: Alerting
         execErrState: Alerting
         for: 5m
-        annotations:
-          summary: "vpsfree host is down"
         labels:
           severity: critical
-          host: vpsfree
+          host: thinkcenter

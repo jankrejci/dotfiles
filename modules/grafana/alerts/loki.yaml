@@ -15,7 +15,7 @@ groups:
               to: 0
             datasourceUid: prometheus
             model:
-              expr: node_systemd_unit_state{name="loki.service",state="active",instance="thinkcenter.nb.krejci.io:9100"}
+              expr: node_systemd_unit_state{name="loki.service",state="active",instance="thinkcenter.nb.krejci.io:9999"}
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
@@ -60,7 +60,7 @@ groups:
               to: 0
             datasourceUid: prometheus
             model:
-              expr: node_systemd_unit_state{name="promtail.service",state="active",instance="thinkcenter.nb.krejci.io:9100"}
+              expr: node_systemd_unit_state{name="promtail.service",state="active",instance="thinkcenter.nb.krejci.io:9999"}
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
