@@ -40,6 +40,10 @@ module: Title in imperative style
 
 No Claude signatures, emojis, or icons. Split unrelated changes into separate commits.
 
+**Commit frequency:** Create a commit after each logical change, even small ones. Be verbose
+in commit messages, especially with reasoning. Commits will be compacted before merge anyway,
+so prefer too many commits over too few during development.
+
 **NEVER push to remote.** User will push when ready.
 
 ## Git Branch Cleanup
