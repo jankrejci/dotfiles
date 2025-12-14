@@ -1,16 +1,10 @@
-{
-  config,
-  lib,
-  ...
-}: let
+{config, ...}: let
   services = config.serviceConfig;
-  domain = "krejci.io";
-  serverDomain = "${services.grafana.subdomain}.${domain}";
-  serviceIP = config.hostConfig.self.serviceHosts.grafana;
-  httpsPort = 443;
+  host = config.hostConfig.self;
+  serverDomain = "${services.grafana.subdomain}.${services.global.domain}";
 in {
   # Allow HTTPS on VPN interface
-  networking.firewall.interfaces."${services.grafana.interface}".allowedTCPPorts = [httpsPort];
+  networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [services.https.port];
 
   systemd.services.grafana = {
     serviceConfig.EnvironmentFile = "/var/lib/grafana/secrets/ntfy-token-env";
@@ -43,14 +37,9 @@ in {
   services.nginx = {
     enable = true;
     virtualHosts.${serverDomain} = {
-      listenAddresses = [serviceIP];
+      listenAddresses = [host.services.grafana.ip];
       forceSSL = true;
-      useACMEHost = "${domain}";
-      # Only allow access from Netbird VPN network
-      extraConfig = ''
-        allow 100.76.0.0/16;
-        deny all;
-      '';
+      useACMEHost = "${services.global.domain}";
       locations."/" = {
         proxyPass = "http://127.0.0.1:${toString services.grafana.port}";
         proxyWebsockets = true;
@@ -67,6 +56,19 @@ in {
 
   # Datasources are provided by prometheus.nix and loki.nix modules
   services.grafana.provision.datasources.settings.apiVersion = 1;
+
+  # Prometheus datasource for Grafana
+  services.grafana.provision.datasources.settings.datasources = [
+    {
+      name = "Prometheus";
+      type = "prometheus";
+      access = "proxy";
+      url = "http://127.0.0.1:${toString services.prometheus.port}/prometheus";
+      isDefault = true;
+      # Fixed UID for dashboard references (see CLAUDE.md)
+      uid = "prometheus";
+    }
+  ];
 
   services.grafana.provision.dashboards.settings = {
     apiVersion = 1;

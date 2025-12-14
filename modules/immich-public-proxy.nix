@@ -1,15 +1,15 @@
 {config, ...}: let
-  proxy = config.serviceConfig.immich-public-proxy;
-  domain = "krejci.io";
-  shareDomain = "${proxy.subdomain}.${domain}";
-  httpsPort = 443;
+  services = config.serviceConfig;
+  domain = services.global.domain;
+  shareDomain = "${services.immich-public-proxy.subdomain}.${domain}";
+  httpsPort = services.https.port;
 in {
   # Immich Public Proxy - allows public sharing without exposing Immich
   services.immich-public-proxy = {
     enable = true;
     # Connect to Immich via Netbird VPN
-    immichUrl = "https://${config.serviceConfig.immich.subdomain}.${domain}";
-    port = proxy.port;
+    immichUrl = "https://${services.immich.subdomain}.${domain}";
+    port = services.immich-public-proxy.port;
     settings = {
       # Show home page with shield icon
       showHomePage = true;
@@ -21,7 +21,7 @@ in {
   };
 
   # Open HTTPS on public interface
-  networking.firewall.interfaces."${proxy.interface}".allowedTCPPorts = [httpsPort];
+  networking.firewall.interfaces."${services.immich-public-proxy.interface}".allowedTCPPorts = [httpsPort];
 
   # Nginx reverse proxy - publicly accessible
   services.nginx = {
@@ -34,7 +34,7 @@ in {
       forceSSL = true;
       useACMEHost = "${domain}";
       locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString proxy.port}";
+        proxyPass = "http://127.0.0.1:${toString services.immich-public-proxy.port}";
         proxyWebsockets = true;
         recommendedProxySettings = true;
       };
