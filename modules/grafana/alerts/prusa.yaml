@@ -1,24 +1,22 @@
 apiVersion: 1
 groups:
   - orgId: 1
-    name: Immich API
-    folder: Services
-    interval: 10s
+    name: Prusa
+    folder: Infra
+    interval: 1m
     rules:
-      - uid: immich_api_down
-        title: Immich API
+      - uid: prusa_host_down
+        title: Prusa Host
         condition: C
         data:
           - refId: A
             relativeTimeRange:
-              from: 600
+              from: 300
               to: 0
             datasourceUid: prometheus
             model:
-              expr: up{job="immich-api"}
+              expr: up{instance="prusa.nb.krejci.io:9999", job="node"}
               refId: A
-              intervalMs: 1000
-              maxDataPoints: 43200
           - refId: B
             datasourceUid: __expr__
             model:
@@ -31,12 +29,14 @@ groups:
             model:
               conditions:
                 - evaluator:
-                    params: [1]
+                    params:
+                      - 1
                     type: lt
                   operator:
                     type: and
                   query:
-                    params: [C]
+                    params:
+                      - C
                   reducer:
                     params: []
                     type: last
@@ -47,6 +47,9 @@ groups:
         noDataState: Alerting
         execErrState: Alerting
         for: 5m
+        annotations:
+          summary: "prusa host is down"
         labels:
           severity: critical
-          host: thinkcenter
+          host: prusa
+          __alerting_keep_firing_for__: 1h
