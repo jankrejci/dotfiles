@@ -1,28 +1,25 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}: let
+{config, ...}: let
   services = config.serviceConfig;
-  domain = "krejci.io";
-  serverDomain = "${services.octoprint.subdomain}.${domain}";
-  serviceIP = config.hostConfig.self.serviceHosts.octoprint;
-  webcamIP = config.hostConfig.self.serviceHosts.webcam;
-  httpsPort = 443;
+  host = config.hostConfig.self;
+  serverDomain = "${services.octoprint.subdomain}.${services.global.domain}";
 
   mkObicoPlugin = ps:
     ps.callPackage ../pkgs/octoprint-obico.nix {};
+  mkPrometheusPlugin = ps:
+    ps.callPackage ../pkgs/octoprint-prometheus-exporter.nix {};
 in {
   # Allow HTTPS on VPN interface
-  networking.firewall.interfaces."${services.octoprint.interface}".allowedTCPPorts = [httpsPort];
+  networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [services.https.port];
 
   services.octoprint = {
     enable = true;
     # Listen on localhost only, accessed via nginx proxy
     host = "127.0.0.1";
     port = services.octoprint.port;
-    plugins = ps: [(mkObicoPlugin ps)];
+    plugins = ps: [
+      (mkObicoPlugin ps)
+      (mkPrometheusPlugin ps)
+    ];
     extraConfig = {
       webcam = {
         # Use nginx-proxied URLs so browser can access the stream
@@ -54,7 +51,7 @@ in {
         }
       ];
       locations."/webcam/" = {
-        proxyPass = "http://${webcamIP}:8080/";
+        proxyPass = "http://${host.services.webcam.ip}:8080/";
         extraConfig = ''
           proxy_buffering off;
           proxy_request_buffering off;
@@ -62,14 +59,15 @@ in {
       };
     };
     virtualHosts.${serverDomain} = {
-      listenAddresses = [serviceIP];
-      forceSSL = true;
-      useACMEHost = "${domain}";
-      # Only allow access from Netbird VPN network
-      extraConfig = ''
-        allow 100.76.0.0/16;
-        deny all;
-      '';
+      listen = [
+        {
+          addr = host.services.octoprint.ip;
+          port = services.https.port;
+          ssl = true;
+        }
+      ];
+      onlySSL = true;
+      useACMEHost = "${services.global.domain}";
       locations."/" = {
         proxyPass = "http://127.0.0.1:${toString services.octoprint.port}";
         proxyWebsockets = true;
@@ -77,13 +75,22 @@ in {
       };
       # Proxy webcam stream and snapshot from camera-streamer
       locations."/webcam/" = {
-        proxyPass = "http://${webcamIP}:8080/";
+        proxyPass = "http://${host.services.webcam.ip}:8080/";
         # Disable buffering for MJPEG streaming
         extraConfig = ''
           proxy_buffering off;
           proxy_request_buffering off;
         '';
       };
+    };
+    # OctoPrint metrics via unified metrics proxy
+    # Dedicated prometheus user with only PLUGIN_PROMETHEUS_EXPORTER_SCRAPE permission
+    # TODO: add setup-octoprint-metrics script to recreate this key if needed
+    virtualHosts."metrics".locations."/metrics/octoprint" = {
+      proxyPass = "http://127.0.0.1:${toString services.octoprint.port}/plugin/prometheus_exporter/metrics";
+      extraConfig = ''
+        proxy_set_header X-Api-Key "d9_H5XHNOzEtEb50k1NQ4v3iwyfXiSu3QUy9kZ96FFY";
+      '';
     };
   };
 }
