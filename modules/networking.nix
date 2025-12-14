@@ -2,7 +2,14 @@
   config,
   lib,
   ...
-}: {
+}: let
+  services = config.serviceConfig;
+  host = config.hostConfig.self;
+  domain = services.global.domain;
+  hostServices = host.services or {};
+  serviceIPs = lib.mapAttrsToList (_: service: service.ip) hostServices;
+  hasServices = hostServices != {};
+in {
   # Avoid collision of the dhcp with the sysystemd.network
   networking = {
     useDHCP = lib.mkForce false;
@@ -40,11 +47,7 @@
   };
 
   # Configure systemd-networkd
-  systemd.network = let
-    serviceHosts = config.hostConfig.self.serviceHosts or {};
-    serviceIPs = lib.attrValues serviceHosts;
-    hasServices = serviceHosts != {};
-  in {
+  systemd.network = {
     enable = true;
 
     wait-online = {
@@ -82,15 +85,12 @@
   };
 
   # Local DNS resolution for service hostnames
-  networking.hosts = let
-    serviceHosts = config.hostConfig.self.serviceHosts or {};
-    domain = "krejci.io";
-  in
+  networking.hosts =
     lib.mapAttrs' (
-      name: ip:
-        lib.nameValuePair ip ["${name}.${domain}"]
+      name: service:
+        lib.nameValuePair service.ip ["${name}.${domain}"]
     )
-    serviceHosts;
+    hostServices;
 
   # NetworkManager disabled by default for headless systems, enabled in desktop.nix
   networking.networkmanager = {
@@ -124,5 +124,19 @@
         AutoConnect = true;
       };
     };
+  };
+
+  # Metrics nginx proxy for all exporters.
+  # Path-based routing allows single firewall port for all metrics.
+  networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [services.metrics.port];
+
+  services.nginx = {
+    enable = true;
+    virtualHosts."metrics".listen = [
+      {
+        addr = "0.0.0.0";
+        port = services.metrics.port;
+      }
+    ];
   };
 }
