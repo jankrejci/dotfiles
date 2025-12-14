@@ -2,7 +2,7 @@
   lib,
   pkgs,
   modulesPath,
-  cachedPkgs-aarch64 ? null,
+  cachedPkgs-aarch64,
   ...
 }: {
   # Disable base.nix profile imported by sd-image module.
@@ -41,7 +41,7 @@
         };
       })
     ]
-    ++ lib.optionals (cachedPkgs-aarch64 != null) [
+    ++ [
       (final: prev: {
         python3 = cachedPkgs-aarch64.python3;
         python3Packages = cachedPkgs-aarch64.python3Packages;
