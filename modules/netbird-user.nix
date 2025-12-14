@@ -12,6 +12,7 @@
   pkgs,
   ...
 }: let
+  services = config.serviceConfig;
   wrapperDir = config.security.wrapperDir;
   hostname = config.networking.hostName;
   netbirdDir = ".local/netbird-user";
@@ -48,8 +49,8 @@ in {
     wantedBy = ["graphical-session.target"];
 
     environment = {
-      # Use different interface and port than system client
-      NB_INTERFACE_NAME = "nb-user";
+      # Use same interface name as system client for unified firewall rules
+      NB_INTERFACE_NAME = services.netbird.interface;
       NB_WIREGUARD_PORT = "51821";
       NB_LOG_LEVEL = "info";
       # Store state and logs in user directory instead of /var/lib/netbird
@@ -70,7 +71,7 @@ in {
         "5"
         "${netbirdUser}/bin/netbird-user"
         "up"
-        "--interface-name nb-user"
+        "--interface-name ${services.netbird.interface}"
         "--wireguard-port 51821"
         "--hostname ${hostname}"
       ];
@@ -101,8 +102,8 @@ in {
   networking.firewall.allowedUDPPorts = [51821];
 
   # Exclude user interface from NetworkManager and DHCP
-  networking.networkmanager.unmanaged = lib.mkAfter ["nb-user"];
-  networking.dhcpcd.denyInterfaces = ["nb-user"];
+  networking.networkmanager.unmanaged = lib.mkAfter [services.netbird.interface];
+  networking.dhcpcd.denyInterfaces = [services.netbird.interface];
 
   # Allow users to configure DNS via systemd-resolved for VPN.
   # Netbird needs to set DNS servers and routing domains for peer resolution.
