@@ -5,7 +5,10 @@
   config,
   pkgs,
   ...
-}: {
+}: let
+  setupKeyFile = "/var/lib/netbird-homelab/setup-key";
+  daemonAddr = "unix:///var/run/netbird-homelab/sock";
+in {
   # Netbird multi-instance client configuration
   services.netbird.clients = {
     homelab = {
@@ -33,7 +36,7 @@
     requires = ["netbird-homelab.service"];
 
     # Only run if setup key file exists, meaning we need to enroll
-    unitConfig.ConditionPathExists = "/var/lib/netbird-homelab/setup-key";
+    unitConfig.ConditionPathExists = "${setupKeyFile}";
 
     serviceConfig = {
       Type = "oneshot";
@@ -41,25 +44,21 @@
       Restart = "on-failure";
       RestartSec = 5;
       StartLimitBurst = 3;
-      ExecStart = let
-        setupKeyFile = "/var/lib/netbird-homelab/setup-key";
-        daemonAddr = "unix:///var/run/netbird-homelab/sock";
-      in
-        pkgs.writeShellScript "netbird-enroll" ''
-          set -euo pipefail
+      ExecStart = pkgs.writeShellScript "netbird-enroll" ''
+        set -euo pipefail
 
-          # Down existing connection to allow re-enrollment
-          ${pkgs.netbird}/bin/netbird down --daemon-addr ${daemonAddr} 2>/dev/null || true
+        # Down existing connection to allow re-enrollment
+        ${pkgs.netbird}/bin/netbird down --daemon-addr ${daemonAddr} 2>/dev/null || true
 
-          # Enroll with setup key
-          ${pkgs.netbird}/bin/netbird up \
-            --daemon-addr ${daemonAddr} \
-            --hostname ${config.networking.hostName} \
-            --setup-key "$(cat ${setupKeyFile})"
+        # Enroll with setup key
+        ${pkgs.netbird}/bin/netbird up \
+          --daemon-addr ${daemonAddr} \
+          --hostname ${config.networking.hostName} \
+          --setup-key "$(cat ${setupKeyFile})"
 
-          # Only reached after successful enrollment
-          rm -f ${setupKeyFile}
-        '';
+        # Only reached after successful enrollment
+        rm -f ${setupKeyFile}
+      '';
     };
   };
 }
