@@ -5,9 +5,13 @@
   ...
 }: let
   cfg = config.homelab.prometheus;
-  services = config.serviceConfig;
-  domain = "${services.global.domain}";
+  # Prefer homelab namespace, fall back to old options during transition
+  services = config.homelab.services or config.serviceConfig;
+  hosts = config.homelab.hosts or config.hostConfig;
+  # Use fallback values until homelab namespace is populated by flake
+  domain = services.global.domain or "krejci.io";
   peerDomain = "nb.${domain}";
+  metricsPort = toString (services.metrics.port or 9999);
 in {
   options.homelab.prometheus = {
     # Default true preserves existing behavior during transition
@@ -27,14 +31,14 @@ in {
       listenAddress = "127.0.0.1";
       # Serve from subpath /prometheus/ (shares domain with Grafana)
       extraFlags = [
-        "--web.external-url=https://${services.grafana.subdomain}.${domain}/prometheus"
+        "--web.external-url=https://${services.grafana.subdomain or "grafana"}.${domain}/prometheus"
         "--web.route-prefix=/prometheus"
       ];
       globalConfig.scrape_interval = "10s";
       scrapeConfigs = [
         {
           job_name = "prometheus";
-          static_configs = [{targets = ["127.0.0.1:${toString services.prometheus.port}"];}];
+          static_configs = [{targets = ["127.0.0.1:${toString (services.prometheus.port or 9090)}"];}];
           metrics_path = "/prometheus/metrics";
         }
         {
@@ -44,9 +48,9 @@ in {
           static_configs = [
             {
               targets = let
-                makeTarget = hostName: _: "${hostName}.${peerDomain}:${toString services.metrics.port}";
+                makeTarget = hostName: _: "${hostName}.${peerDomain}:${metricsPort}";
                 # Filter out "self" reference injected by flake.nix
-                nixosHosts = lib.filterAttrs (name: hostConfig: name != "self" && hostConfig.kind == "nixos") config.hostConfig;
+                nixosHosts = lib.filterAttrs (name: hostConfig: name != "self" && (hostConfig.kind or "nixos") == "nixos") hosts;
               in
                 lib.mapAttrsToList makeTarget nixosHosts;
             }
@@ -57,7 +61,7 @@ in {
           metrics_path = "/metrics/immich";
           static_configs = [
             {
-              targets = ["thinkcenter.${peerDomain}:${toString services.metrics.port}"];
+              targets = ["thinkcenter.${peerDomain}:${metricsPort}"];
               labels = {host = "thinkcenter";};
             }
           ];
@@ -67,7 +71,7 @@ in {
           metrics_path = "/metrics/immich-microservices";
           static_configs = [
             {
-              targets = ["thinkcenter.${peerDomain}:${toString services.metrics.port}"];
+              targets = ["thinkcenter.${peerDomain}:${metricsPort}"];
               labels = {host = "thinkcenter";};
             }
           ];
@@ -77,7 +81,7 @@ in {
           metrics_path = "/metrics/ntfy";
           static_configs = [
             {
-              targets = ["thinkcenter.${peerDomain}:${toString services.metrics.port}"];
+              targets = ["thinkcenter.${peerDomain}:${metricsPort}"];
               labels = {host = "thinkcenter";};
             }
           ];
@@ -87,7 +91,7 @@ in {
           metrics_path = "/metrics/postgres";
           static_configs = [
             {
-              targets = ["thinkcenter.${peerDomain}:${toString services.metrics.port}"];
+              targets = ["thinkcenter.${peerDomain}:${metricsPort}"];
               labels = {host = "thinkcenter";};
             }
           ];
@@ -97,7 +101,7 @@ in {
           metrics_path = "/metrics/redis";
           static_configs = [
             {
-              targets = ["thinkcenter.${peerDomain}:${toString services.metrics.port}"];
+              targets = ["thinkcenter.${peerDomain}:${metricsPort}"];
               labels = {host = "thinkcenter";};
             }
           ];
@@ -107,7 +111,7 @@ in {
           metrics_path = "/metrics/nginx";
           static_configs = [
             {
-              targets = ["thinkcenter.${peerDomain}:${toString services.metrics.port}"];
+              targets = ["thinkcenter.${peerDomain}:${metricsPort}"];
               labels = {host = "thinkcenter";};
             }
           ];
@@ -117,7 +121,7 @@ in {
           metrics_path = "/metrics/wireguard";
           static_configs = [
             {
-              targets = ["thinkcenter.${peerDomain}:${toString services.metrics.port}"];
+              targets = ["thinkcenter.${peerDomain}:${metricsPort}"];
               labels = {host = "thinkcenter";};
             }
           ];
@@ -127,7 +131,7 @@ in {
           metrics_path = "/metrics/octoprint";
           static_configs = [
             {
-              targets = ["prusa.${peerDomain}:${toString services.metrics.port}"];
+              targets = ["prusa.${peerDomain}:${metricsPort}"];
               labels = {host = "prusa";};
             }
           ];
