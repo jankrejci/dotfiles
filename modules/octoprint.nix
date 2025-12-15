@@ -5,12 +5,10 @@
   ...
 }: let
   cfg = config.homelab.octoprint;
-  # Prefer homelab namespace, fall back to old options during transition
-  services = config.homelab.services or config.serviceConfig;
-  host = config.homelab.host or config.hostConfig.self;
-  # Use fallback values until homelab namespace is populated by flake
-  domain = services.global.domain or "krejci.io";
-  serverDomain = "${services.octoprint.subdomain or "octoprint"}.${domain}";
+  services = config.homelab.services;
+  host = config.homelab.host;
+  domain = services.global.domain;
+  serverDomain = "${services.octoprint.subdomain}.${domain}";
 
   mkObicoPlugin = ps:
     ps.callPackage ../pkgs/octoprint-obico.nix {};
@@ -28,15 +26,15 @@ in {
 
   config = lib.mkIf cfg.enable {
     # Allow HTTPS on VPN interface
-    networking.firewall.interfaces."${services.netbird.interface or "nb-homelab"}".allowedTCPPorts = [
-      (services.https.port or 443)
+    networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [
+      services.https.port
     ];
 
     services.octoprint = {
       enable = true;
       # Listen on localhost only, accessed via nginx proxy
       host = "127.0.0.1";
-      port = services.octoprint.port or 5000;
+      port = services.octoprint.port;
       plugins = ps: [
         (mkObicoPlugin ps)
         (mkPrometheusPlugin ps)
@@ -72,7 +70,7 @@ in {
           }
         ];
         locations."/webcam/" = {
-          proxyPass = "http://${host.services.webcam.ip or "127.0.0.1"}:8080/";
+          proxyPass = "http://${host.services.webcam.ip}:8080/";
           extraConfig = ''
             proxy_buffering off;
             proxy_request_buffering off;
@@ -82,21 +80,21 @@ in {
       virtualHosts.${serverDomain} = {
         listen = [
           {
-            addr = host.services.octoprint.ip or "127.0.0.1";
-            port = services.https.port or 443;
+            addr = host.services.octoprint.ip;
+            port = services.https.port;
             ssl = true;
           }
         ];
         onlySSL = true;
         useACMEHost = domain;
         locations."/" = {
-          proxyPass = "http://127.0.0.1:${toString (services.octoprint.port or 5000)}";
+          proxyPass = "http://127.0.0.1:${toString services.octoprint.port}";
           proxyWebsockets = true;
           recommendedProxySettings = true;
         };
         # Proxy webcam stream and snapshot from camera-streamer
         locations."/webcam/" = {
-          proxyPass = "http://${host.services.webcam.ip or "127.0.0.1"}:8080/";
+          proxyPass = "http://${host.services.webcam.ip}:8080/";
           # Disable buffering for MJPEG streaming
           extraConfig = ''
             proxy_buffering off;
@@ -108,7 +106,7 @@ in {
       # Dedicated prometheus user with only PLUGIN_PROMETHEUS_EXPORTER_SCRAPE permission
       # TODO: add setup-octoprint-metrics script to recreate this key if needed
       virtualHosts."metrics".locations."/metrics/octoprint" = {
-        proxyPass = "http://127.0.0.1:${toString (services.octoprint.port or 5000)}/plugin/prometheus_exporter/metrics";
+        proxyPass = "http://127.0.0.1:${toString services.octoprint.port}/plugin/prometheus_exporter/metrics";
         extraConfig = ''
           proxy_set_header X-Api-Key "d9_H5XHNOzEtEb50k1NQ4v3iwyfXiSu3QUy9kZ96FFY";
         '';

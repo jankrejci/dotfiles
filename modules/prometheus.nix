@@ -5,13 +5,11 @@
   ...
 }: let
   cfg = config.homelab.prometheus;
-  # Prefer homelab namespace, fall back to old options during transition
-  services = config.homelab.services or config.serviceConfig;
-  hosts = config.homelab.hosts or config.hostConfig;
-  # Use fallback values until homelab namespace is populated by flake
-  domain = services.global.domain or "krejci.io";
+  services = config.homelab.services;
+  hosts = config.homelab.hosts;
+  domain = services.global.domain;
   peerDomain = "nb.${domain}";
-  metricsPort = toString (services.metrics.port or 9999);
+  metricsPort = toString services.metrics.port;
 in {
   options.homelab.prometheus = {
     # Default true preserves existing behavior during transition

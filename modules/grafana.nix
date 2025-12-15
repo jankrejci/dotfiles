@@ -5,12 +5,10 @@
   ...
 }: let
   cfg = config.homelab.grafana;
-  # Prefer homelab namespace, fall back to old options during transition
-  services = config.homelab.services or config.serviceConfig;
-  host = config.homelab.host or config.hostConfig.self;
-  # Use fallback values until homelab.services is populated by flake
-  domain = services.global.domain or "krejci.io";
-  serverDomain = "${services.grafana.subdomain or "grafana"}.${domain}";
+  services = config.homelab.services;
+  host = config.homelab.host;
+  domain = services.global.domain;
+  serverDomain = "${services.grafana.subdomain}.${domain}";
 in {
   options.homelab.grafana = {
     # Default true preserves existing behavior where importing the module enables it.
@@ -24,8 +22,8 @@ in {
 
   config = lib.mkIf cfg.enable {
     # Allow HTTPS on VPN interface
-    networking.firewall.interfaces."${services.netbird.interface or "nb-homelab"}".allowedTCPPorts = [
-      (services.https.port or 443)
+    networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [
+      services.https.port
     ];
 
     systemd.services.grafana = {
@@ -45,7 +43,7 @@ in {
       settings.server = {
         # 127.0.0.1 only - accessed via nginx proxy (defense in depth)
         http_addr = "127.0.0.1";
-        http_port = services.grafana.port or 3000;
+        http_port = services.grafana.port;
         inherit domain;
         root_url = "https://${serverDomain}";
       };
@@ -57,17 +55,17 @@ in {
     services.nginx = {
       enable = true;
       virtualHosts.${serverDomain} = {
-        listenAddresses = [host.services.grafana.ip or "127.0.0.1"];
+        listenAddresses = [host.services.grafana.ip];
         forceSSL = true;
         useACMEHost = domain;
         locations."/" = {
-          proxyPass = "http://127.0.0.1:${toString (services.grafana.port or 3000)}";
+          proxyPass = "http://127.0.0.1:${toString services.grafana.port}";
           proxyWebsockets = true;
           recommendedProxySettings = true;
         };
         # Prometheus UI accessible at /prometheus/
         locations."/prometheus/" = {
-          proxyPass = "http://127.0.0.1:${toString (services.prometheus.port or 9090)}";
+          proxyPass = "http://127.0.0.1:${toString services.prometheus.port}";
           proxyWebsockets = true;
           recommendedProxySettings = true;
         };
@@ -81,7 +79,7 @@ in {
           name = "Prometheus";
           type = "prometheus";
           access = "proxy";
-          url = "http://127.0.0.1:${toString (services.prometheus.port or 9090)}/prometheus";
+          url = "http://127.0.0.1:${toString services.prometheus.port}/prometheus";
           isDefault = true;
           # Fixed UID for dashboard references (see CLAUDE.md)
           uid = "prometheus";
@@ -114,7 +112,7 @@ in {
                 type = "webhook";
                 disableResolveMessage = false;
                 settings = {
-                  url = "http://127.0.0.1:${toString (services.ntfy.port or 2586)}/grafana-alerts?template=grafana";
+                  url = "http://127.0.0.1:${toString services.ntfy.port}/grafana-alerts?template=grafana";
                   httpMethod = "POST";
                   authorization_scheme = "Bearer";
                   authorization_credentials = "$NTFY_TOKEN";
