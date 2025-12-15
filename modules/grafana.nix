@@ -5,9 +5,9 @@
   ...
 }: let
   cfg = config.homelab.grafana;
-  # Prefer homelab.services, fall back to serviceConfig during transition
+  # Prefer homelab namespace, fall back to old options during transition
   services = config.homelab.services or config.serviceConfig;
-  host = config.hostConfig.self;
+  host = config.homelab.host or config.hostConfig.self;
   # Use fallback values until homelab.services is populated by flake
   domain = services.global.domain or "krejci.io";
   serverDomain = "${services.grafana.subdomain or "grafana"}.${domain}";
@@ -57,7 +57,7 @@ in {
     services.nginx = {
       enable = true;
       virtualHosts.${serverDomain} = {
-        listenAddresses = [host.services.grafana.ip];
+        listenAddresses = [host.services.grafana.ip or "127.0.0.1"];
         forceSSL = true;
         useACMEHost = domain;
         locations."/" = {
