@@ -3,7 +3,7 @@
   pkgs,
   ...
 }: let
-  services = config.serviceConfig;
+  services = config.homelab.services;
   lokiDataDir = "/var/lib/loki";
 in {
   # Loki: log aggregation system (like Prometheus but for logs)

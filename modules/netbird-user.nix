@@ -12,7 +12,7 @@
   pkgs,
   ...
 }: let
-  services = config.serviceConfig;
+  services = config.homelab.services;
   wrapperDir = config.security.wrapperDir;
   hostname = config.networking.hostName;
   netbirdDir = ".local/netbird-user";
