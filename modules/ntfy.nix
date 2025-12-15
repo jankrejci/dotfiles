@@ -6,12 +6,10 @@
   ...
 }: let
   cfg = config.homelab.ntfy;
-  # Prefer homelab namespace, fall back to old options during transition
-  services = config.homelab.services or config.serviceConfig;
-  host = config.homelab.host or config.hostConfig.self;
-  # Use fallback values until homelab namespace is populated by flake
-  domain = services.global.domain or "krejci.io";
-  ntfyDomain = "${services.ntfy.subdomain or "ntfy"}.${domain}";
+  services = config.homelab.services;
+  host = config.homelab.host;
+  domain = services.global.domain;
+  ntfyDomain = "${services.ntfy.subdomain}.${domain}";
 in {
   options.homelab.ntfy = {
     # Default true preserves existing behavior during transition
@@ -24,8 +22,8 @@ in {
 
   config = lib.mkIf cfg.enable {
     # Allow HTTPS on VPN interface only
-    networking.firewall.interfaces."${services.netbird.interface or "nb-homelab"}".allowedTCPPorts = [
-      (services.https.port or 443)
+    networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [
+      services.https.port
     ];
 
     # Use unstable ntfy-sh for template support (requires >= 2.14.0)
@@ -34,7 +32,7 @@ in {
       package = pkgs.unstable.ntfy-sh;
       settings = {
         # Listen on 127.0.0.1 only, accessed via nginx proxy (defense in depth)
-        listen-http = "127.0.0.1:${toString (services.ntfy.port or 2586)}";
+        listen-http = "127.0.0.1:${toString services.ntfy.port}";
         base-url = "https://${ntfyDomain}";
         # Authentication: read-only by default, publishing requires tokens
         auth-default-access = "read-only";
@@ -59,11 +57,11 @@ in {
     services.nginx = {
       enable = true;
       virtualHosts.${ntfyDomain} = {
-        listenAddresses = [host.services.ntfy.ip or "127.0.0.1"];
+        listenAddresses = [host.services.ntfy.ip];
         forceSSL = true;
         useACMEHost = domain;
         locations."/" = {
-          proxyPass = "http://127.0.0.1:${toString (services.ntfy.port or 2586)}";
+          proxyPass = "http://127.0.0.1:${toString services.ntfy.port}";
           proxyWebsockets = true;
           recommendedProxySettings = true;
         };

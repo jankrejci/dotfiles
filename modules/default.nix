@@ -11,6 +11,11 @@
     ./ssh.nix
     ./networking.nix
 
-    # Service modules will be added here as they are migrated to homelab.X.enable pattern
+    # Service modules with homelab.X.enable pattern
+    ./grafana.nix
+    ./prometheus.nix
+    ./immich.nix
+    ./ntfy.nix
+    ./octoprint.nix
   ];
 }
