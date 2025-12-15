@@ -1,6 +1,7 @@
 {config, ...}: let
+  global = config.homelab.global;
   services = config.homelab.services;
-  domain = services.global.domain;
+  domain = global.domain;
   shareDomain = "${services.immich-public-proxy.subdomain}.${domain}";
   httpsPort = services.https.port;
 in {

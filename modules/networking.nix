@@ -3,10 +3,11 @@
   lib,
   ...
 }: let
+  global = config.homelab.global;
   services = config.homelab.services;
   host = config.homelab.host;
-  domain = services.global.domain or "krejci.io";
-  hostServices = host.services or {};
+  domain = global.domain;
+  hostServices = host.services;
   serviceIPs = lib.mapAttrsToList (_: service: service.ip) hostServices;
   hasServices = hostServices != {};
 in {

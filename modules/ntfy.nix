@@ -6,9 +6,10 @@
   ...
 }: let
   cfg = config.homelab.ntfy;
+  global = config.homelab.global;
   services = config.homelab.services;
   host = config.homelab.host;
-  domain = services.global.domain;
+  domain = global.domain;
   ntfyDomain = "${services.ntfy.subdomain}.${domain}";
 in {
   options.homelab.ntfy = {

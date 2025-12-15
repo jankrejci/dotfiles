@@ -5,10 +5,11 @@
   ...
 }: let
   cfg = config.homelab.prometheus;
+  global = config.homelab.global;
   services = config.homelab.services;
   hosts = config.homelab.hosts;
-  domain = services.global.domain;
-  peerDomain = "nb.${domain}";
+  domain = global.domain;
+  peerDomain = global.peerDomain;
   metricsPort = toString services.metrics.port;
 in {
   options.homelab.prometheus = {

@@ -15,9 +15,10 @@
 # Files automatically get correct group ownership (jellyfin) via setgid bit.
 # Scan library after upload: Dashboard → Libraries → Scan Library
 {config, ...}: let
+  global = config.homelab.global;
   services = config.homelab.services;
   host = config.homelab.host;
-  jellyfinDomain = "${services.jellyfin.subdomain}.${services.global.domain}";
+  jellyfinDomain = "${services.jellyfin.subdomain}.${global.domain}";
 in {
   # Allow HTTPS on VPN interface
   networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [services.https.port];
@@ -64,7 +65,7 @@ in {
       listenAddresses = [host.services.jellyfin.ip];
       # Enable HTTPS with Let's Encrypt wildcard certificate
       forceSSL = true;
-      useACMEHost = "${services.global.domain}";
+      useACMEHost = "${global.domain}";
       # Allow large media file uploads
       extraConfig = "client_max_body_size 10G;";
       locations."/" = {
