@@ -21,35 +21,41 @@
   };
 
   # Host configuration submodule
-  hostModule = types.submodule {
+  hostModule = types.submodule ({name, ...}: {
     options = {
       hostName = mkOption {
         type = types.str;
+        default = name;
         description = "Hostname";
       };
 
       system = mkOption {
         type = types.enum ["x86_64-linux" "aarch64-linux"];
+        default = "x86_64-linux";
         description = "System architecture";
       };
 
       isRpi = mkOption {
         type = types.bool;
+        default = false;
         description = "Whether this is a Raspberry Pi";
       };
 
       kind = mkOption {
         type = types.enum ["nixos" "installer"];
+        default = "nixos";
         description = "Type of host";
       };
 
       device = mkOption {
         type = types.str;
+        default = "/dev/sda";
         description = "Root disk device";
       };
 
       swapSize = mkOption {
         type = types.str;
+        default = "1G";
         description = "Swap partition size";
       };
 
@@ -89,7 +95,7 @@
         description = "Prometheus scrape targets for this host";
       };
     };
-  };
+  });
 
   # Service configuration submodule
   serviceModule = types.submodule {
@@ -119,6 +125,20 @@
       };
     };
   };
+  # Global configuration submodule
+  globalModule = types.submodule {
+    options = {
+      domain = mkOption {
+        type = types.str;
+        description = "Base domain for all services";
+      };
+
+      peerDomain = mkOption {
+        type = types.str;
+        description = "VPN peer domain for internal access";
+      };
+    };
+  };
 in {
   options.homelab = {
     # Current host configuration
@@ -134,11 +154,17 @@ in {
       description = "All host configurations for prometheus discovery";
     };
 
-    # Global service configuration
+    # Global configuration
+    global = mkOption {
+      type = globalModule;
+      description = "Global homelab configuration";
+    };
+
+    # Service configuration
     services = mkOption {
       type = types.attrsOf serviceModule;
       default = {};
-      description = "Global service configuration";
+      description = "Service configuration";
     };
   };
 }

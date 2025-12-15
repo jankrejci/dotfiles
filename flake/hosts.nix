@@ -142,12 +142,14 @@
     };
   };
 
+  # Global configuration
+  global = {
+    domain = "krejci.io";
+    peerDomain = "nb.krejci.io";
+  };
+
   # Service configuration
   services = {
-    global = {
-      domain = "krejci.io";
-    };
-
     https = {
       port = 443;
     };
@@ -204,26 +206,10 @@
     };
   };
 
-  # Normalize host config with defaults
-  normalizeHost = name: cfg: {
-    hostName = cfg.hostName or name;
-    system = cfg.system or "x86_64-linux";
-    isRpi = cfg.isRpi or false;
-    kind = cfg.kind or "nixos";
-    device = cfg.device or "/dev/sda";
-    swapSize = cfg.swapSize or "1G";
-    services = cfg.services or {};
-    modules = cfg.modules or {};
-    extraModules = cfg.extraModules or [];
-  };
-
-  # Normalized hosts
-  normalizedHosts = lib.mapAttrs normalizeHost hosts;
-
   # Filter by kind
-  nixosHosts = lib.filterAttrs (_: h: h.kind == "nixos") normalizedHosts;
-  rpiHosts = lib.filterAttrs (_: h: h.isRpi) nixosHosts;
-  regularHosts = lib.filterAttrs (_: h: !h.isRpi) nixosHosts;
+  nixosHosts = lib.filterAttrs (_: h: (h.kind or "nixos") == "nixos") hosts;
+  rpiHosts = lib.filterAttrs (_: h: h.isRpi or false) nixosHosts;
+  regularHosts = lib.filterAttrs (_: h: !(h.isRpi or false)) nixosHosts;
 
   # Common base modules for all hosts
   baseModules = [
@@ -235,40 +221,42 @@
   ];
 
   # Create modules list for a host
-  mkModulesList = hostName: hostCfg: let
+  mkModulesList = hostName: host: let
     hostConfigFile = ../hosts/${hostName}.nix;
     hasHostConfig = builtins.pathExists hostConfigFile;
   in
     baseModules
     ++ lib.optional hasHostConfig hostConfigFile
-    ++ hostCfg.extraModules
+    ++ host.extraModules or []
     ++ [
       # Inject homelab configuration
       ({...}: {
-        # Current host
-        homelab.host = hostCfg;
+        # Current host - add hostName for modules that need it
+        homelab.host = host // {hostName = host.hostName or hostName;};
         # All hosts for prometheus discovery
-        homelab.hosts = normalizedHosts;
-        # Global service configuration
+        homelab.hosts = hosts;
+        # Global configuration
+        homelab.global = global;
+        # Service configuration
         homelab.services = services;
 
         # Wire up enable flags from host config to homelab modules
-        homelab.immich.enable = hostCfg.modules.immich.enable or false;
-        homelab.grafana.enable = hostCfg.modules.grafana.enable or false;
-        homelab.prometheus.enable = hostCfg.modules.prometheus.enable or false;
-        homelab.ntfy.enable = hostCfg.modules.ntfy.enable or false;
-        homelab.octoprint.enable = hostCfg.modules.octoprint.enable or false;
+        homelab.immich.enable = host.modules.immich.enable or false;
+        homelab.grafana.enable = host.modules.grafana.enable or false;
+        homelab.prometheus.enable = host.modules.prometheus.enable or false;
+        homelab.ntfy.enable = host.modules.ntfy.enable or false;
+        homelab.octoprint.enable = host.modules.octoprint.enable or false;
       })
     ];
 
   # Create nixosConfiguration for regular x86_64 hosts
-  mkSystem = hostName: hostCfg:
+  mkSystem = hostName: host:
     withSystem "x86_64-linux" ({pkgs, ...}:
       lib.nixosSystem {
         system = "x86_64-linux";
         specialArgs = {inherit inputs;};
         modules =
-          mkModulesList hostName hostCfg
+          mkModulesList hostName host
           ++ [({...}: {nixpkgs.pkgs = pkgs;})];
       });
 
@@ -279,17 +267,18 @@
   };
 
   # Create nixosConfiguration for RPi hosts
-  mkRpiSystem = hostName: hostCfg:
+  mkRpiSystem = hostName: host:
     inputs.nixos-raspberrypi.lib.nixosSystem {
       specialArgs = {
         inherit inputs cachedPkgs-aarch64;
         inherit (inputs) nixos-raspberrypi;
       };
-      modules = mkModulesList hostName hostCfg;
+      modules = mkModulesList hostName host;
     };
 in {
-  # Export hosts and services for external use
-  flake.hosts = normalizedHosts;
+  # Export configuration for other flake modules
+  flake.hosts = hosts;
+  flake.global = global;
   flake.services = services;
 
   flake.nixosConfigurations =

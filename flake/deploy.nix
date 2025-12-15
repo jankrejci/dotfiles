@@ -6,19 +6,19 @@
   ...
 }: let
   lib = inputs.nixpkgs.lib;
-  # Get hosts from the hosts module
-  hostsConfig = config.flake.hosts;
-  nixosHosts = lib.filterAttrs (_: h: h.kind == "nixos") hostsConfig;
+  hosts = config.flake.hosts;
+  global = config.flake.global;
+  nixosHosts = lib.filterAttrs (_: h: (h.kind or "nixos") == "nixos") hosts;
 
   # Create a deploy node entry
-  mkNode = hostName: hostConfig: {
-    hostname = "${hostName}.nb.krejci.io";
+  mkNode = hostName: host: {
+    hostname = "${hostName}.${global.peerDomain}";
     sshUser = "admin";
     profiles.system = {
       user = "root";
       path =
         inputs.deploy-rs.lib.${
-          if hostConfig.isRpi
+          if host.isRpi or false
           then "aarch64-linux"
           else "x86_64-linux"
         }
