@@ -9,7 +9,10 @@
   };
 
   inputs = {
-    # Most of packages are fetched from the stable channel
+    # Flake-parts for modular flake organization
+    flake-parts.url = "github:hercules-ci/flake-parts";
+
+    # Most packages are fetched from the stable channel
     nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
     # Some bleeding edge packages are fetch from unstable
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
