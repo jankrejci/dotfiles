@@ -5,9 +5,10 @@
   ...
 }: let
   cfg = config.homelab.octoprint;
+  global = config.homelab.global;
   services = config.homelab.services;
   host = config.homelab.host;
-  domain = services.global.domain;
+  domain = global.domain;
   serverDomain = "${services.octoprint.subdomain}.${domain}";
 
   mkObicoPlugin = ps:
