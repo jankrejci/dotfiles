@@ -3,9 +3,9 @@
   lib,
   ...
 }: let
-  services = config.serviceConfig;
-  host = config.hostConfig.self;
-  domain = services.global.domain;
+  services = config.homelab.services;
+  host = config.homelab.host;
+  domain = services.global.domain or "krejci.io";
   hostServices = host.services or {};
   serviceIPs = lib.mapAttrsToList (_: service: service.ip) hostServices;
   hasServices = hostServices != {};
@@ -22,7 +22,7 @@ in {
   boot.initrd.systemd.network.wait-online.enable = false;
 
   networking = {
-    hostName = config.hostConfig.self.hostName;
+    hostName = host.hostName;
     firewall.enable = true;
     # Use nftables instead of iptables (modern, better performance)
     nftables.enable = true;

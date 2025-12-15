@@ -11,7 +11,7 @@ in {
     disk = {
       main = {
         type = "disk";
-        device = config.hostConfig.self.device;
+        device = config.homelab.host.device;
         content = {
           type = "gpt";
           partitions = {
@@ -58,7 +58,7 @@ in {
             };
           };
           swap = {
-            size = config.hostConfig.self.swapSize;
+            size = config.homelab.host.swapSize;
             content = {
               type = "swap";
               discardPolicy = "both";

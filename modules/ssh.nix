@@ -41,7 +41,7 @@ in {
       runtimeInputs = with pkgs; [coreutils curl gnugrep gnused];
       text = ''
         readonly USERNAME="$1"
-        readonly HOSTNAME="${config.hostConfig.self.hostName}"
+        readonly HOSTNAME="${config.homelab.host.hostName}"
         readonly CACHE_FILE="${keysPath}"
         readonly KEYS_URL="${gitRepo}/refs/heads/${gitBranch}/${keysFile}"
 
