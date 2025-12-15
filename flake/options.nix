@@ -1,5 +1,5 @@
-# Custom flake-level options for homelab configuration
-# These are internal options used to configure nixosConfigurations, not flake outputs
+# Flake-level options for homelab configuration
+# These are used by hosts.nix, deploy.nix, and images.nix
 {
   inputs,
   lib ? inputs.nixpkgs.lib,
@@ -7,8 +7,40 @@
 }: let
   inherit (lib) mkOption types;
 in {
-  # Internal options for homelab configuration
-  # These are used by flake/hosts.nix to generate nixosConfigurations
+  options.flake = {
+    # Global configuration
+    global = mkOption {
+      type = types.submodule {
+        options = {
+          domain = mkOption {
+            type = types.str;
+            description = "Base domain for all services";
+          };
+          peerDomain = mkOption {
+            type = types.str;
+            description = "VPN peer domain for internal access";
+          };
+        };
+      };
+      description = "Global homelab configuration";
+    };
+
+    # Host configurations
+    hosts = mkOption {
+      type = types.attrsOf types.attrs;
+      default = {};
+      description = "Host configurations";
+    };
+
+    # Service configurations
+    services = mkOption {
+      type = types.attrsOf types.attrs;
+      default = {};
+      description = "Service configurations";
+    };
+  };
+
+  # NixOS-level options - kept for backwards compatibility
   options.homelab = {
     hosts = mkOption {
       description = "Host configurations for the homelab";

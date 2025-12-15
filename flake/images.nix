@@ -6,10 +6,11 @@
   ...
 }: let
   lib = inputs.nixpkgs.lib;
-  hostsConfig = config.flake.hosts;
-  servicesConfig = config.flake.services;
-  nixosHosts = lib.filterAttrs (_: h: h.kind == "nixos") hostsConfig;
-  rpiHosts = lib.filterAttrs (_: h: h.isRpi) nixosHosts;
+  hosts = config.flake.hosts;
+  global = config.flake.global;
+  services = config.flake.services;
+  nixosHosts = lib.filterAttrs (_: h: (h.kind or "nixos") == "nixos") hosts;
+  rpiHosts = lib.filterAttrs (_: h: h.isRpi or false) nixosHosts;
 
   # Common base modules - use single import point
   baseModules = [
@@ -23,7 +24,7 @@
   # Create modules list for a host
   mkModulesList = {
     hostName,
-    hostConfig,
+    host,
     additionalModules ? [],
   }: let
     hostConfigFile = ../hosts/${hostName}.nix;
@@ -31,21 +32,22 @@
   in
     baseModules
     ++ lib.optional hasHostConfig hostConfigFile
-    ++ hostConfig.extraModules or []
+    ++ host.extraModules or []
     ++ additionalModules
     ++ [
       # Inject homelab configuration
       ({...}: {
-        homelab.host = hostConfig;
-        homelab.hosts = hostsConfig;
-        homelab.services = servicesConfig;
+        homelab.host = host // {hostName = host.hostName or hostName;};
+        homelab.hosts = hosts;
+        homelab.global = global;
+        homelab.services = services;
 
         # Wire up enable flags
-        homelab.immich.enable = hostConfig.modules.immich.enable or false;
-        homelab.grafana.enable = hostConfig.modules.grafana.enable or false;
-        homelab.prometheus.enable = hostConfig.modules.prometheus.enable or false;
-        homelab.ntfy.enable = hostConfig.modules.ntfy.enable or false;
-        homelab.octoprint.enable = hostConfig.modules.octoprint.enable or false;
+        homelab.immich.enable = host.modules.immich.enable or false;
+        homelab.grafana.enable = host.modules.grafana.enable or false;
+        homelab.prometheus.enable = host.modules.prometheus.enable or false;
+        homelab.ntfy.enable = host.modules.ntfy.enable or false;
+        homelab.octoprint.enable = host.modules.octoprint.enable or false;
       })
     ];
 
@@ -64,7 +66,7 @@ in {
         modules =
           mkModulesList {
             hostName = "iso";
-            hostConfig = hostsConfig.iso;
+            host = hosts.iso;
             additionalModules = [
               "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
               ({...}: {
@@ -81,7 +83,7 @@ in {
 
     # SD card images for Raspberry Pi
     sdcard = lib.genAttrs (builtins.attrNames rpiHosts) (hostName: let
-      hostConfig = hostsConfig.${hostName};
+      host = hosts.${hostName};
     in
       (inputs.nixos-raspberrypi.lib.nixosSystem {
         specialArgs = {
@@ -89,7 +91,7 @@ in {
           inherit (inputs) nixos-raspberrypi;
         };
         modules =
-          mkModulesList {inherit hostName hostConfig;}
+          mkModulesList {inherit hostName host;}
           ++ [
             inputs.nixos-raspberrypi.nixosModules.sd-image
             ../modules/load-keys.nix
