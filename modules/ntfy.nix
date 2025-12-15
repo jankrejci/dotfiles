@@ -6,9 +6,12 @@
   ...
 }: let
   cfg = config.homelab.ntfy;
-  services = config.serviceConfig;
-  host = config.hostConfig.self;
-  ntfyDomain = "${services.ntfy.subdomain}.${services.global.domain}";
+  # Prefer homelab namespace, fall back to old options during transition
+  services = config.homelab.services or config.serviceConfig;
+  host = config.homelab.host or config.hostConfig.self;
+  # Use fallback values until homelab namespace is populated by flake
+  domain = services.global.domain or "krejci.io";
+  ntfyDomain = "${services.ntfy.subdomain or "ntfy"}.${domain}";
 in {
   options.homelab.ntfy = {
     # Default true preserves existing behavior during transition
@@ -21,7 +24,9 @@ in {
 
   config = lib.mkIf cfg.enable {
     # Allow HTTPS on VPN interface only
-    networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [services.https.port];
+    networking.firewall.interfaces."${services.netbird.interface or "nb-homelab"}".allowedTCPPorts = [
+      (services.https.port or 443)
+    ];
 
     # Use unstable ntfy-sh for template support (requires >= 2.14.0)
     services.ntfy-sh = {
@@ -29,7 +34,7 @@ in {
       package = pkgs.unstable.ntfy-sh;
       settings = {
         # Listen on 127.0.0.1 only, accessed via nginx proxy (defense in depth)
-        listen-http = "127.0.0.1:${toString services.ntfy.port}";
+        listen-http = "127.0.0.1:${toString (services.ntfy.port or 2586)}";
         base-url = "https://${ntfyDomain}";
         # Authentication: read-only by default, publishing requires tokens
         auth-default-access = "read-only";
@@ -54,12 +59,11 @@ in {
     services.nginx = {
       enable = true;
       virtualHosts.${ntfyDomain} = {
-        listenAddresses = [host.services.ntfy.ip];
-        # Enable HTTPS with Let's Encrypt wildcard certificate
+        listenAddresses = [host.services.ntfy.ip or "127.0.0.1"];
         forceSSL = true;
-        useACMEHost = "${services.global.domain}";
+        useACMEHost = domain;
         locations."/" = {
-          proxyPass = "http://127.0.0.1:${toString services.ntfy.port}";
+          proxyPass = "http://127.0.0.1:${toString (services.ntfy.port or 2586)}";
           proxyWebsockets = true;
           recommendedProxySettings = true;
         };
