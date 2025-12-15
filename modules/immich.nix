@@ -1,8 +1,11 @@
+# Immich photo library with homelab enable flag
 {
   config,
+  lib,
   pkgs,
   ...
 }: let
+  cfg = config.homelab.immich;
   services = config.serviceConfig;
   host = config.hostConfig.self;
   domain = services.global.domain;
@@ -23,8 +26,18 @@
   # Backup configuration
   backupDir = "/var/backup/immich-db";
 in {
-  # Install borgbackup for backup operations
-  environment.systemPackages = with pkgs; [
+  options.homelab.immich = {
+    # Default true preserves existing behavior during transition
+    enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Enable Immich photo library";
+    };
+  };
+
+  config = lib.mkIf cfg.enable {
+    # Install borgbackup for backup operations
+    environment.systemPackages = with pkgs; [
     borgbackup
     (pkgs.writeShellScriptBin "restore-immich-backup" ''
       if [ $# -lt 2 ]; then
@@ -272,6 +285,7 @@ in {
       "/metrics/postgres".proxyPass = "http://127.0.0.1:${toString postgresMetricsPort}/metrics";
       "/metrics/redis".proxyPass = "http://127.0.0.1:${toString redisMetricsPort}/metrics";
       "/metrics/nginx".proxyPass = "http://127.0.0.1:${toString nginxMetricsPort}/metrics";
+    };
     };
   };
 }
