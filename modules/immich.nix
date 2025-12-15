@@ -6,11 +6,13 @@
   ...
 }: let
   cfg = config.homelab.immich;
-  services = config.serviceConfig;
-  host = config.hostConfig.self;
-  domain = services.global.domain;
-  immichDomain = "${services.immich.subdomain}.${domain}";
-  httpsPort = services.https.port;
+  # Prefer homelab namespace, fall back to old options during transition
+  services = config.homelab.services or config.serviceConfig;
+  host = config.homelab.host or config.hostConfig.self;
+  # Use fallback values until homelab namespace is populated by flake
+  domain = services.global.domain or "krejci.io";
+  immichDomain = "${services.immich.subdomain or "immich"}.${domain}";
+  httpsPort = services.https.port or 443;
 
   # Internal metrics ports for exporters
   immichApiMetricsPort = 8081;
@@ -36,6 +38,9 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    # Scrape target registration will be added in Phase 4 when modules/default.nix
+    # is used and homelab.monitoring options are available to all hosts.
+
     # Install borgbackup for backup operations
     environment.systemPackages = with pkgs; [
     borgbackup
@@ -92,7 +97,7 @@ in {
     '')
   ];
   # Allow HTTPS on VPN interface (nginx proxies to Immich for both web and mobile)
-  networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [httpsPort];
+  networking.firewall.interfaces."${services.netbird.interface or "nb-homelab"}".allowedTCPPorts = [httpsPort];
 
   # Prometheus exporters for Immich dependencies
   services.prometheus.exporters = {
@@ -164,7 +169,7 @@ in {
     enable = true;
     # Listen on 127.0.0.1 only, accessed via nginx proxy
     host = "127.0.0.1";
-    port = services.immich.port;
+    port = services.immich.port or 2283;
     # Media stored on dedicated NVMe disk at /var/lib/immich (default)
     environment = {
       PUBLIC_IMMICH_SERVER_URL = "https://share.${domain}";
@@ -264,7 +269,7 @@ in {
   services.nginx = {
     enable = true;
     virtualHosts.${immichDomain} = {
-      listenAddresses = [host.services.immich.ip];
+      listenAddresses = [host.services.immich.ip or "127.0.0.1"];
       # Enable HTTPS with Let's Encrypt wildcard certificate
       forceSSL = true;
       useACMEHost = "${domain}";
@@ -273,7 +278,7 @@ in {
         client_max_body_size 1G;
       '';
       locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString services.immich.port}";
+        proxyPass = "http://127.0.0.1:${toString (services.immich.port or 2283)}";
         proxyWebsockets = true;
         recommendedProxySettings = true;
       };
