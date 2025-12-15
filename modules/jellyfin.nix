@@ -15,8 +15,8 @@
 # Files automatically get correct group ownership (jellyfin) via setgid bit.
 # Scan library after upload: Dashboard → Libraries → Scan Library
 {config, ...}: let
-  services = config.serviceConfig;
-  host = config.hostConfig.self;
+  services = config.homelab.services;
+  host = config.homelab.host;
   jellyfinDomain = "${services.jellyfin.subdomain}.${services.global.domain}";
 in {
   # Allow HTTPS on VPN interface

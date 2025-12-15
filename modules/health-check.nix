@@ -3,7 +3,7 @@
   pkgs,
   ...
 }: let
-  ntfyPort = config.serviceConfig.ntfy.port;
+  ntfyPort = config.homelab.services.ntfy.port;
   ntfyTopic = "system-health";
 
   healthCheckScript = pkgs.writeShellApplication {
