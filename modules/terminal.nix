@@ -106,11 +106,14 @@
     scrollback_editor "hx"
   '';
 
+  # Copy zellij logo to icons directory for desktop entry
+  home.file.".local/share/icons/hicolor/128x128/apps/zellij.png".source = ./zellij/logo.png;
+
   xdg.desktopEntries."Zellij" = {
     name = "Zellij";
     comment = "Terminal multiplexer";
     exec = "alacritty -e zellij -l welcome";
-    icon = "/home/jkr/dotfiles/modules/zellij/logo.png";
+    icon = "zellij";
     categories = ["System" "TerminalEmulator"];
     terminal = false;
   };
