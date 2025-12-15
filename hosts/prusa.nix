@@ -6,7 +6,7 @@
   ...
 }: let
   camera-streamer = pkgs.callPackage ../pkgs/camera-streamer.nix {};
-  host = config.hostConfig.self;
+  host = config.homelab.host;
 in {
   # RPi Zero 2 W with OctoPrint and camera streaming.
   # Note: deploy-rs may fail due to nix daemon crashes on this device.
