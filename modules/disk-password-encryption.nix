@@ -70,6 +70,12 @@ in {
   };
 
   boot = {
+    # LVM kernel modules needed in initrd for root volume
+    initrd.kernelModules = ["dm-snapshot"];
+    initrd.availableKernelModules = ["dm-mod" "dm-crypt"];
+    # Enable LVM support in initrd
+    initrd.services.lvm.enable = true;
+
     loader = {
       systemd-boot = {
         # Systemd boot instead of GRUB is needed for secure boot,
