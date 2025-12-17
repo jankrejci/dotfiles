@@ -1,11 +1,10 @@
 # User-level Netbird client for desktop SSO authentication.
-# Runs alongside the system-level netbird-homelab client.
 # Users authenticate via SSO through the tray UI, enabling user-based policies.
+# Mutually exclusive with netbird-homelab (system client for servers).
 #
 # WARNING: Netbird has a known routing table conflict issue when running
 # multiple instances. The second instance may delete routes from the first.
 # See: https://github.com/netbirdio/netbird/issues/2023
-# This module is experimental until upstream fixes the conflict.
 {
   config,
   lib,
@@ -49,9 +48,8 @@ in {
     wantedBy = ["graphical-session.target"];
 
     environment = {
-      # Use same interface name as system client for unified firewall rules
       NB_INTERFACE_NAME = services.netbird.interface;
-      NB_WIREGUARD_PORT = "51821";
+      NB_WIREGUARD_PORT = toString services.netbird.port;
       NB_LOG_LEVEL = "info";
       # Store state and logs in user directory instead of /var/lib/netbird
       NB_STATE_DIR = "%h/${netbirdDir}";
@@ -62,19 +60,17 @@ in {
       Type = "simple";
       ExecStartPre = "${pkgs.coreutils}/bin/mkdir -p %t/netbird-user %h/${netbirdDir}";
       ExecStart = "${wrapperDir}/netbird-user-daemon service run --config %h/${netbirdDir}/config.json --daemon-addr unix://%t/netbird-user/sock";
-      # Workaround: netbird ignores NB_INTERFACE_NAME and NB_WIREGUARD_PORT env vars
-      # after config.json exists. The daemon creates config with wrong defaults on
-      # first start. Running "up" with flags fixes the config. Timeout prevents
-      # blocking on SSO prompt; "-" ignores the non-zero exit from timeout.
-      ExecStartPost = lib.concatStringsSep " " [
-        "-${pkgs.coreutils}/bin/timeout"
-        "5"
-        "${netbirdUser}/bin/netbird-user"
-        "up"
-        "--interface-name ${services.netbird.interface}"
-        "--wireguard-port 51821"
-        "--hostname ${hostname}"
-      ];
+      # Workaround: netbird ignores NB_INTERFACE_NAME env var after config.json exists.
+      # Must run down+up with explicit flags to update config. Wait for socket first,
+      # then disconnect and reconnect. Timeout prevents blocking on SSO prompt.
+      ExecStartPost = pkgs.writeShellScript "netbird-user-configure" ''
+        sleep 3
+        ${netbirdUser}/bin/netbird-user down 2>/dev/null || true
+        timeout 5 ${netbirdUser}/bin/netbird-user up \
+          --interface-name ${services.netbird.interface} \
+          --wireguard-port ${toString services.netbird.port} \
+          --hostname ${hostname} || true
+      '';
       Restart = "on-failure";
       RestartSec = 5;
     };
@@ -98,8 +94,8 @@ in {
     X-GNOME-Autostart-enabled=true
   '';
 
-  # Open firewall for user WireGuard port
-  networking.firewall.allowedUDPPorts = [51821];
+  # Open firewall for WireGuard port
+  networking.firewall.allowedUDPPorts = [services.netbird.port];
 
   # Exclude user interface from NetworkManager and DHCP
   networking.networkmanager.unmanaged = lib.mkAfter [services.netbird.interface];
