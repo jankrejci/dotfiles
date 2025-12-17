@@ -610,7 +610,7 @@ in {
           info "Checking secure boot setup mode"
 
           if ssh "$TARGET" \
-            'sbctl status | grep -qE "Setup Mode:.*Enabled"' 2>/dev/null; then
+            'nix-shell -p sbctl --run "sbctl status" | grep -qE "Setup Mode:.*Enabled"' 2>/dev/null; then
             return
           fi
 
