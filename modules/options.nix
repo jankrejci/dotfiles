@@ -3,23 +3,6 @@
 {lib, ...}: let
   inherit (lib) mkOption types;
 
-  # Service IP assignment submodule
-  serviceIpModule = types.submodule {
-    options.ip = mkOption {
-      type = types.str;
-      description = "IP address for this service";
-    };
-  };
-
-  # Module enable flags submodule
-  moduleEnableModule = types.submodule {
-    options.enable = mkOption {
-      type = types.bool;
-      default = false;
-      description = "Whether this module is enabled";
-    };
-  };
-
   # Host configuration submodule
   hostModule = types.submodule ({name, ...}: {
     options = {
@@ -59,16 +42,12 @@
         description = "Swap partition size";
       };
 
-      services = mkOption {
-        type = types.attrsOf serviceIpModule;
+      # Homelab service configuration for this host.
+      # Injected into NixOS module system and merges with homelab/*.nix options.
+      homelab = mkOption {
+        type = types.attrs;
         default = {};
-        description = "Service IP assignments";
-      };
-
-      modules = mkOption {
-        type = types.attrsOf moduleEnableModule;
-        default = {};
-        description = "Module enable flags";
+        description = "Homelab service configuration";
       };
 
       extraModules = mkOption {
