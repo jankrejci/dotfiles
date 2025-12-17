@@ -6,17 +6,14 @@
   pkgs,
   ...
 }: let
-  setupKeyFile = "/var/lib/netbird-homelab/setup-key";
-  daemonAddr = "unix:///var/run/netbird-homelab/sock";
+  services = config.homelab.services;
+  clientName = "homelab";
+  setupKeyFile = "/var/lib/netbird-${clientName}/setup-key";
+  daemonAddr = "unix:///var/run/netbird-${clientName}/sock";
 in {
-  # Netbird multi-instance client configuration
-  services.netbird.clients = {
-    homelab = {
-      port = 51820;
-      # Interface: nb-homelab
-      # Setup key: /var/lib/netbird-homelab/setup-key
-      # State: /var/lib/netbird-homelab/
-    };
+  services.netbird.clients.${clientName} = {
+    port = services.netbird.port;
+    interface = services.netbird.interface;
   };
 
   # Add capability to bind to port 53 for Netbird DNS
@@ -26,6 +23,28 @@ in {
     "CAP_BPF"
     "CAP_NET_BIND_SERVICE"
   ];
+
+  # Allow netbird service to configure DNS via systemd-resolved.
+  # Required for peer name resolution via nb.krejci.io domain.
+  security.polkit.enable = true;
+  security.polkit.extraConfig = ''
+    polkit.addRule(function(action, subject) {
+      var start = "org.freedesktop.resolve1.";
+      var allowed = [
+        "set-dns-servers",
+        "set-domains",
+        "set-default-route",
+        "set-dnssec",
+        "set-dns-over-tls",
+        "revert"
+      ];
+      if (action.id.indexOf(start) === 0 &&
+          allowed.indexOf(action.id.slice(start.length)) !== -1 &&
+          subject.user === "netbird-homelab") {
+        return polkit.Result.YES;
+      }
+    });
+  '';
 
   # Automatic enrollment using setup key on first boot.
   # The setup key is injected during deployment by nixos-install script.
