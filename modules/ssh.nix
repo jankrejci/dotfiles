@@ -3,6 +3,7 @@
   pkgs,
   ...
 }: let
+  services = config.homelab.services;
   gitRepo = "https://raw.githubusercontent.com/jankrejci/dotfiles";
   gitBranch = "main";
   keysFile = "ssh-authorized-keys.conf";
@@ -128,9 +129,7 @@ in {
   services.openssh = {
     enable = true;
 
-    # During Netbird migration: listen on all interfaces
-    # Security enforced via firewall (only wg0 and nb-homelab allowed)
-    # After migration: can remove this comment and keep config
+    # Listen on all interfaces, security enforced via firewall
     listenAddresses = [];
 
     # Don't open firewall globally - use interface-specific rules below
@@ -145,7 +144,7 @@ in {
   };
 
   # Restrict SSH access to VPN interface only
-  networking.firewall.interfaces."nb-homelab".allowedTCPPorts = [22];
+  networking.firewall.interfaces.${services.netbird.interface}.allowedTCPPorts = [22];
 
   systemd.services.sshd.serviceConfig = {
     Restart = "always";
