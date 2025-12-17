@@ -6,7 +6,6 @@
   ...
 }: let
   camera-streamer = pkgs.callPackage ../pkgs/camera-streamer.nix {};
-  host = config.homelab.host;
 in {
   # RPi Zero 2 W with OctoPrint and camera streaming.
   # Note: deploy-rs may fail due to nix daemon crashes on this device.
@@ -59,7 +58,7 @@ in {
         "--camera-fps=5"
         "--camera-options=Saturation=0"
         "--http-port=8080"
-        "--http-listen=${host.services.webcam.ip}"
+        "--http-listen=${config.homelab.octoprint.webcamIp}"
       ];
       Restart = "on-failure";
       RestartSec = "10s";
