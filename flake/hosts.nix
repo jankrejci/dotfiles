@@ -1,4 +1,24 @@
 # nixosConfigurations output using homelab options
+#
+# Host definitions use a simple pattern:
+# - Standard NixOS options (device, swapSize) go at the top level
+# - Service configuration goes under `homelab` and is injected directly
+#   into the NixOS module system (no manual wiring needed)
+# - Extra NixOS modules go in `extraModules`
+#
+# The `homelab` attrset maps directly to homelab.* NixOS options defined
+# in ../homelab/*.nix modules. Each module defines its own options with
+# sensible defaults. Host-specific values (IPs, enable flags) override them.
+#
+# Example:
+#   myhost = {
+#     device = "/dev/sda";
+#     homelab = {
+#       grafana = { enable = true; ip = "192.168.1.1"; };
+#       prometheus.enable = true;
+#     };
+#     extraModules = [ ../modules/headless.nix ];
+#   };
 {
   inputs,
   config,
@@ -12,14 +32,23 @@
     ### Servers ###
 
     vpsfree = {
-      services = {
-        share.ip = "192.168.92.1";
+      homelab = {
+        acme.enable = true;
+        immich-public-proxy = {
+          enable = true;
+          ip = "192.168.92.1";
+          interface = "venet0";
+        };
+        wireguard = {
+          enable = true;
+          ip = "192.168.99.2";
+          server = true;
+          peers = ["thinkcenter"];
+        };
       };
       extraModules = [
         ../modules/headless.nix
         ../modules/netbird-homelab.nix
-        ../modules/acme.nix
-        ../modules/immich-public-proxy.nix
         ../modules/vpsadminos.nix
       ];
     };
@@ -27,26 +56,37 @@
     thinkcenter = {
       device = "/dev/sda";
       swapSize = "8G";
-      services = {
-        immich.ip = "192.168.91.1";
-        grafana.ip = "192.168.91.2";
-        jellyfin.ip = "192.168.91.3";
-        ntfy.ip = "192.168.91.4";
-      };
-      modules = {
-        immich.enable = true;
-        grafana.enable = true;
+      homelab = {
+        acme.enable = true;
+        grafana = {
+          enable = true;
+          ip = "192.168.91.2";
+        };
+        immich = {
+          enable = true;
+          ip = "192.168.91.1";
+        };
+        jellyfin = {
+          enable = true;
+          ip = "192.168.91.3";
+        };
+        loki.enable = true;
+        ntfy = {
+          enable = true;
+          ip = "192.168.91.4";
+        };
         prometheus.enable = true;
-        ntfy.enable = true;
+        wireguard = {
+          enable = true;
+          ip = "192.168.99.1";
+          peers = ["vpsfree"];
+        };
       };
       extraModules = [
         ../modules/headless.nix
         ../modules/netbird-homelab.nix
-        ../modules/acme.nix
         ../modules/disk-tpm-encryption.nix
         ../modules/health-check.nix
-        ../modules/jellyfin.nix
-        ../modules/loki.nix
       ];
     };
 
@@ -121,17 +161,17 @@
     prusa = {
       system = "aarch64-linux";
       isRpi = true;
-      services = {
-        octoprint.ip = "192.168.93.1";
-        webcam.ip = "192.168.93.2";
-      };
-      modules = {
-        octoprint.enable = true;
+      homelab = {
+        acme.enable = true;
+        octoprint = {
+          enable = true;
+          ip = "192.168.93.1";
+          webcamIp = "192.168.93.2";
+        };
       };
       extraModules = [
         ../modules/raspberry.nix
         ../modules/netbird-homelab.nix
-        ../modules/acme.nix
       ];
     };
 
@@ -148,7 +188,8 @@
     peerDomain = "nb.krejci.io";
   };
 
-  # Service configuration
+  # Shared service configuration
+  # Service-specific ports and subdomains are now defined in module defaults
   services = {
     https = {
       port = 443;
@@ -159,50 +200,8 @@
     };
 
     netbird = {
-      interface = "nb-homelab";
-    };
-
-    grafana = {
-      port = 3000;
-      subdomain = "grafana";
-    };
-
-    prometheus = {
-      port = 9090;
-    };
-
-    loki = {
-      port = 3100;
-    };
-
-    promtail = {
-      port = 9080;
-    };
-
-    immich = {
-      port = 2283;
-      subdomain = "immich";
-    };
-
-    ntfy = {
-      port = 2586;
-      subdomain = "ntfy";
-    };
-
-    jellyfin = {
-      port = 8096;
-      subdomain = "jellyfin";
-    };
-
-    octoprint = {
-      port = 5000;
-      subdomain = "octoprint";
-    };
-
-    immich-public-proxy = {
-      port = 2283;
-      subdomain = "share";
-      interface = "venet0";
+      interface = "nb0";
+      port = 51820;
     };
   };
 
@@ -216,7 +215,8 @@
     inputs.home-manager.nixosModules.home-manager
     inputs.disko.nixosModules.disko
     inputs.nix-flatpak.nixosModules.nix-flatpak
-    ../modules # Single import point for all homelab modules
+    ../modules # Base system modules
+    ../homelab # Service modules with enable pattern
     ../users/admin.nix
   ];
 
@@ -229,24 +229,22 @@
     ++ lib.optional hasHostConfig hostConfigFile
     ++ host.extraModules or []
     ++ [
-      # Inject homelab configuration
+      # Inject shared homelab configuration
       ({...}: {
-        # Current host - add hostName for modules that need it
-        homelab.host = host // {hostName = host.hostName or hostName;};
-        # All hosts for prometheus discovery
+        # Current host metadata for modules that need device, swapSize, etc.
+        # Excludes homelab key - use config.homelab.X for service config instead.
+        homelab.host = (builtins.removeAttrs host ["homelab"]) // {hostName = host.hostName or hostName;};
+        # All hosts for cross-host references like wireguard peers.
+        # Includes homelab key so modules can access hosts.X.homelab.Y
         homelab.hosts = hosts;
-        # Global configuration
+        # Global config: domain, peerDomain
         homelab.global = global;
-        # Service configuration
+        # Shared service config: https.port, metrics.port, netbird.*
         homelab.services = services;
-
-        # Wire up enable flags from host config to homelab modules
-        homelab.immich.enable = host.modules.immich.enable or false;
-        homelab.grafana.enable = host.modules.grafana.enable or false;
-        homelab.prometheus.enable = host.modules.prometheus.enable or false;
-        homelab.ntfy.enable = host.modules.ntfy.enable or false;
-        homelab.octoprint.enable = host.modules.octoprint.enable or false;
       })
+      # Inject host-specific homelab config directly into NixOS module system.
+      # The attrset merges with option definitions from ../homelab/*.nix modules.
+      ({...}: {homelab = host.homelab or {};})
     ];
 
   # Create nixosConfiguration for regular x86_64 hosts
