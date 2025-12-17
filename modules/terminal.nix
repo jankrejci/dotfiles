@@ -107,7 +107,7 @@
   '';
 
   # Copy zellij logo to icons directory for desktop entry
-  home.file.".local/share/icons/hicolor/128x128/apps/zellij.png".source = ./zellij/logo.png;
+  home.file.".local/share/icons/hicolor/128x128/apps/zellij.png".source = ../assets/zellij/logo.png;
 
   xdg.desktopEntries."Zellij" = {
     name = "Zellij";
