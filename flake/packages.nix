@@ -18,16 +18,10 @@
     pkgsWithOverlays = import inputs.nixpkgs {
       inherit system;
       config.allowUnfree = true;
-      overlays =
-        [unstableOverlay]
-        ++ (
-          if system == "x86_64-linux"
-          then [
-            inputs.nixgl.overlay
-            (import ../pkgs/netbird-ui-white-icons.nix)
-          ]
-          else []
-        );
+      overlays = [
+        unstableOverlay
+        (import ../pkgs/netbird-ui-white-icons.nix)
+      ];
     };
 
     scripts = import ../scripts.nix {

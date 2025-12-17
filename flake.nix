@@ -10,7 +10,6 @@
   inputs = {
     # Flake-parts for modular flake organization
     flake-parts.url = "github:hercules-ci/flake-parts";
-
     # Most packages are fetched from the stable channel
     nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
     # Some bleeding edge packages are fetched from unstable
@@ -24,8 +23,6 @@
     };
     # For accessing deploy-rs utility Nix functions
     deploy-rs.url = "github:serokell/deploy-rs";
-    # nixgl is needed for alacritty outside of nixOS
-    nixgl.url = "github:guibou/nixGL";
     # Declarative partitioning and formatting
     disko.url = "github:nix-community/disko";
     # Install NixOS everywhere via SSH
