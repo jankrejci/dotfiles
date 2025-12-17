@@ -8,16 +8,31 @@
   cfg = config.homelab.ntfy;
   global = config.homelab.global;
   services = config.homelab.services;
-  host = config.homelab.host;
   domain = global.domain;
-  ntfyDomain = "${services.ntfy.subdomain}.${domain}";
+  ntfyDomain = "${cfg.subdomain}.${domain}";
 in {
   options.homelab.ntfy = {
-    # Default true preserves existing behavior during transition
     enable = lib.mkOption {
       type = lib.types.bool;
-      default = true;
+      default = false;
       description = "Enable Ntfy notification service";
+    };
+
+    ip = lib.mkOption {
+      type = lib.types.str;
+      description = "IP address for nginx to listen on";
+    };
+
+    port = lib.mkOption {
+      type = lib.types.port;
+      default = 2586;
+      description = "Port for ntfy server";
+    };
+
+    subdomain = lib.mkOption {
+      type = lib.types.str;
+      default = "ntfy";
+      description = "Subdomain for ntfy";
     };
   };
 
@@ -33,7 +48,7 @@ in {
       package = pkgs.unstable.ntfy-sh;
       settings = {
         # Listen on 127.0.0.1 only, accessed via nginx proxy (defense in depth)
-        listen-http = "127.0.0.1:${toString services.ntfy.port}";
+        listen-http = "127.0.0.1:${toString cfg.port}";
         base-url = "https://${ntfyDomain}";
         # Authentication: read-only by default, publishing requires tokens
         auth-default-access = "read-only";
@@ -49,7 +64,7 @@ in {
     # Install custom Grafana template
     systemd.tmpfiles.rules = [
       "d /var/lib/ntfy-sh/templates 0755 ntfy-sh ntfy-sh -"
-      "L+ /var/lib/ntfy-sh/templates/grafana.yml - - - - ${./ntfy/grafana.yml}"
+      "L+ /var/lib/ntfy-sh/templates/grafana.yml - - - - ${../assets/ntfy/grafana.yml}"
     ];
 
     # Wait for services interface before binding
@@ -58,11 +73,11 @@ in {
     services.nginx = {
       enable = true;
       virtualHosts.${ntfyDomain} = {
-        listenAddresses = [host.services.ntfy.ip];
+        listenAddresses = [cfg.ip];
         forceSSL = true;
         useACMEHost = domain;
         locations."/" = {
-          proxyPass = "http://127.0.0.1:${toString services.ntfy.port}";
+          proxyPass = "http://127.0.0.1:${toString cfg.port}";
           proxyWebsockets = true;
           recommendedProxySettings = true;
         };
