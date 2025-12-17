@@ -82,29 +82,14 @@ in {
             description = "Swap partition size";
           };
 
-          # Service IPs assigned to this host
-          services = mkOption {
-            type = types.attrsOf (types.submodule {
-              options.ip = mkOption {
-                type = types.str;
-                description = "IP address for this service on this host";
-              };
-            });
+          # Homelab service configuration for this host.
+          # This attrset is injected directly into the NixOS module system
+          # and merges with homelab.* options defined in ../homelab/*.nix.
+          # Also used by cross-host references (e.g. wireguard peers).
+          homelab = mkOption {
+            type = types.attrs;
             default = {};
-            description = "Service IP assignments for this host";
-          };
-
-          # Module enable flags
-          modules = mkOption {
-            type = types.attrsOf (types.submodule {
-              options.enable = mkOption {
-                type = types.bool;
-                default = false;
-                description = "Whether to enable this module";
-              };
-            });
-            default = {};
-            description = "Module enable flags";
+            description = "Homelab service configuration (injected as homelab.*)";
           };
 
           # Extra NixOS modules to include
