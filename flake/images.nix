@@ -12,12 +12,13 @@
   nixosHosts = lib.filterAttrs (_: h: (h.kind or "nixos") == "nixos") hosts;
   rpiHosts = lib.filterAttrs (_: h: h.isRpi or false) nixosHosts;
 
-  # Common base modules - use single import point
+  # Common base modules
   baseModules = [
     inputs.home-manager.nixosModules.home-manager
     inputs.disko.nixosModules.disko
     inputs.nix-flatpak.nixosModules.nix-flatpak
-    ../modules # Single import for all homelab modules
+    ../modules # Base system modules
+    ../homelab # Service modules with enable pattern
     ../users/admin.nix
   ];
 
@@ -35,20 +36,21 @@
     ++ host.extraModules or []
     ++ additionalModules
     ++ [
-      # Inject homelab configuration
+      # Inject shared homelab configuration
       ({...}: {
-        homelab.host = host // {hostName = host.hostName or hostName;};
+        # Current host metadata for modules that need device, swapSize, etc.
+        # Excludes homelab key - use config.homelab.X for service config instead.
+        homelab.host = (builtins.removeAttrs host ["homelab"]) // {hostName = host.hostName or hostName;};
+        # All hosts for cross-host references like wireguard peers
         homelab.hosts = hosts;
+        # Global config: domain, peerDomain
         homelab.global = global;
+        # Shared service config: https.port, metrics.port, netbird.*
         homelab.services = services;
-
-        # Wire up enable flags
-        homelab.immich.enable = host.modules.immich.enable or false;
-        homelab.grafana.enable = host.modules.grafana.enable or false;
-        homelab.prometheus.enable = host.modules.prometheus.enable or false;
-        homelab.ntfy.enable = host.modules.ntfy.enable or false;
-        homelab.octoprint.enable = host.modules.octoprint.enable or false;
       })
+      # Inject host-specific homelab config directly into NixOS module system.
+      # The attrset merges with option definitions from ../homelab/*.nix modules.
+      ({...}: {homelab = host.homelab or {};})
     ];
 
   # Cached aarch64 packages for RPi overlay
@@ -69,6 +71,8 @@ in {
             host = hosts.iso;
             additionalModules = [
               "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+              ../modules/netbird-homelab.nix
+              ../modules/load-keys.nix
               ({...}: {
                 isoImage.makeEfiBootable = true;
                 isoImage.makeUsbBootable = true;
@@ -95,6 +99,7 @@ in {
           ++ [
             inputs.nixos-raspberrypi.nixosModules.sd-image
             ../modules/load-keys.nix
+            ../modules/load-wifi.nix
             ({lib, ...}: {
               sdImage.compressImage = false;
               sdImage.firmwareSize = lib.mkForce 256;
