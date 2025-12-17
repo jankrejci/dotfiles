@@ -7,7 +7,24 @@
   services = config.homelab.services;
   host = config.homelab.host;
   domain = global.domain;
-  hostServices = host.services;
+  homelab = config.homelab;
+
+  # Collect service IPs from enabled homelab modules.
+  # Each module with an IP should have enable and ip options.
+  serviceModules = ["grafana" "immich" "immich-public-proxy" "jellyfin" "ntfy" "octoprint"];
+  enabledServices =
+    lib.filter (
+      name:
+        homelab.${name}.enable or false && homelab.${name}.ip or "" != ""
+    )
+    serviceModules;
+
+  # Build {serviceName = {ip = "...", subdomain = "..."}} for enabled services
+  hostServices = lib.genAttrs enabledServices (name: {
+    ip = homelab.${name}.ip;
+    subdomain = homelab.${name}.subdomain or name;
+  });
+
   serviceIPs = lib.mapAttrsToList (_: service: service.ip) hostServices;
   hasServices = hostServices != {};
 in {
@@ -77,10 +94,16 @@ in {
       "98-all-ethernet" = lib.mkDefault {
         matchConfig.Type = "ether";
         DHCP = "yes";
+        # Prefer ethernet over WiFi for default route
+        dhcpV4Config.RouteMetric = 100;
+        dhcpV6Config.RouteMetric = 100;
       };
       "99-all-wifi" = {
         matchConfig.Type = "wlan";
         DHCP = "yes";
+        # Lower priority than ethernet
+        dhcpV4Config.RouteMetric = 600;
+        dhcpV6Config.RouteMetric = 600;
       };
     };
   };
@@ -88,8 +111,8 @@ in {
   # Local DNS resolution for service hostnames
   networking.hosts =
     lib.mapAttrs' (
-      name: service:
-        lib.nameValuePair service.ip ["${name}.${domain}"]
+      _: service:
+        lib.nameValuePair service.ip ["${service.subdomain}.${domain}"]
     )
     hostServices;
 
@@ -127,17 +150,37 @@ in {
     };
   };
 
+  services.prometheus.exporters.node = {
+    enable = true;
+    openFirewall = false;
+    listenAddress = "127.0.0.1";
+  };
+
+  systemd.services.prometheus-node-exporter.serviceConfig = {
+    Restart = "always";
+    RestartSec = 5;
+  };
+
   # Metrics nginx proxy for all exporters.
   # Path-based routing allows single firewall port for all metrics.
   networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [services.metrics.port];
 
   services.nginx = {
     enable = true;
-    virtualHosts."metrics".listen = [
-      {
-        addr = "0.0.0.0";
-        port = services.metrics.port;
-      }
-    ];
+    virtualHosts."metrics" = {
+      extraConfig = ''
+        allow 100.76.0.0/16;
+        deny all;
+      '';
+      locations."/metrics/node" = {
+        proxyPass = "http://127.0.0.1:9100/metrics";
+      };
+      listen = [
+        {
+          addr = "0.0.0.0";
+          port = services.metrics.port;
+        }
+      ];
+    };
   };
 }

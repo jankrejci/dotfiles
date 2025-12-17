@@ -96,22 +96,6 @@
     tcpdump
   ];
 
-  services.prometheus.exporters.node = {
-    enable = true;
-    openFirewall = false;
-    listenAddress = "127.0.0.1";
-  };
-
-  systemd.services.prometheus-node-exporter.serviceConfig = {
-    Restart = "always";
-    RestartSec = 5;
-  };
-
-  # Node exporter metrics via unified metrics proxy
-  services.nginx.virtualHosts."metrics".locations."/metrics/node" = {
-    proxyPass = "http://127.0.0.1:9100/metrics";
-  };
-
   # Common directory for storing root secrets
   systemd.tmpfiles.rules = [
     "d /root/secrets 0700 root root -"
