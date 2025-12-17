@@ -25,6 +25,7 @@ Senior software engineer with 10+ years NixOS/functional programming experience.
 - Use ripgrep/grep to understand codebase
 - Prefer editing existing files over creating new ones
 - Run `nix flake check` after changes
+- Run `nix fmt` before committing
 - Keep responses concise and action-oriented
 - **Avoid nesting**: Use guard clauses and early returns
 - **Comments**: Write proper sentences, NEVER use parentheses for asides!!!
@@ -90,6 +91,11 @@ Remote machines via VPN only:
 - NEVER run `netbird down` while SSH'd via VPN
 - NEVER delete peer from dashboard while needing remote access
 - If changes affect connectivity: inform user, let them execute locally
+
+**Before renaming interfaces, ports, or service identifiers:**
+- Run `grep -r "old_name"` across the entire codebase
+- Update ALL hardcoded references before deploying
+- Firewall rules, systemd units, and nginx configs often have hardcoded names
 
 ## Netbird Architecture
 Two-tier VPN setup for different access patterns:
