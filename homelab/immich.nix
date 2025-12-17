@@ -8,9 +8,8 @@
   cfg = config.homelab.immich;
   global = config.homelab.global;
   services = config.homelab.services;
-  host = config.homelab.host;
   domain = global.domain;
-  immichDomain = "${services.immich.subdomain}.${domain}";
+  immichDomain = "${cfg.subdomain}.${domain}";
   httpsPort = services.https.port;
 
   # Internal metrics ports for exporters
@@ -28,11 +27,27 @@
   backupDir = "/var/backup/immich-db";
 in {
   options.homelab.immich = {
-    # Default true preserves existing behavior during transition
     enable = lib.mkOption {
       type = lib.types.bool;
-      default = true;
+      default = false;
       description = "Enable Immich photo library";
+    };
+
+    ip = lib.mkOption {
+      type = lib.types.str;
+      description = "IP address for nginx to listen on";
+    };
+
+    port = lib.mkOption {
+      type = lib.types.port;
+      default = 2283;
+      description = "Port for Immich server";
+    };
+
+    subdomain = lib.mkOption {
+      type = lib.types.str;
+      default = "immich";
+      description = "Subdomain for Immich";
     };
   };
 
@@ -169,7 +184,7 @@ in {
       enable = true;
       # Listen on 127.0.0.1 only, accessed via nginx proxy
       host = "127.0.0.1";
-      port = services.immich.port;
+      port = cfg.port;
       # Media stored on dedicated NVMe disk at /var/lib/immich (default)
       environment = {
         PUBLIC_IMMICH_SERVER_URL = "https://share.${domain}";
@@ -269,7 +284,7 @@ in {
     services.nginx = {
       enable = true;
       virtualHosts.${immichDomain} = {
-        listenAddresses = [host.services.immich.ip];
+        listenAddresses = [cfg.ip];
         # Enable HTTPS with Let's Encrypt wildcard certificate
         forceSSL = true;
         useACMEHost = "${domain}";
@@ -278,7 +293,7 @@ in {
           client_max_body_size 1G;
         '';
         locations."/" = {
-          proxyPass = "http://127.0.0.1:${toString services.immich.port}";
+          proxyPass = "http://127.0.0.1:${toString cfg.port}";
           proxyWebsockets = true;
           recommendedProxySettings = true;
         };
