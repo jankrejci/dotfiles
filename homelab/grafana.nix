@@ -7,17 +7,31 @@
   cfg = config.homelab.grafana;
   global = config.homelab.global;
   services = config.homelab.services;
-  host = config.homelab.host;
   domain = global.domain;
-  serverDomain = "${services.grafana.subdomain}.${domain}";
+  serverDomain = "${cfg.subdomain}.${domain}";
 in {
   options.homelab.grafana = {
-    # Default true preserves existing behavior where importing the module enables it.
-    # Will change to false in Phase 4 when hosts explicitly set enable flags.
     enable = lib.mkOption {
       type = lib.types.bool;
-      default = true;
+      default = false;
       description = "Enable Grafana monitoring dashboard";
+    };
+
+    ip = lib.mkOption {
+      type = lib.types.str;
+      description = "IP address for nginx to listen on";
+    };
+
+    port = lib.mkOption {
+      type = lib.types.port;
+      default = 3000;
+      description = "Port for Grafana web interface";
+    };
+
+    subdomain = lib.mkOption {
+      type = lib.types.str;
+      default = "grafana";
+      description = "Subdomain for Grafana";
     };
   };
 
@@ -44,7 +58,7 @@ in {
       settings.server = {
         # 127.0.0.1 only - accessed via nginx proxy (defense in depth)
         http_addr = "127.0.0.1";
-        http_port = services.grafana.port;
+        http_port = cfg.port;
         inherit domain;
         root_url = "https://${serverDomain}";
       };
@@ -56,17 +70,17 @@ in {
     services.nginx = {
       enable = true;
       virtualHosts.${serverDomain} = {
-        listenAddresses = [host.services.grafana.ip];
+        listenAddresses = [cfg.ip];
         forceSSL = true;
         useACMEHost = domain;
         locations."/" = {
-          proxyPass = "http://127.0.0.1:${toString services.grafana.port}";
+          proxyPass = "http://127.0.0.1:${toString cfg.port}";
           proxyWebsockets = true;
           recommendedProxySettings = true;
         };
         # Prometheus UI accessible at /prometheus/
         locations."/prometheus/" = {
-          proxyPass = "http://127.0.0.1:${toString services.prometheus.port}";
+          proxyPass = "http://127.0.0.1:${toString config.homelab.prometheus.port}";
           proxyWebsockets = true;
           recommendedProxySettings = true;
         };
@@ -80,7 +94,7 @@ in {
           name = "Prometheus";
           type = "prometheus";
           access = "proxy";
-          url = "http://127.0.0.1:${toString services.prometheus.port}/prometheus";
+          url = "http://127.0.0.1:${toString config.homelab.prometheus.port}/prometheus";
           isDefault = true;
           # Fixed UID for dashboard references (see CLAUDE.md)
           uid = "prometheus";
@@ -99,7 +113,7 @@ in {
     };
 
     services.grafana.provision.alerting = {
-      rules.path = ./grafana/alerts;
+      rules.path = ../assets/grafana/alerts;
 
       contactPoints.settings = {
         apiVersion = 1;
@@ -113,7 +127,7 @@ in {
                 type = "webhook";
                 disableResolveMessage = false;
                 settings = {
-                  url = "http://127.0.0.1:${toString services.ntfy.port}/grafana-alerts?template=grafana";
+                  url = "http://127.0.0.1:${toString config.homelab.ntfy.port}/grafana-alerts?template=grafana";
                   httpMethod = "POST";
                   authorization_scheme = "Bearer";
                   authorization_credentials = "$NTFY_TOKEN";
@@ -139,6 +153,6 @@ in {
       };
     };
 
-    environment.etc."grafana/dashboards".source = ./grafana/dashboards;
+    environment.etc."grafana/dashboards".source = ../assets/grafana/dashboards;
   };
 }
