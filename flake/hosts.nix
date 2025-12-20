@@ -175,6 +175,18 @@
       ];
     };
 
+    rak2245 = {
+      system = "aarch64-linux";
+      isRpi = true;
+      homelab = {
+        lorawan-gateway.enable = true;
+      };
+      extraModules = [
+        ../modules/raspberry.nix
+        ../modules/netbird-homelab.nix
+      ];
+    };
+
     ### NixOS installer ###
 
     iso = {
