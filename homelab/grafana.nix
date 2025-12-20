@@ -123,5 +123,11 @@ in {
     };
 
     environment.etc."grafana/dashboards".source = ../assets/grafana/dashboards;
+
+    # Image renderer for PNG exports and alert notifications
+    services.grafana-image-renderer = {
+      enable = true;
+      provisionGrafana = true;
+    };
   };
 }
