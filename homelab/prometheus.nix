@@ -1,13 +1,29 @@
-# Prometheus monitoring with homelab enable flag
+# Prometheus monitoring stack
+#
+# Architecture:
+# - Prometheus scrapes metrics from all nixos hosts via VPN
+# - Alertmanager routes alerts to ntfy with custom templates
+# - Metrics exposed via nginx proxy at /metrics/prometheus
+#
+# Scrape target discovery:
+# - Each service module registers homelab.scrapeTargets
+# - This module collects targets from all nixos hosts
+# - Targets are grouped by job and scraped via {host}.nb.krejci.io:9999
+#
+# Alert aggregation:
+# - Each service module registers homelab.alerts
+# - This module collects alerts from all nixos hosts
+# - Alerts must have type label (host or service) for correct routing
+#
 {
   config,
   lib,
+  inputs,
   ...
 }: let
   cfg = config.homelab.prometheus;
   global = config.homelab.global;
   services = config.homelab.services;
-  hosts = config.homelab.hosts;
   domain = global.domain;
   peerDomain = global.peerDomain;
   metricsPort = toString services.metrics.port;
@@ -50,108 +66,43 @@ in {
         "--web.route-prefix=/prometheus"
       ];
       globalConfig.scrape_interval = "10s";
-      scrapeConfigs = [
-        {
-          job_name = "prometheus";
-          static_configs = [{targets = ["127.0.0.1:${toString cfg.port}"];}];
-          metrics_path = "/prometheus/metrics";
-        }
-        {
-          # Node exporter from all NixOS hosts in the fleet
-          job_name = "node";
-          metrics_path = "/metrics/node";
-          static_configs = [
-            {
-              targets = let
-                makeTarget = hostName: _: "${hostName}.${peerDomain}:${metricsPort}";
-                # Filter out "self" reference injected by flake.nix
-                nixosHosts = lib.filterAttrs (name: hostConfig: name != "self" && (hostConfig.kind or "nixos") == "nixos") hosts;
-              in
-                lib.mapAttrsToList makeTarget nixosHosts;
-            }
-          ];
-        }
-        {
-          job_name = "immich";
-          metrics_path = "/metrics/immich";
-          static_configs = [
-            {
-              targets = ["thinkcenter.${peerDomain}:${metricsPort}"];
-              labels = {host = "thinkcenter";};
-            }
-          ];
-        }
-        {
-          job_name = "immich-microservices";
-          metrics_path = "/metrics/immich-microservices";
-          static_configs = [
-            {
-              targets = ["thinkcenter.${peerDomain}:${metricsPort}"];
-              labels = {host = "thinkcenter";};
-            }
-          ];
-        }
-        {
-          job_name = "ntfy";
-          metrics_path = "/metrics/ntfy";
-          static_configs = [
-            {
-              targets = ["thinkcenter.${peerDomain}:${metricsPort}"];
-              labels = {host = "thinkcenter";};
-            }
-          ];
-        }
-        {
-          job_name = "postgres";
-          metrics_path = "/metrics/postgres";
-          static_configs = [
-            {
-              targets = ["thinkcenter.${peerDomain}:${metricsPort}"];
-              labels = {host = "thinkcenter";};
-            }
-          ];
-        }
-        {
-          job_name = "redis";
-          metrics_path = "/metrics/redis";
-          static_configs = [
-            {
-              targets = ["thinkcenter.${peerDomain}:${metricsPort}"];
-              labels = {host = "thinkcenter";};
-            }
-          ];
-        }
-        {
-          job_name = "nginx";
-          metrics_path = "/metrics/nginx";
-          static_configs = [
-            {
-              targets = ["thinkcenter.${peerDomain}:${metricsPort}"];
-              labels = {host = "thinkcenter";};
-            }
-          ];
-        }
-        {
-          job_name = "wireguard";
-          metrics_path = "/metrics/wireguard";
-          static_configs = [
-            {
-              targets = ["thinkcenter.${peerDomain}:${metricsPort}"];
-              labels = {host = "thinkcenter";};
-            }
-          ];
-        }
-        {
-          job_name = "octoprint";
-          metrics_path = "/metrics/octoprint";
-          static_configs = [
-            {
-              targets = ["prusa.${peerDomain}:${metricsPort}"];
-              labels = {host = "prusa";};
-            }
-          ];
-        }
-      ];
+      # Scrape configs aggregated from homelab.scrapeTargets across all nixos hosts.
+      # Each service module registers its scrape target, prometheus collects them all.
+      scrapeConfigs = let
+        allConfigs = inputs.self.nixosConfigurations;
+
+        # Filter to nixos hosts only, excluding installer ISO
+        nixosHostNames = lib.attrNames (
+          lib.filterAttrs (_: h: (h.kind or "nixos") == "nixos") config.homelab.hosts
+        );
+
+        # Collect targets from all hosts, attach hostName to each
+        allTargets = lib.flatten (
+          map (
+            name:
+              map (target: target // {hostName = name;})
+              (allConfigs.${name}.config.homelab.scrapeTargets or [])
+          )
+          nixosHostNames
+        );
+
+        # Group by job name so same job from multiple hosts becomes one scrape config
+        targetsByJob = lib.groupBy (t: t.job) allTargets;
+
+        # All targets scraped via VPN domain and metrics proxy port
+        mkTarget = t: "${t.hostName}.${peerDomain}:${metricsPort}";
+      in
+        lib.mapAttrsToList (jobName: targets: {
+          job_name = jobName;
+          metrics_path = (builtins.head targets).metricsPath;
+          static_configs =
+            map (t: {
+              targets = [(mkTarget t)];
+              labels = {host = t.hostName;};
+            })
+            targets;
+        })
+        targetsByJob;
 
       # Point Prometheus to Alertmanager
       alertmanagers = [
@@ -227,7 +178,45 @@ in {
       };
     };
 
-    # Alert rules - will be populated from homelab.alerts
-    services.prometheus.rules = [];
+    # Prometheus metrics via nginx proxy
+    services.nginx.virtualHosts."metrics".locations."/metrics/prometheus".proxyPass = "http://127.0.0.1:${toString cfg.port}/prometheus/metrics";
+
+    homelab.scrapeTargets = [
+      {
+        job = "prometheus";
+        metricsPath = "/metrics/prometheus";
+      }
+    ];
+
+    # Alert rules aggregated from homelab.alerts across all nixos hosts.
+    # Each service module registers its alerts, prometheus collects them all.
+    # Alerts are grouped by category name for organization in the rules file.
+    services.prometheus.rules = let
+      localAlerts = config.homelab.alerts;
+
+      # Collect alerts from other nixos hosts
+      allConfigs = inputs.self.nixosConfigurations;
+      otherHostNames =
+        lib.filter
+        (name: name != config.homelab.host.hostName)
+        (lib.attrNames (lib.filterAttrs (_: h: (h.kind or "nixos") == "nixos") config.homelab.hosts));
+      remoteAlerts = lib.foldAttrs (a: b: a ++ b) [] (
+        map (name: allConfigs.${name}.config.homelab.alerts or {}) otherHostNames
+      );
+
+      # Merge local and remote alerts by category
+      allAlerts = lib.foldAttrs (a: b: a ++ b) [] [localAlerts remoteAlerts];
+
+      # Convert to prometheus rule groups format
+      alertGroups =
+        lib.mapAttrsToList (name: rules: {
+          inherit name rules;
+        })
+        allAlerts;
+    in [
+      (builtins.toJSON {
+        groups = alertGroups;
+      })
+    ];
   };
 }
