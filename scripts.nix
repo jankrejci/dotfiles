@@ -892,7 +892,7 @@ in {
 
         readonly DOMAIN="nb.krejci.io"
         readonly TOKEN_ENV_PATH="/var/lib/grafana/secrets/ntfy-token-env"
-        readonly TOKEN_YAML_PATH="/var/lib/grafana/secrets/ntfy-token.yaml"
+        readonly TOKEN_TXT_PATH="/var/lib/alertmanager/ntfy-token.txt"
 
         function create_ntfy_user() {
           local -r target="$1"
@@ -930,16 +930,11 @@ in {
             --path "$TOKEN_ENV_PATH" \
             --content "NTFY_TOKEN=$token"
 
-          # YAML config file for alertmanager-ntfy
-          local -r yaml_content=$(concat \
-            "ntfy:" \
-            "  auth:" \
-            "    token: $token"
-          )
+          # Plain text file for Alertmanager credentials_file
           inject_secret \
             --target "$target" \
-            --path "$TOKEN_YAML_PATH" \
-            --content "$yaml_content"
+            --path "$TOKEN_TXT_PATH" \
+            --content "$token"
         }
 
         function restart_services() {
@@ -947,7 +942,7 @@ in {
 
           info "Restarting services"
           ssh "$target" "sudo systemctl restart grafana.service 2>/dev/null || echo 'Grafana will start on next deployment'"
-          ssh "$target" "sudo systemctl restart alertmanager-ntfy.service 2>/dev/null || echo 'alertmanager-ntfy will start on next deployment'"
+          ssh "$target" "sudo systemctl restart alertmanager.service 2>/dev/null || echo 'Alertmanager will start on next deployment'"
         }
 
         function main() {
@@ -965,7 +960,6 @@ in {
           restart_services "$target"
 
           info "ntfy token successfully configured for $hostname"
-          info "Grafana and Prometheus alerts will now use ntfy"
         }
 
         main "$@"
