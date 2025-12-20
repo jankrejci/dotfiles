@@ -1,0 +1,26 @@
+title: |
+  {{- range .alerts -}}
+  {{- if eq $.status "firing" -}}
+  🚨 {{ .labels.host | title }} host is down
+  {{- else -}}
+  ✅ {{ .labels.host | title }} host is up
+  {{- end -}}
+  {{- end }}
+message: |
+  {{- range .alerts }}
+  Starts: {{ .startsAt | date "2006-01-02 15:04:05" }}
+  Instance: {{ .labels.instance }}
+  {{- end }}
+priority: |
+  {{- if eq .status "firing" -}}
+  4
+  {{- else -}}
+  3
+  {{- end }}
+actions:
+  - action: view
+    label: Open Grafana
+    url: |
+      {{- range .alerts -}}
+      https://grafana.krejci.io/d/rYdddlPWk/node-exporter-full?var-node={{ .labels.instance }}
+      {{- end -}}
