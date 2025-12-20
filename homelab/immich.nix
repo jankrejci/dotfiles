@@ -52,9 +52,6 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-    # Scrape target registration will be added in Phase 4 when modules/default.nix
-    # is used and homelab.monitoring options are available to all hosts.
-
     # Install borgbackup for backup operations
     environment.systemPackages = with pkgs; [
       borgbackup
@@ -307,5 +304,111 @@ in {
         "/metrics/nginx".proxyPass = "http://127.0.0.1:${toString nginxMetricsPort}/metrics";
       };
     };
+
+    # Scrape targets for prometheus
+    homelab.scrapeTargets = [
+      {
+        job = "immich";
+        metricsPath = "/metrics/immich";
+      }
+      {
+        job = "immich-microservices";
+        metricsPath = "/metrics/immich-microservices";
+      }
+      {
+        job = "postgres";
+        metricsPath = "/metrics/postgres";
+      }
+      {
+        job = "redis";
+        metricsPath = "/metrics/redis";
+      }
+      {
+        job = "nginx";
+        metricsPath = "/metrics/nginx";
+      }
+    ];
+
+    # Alert rules for immich service
+    homelab.alerts.immich = [
+      {
+        alert = "ImmichDown";
+        expr = ''up{job="immich"} == 0'';
+        labels = {
+          severity = "critical";
+          host = config.homelab.host.hostName;
+          type = "service";
+        };
+        annotations.summary = "Immich server is down";
+      }
+      {
+        alert = "ImmichMicroservicesDown";
+        expr = ''up{job="immich-microservices"} == 0'';
+        labels = {
+          severity = "critical";
+          host = config.homelab.host.hostName;
+          type = "service";
+        };
+        annotations.summary = "Immich microservices are down";
+      }
+    ];
+
+    # Backend infrastructure alerts for immich dependencies
+    homelab.alerts.backend = [
+      {
+        alert = "PostgresDown";
+        expr = ''pg_up{job="postgres"} == 0'';
+        labels = {
+          severity = "critical";
+          host = config.homelab.host.hostName;
+          type = "service";
+        };
+        annotations.summary = "PostgreSQL is down";
+      }
+      {
+        alert = "RedisDown";
+        expr = ''redis_up{job="redis"} == 0'';
+        labels = {
+          severity = "critical";
+          host = config.homelab.host.hostName;
+          type = "service";
+        };
+        annotations.summary = "Redis is down";
+      }
+      {
+        alert = "NginxFailed";
+        expr = ''node_systemd_unit_state{name="nginx.service",state="failed"} > 0'';
+        labels = {
+          severity = "critical";
+          host = config.homelab.host.hostName;
+          type = "service";
+        };
+        annotations.summary = "Nginx service failed";
+      }
+    ];
+
+    # Backup job alerts
+    homelab.alerts.backup = [
+      {
+        alert = "ImmichLocalBackupFailed";
+        expr = ''node_systemd_unit_state{name="borgbackup-job-immich-local.service",state="failed"} > 0'';
+        labels = {
+          severity = "critical";
+          host = config.homelab.host.hostName;
+          type = "service";
+        };
+        annotations.summary = "Immich local backup failed";
+      }
+      {
+        alert = "ImmichRemoteBackupFailed";
+        expr = ''node_systemd_unit_state{name="borgbackup-job-immich-remote.service",state="failed"} > 0'';
+        labels = {
+          severity = "critical";
+          host = config.homelab.host.hostName;
+          type = "service";
+        };
+        annotations.summary = "Immich remote backup failed";
+      }
+    ];
   };
 }
