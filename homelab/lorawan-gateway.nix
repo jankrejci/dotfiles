@@ -119,6 +119,7 @@ in {
     systemd.services.lorawan-gateway-config = {
       description = "Generate LoRaWAN gateway configuration";
       wantedBy = ["multi-user.target"];
+      after = ["network.target"];
       before = ["chirpstack-concentratord.service"];
       serviceConfig = {
         Type = "oneshot";
