@@ -339,7 +339,7 @@ in {
 
         readonly KEYTYPE="ed25519"
         readonly KEYS_DIR="$HOME/.ssh"
-        readonly AUTH_KEYS_FILE="ssh-authorized-keys.pub"
+        readonly AUTH_KEYS_FILE="ssh-authorized-keys.conf"
 
         function generate_ssh_keys() {
           local -r key_name="$1"
@@ -347,11 +347,9 @@ in {
 
           local -r key_file="$KEYS_DIR/$key_name"
 
-          # Create .ssh directory if it doesn't exist
           mkdir -p "$KEYS_DIR"
           chmod 700 "$KEYS_DIR"
 
-          # Generate the SSH key pair with password protection
           info "Generating new SSH key pair with password protection"
           ssh-keygen -t "$KEYTYPE" -f "$key_file" -C "$key_name" -N "$key_password" >&2
 
@@ -359,15 +357,12 @@ in {
         }
 
         function export_keys() {
-          local -r auth_keys_path="$1"
+          local -r target="$1"
           local -r key_file="$2"
 
-          # Ensure authorized keys file directory exists
-          mkdir -p "$(dirname "$auth_keys_path")"
-
-          # Add public key to authorized keys file
-          info "Adding public key to $auth_keys_path"
-          cat "$key_file.pub" >> "$auth_keys_path"
+          info "Adding public key to $AUTH_KEYS_FILE"
+          local -r pubkey=$(cat "$key_file.pub")
+          echo "$target, admin, $pubkey" >> "$AUTH_KEYS_FILE"
         }
 
         function add_ssh_config_entry() {
@@ -388,7 +383,7 @@ in {
           info "Adding SSH config entry for $target"
           local -r config_entry=$(concat \
             "Host $target" \
-            "  HostName $target.x.nb" \
+            "  HostName $target.nb.krejci.io" \
             "  User admin" \
             "  IdentityFile $key_file_path"
           )
@@ -397,33 +392,30 @@ in {
         }
 
         function commit_keys() {
-          local -r auth_keys_path="$1"
-          local -r target="$2"
-          local -r username="$3"
-          local -r hostname="$4"
+          local -r target="$1"
+          local -r key_name="$2"
 
-          info "Committing changes to $auth_keys_path"
-          git add "$auth_keys_path"
-          git commit -m "$target: Authorize $username-$hostname ssh key"
+          info "Committing changes to $AUTH_KEYS_FILE"
+          git add "$AUTH_KEYS_FILE"
+          git commit -m "$target: Authorize $key_name ssh key"
         }
 
         function main() {
-          if [ $# -ne 1 ]; then
+          [ $# -eq 1 ] || {
             error "Usage: add-ssh-key TARGET"
             exit 1
-          fi
+          }
           local -r target="$1"
 
           local -r hostname="$(hostname)"
           local -r username="$(whoami)"
-
           local -r key_name="$username-$hostname-$target"
-          local -r auth_keys_path="hosts/$target/$AUTH_KEYS_FILE"
 
           local -r key_password=$(ask_for_token "key password")
           local -r key_file=$(generate_ssh_keys "$key_name" "$key_password")
-          export_keys "$auth_keys_path" "$key_file"
-          commit_keys "$auth_keys_path" "$target" "$username" "$hostname"
+          export_keys "$target" "$key_file"
+          add_ssh_config_entry "$target" "$key_file"
+          commit_keys "$target" "$key_name"
 
           info "SSH key pair generated successfully"
         }
