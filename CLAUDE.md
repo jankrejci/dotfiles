@@ -41,9 +41,13 @@ module: Title in imperative style
 
 No Claude signatures, emojis, or icons. Split unrelated changes into separate commits.
 
-**Commit frequency:** Create a commit after each logical change, even small ones. Be verbose
-in commit messages, especially with reasoning. Commits will be compacted before merge anyway,
-so prefer too many commits over too few during development.
+**Atomic commits:** Each commit must:
+- Pass `nix flake check` and `nix fmt`
+- Be a single logical change that can be reviewed in isolation
+- Build progressively toward the goal so history is easy to follow
+
+Prefer too many small commits over too few during development. Commits will be
+compacted before merge anyway, but reviewability during development matters.
 
 **NEVER push to remote.** User will push when ready.
 
@@ -135,3 +139,33 @@ Future work: revisit when Netbird adds stable identifiers or setup key groups fe
 See `scripts.nix` for available commands. Key ones:
 - `nix run .#deploy-config <hostname>` - Deploy config remotely
 - `nix run .#build-sdcard <hostname>` - Build RPi SD card image
+
+## Repository Structure
+
+```
+flake.nix              # Entry point, uses flake-parts
+flake/                 # Flake-parts modules
+  default.nix          # Imports all flake modules
+  options.nix          # Flake and NixOS-level homelab options
+  packages.nix         # perSystem: formatter, packages, checks
+  hosts.nix            # Host definitions and nixosConfigurations
+  deploy.nix           # deploy-rs node configuration
+  images.nix           # ISO and SD card image builders
+homelab/               # Service modules with homelab.X.enable pattern
+modules/               # Base NixOS modules (common, ssh, networking)
+hosts/                 # Host-specific configuration overrides
+users/                 # User configurations
+pkgs/                  # Custom packages
+scripts.nix            # Deployment and utility scripts
+```
+
+**Flake-parts pattern:**
+- `flake.nix` imports `./flake` which re-exports from submodules
+- `perSystem` in `packages.nix` handles per-architecture outputs
+- `flake.*` options in `options.nix` for cross-module data sharing
+- Host config in `hosts.nix` injects `homelab.*` options into NixOS modules
+
+**Adding a new service:**
+1. Create `homelab/myservice.nix` with `homelab.myservice.enable` option
+2. Add to `homelab/default.nix` imports
+3. Enable in host definition in `flake/hosts.nix`
