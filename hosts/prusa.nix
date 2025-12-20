@@ -7,6 +7,20 @@
 }: let
   camera-streamer = pkgs.callPackage ../pkgs/camera-streamer.nix {};
 in {
+  homelab.alerts.hosts = [
+    {
+      alert = "PrusaDown";
+      expr = ''up{instance=~"prusa.*", job="node"} == 0'';
+      labels = {
+        severity = "critical";
+        host = config.homelab.host.hostName;
+        type = "host";
+        oneshot = "true";
+      };
+      annotations.summary = "prusa host is down";
+    }
+  ];
+
   # RPi Zero 2 W with OctoPrint and camera streaming.
   # Note: deploy-rs may fail due to nix daemon crashes on this device.
   # Manual workaround: nix copy + ssh activate directly.
