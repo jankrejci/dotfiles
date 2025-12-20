@@ -61,10 +61,9 @@ in {
       };
     };
 
-    # Install webhook templates for Grafana and Prometheus alerts
+    # Install webhook templates for Prometheus alerts
     systemd.tmpfiles.rules = [
       "d /var/lib/ntfy-sh/templates 0755 ntfy-sh ntfy-sh -"
-      "L+ /var/lib/ntfy-sh/templates/grafana.yml - - - - ${../assets/ntfy/grafana.yml}"
       "L+ /var/lib/ntfy-sh/templates/prometheus-host.yml - - - - ${../assets/ntfy/prometheus-host.yml}"
       "L+ /var/lib/ntfy-sh/templates/prometheus-service.yml - - - - ${../assets/ntfy/prometheus-service.yml}"
       "L+ /var/lib/ntfy-sh/templates/default.yml - - - - ${../assets/ntfy/default.yml}"
