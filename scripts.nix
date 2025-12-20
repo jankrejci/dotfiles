@@ -209,6 +209,21 @@
       echo -n "$token"
     }
 
+    # Try to get WiFi credentials from sops secrets file
+    function get_wifi_from_sops() {
+      local -r secrets_file="secrets.yaml"
+      [ -f "$secrets_file" ] || return 1
+
+      local ssid password
+      ssid=$(${pkgs.sops}/bin/sops -d --extract '["wifi"]["ssid"]' "$secrets_file" 2>/dev/null) || return 1
+      password=$(${pkgs.sops}/bin/sops -d --extract '["wifi"]["password"]' "$secrets_file" 2>/dev/null) || return 1
+      [ -n "$ssid" ] && [ -n "$password" ] || return 1
+
+      WIFI_SSID="$ssid"
+      WIFI_PASSWORD="$password"
+      export WIFI_SSID WIFI_PASSWORD
+    }
+
     # Ensure NETBIRD_API_TOKEN is set, trying sops then interactive prompt
     function require_netbird_token() {
       [ -n "''${NETBIRD_API_TOKEN:-}" ] && return
@@ -433,15 +448,22 @@ in {
         # shellcheck source=/dev/null
         source ${lib}
 
-        function ask_wifi_credentials() {
+        function configure_wifi() {
+          get_wifi_from_sops && {
+            info "Using WiFi credentials from secrets.yaml for $WIFI_SSID"
+            return
+          }
+
+          # Not in interactive terminal, skip WiFi
+          [ -t 0 ] || {
+            info "No WiFi in secrets.yaml and not interactive, skipping"
+            return
+          }
+
           read -r -p "Configure WiFi? [y/N] " response
           case "$response" in
-            y|Y)
-              ;;
-            *)
-              info "Skipping WiFi configuration"
-              return
-              ;;
+            y|Y) ;;
+            *) info "Skipping WiFi configuration"; return ;;
           esac
 
           WIFI_SSID=$(ask_for_token "WiFi SSID")
@@ -460,7 +482,7 @@ in {
           NETBIRD_SETUP_KEY=$(generate_netbird_key "$hostname")
           export NETBIRD_SETUP_KEY
 
-          ask_wifi_credentials
+          configure_wifi
 
           info "Building image for host: $hostname"
 
