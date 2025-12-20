@@ -197,6 +197,33 @@
       echo -n "$token"
     }
 
+    # Try to get Netbird API token from sops secrets file
+    function get_netbird_token_from_sops() {
+      local -r secrets_file="secrets.yaml"
+      [ -f "$secrets_file" ] || return 1
+
+      local token
+      token=$(${pkgs.sops}/bin/sops -d --extract '["netbird"]["api_token"]' "$secrets_file" 2>/dev/null) || return 1
+      [ -n "$token" ] || return 1
+
+      echo -n "$token"
+    }
+
+    # Ensure NETBIRD_API_TOKEN is set, trying sops then interactive prompt
+    function require_netbird_token() {
+      [ -n "''${NETBIRD_API_TOKEN:-}" ] && return
+
+      NETBIRD_API_TOKEN=$(get_netbird_token_from_sops) && {
+        info "Using Netbird API token from secrets.yaml"
+        export NETBIRD_API_TOKEN
+        return
+      }
+
+      warn "NETBIRD_API_TOKEN not found in environment or secrets.yaml"
+      NETBIRD_API_TOKEN=$(ask_for_token "Netbird API token")
+      export NETBIRD_API_TOKEN
+    }
+
     # Generate Netbird setup key via API
     # Usage: generate_netbird_key hostname [--reusable] [--allow-extra-dns]
     #   --reusable: Create reusable ephemeral key (for ISO installer)
@@ -215,21 +242,17 @@
         shift
       done
 
-      if [ -z "$hostname" ]; then
+      [ -n "$hostname" ] || {
         error "generate_netbird_key: hostname required"
         exit 1
-      fi
+      }
 
-      if [ -z "''${NETBIRD_API_TOKEN:-}" ]; then
-        warn "NETBIRD_API_TOKEN not found in environment"
-        NETBIRD_API_TOKEN=$(ask_for_token "Netbird API token")
-        export NETBIRD_API_TOKEN
-      fi
+      require_netbird_token
 
-      if [ -z "$NETBIRD_API_TOKEN" ]; then
+      [ -n "$NETBIRD_API_TOKEN" ] || {
         error "Netbird API token is required"
         exit 1
-      fi
+      }
 
       local key_type="one-off"
       local ephemeral=false
