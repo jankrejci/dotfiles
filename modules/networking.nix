@@ -161,6 +161,14 @@ in {
     RestartSec = 5;
   };
 
+  # Scrape target for prometheus
+  homelab.scrapeTargets = [
+    {
+      job = "node";
+      metricsPath = "/metrics/node";
+    }
+  ];
+
   # Metrics nginx proxy for all exporters.
   # Path-based routing allows single firewall port for all metrics.
   networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [services.metrics.port];
