@@ -125,9 +125,11 @@ in {
     environment.etc."grafana/dashboards".source = ../assets/grafana/dashboards;
 
     # Image renderer for PNG exports and alert notifications
+    # Port 8082 to avoid conflict with immich-api on 8081
     services.grafana-image-renderer = {
       enable = true;
       provisionGrafana = true;
+      settings.server.addr = "127.0.0.1:8082";
     };
   };
 }

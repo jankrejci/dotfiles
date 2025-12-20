@@ -64,6 +64,7 @@ in {
       extraFlags = [
         "--web.external-url=https://${config.homelab.grafana.subdomain}.${domain}/prometheus"
         "--web.route-prefix=/prometheus"
+        "--web.enable-admin-api"
       ];
       globalConfig.scrape_interval = "10s";
       # Scrape configs aggregated from homelab.scrapeTargets across all nixos hosts.
