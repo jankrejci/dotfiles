@@ -133,5 +133,28 @@ in {
         '';
       };
     };
+
+    # Scrape target for prometheus
+    homelab.scrapeTargets = [
+      {
+        job = "octoprint";
+        metricsPath = "/metrics/octoprint";
+      }
+    ];
+
+    # Alert rules for octoprint with oneshot label to prevent repeat notifications
+    homelab.alerts.octoprint = [
+      {
+        alert = "OctoprintDown";
+        expr = ''up{job="octoprint"} == 0'';
+        labels = {
+          severity = "critical";
+          host = config.homelab.host.hostName;
+          type = "service";
+          oneshot = "true";
+        };
+        annotations.summary = "OctoPrint is down";
+      }
+    ];
   };
 }
