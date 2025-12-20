@@ -55,24 +55,6 @@
         default = [];
         description = "Extra NixOS modules";
       };
-
-      # For prometheus discovery: scrape targets registered by this host
-      scrapeTargets = mkOption {
-        type = types.attrsOf (types.submodule {
-          options = {
-            metricsPath = mkOption {
-              type = types.str;
-              description = "Path to metrics endpoint";
-            };
-            job = mkOption {
-              type = types.str;
-              description = "Prometheus job name";
-            };
-          };
-        });
-        default = {};
-        description = "Prometheus scrape targets for this host";
-      };
     };
   });
 
@@ -118,6 +100,21 @@
       };
     };
   };
+
+  # Scrape target submodule for prometheus
+  scrapeTarget = types.submodule {
+    options = {
+      job = mkOption {
+        type = types.str;
+        description = "Prometheus job name";
+      };
+
+      metricsPath = mkOption {
+        type = types.str;
+        description = "Path to metrics endpoint";
+      };
+    };
+  };
 in {
   options.homelab = {
     # Current host configuration
@@ -144,6 +141,15 @@ in {
       type = types.attrsOf serviceModule;
       default = {};
       description = "Service configuration";
+    };
+
+    # Scrape targets for prometheus.
+    # Each service module registers its metrics endpoints here.
+    # Prometheus collects from all hosts and generates scrape configs.
+    scrapeTargets = mkOption {
+      type = types.listOf scrapeTarget;
+      default = [];
+      description = "Prometheus scrape targets for this host";
     };
   };
 }
