@@ -46,6 +46,8 @@ in {
         (builtins.toJSON config.services.grafana.settings)
         (builtins.toJSON config.services.grafana.provision.datasources.settings)
         (builtins.toJSON config.services.grafana.provision.dashboards.settings)
+        # Restart when dashboard files change
+        config.environment.etc."grafana/dashboards".source
       ];
     };
 
