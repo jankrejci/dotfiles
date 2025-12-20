@@ -12,8 +12,8 @@
   peerDomain = global.peerDomain;
   metricsPort = toString services.metrics.port;
 
-  # Alertmanager-ntfy bridge port
-  alertmanagerNtfyPort = 8686;
+  # Ntfy credentials file for alertmanager
+  ntfyCredentialsFile = "/var/lib/alertmanager/ntfy-token.txt";
 in {
   options.homelab.prometheus = {
     enable = lib.mkOption {
@@ -163,81 +163,71 @@ in {
       ];
     };
 
-    # Alertmanager routes alerts to alertmanager-ntfy
+    # Alertmanager sends directly to ntfy using custom templates
     services.prometheus.alertmanager = {
       enable = true;
       listenAddress = "127.0.0.1";
       port = config.homelab.alertmanager.port;
       configuration = {
+        # Alertmanager routing tree:
+        # - Alerts must have type label (host or service) to route correctly
+        # - Alerts without type label fall through to ntfy-default
+        # - Oneshot alerts (oneshot=true) get 1-year repeat interval
         route = {
-          receiver = "ntfy";
+          receiver = "ntfy-default";
           group_by = ["alertname"];
           group_wait = "30s";
           group_interval = "5m";
           repeat_interval = "12h";
+          routes = let
+            # Sub-route for oneshot alerts - suppresses repeat notifications
+            oneshotRoute = {
+              match = {oneshot = "true";};
+              repeat_interval = "8760h";
+            };
+          in [
+            {
+              match = {type = "host";};
+              receiver = "ntfy-host";
+              routes = [oneshotRoute];
+            }
+            {
+              match = {type = "service";};
+              receiver = "ntfy-service";
+              routes = [oneshotRoute];
+            }
+          ];
         };
-        receivers = [
-          {
-            name = "ntfy";
+        # Receivers send alerts to ntfy with different templates:
+        # - ntfy-host: host down alerts with hostname in title
+        # - ntfy-service: service alerts with service name in title
+        # - ntfy-default: fallback for misconfigured alerts
+        # Templates are defined in assets/ntfy/*.yml
+        receivers = let
+          mkReceiver = name: template: {
+            inherit name;
             webhook_configs = [
               {
-                url = "http://127.0.0.1:${toString alertmanagerNtfyPort}/hook";
+                url = "http://127.0.0.1:${toString config.homelab.ntfy.port}/grafana-alerts?template=${template}";
                 send_resolved = true;
-              }
-            ];
-          }
-        ];
-      };
-    };
-
-    # Bridge between Alertmanager and ntfy
-    services.prometheus.alertmanager-ntfy = {
-      enable = true;
-      settings = {
-        http.addr = "127.0.0.1:${toString alertmanagerNtfyPort}";
-        ntfy = {
-          baseurl = "http://127.0.0.1:${toString config.homelab.ntfy.port}";
-          notification = {
-            topic = "grafana-alerts";
-            priority = ''status == "resolved" ? "low" : "high"'';
-            tags = [
-              {
-                tag = "white_check_mark";
-                condition = ''status == "resolved"'';
-              }
-              {
-                tag = "rotating_light";
-                condition = ''status == "firing"'';
+                http_config = {
+                  authorization = {
+                    type = "Bearer";
+                    credentials_file = ntfyCredentialsFile;
+                  };
+                };
               }
             ];
           };
-        };
+        in [
+          (mkReceiver "ntfy-host" "prometheus-host")
+          (mkReceiver "ntfy-service" "prometheus-service")
+          (mkReceiver "ntfy-default" "default")
+        ];
       };
     };
 
-    # Inject ntfy token for alertmanager-ntfy
-    systemd.services.alertmanager-ntfy = {
-      serviceConfig.EnvironmentFile = "/var/lib/grafana/secrets/ntfy-token-env";
-    };
-
-    # Alert rules
-    services.prometheus.rules = [
-      (builtins.toJSON {
-        groups = [
-          {
-            name = "hosts";
-            rules = [
-              {
-                alert = "VpsfreeDown";
-                expr = ''up{instance=~"vpsfree.*", job="node"} == 0'';
-                for = "5m";
-                labels.severity = "critical";
-                annotations.summary = "vpsfree host is down";
-              }
-            ];
-          }
-        ];
-      })
-    ];
+    # Alert rules - will be populated from homelab.alerts
+    services.prometheus.rules = [];
   };
 }
