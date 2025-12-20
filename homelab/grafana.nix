@@ -2,6 +2,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   cfg = config.homelab.grafana;
@@ -53,6 +54,10 @@ in {
 
     services.grafana = {
       enable = true;
+      # Infinity plugin for querying external APIs like Binance
+      declarativePlugins = with pkgs.grafanaPlugins; [
+        yesoreyeram-infinity-datasource
+      ];
       settings.server = {
         # 127.0.0.1 only - accessed via nginx proxy (defense in depth)
         http_addr = "127.0.0.1";
@@ -96,6 +101,13 @@ in {
           isDefault = true;
           # Fixed UID for dashboard references
           uid = "prometheus";
+        }
+        {
+          name = "Binance";
+          type = "yesoreyeram-infinity-datasource";
+          access = "proxy";
+          # Fixed UID for dashboard references
+          uid = "binance";
         }
       ];
     };
