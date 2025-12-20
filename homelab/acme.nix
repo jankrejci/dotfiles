@@ -43,5 +43,19 @@ in {
     systemd.tmpfiles.rules = [
       "d /var/lib/acme 0755 acme acme -"
     ];
+
+    # Alert rules for ACME certificate renewal
+    homelab.alerts.acme = [
+      {
+        alert = "AcmeFailed";
+        expr = ''node_systemd_unit_state{name="acme-krejci.io.service",state="failed"} > 0'';
+        labels = {
+          severity = "critical";
+          host = config.homelab.host.hostName;
+          type = "service";
+        };
+        annotations.summary = "ACME certificate renewal failed";
+      }
+    ];
   };
 }
