@@ -42,14 +42,10 @@ in {
     ];
 
     systemd.services.grafana = {
-      serviceConfig.EnvironmentFile = "/var/lib/grafana/secrets/ntfy-token-env";
       restartTriggers = [
         (builtins.toJSON config.services.grafana.settings)
         (builtins.toJSON config.services.grafana.provision.datasources.settings)
         (builtins.toJSON config.services.grafana.provision.dashboards.settings)
-        (builtins.toJSON config.services.grafana.provision.alerting.rules.path)
-        (builtins.toJSON config.services.grafana.provision.alerting.contactPoints.settings)
-        (builtins.toJSON config.services.grafana.provision.alerting.policies.settings)
       ];
     };
 
@@ -96,7 +92,7 @@ in {
           access = "proxy";
           url = "http://127.0.0.1:${toString config.homelab.prometheus.port}/prometheus";
           isDefault = true;
-          # Fixed UID for dashboard references (see CLAUDE.md)
+          # Fixed UID for dashboard references
           uid = "prometheus";
         }
       ];
@@ -110,47 +106,6 @@ in {
           options.path = "/etc/grafana/dashboards";
         }
       ];
-    };
-
-    services.grafana.provision.alerting = {
-      rules.path = ../assets/grafana/alerts;
-
-      contactPoints.settings = {
-        apiVersion = 1;
-        contactPoints = [
-          {
-            orgId = 1;
-            name = "ntfy";
-            receivers = [
-              {
-                uid = "ntfy-webhook";
-                type = "webhook";
-                disableResolveMessage = false;
-                settings = {
-                  url = "http://127.0.0.1:${toString config.homelab.ntfy.port}/grafana-alerts?template=grafana";
-                  httpMethod = "POST";
-                  authorization_scheme = "Bearer";
-                  authorization_credentials = "$NTFY_TOKEN";
-                };
-              }
-            ];
-          }
-        ];
-      };
-
-      policies.settings = {
-        apiVersion = 1;
-        policies = [
-          {
-            orgId = 1;
-            receiver = "ntfy";
-            group_by = ["alertname"];
-            group_wait = "30s";
-            group_interval = "5m";
-            repeat_interval = "12h";
-          }
-        ];
-      };
     };
 
     environment.etc."grafana/dashboards".source = ../assets/grafana/dashboards;
