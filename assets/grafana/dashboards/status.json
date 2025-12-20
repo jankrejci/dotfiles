@@ -1,0 +1,135 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "folderTitle": "Infra",
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "id": 1,
+      "panels": [],
+      "title": "$host - $job status",
+      "type": "row"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"type": "value", "options": {"0": {"index": 1, "text": "Down"}, "1": {"index": 0, "text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"index": 2, "text": "N/A"}}}
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "dark-grey", "value": null},
+              {"color": "dark-red", "value": 0},
+              {"color": "dark-green", "value": 1}
+            ]
+          }
+        }
+      },
+      "gridPos": {"h": 3, "w": 2, "x": 0, "y": 1},
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "expr": "up{job=~\"$job\", host=~\"$host\"}",
+          "legendFormat": "__auto",
+          "refId": "A"
+        }
+      ],
+      "title": "",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "custom": {
+            "fillOpacity": 100,
+            "lineWidth": 0
+          },
+          "mappings": [
+            {"type": "range", "options": {"from": 0, "to": 0, "result": {"text": "Down", "index": 1}}},
+            {"type": "range", "options": {"from": 1, "to": 1, "result": {"text": "Up", "index": 0}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A", "index": 2}}}
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "dark-grey", "value": null},
+              {"color": "dark-red", "value": 0},
+              {"color": "dark-green", "value": 1}
+            ]
+          }
+        }
+      },
+      "gridPos": {"h": 3, "w": 22, "x": 2, "y": 1},
+      "id": 3,
+      "options": {
+        "showValue": "never",
+        "alignValue": "center",
+        "mergeValues": true,
+        "rowHeight": 0.9,
+        "legend": {"displayMode": "list", "placement": "bottom", "showLegend": false}
+      },
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "expr": "up{job=~\"$job\", host=~\"$host\"}",
+          "legendFormat": " ",
+          "refId": "A"
+        }
+      ],
+      "title": "",
+      "type": "state-timeline"
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["status", "uptime"],
+  "templating": {
+    "list": [
+      {
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "definition": "label_values(up, host)",
+        "includeAll": false,
+        "multi": false,
+        "name": "host",
+        "query": {"query": "label_values(up, host)", "refId": "PrometheusVariableQueryEditor-VariableQuery"},
+        "refresh": 2,
+        "type": "query"
+      },
+      {
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "definition": "label_values(up{host=~\"$host\"}, job)",
+        "includeAll": false,
+        "multi": false,
+        "name": "job",
+        "query": {"query": "label_values(up{host=~\"$host\"}, job)", "refId": "PrometheusVariableQueryEditor-VariableQuery"},
+        "refresh": 2,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {"from": "now-24h", "to": "now"},
+  "timepicker": {},
+  "timezone": "",
+  "title": "Service Status",
+  "uid": "service-status",
+  "version": 1
+}
