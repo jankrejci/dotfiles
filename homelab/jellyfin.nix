@@ -105,5 +105,19 @@ in {
         };
       };
     };
+
+    # Alert rules for jellyfin
+    homelab.alerts.jellyfin = [
+      {
+        alert = "JellyfinDown";
+        expr = ''node_systemd_unit_state{name="jellyfin.service",state="active"} == 0'';
+        labels = {
+          severity = "critical";
+          host = config.homelab.host.hostName;
+          type = "service";
+        };
+        annotations.summary = "Jellyfin service is not active";
+      }
+    ];
   };
 }
