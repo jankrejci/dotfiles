@@ -55,6 +55,13 @@
         default = [];
         description = "Extra NixOS modules";
       };
+
+      # Alert rules for this host, collected by prometheus
+      alerts = mkOption {
+        type = types.attrsOf (types.listOf alertRule);
+        default = {};
+        description = "Alert rules grouped by category";
+      };
     };
   });
 
@@ -97,6 +104,39 @@
       peerDomain = mkOption {
         type = types.str;
         description = "VPN peer domain for internal access";
+      };
+    };
+  };
+
+  # Alert rule submodule for prometheus
+  alertRule = types.submodule {
+    options = {
+      alert = mkOption {
+        type = types.str;
+        description = "Alert name";
+      };
+
+      expr = mkOption {
+        type = types.str;
+        description = "PromQL expression";
+      };
+
+      for = mkOption {
+        type = types.str;
+        default = "5m";
+        description = "Duration before alert fires";
+      };
+
+      labels = mkOption {
+        type = types.attrsOf types.str;
+        default = {};
+        description = "Alert labels";
+      };
+
+      annotations = mkOption {
+        type = types.attrsOf types.str;
+        default = {};
+        description = "Alert annotations";
       };
     };
   };
@@ -150,6 +190,15 @@ in {
       type = types.listOf scrapeTarget;
       default = [];
       description = "Prometheus scrape targets for this host";
+    };
+
+    # Alert rules grouped by service name.
+    # Each service module contributes its alerts here.
+    # Prometheus collects all groups into rule files.
+    alerts = mkOption {
+      type = types.attrsOf (types.listOf alertRule);
+      default = {};
+      description = "Alert rules grouped by service";
     };
   };
 }
