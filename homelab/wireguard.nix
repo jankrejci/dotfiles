@@ -90,5 +90,27 @@ in {
     services.nginx.virtualHosts."metrics".locations."/metrics/wireguard" = {
       proxyPass = "http://127.0.0.1:9586/metrics";
     };
+
+    # Scrape target for prometheus
+    homelab.scrapeTargets = [
+      {
+        job = "wireguard";
+        metricsPath = "/metrics/wireguard";
+      }
+    ];
+
+    # Alert rules for wireguard tunnel
+    homelab.alerts.wireguard = [
+      {
+        alert = "WireGuardTunnelDown";
+        expr = ''wireguard_latest_handshake_delay_seconds{interface="wg0"} > 180'';
+        labels = {
+          severity = "critical";
+          host = host.hostName;
+          type = "service";
+        };
+        annotations.summary = "WireGuard tunnel has no recent handshake";
+      }
+    ];
   };
 }
