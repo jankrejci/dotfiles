@@ -9,6 +9,7 @@
     ./immich-public-proxy.nix
     ./jellyfin.nix
     ./loki.nix
+    ./lorawan-gateway.nix
     ./ntfy.nix
     ./octoprint.nix
     ./prometheus.nix
