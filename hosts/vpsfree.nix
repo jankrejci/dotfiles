@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   pkgs,
   ...
@@ -62,5 +63,18 @@ in {
   # Install borgbackup for borg serve command
   environment.systemPackages = with pkgs; [
     borgbackup
+  ];
+
+  homelab.alerts.hosts = [
+    {
+      alert = "VpsfreeDown";
+      expr = ''up{instance=~"vpsfree.*", job="node"} == 0'';
+      labels = {
+        severity = "critical";
+        host = config.homelab.host.hostName;
+        type = "host";
+      };
+      annotations.summary = "vpsfree host is down";
+    }
   ];
 }
