@@ -1,0 +1,8 @@
+title: |
+  {{- range .alerts -}}
+  {{ .labels.alertname }}
+  {{- end }}
+message: |
+  {{- range .alerts }}
+  {{ .annotations.summary }}
+  {{- end }}
