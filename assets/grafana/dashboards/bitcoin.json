@@ -1,0 +1,197 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "folderTitle": "Crypto",
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "id": 1,
+      "type": "stat",
+      "title": "BTC/USDT",
+      "datasource": {"type": "yesoreyeram-infinity-datasource", "uid": "binance"},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{"color": "green", "value": null}]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "/^Close$/", "values": false},
+        "showPercentChange": true,
+        "percentChangeColorMode": "standard",
+        "textMode": "auto"
+      },
+      "targets": [{
+        "refId": "A",
+        "datasource": {"type": "yesoreyeram-infinity-datasource", "uid": "binance"},
+        "type": "json",
+        "source": "url",
+        "format": "table",
+        "url": "https://api.binance.com/api/v3/klines",
+        "url_options": {
+          "method": "GET",
+          "params": [
+            {"key": "symbol", "value": "BTCUSDT"},
+            {"key": "interval", "value": "$interval"},
+            {"key": "limit", "value": "100"}
+          ]
+        },
+        "columns": [
+          {"selector": "0", "text": "Datetime", "type": "timestamp_epoch"},
+          {"selector": "1", "text": "Open", "type": "number"},
+          {"selector": "2", "text": "High", "type": "number"},
+          {"selector": "3", "text": "Low", "type": "number"},
+          {"selector": "4", "text": "Close", "type": "number"},
+          {"selector": "5", "text": "Volume", "type": "number"}
+        ]
+      }]
+    },
+    {
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "id": 2,
+      "type": "stat",
+      "title": "24h Volume",
+      "datasource": {"type": "yesoreyeram-infinity-datasource", "uid": "binance"},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{"color": "blue", "value": null}]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {"calcs": ["sum"], "fields": "/^Volume$/", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [{
+        "refId": "A",
+        "datasource": {"type": "yesoreyeram-infinity-datasource", "uid": "binance"},
+        "type": "json",
+        "source": "url",
+        "format": "table",
+        "url": "https://api.binance.com/api/v3/klines",
+        "url_options": {
+          "method": "GET",
+          "params": [
+            {"key": "symbol", "value": "BTCUSDT"},
+            {"key": "interval", "value": "1h"},
+            {"key": "limit", "value": "24"}
+          ]
+        },
+        "columns": [
+          {"selector": "0", "text": "Datetime", "type": "timestamp_epoch"},
+          {"selector": "7", "text": "Volume", "type": "number"}
+        ]
+      }]
+    },
+    {
+      "gridPos": {"h": 20, "w": 24, "x": 0, "y": 4},
+      "id": 3,
+      "type": "candlestick",
+      "title": "BTC/USDT Price",
+      "datasource": {"type": "yesoreyeram-infinity-datasource", "uid": "binance"},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisPlacement": "auto",
+            "hideFrom": {"legend": false, "tooltip": false, "viz": false},
+            "scaleDistribution": {"type": "linear"}
+          }
+        }
+      },
+      "options": {
+        "candleStyle": "candles",
+        "colorStrategy": "open-close",
+        "colors": {"down": "red", "up": "green"},
+        "fields": {
+          "open": "Open",
+          "high": "High",
+          "low": "Low",
+          "close": "Close",
+          "volume": "Volume"
+        },
+        "includeAllFields": false,
+        "mode": "candles+volume",
+        "legend": {"displayMode": "list", "placement": "bottom", "showLegend": false},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
+      "targets": [{
+        "refId": "A",
+        "datasource": {"type": "yesoreyeram-infinity-datasource", "uid": "binance"},
+        "type": "json",
+        "source": "url",
+        "format": "table",
+        "url": "https://api.binance.com/api/v3/klines",
+        "url_options": {
+          "method": "GET",
+          "params": [
+            {"key": "symbol", "value": "BTCUSDT"},
+            {"key": "interval", "value": "$interval"},
+            {"key": "limit", "value": "500"}
+          ]
+        },
+        "columns": [
+          {"selector": "0", "text": "Datetime", "type": "timestamp_epoch"},
+          {"selector": "1", "text": "Open", "type": "number"},
+          {"selector": "2", "text": "High", "type": "number"},
+          {"selector": "3", "text": "Low", "type": "number"},
+          {"selector": "4", "text": "Close", "type": "number"},
+          {"selector": "5", "text": "Volume", "type": "number"}
+        ]
+      }]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["crypto", "bitcoin"],
+  "templating": {
+    "list": [
+      {
+        "current": {"selected": true, "text": "1h", "value": "1h"},
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "interval",
+        "options": [
+          {"selected": false, "text": "1m", "value": "1m"},
+          {"selected": false, "text": "5m", "value": "5m"},
+          {"selected": false, "text": "15m", "value": "15m"},
+          {"selected": false, "text": "1h", "value": "1h"},
+          {"selected": false, "text": "4h", "value": "4h"},
+          {"selected": false, "text": "1d", "value": "1d"},
+          {"selected": false, "text": "1w", "value": "1w"}
+        ],
+        "query": "1m, 5m, 15m, 1h, 4h, 1d, 1w",
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {"from": "now-7d", "to": "now"},
+  "timepicker": {},
+  "timezone": "",
+  "title": "Bitcoin",
+  "uid": "bitcoin",
+  "version": 1
+}
