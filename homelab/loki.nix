@@ -164,5 +164,29 @@ in {
         };
       }
     ];
+
+    # Alert rules for loki and promtail
+    homelab.alerts.loki = [
+      {
+        alert = "LokiDown";
+        expr = ''node_systemd_unit_state{name="loki.service",state="active"} == 0'';
+        labels = {
+          severity = "critical";
+          host = config.homelab.host.hostName;
+          type = "service";
+        };
+        annotations.summary = "Loki service is not active";
+      }
+      {
+        alert = "PromtailDown";
+        expr = ''node_systemd_unit_state{name="promtail.service",state="active"} == 0'';
+        labels = {
+          severity = "warning";
+          host = config.homelab.host.hostName;
+          type = "service";
+        };
+        annotations.summary = "Promtail service is not active";
+      }
+    ];
   };
 }
