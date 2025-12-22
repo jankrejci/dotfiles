@@ -179,7 +179,10 @@
       system = "aarch64-linux";
       isRpi = true;
       homelab = {
-        lorawan-gateway.enable = true;
+        lorawan-gateway = {
+          enable = true;
+          gnss.enable = true;
+        };
       };
       extraModules = [
         ../modules/raspberry.nix
