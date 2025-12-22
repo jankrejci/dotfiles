@@ -3,15 +3,9 @@
   config,
   inputs,
   lib,
-  pkgs,
   ...
 }: {
   imports = [inputs.nixos-raspberrypi.nixosModules.raspberry-pi-3.base];
-
-  # Software UART for when hardware TX pin is dead
-  environment.systemPackages = [
-    (pkgs.callPackage ../pkgs/soft-uart-tx.nix {})
-  ];
 
   # Enable SPI for RAK2245 communication with SX1301 concentrator
   # Enable uart0 overlay to properly configure GPIO14/15 for UART TX/RX.
