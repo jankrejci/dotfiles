@@ -2,11 +2,8 @@
   config,
   inputs,
   lib,
-  pkgs,
   ...
-}: let
-  camera-streamer = pkgs.callPackage ../pkgs/camera-streamer.nix {};
-in {
+}: {
   homelab.alerts.hosts = [
     {
       alert = "PrusaDown";
@@ -47,38 +44,4 @@ in {
 
   # Allow admin to access camera devices for testing
   users.users.admin.extraGroups = ["video"];
-
-  # Camera tools for testing and streaming
-  environment.systemPackages = [
-    pkgs.libcamera
-    camera-streamer
-  ];
-
-  # Camera streaming service for OctoPrint integration
-  systemd.services.camera-streamer = {
-    description = "Camera Streamer for Prusa";
-    after = ["network.target" "sys-subsystem-net-devices-services.device"];
-    wantedBy = ["multi-user.target"];
-    # Only start if a camera is actually connected
-    unitConfig.ConditionPathExists = "/dev/video0";
-    serviceConfig = {
-      # OV5647 native 4:3 binned mode to avoid cropping.
-      # Saturation=0 produces grayscale output for better IR night vision.
-      ExecStart = builtins.concatStringsSep " " [
-        "${camera-streamer}/bin/camera-streamer"
-        "--camera-type=libcamera"
-        "--camera-width=1920"
-        "--camera-height=1440"
-        "--camera-fps=5"
-        "--camera-options=Saturation=0"
-        "--http-port=8080"
-        "--http-listen=${config.homelab.octoprint.webcamIp}"
-      ];
-      Restart = "on-failure";
-      RestartSec = "10s";
-      # Run as root to access camera devices
-      User = "root";
-      Group = "video";
-    };
-  };
 }

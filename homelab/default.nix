@@ -13,6 +13,7 @@
     ./ntfy.nix
     ./octoprint.nix
     ./prometheus.nix
+    ./webcam.nix
     ./wireguard.nix
   ];
 }
