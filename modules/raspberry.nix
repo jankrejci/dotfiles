@@ -141,7 +141,11 @@
     [all]
     dtoverlay=disable-bt
     dtoverlay=vc4-kms-v3d
+    dtparam=i2c_arm=on
   '';
+
+  # I2C for GPS configuration on RAK2245 and other HATs
+  hardware.i2c.enable = true;
 
   # Disable documentation since RPi is deployed remotely.
   documentation = {
@@ -153,7 +157,8 @@
   };
 
   # Override default packages to keep only rsync for file transfers.
-  environment.defaultPackages = lib.mkForce [pkgs.rsync];
+  # i2c-tools needed for GPS configuration on RAK2245
+  environment.defaultPackages = lib.mkForce [pkgs.rsync pkgs.i2c-tools];
 
   # Disable fail2ban since RPi is not a critical endpoint and is behind VPN.
   services.fail2ban.enable = lib.mkForce false;
