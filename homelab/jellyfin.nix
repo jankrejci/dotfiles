@@ -50,6 +50,10 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    # Register IP for services dummy interface
+    homelab.serviceIPs = [cfg.ip];
+    networking.hosts.${cfg.ip} = [jellyfinDomain];
+
     # Allow HTTPS on VPN interface
     networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [services.https.port];
 
