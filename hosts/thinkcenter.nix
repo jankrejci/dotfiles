@@ -4,6 +4,6 @@
 
   hardware.cpu.intel.updateMicrocode = true;
 
-  # Enable processes collector for detailed monitoring (systemd already enabled in common.nix)
-  services.prometheus.exporters.node.enabledCollectors = lib.mkForce ["systemd" "processes"];
+  # Add processes collector for detailed monitoring
+  services.prometheus.exporters.node.enabledCollectors = ["processes"];
 }

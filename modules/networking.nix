@@ -154,6 +154,7 @@ in {
     enable = true;
     openFirewall = false;
     listenAddress = "127.0.0.1";
+    enabledCollectors = ["systemd"];
   };
 
   systemd.services.prometheus-node-exporter.serviceConfig = {
