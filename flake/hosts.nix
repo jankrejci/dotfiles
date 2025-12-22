@@ -166,8 +166,8 @@
         octoprint = {
           enable = true;
           ip = "192.168.93.1";
-          webcamIp = "192.168.93.2";
         };
+        webcam.enable = true;
       };
       extraModules = [
         ../modules/raspberry.nix

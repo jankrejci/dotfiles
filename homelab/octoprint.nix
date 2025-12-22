@@ -27,11 +27,6 @@ in {
       description = "IP address for nginx to listen on";
     };
 
-    webcamIp = lib.mkOption {
-      type = lib.types.str;
-      description = "IP address for webcam stream";
-    };
-
     port = lib.mkOption {
       type = lib.types.port;
       default = 5000;
@@ -46,6 +41,10 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    # Register IP for services dummy interface
+    homelab.serviceIPs = [cfg.ip];
+    networking.hosts.${cfg.ip} = [serverDomain];
+
     # Allow HTTPS on VPN interface
     networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [
       services.https.port
@@ -82,22 +81,6 @@ in {
 
     services.nginx = {
       enable = true;
-      # Localhost proxy for Obico plugin to access webcam via relative URLs
-      virtualHosts."localhost" = {
-        listen = [
-          {
-            addr = "127.0.0.1";
-            port = 80;
-          }
-        ];
-        locations."/webcam/" = {
-          proxyPass = "http://${cfg.webcamIp}:8080/";
-          extraConfig = ''
-            proxy_buffering off;
-            proxy_request_buffering off;
-          '';
-        };
-      };
       virtualHosts.${serverDomain} = {
         listen = [
           {
@@ -113,15 +96,8 @@ in {
           proxyWebsockets = true;
           recommendedProxySettings = true;
         };
-        # Proxy webcam stream and snapshot from camera-streamer
-        locations."/webcam/" = {
-          proxyPass = "http://${cfg.webcamIp}:8080/";
-          # Disable buffering for MJPEG streaming
-          extraConfig = ''
-            proxy_buffering off;
-            proxy_request_buffering off;
-          '';
-        };
+        # Webcam proxy config from webcam module
+        locations."/webcam/" = config.homelab.webcam.nginxLocation;
       };
       # OctoPrint metrics via unified metrics proxy
       # Dedicated prometheus user with only PLUGIN_PROMETHEUS_EXPORTER_SCRAPE permission
