@@ -3,30 +3,12 @@
   lib,
   ...
 }: let
-  global = config.homelab.global;
   services = config.homelab.services;
   host = config.homelab.host;
-  domain = global.domain;
-  homelab = config.homelab;
 
-  # Collect service IPs from enabled homelab modules.
-  # Each module with an IP should have enable and ip options.
-  serviceModules = ["grafana" "immich" "immich-public-proxy" "jellyfin" "ntfy" "octoprint"];
-  enabledServices =
-    lib.filter (
-      name:
-        homelab.${name}.enable or false && homelab.${name}.ip or "" != ""
-    )
-    serviceModules;
-
-  # Build {serviceName = {ip = "...", subdomain = "..."}} for enabled services
-  hostServices = lib.genAttrs enabledServices (name: {
-    ip = homelab.${name}.ip;
-    subdomain = homelab.${name}.subdomain or name;
-  });
-
-  serviceIPs = lib.mapAttrsToList (_: service: service.ip) hostServices;
-  hasServices = hostServices != {};
+  # Service IPs registered by homelab modules via homelab.serviceIPs
+  serviceIPs = config.homelab.serviceIPs;
+  hasServices = serviceIPs != [];
 in {
   # Avoid collision of the dhcp with the sysystemd.network
   networking = {
@@ -107,14 +89,6 @@ in {
       };
     };
   };
-
-  # Local DNS resolution for service hostnames
-  networking.hosts =
-    lib.mapAttrs' (
-      _: service:
-        lib.nameValuePair service.ip ["${service.subdomain}.${domain}"]
-    )
-    hostServices;
 
   # NetworkManager disabled by default for headless systems, enabled in desktop.nix
   networking.networkmanager = {

@@ -183,6 +183,15 @@ in {
       description = "Service configuration";
     };
 
+    # Service IPs for the services dummy interface.
+    # Each service module registers its IPs here.
+    # networking.nix collects all IPs and configures the interface.
+    serviceIPs = mkOption {
+      type = types.listOf types.str;
+      default = [];
+      description = "IPs to add to services dummy interface";
+    };
+
     # Scrape targets for prometheus.
     # Each service module registers its metrics endpoints here.
     # Prometheus collects from all hosts and generates scrape configs.
