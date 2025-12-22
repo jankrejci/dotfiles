@@ -1,4 +1,5 @@
 {
+  "_comment": "Grid is 24 columns but panels span ~20. Use width 3 for 7 panels, width 4 for 5 panels, width 5 for 4 panels, width 6 for 3 panels, width 10 for 2 panels.",
   "annotations": {"list": []},
   "editable": true,
   "fiscalYearStartMonth": 0,
@@ -20,7 +21,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 5, "x": 0, "y": 1}, "id": 2,
+      "gridPos": {"h": 3, "w": 4, "x": 0, "y": 1}, "id": 2,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "up{job=\"node\", host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Thinkcenter", "type": "stat"
@@ -37,7 +38,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 5, "x": 5, "y": 1}, "id": 3,
+      "gridPos": {"h": 3, "w": 4, "x": 4, "y": 1}, "id": 3,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "up{job=\"node\", host=\"vpsfree\"}", "refId": "A"}],
       "title": "Vpsfree", "type": "stat"
@@ -54,7 +55,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 5, "x": 10, "y": 1}, "id": 4,
+      "gridPos": {"h": 3, "w": 4, "x": 8, "y": 1}, "id": 4,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "up{job=\"node\", host=\"prusa\"}", "refId": "A"}],
       "title": "Prusa", "type": "stat"
@@ -71,10 +72,27 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 5, "x": 15, "y": 1}, "id": 5,
+      "gridPos": {"h": 3, "w": 4, "x": 12, "y": 1}, "id": 5,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "up{job=\"node\", host=\"rpi4\"}", "refId": "A"}],
       "title": "Rpi4", "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "Down"}, "1": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 3, "w": 4, "x": 16, "y": 1}, "id": 6,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "up{job=\"node\", host=\"rak2245\"}", "refId": "A"}],
+      "title": "Rak2245", "type": "stat"
     },
 
     {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 4}, "id": 10, "panels": [], "title": "User Services", "type": "row"},
@@ -90,9 +108,9 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 10, "x": 0, "y": 5}, "id": 11,
+      "gridPos": {"h": 3, "w": 6, "x": 0, "y": 5}, "id": 11,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"jellyfin.service\",state=\"active\",instance=\"thinkcenter.nb.krejci.io:9999\"}", "refId": "A"}],
+      "targets": [{"expr": "node_systemd_unit_state{name=\"jellyfin.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Jellyfin", "type": "stat"
     },
     {
@@ -107,10 +125,27 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 10, "x": 10, "y": 5}, "id": 12,
+      "gridPos": {"h": 3, "w": 6, "x": 6, "y": 5}, "id": 12,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"immich-server.service\",state=\"active\",instance=\"thinkcenter.nb.krejci.io:9999\"}", "refId": "A"}],
+      "targets": [{"expr": "node_systemd_unit_state{name=\"immich-server.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Immich", "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "Down"}, "1": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 3, "w": 6, "x": 12, "y": 5}, "id": 13,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "up{job=\"octoprint\"}", "refId": "A"}],
+      "title": "Octoprint", "type": "stat"
     },
 
     {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 8}, "id": 20, "panels": [], "title": "Monitoring", "type": "row"},
@@ -128,7 +163,7 @@
       },
       "gridPos": {"h": 3, "w": 5, "x": 0, "y": 9}, "id": 21,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"grafana.service\",state=\"active\",instance=\"thinkcenter.nb.krejci.io:9999\"}", "refId": "A"}],
+      "targets": [{"expr": "node_systemd_unit_state{name=\"grafana.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Grafana", "type": "stat"
     },
     {
@@ -145,7 +180,7 @@
       },
       "gridPos": {"h": 3, "w": 5, "x": 5, "y": 9}, "id": 22,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"prometheus.service\",state=\"active\",instance=\"thinkcenter.nb.krejci.io:9999\"}", "refId": "A"}],
+      "targets": [{"expr": "node_systemd_unit_state{name=\"prometheus.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Prometheus", "type": "stat"
     },
     {
@@ -162,7 +197,7 @@
       },
       "gridPos": {"h": 3, "w": 5, "x": 10, "y": 9}, "id": 23,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"ntfy-sh.service\",state=\"active\",instance=\"thinkcenter.nb.krejci.io:9999\"}", "refId": "A"}],
+      "targets": [{"expr": "node_systemd_unit_state{name=\"ntfy-sh.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Ntfy", "type": "stat"
     },
     {
@@ -179,7 +214,7 @@
       },
       "gridPos": {"h": 3, "w": 5, "x": 15, "y": 9}, "id": 24,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"loki.service\",state=\"active\",instance=\"thinkcenter.nb.krejci.io:9999\"}", "refId": "A"}],
+      "targets": [{"expr": "node_systemd_unit_state{name=\"loki.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Loki", "type": "stat"
     },
 
@@ -196,9 +231,9 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 0, "y": 13}, "id": 31,
+      "gridPos": {"h": 3, "w": 3, "x": 0, "y": 13}, "id": 31,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"nginx.service\",state=\"active\",instance=\"thinkcenter.nb.krejci.io:9999\"}", "refId": "A"}],
+      "targets": [{"expr": "node_systemd_unit_state{name=\"nginx.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Nginx", "type": "stat"
     },
     {
@@ -213,9 +248,9 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 4, "y": 13}, "id": 32,
+      "gridPos": {"h": 3, "w": 3, "x": 3, "y": 13}, "id": 32,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"postgresql.service\",state=\"active\",instance=\"thinkcenter.nb.krejci.io:9999\"}", "refId": "A"}],
+      "targets": [{"expr": "node_systemd_unit_state{name=\"postgresql.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Postgres", "type": "stat"
     },
     {
@@ -230,9 +265,9 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 8, "y": 13}, "id": 33,
+      "gridPos": {"h": 3, "w": 3, "x": 6, "y": 13}, "id": 33,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"redis-immich.service\",state=\"active\",instance=\"thinkcenter.nb.krejci.io:9999\"}", "refId": "A"}],
+      "targets": [{"expr": "node_systemd_unit_state{name=\"redis-immich.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Redis", "type": "stat"
     },
     {
@@ -247,9 +282,9 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 12, "y": 13}, "id": 34,
+      "gridPos": {"h": 3, "w": 3, "x": 9, "y": 13}, "id": 34,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"acme-krejci.io.service\",state=\"active\",instance=\"thinkcenter.nb.krejci.io:9999\"}", "refId": "A"}],
+      "targets": [{"expr": "min(node_systemd_unit_state{name=\"acme-krejci.io.service\",state=\"active\"})", "refId": "A"}],
       "title": "Acme", "type": "stat"
     },
     {
@@ -264,10 +299,44 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 16, "y": 13}, "id": 35,
+      "gridPos": {"h": 3, "w": 3, "x": 12, "y": 13}, "id": 35,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_network_carrier{device=\"wg0\",instance=\"thinkcenter.nb.krejci.io:9999\"}", "refId": "A"}],
+      "targets": [{"expr": "node_network_carrier{device=\"wg0\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Wireguard", "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "Down"}, "1": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 3, "w": 3, "x": 15, "y": 13}, "id": 36,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "node_systemd_unit_state{name=\"chirpstack-concentratord.service\",state=\"active\",host=\"rak2245\"}", "refId": "A"}],
+      "title": "Concentratord", "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "Down"}, "1": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 3, "w": 3, "x": 18, "y": 13}, "id": 37,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "node_systemd_unit_state{name=\"chirpstack-udp-forwarder.service\",state=\"active\",host=\"rak2245\"}", "refId": "A"}],
+      "title": "UDP Forwarder", "type": "stat"
     },
 
     {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 16}, "id": 40, "panels": [], "title": "Backups", "type": "row"},
@@ -283,7 +352,7 @@
       },
       "gridPos": {"h": 3, "w": 10, "x": 0, "y": 17}, "id": 41,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "(time() - node_systemd_timer_last_trigger_seconds{instance=\"thinkcenter.nb.krejci.io:9999\",name=\"borgbackup-job-immich-local.timer\"}) / 3600", "refId": "A"}],
+      "targets": [{"expr": "(time() - node_systemd_timer_last_trigger_seconds{host=\"thinkcenter\",name=\"borgbackup-job-immich-local.timer\"}) / 3600", "refId": "A"}],
       "title": "Immich Local", "type": "stat"
     },
     {
@@ -298,7 +367,7 @@
       },
       "gridPos": {"h": 3, "w": 10, "x": 10, "y": 17}, "id": 42,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "(time() - node_systemd_timer_last_trigger_seconds{instance=\"thinkcenter.nb.krejci.io:9999\",name=\"borgbackup-job-immich-remote.timer\"}) / 3600", "refId": "A"}],
+      "targets": [{"expr": "(time() - node_systemd_timer_last_trigger_seconds{host=\"thinkcenter\",name=\"borgbackup-job-immich-remote.timer\"}) / 3600", "refId": "A"}],
       "title": "Immich Remote", "type": "stat"
     },
 
@@ -340,7 +409,7 @@
       },
       "gridPos": {"h": 2, "w": 20, "x": 0, "y": 24}, "id": 61,
       "options": {"showValue": "never", "alignValue": "center", "mergeValues": true, "rowHeight": 0.9, "legend": {"showLegend": false}},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"jellyfin.service\",state=\"active\",instance=\"thinkcenter.nb.krejci.io:9999\"}", "legendFormat": " ", "refId": "A"}],
+      "targets": [{"expr": "node_systemd_unit_state{name=\"jellyfin.service\",state=\"active\",host=\"thinkcenter\"}", "legendFormat": " ", "refId": "A"}],
       "title": "", "type": "state-timeline"
     }
   ],
