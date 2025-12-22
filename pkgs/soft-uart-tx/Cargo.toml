@@ -1,0 +1,17 @@
+[package]
+name = "soft-uart-tx"
+version = "1.0.0"
+edition = "2021"
+description = "Software UART TX via GPIO bit-banging for Raspberry Pi"
+license = "MIT"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+env_logger = "0.11"
+gpiod = "0.3"
+hex = "0.4"
+log = "0.4"
+
+[profile.release]
+opt-level = 3
+lto = true
