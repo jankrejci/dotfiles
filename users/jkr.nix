@@ -47,7 +47,7 @@
         ];
 
         home.packages = with pkgs; [
-          unstable.rustup # rust install tool
+          rustup
           unstable.espflash # flasher utility for Espressif SoCs
           unstable.trezor-suite
           unstable.claude-code
