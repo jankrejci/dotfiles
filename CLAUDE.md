@@ -169,3 +169,10 @@ scripts.nix            # Deployment and utility scripts
 1. Create `homelab/myservice.nix` with `homelab.myservice.enable` option
 2. Add to `homelab/default.nix` imports
 3. Enable in host definition in `flake/hosts.nix`
+
+## LoRaWAN Gateway
+
+See `homelab/lorawan-gateway.nix` for full GNSS architecture documentation.
+
+Key finding: GPS time sync requires working GPIO14 for UART TX to send UBX
+commands. Some RPi boards have dead GPIO14. Use RPi 3B, not 3B+.
