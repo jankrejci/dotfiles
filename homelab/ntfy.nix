@@ -37,6 +37,10 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    # Register IP for services dummy interface
+    homelab.serviceIPs = [cfg.ip];
+    networking.hosts.${cfg.ip} = [ntfyDomain];
+
     # Allow HTTPS on VPN interface only
     networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [
       services.https.port

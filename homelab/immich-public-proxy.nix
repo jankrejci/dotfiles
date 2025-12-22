@@ -41,6 +41,10 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    # Register IP for services dummy interface
+    homelab.serviceIPs = [cfg.ip];
+    networking.hosts.${cfg.ip} = [shareDomain];
+
     # Immich Public Proxy - allows public sharing without exposing Immich
     services.immich-public-proxy = {
       enable = true;

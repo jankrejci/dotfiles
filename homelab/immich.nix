@@ -52,6 +52,10 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    # Register IP for services dummy interface
+    homelab.serviceIPs = [cfg.ip];
+    networking.hosts.${cfg.ip} = [immichDomain];
+
     # Install borgbackup for backup operations
     environment.systemPackages = with pkgs; [
       borgbackup
