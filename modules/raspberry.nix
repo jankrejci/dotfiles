@@ -29,6 +29,8 @@
     [
       (final: prev: {
         ffmpeg = final.rpi.ffmpeg-headless;
+        # Disable xgps and other GUI tools that pull in GTK and X11 dependencies.
+        gpsd = prev.gpsd.override {guiSupport = false;};
       })
       # Disable U-Boot "Hit any key" prompt. Default bootdelay=2 waits for keypress.
       # -2 skips autoboot delay entirely. Combined with boot.loader.timeout=0
@@ -46,6 +48,11 @@
         python3 = cachedPkgs-aarch64.python3;
         python3Packages = cachedPkgs-aarch64.python3Packages;
         # Don't overlay octoprint so it uses our ffmpeg-headless overlay.
+      })
+      # Source nix from standard nixpkgs to avoid building graphviz, pandoc, mdbook.
+      # nixos-raspberrypi fork builds nix with manual which pulls GTK dependencies.
+      (final: prev: {
+        nix = cachedPkgs-aarch64.nix;
       })
     ];
 
