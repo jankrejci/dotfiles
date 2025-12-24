@@ -128,17 +128,22 @@ See: https://github.com/netbirdio/netbird/issues/2023
 
 ### Declarative Configuration
 
-Declarative Netbird API management was prototyped but abandoned for now. The approach
-worked but had a fundamental limitation: peer IDs change on re-enrollment, making
-automatic group membership sync impractical. Manual dashboard management is simpler
-until Netbird supports stable peer identifiers or setup-key-based group assignment.
+Groups and policies managed via `nix run .#sync-netbird-config`.
+Config in `flake/netbird.nix` under `netbird.groups` and `netbird.policies`.
 
-Future work: revisit when Netbird adds stable identifiers or setup key groups feature.
+```bash
+nix run .#sync-netbird-config -- --dry-run  # Preview changes
+nix run .#sync-netbird-config               # Apply with confirmation
+nix run .#sync-netbird-config -- --delete   # Also delete extra items
+```
+
+Peer management remains manual because peer IDs change on re-enrollment.
 
 ## Scripts
 See `scripts.nix` for available commands. Key ones:
 - `nix run .#deploy-config <hostname>` - Deploy config remotely
 - `nix run .#build-sdcard <hostname>` - Build RPi SD card image
+- `nix run .#sync-netbird-config` - Sync Netbird groups/policies to API
 
 ## Repository Structure
 

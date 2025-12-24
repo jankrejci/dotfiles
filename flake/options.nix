@@ -38,6 +38,88 @@ in {
       default = {};
       description = "Service configurations";
     };
+
+    # Netbird groups and policies for API sync
+    netbird = mkOption {
+      type = types.submodule {
+        options = {
+          groups = mkOption {
+            type = types.attrsOf (types.submodule {});
+            default = {};
+            description = "Netbird groups (names only, peers managed via dashboard)";
+          };
+          policies = mkOption {
+            type = types.attrsOf (types.submodule {
+              options = {
+                description = mkOption {
+                  type = types.str;
+                  default = "";
+                  description = "Policy description";
+                };
+                enabled = mkOption {
+                  type = types.bool;
+                  default = true;
+                  description = "Whether the policy is enabled";
+                };
+                rules = mkOption {
+                  type = types.listOf (types.submodule {
+                    options = {
+                      name = mkOption {
+                        type = types.str;
+                        description = "Rule name";
+                      };
+                      description = mkOption {
+                        type = types.str;
+                        default = "";
+                        description = "Rule description";
+                      };
+                      enabled = mkOption {
+                        type = types.bool;
+                        default = true;
+                        description = "Whether the rule is enabled";
+                      };
+                      sources = mkOption {
+                        type = types.listOf types.str;
+                        description = "Source group names";
+                      };
+                      destinations = mkOption {
+                        type = types.listOf types.str;
+                        description = "Destination group names";
+                      };
+                      protocol = mkOption {
+                        type = types.enum ["all" "tcp" "udp" "icmp"];
+                        default = "all";
+                        description = "Protocol to allow";
+                      };
+                      ports = mkOption {
+                        type = types.listOf types.str;
+                        default = [];
+                        description = "Ports to allow (empty = all)";
+                      };
+                      bidirectional = mkOption {
+                        type = types.bool;
+                        default = false;
+                        description = "Allow traffic in both directions";
+                      };
+                      action = mkOption {
+                        type = types.enum ["accept" "drop"];
+                        default = "accept";
+                        description = "Action to take";
+                      };
+                    };
+                  });
+                  description = "Policy rules";
+                };
+              };
+            });
+            default = {};
+            description = "Netbird policies to create";
+          };
+        };
+      };
+      default = {};
+      description = "Netbird API configuration (groups and policies)";
+    };
   };
 
   # NixOS-level options - kept for backwards compatibility

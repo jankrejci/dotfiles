@@ -6,5 +6,6 @@
     ./hosts.nix
     ./deploy.nix
     ./images.nix
+    ./netbird.nix
   ];
 }

@@ -1,5 +1,9 @@
 # perSystem outputs: formatter, packages, checks
-{inputs, ...}: {
+{
+  inputs,
+  config,
+  ...
+}: {
   perSystem = {
     pkgs,
     system,
@@ -28,6 +32,12 @@
       pkgs = pkgsWithOverlays;
       nixos-anywhere = inputs.nixos-anywhere.packages.${system}.nixos-anywhere;
     };
+
+    # Netbird sync script from flake/netbird.nix
+    netbirdScript = config.flake.netbirdSyncScript {
+      pkgs = pkgsWithOverlays;
+      inherit (scripts) lib;
+    };
   in {
     # Use pkgs with overlays for this system
     _module.args.pkgs = pkgsWithOverlays;
@@ -36,7 +46,7 @@
 
     packages =
       if system == "x86_64-linux"
-      then scripts
+      then scripts // {sync-netbird-config = netbirdScript;}
       else {};
 
     checks =
