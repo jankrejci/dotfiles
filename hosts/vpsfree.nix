@@ -28,24 +28,31 @@ in {
   # There is no DHCP, so fixed dns is needed
   networking.nameservers = ["1.1.1.1" "8.8.8.8"];
 
-  # Backup storage - NFS mount from NAS
-  fileSystems.${mountPoint} = {
-    device = "${nasHost}:${nasPath}";
-    fsType = "nfs";
-    options = ["nofail"];
-  };
+  # NFS client requires rpcbind for mount.nfs helper to resolve NFS server ports.
+  boot.supportedFilesystems = ["nfs"];
+  services.rpcbind.enable = true;
 
-  # Bind mount borg repos from NAS
-  fileSystems."/var/lib/borg-repos" = {
-    device = "${mountPoint}/borg-repos";
-    fsType = "none";
-    options = ["bind" "x-systemd.requires=mnt-nas\\x2dbackup.mount"];
-  };
+  # NFS mount from NAS. Automount is unsupported in vpsAdminOS containers,
+  # so we use a regular mount that starts after network is online.
+  systemd.mounts = [
+    {
+      what = "${nasHost}:${nasPath}";
+      where = mountPoint;
+      type = "nfs";
+      options = "soft,timeo=30,retrans=3,nofail";
+      wantedBy = ["multi-user.target"];
+      after = ["network-online.target" "rpcbind.service"];
+      wants = ["network-online.target"];
+      requires = ["rpcbind.service"];
+    }
+  ];
 
-  # Ensure base directory exists on NAS
+  # Symlink borg repos to NAS mount point.
+  # Immutable flag on mount point prevents accidental writes when NFS is unmounted.
   systemd.tmpfiles.rules = [
-    "d ${mountPoint}/borg-repos 0755 borg borg -"
-    "d ${mountPoint}/borg-repos/immich 0700 borg borg -"
+    "d ${mountPoint} 0755 root root -"
+    "h ${mountPoint} - - - - +i"
+    "L /var/lib/borg-repos - - - - ${mountPoint}/borg-repos"
   ];
 
   # Borg user needs bash shell because borg client executes `borg serve` via SSH.
@@ -60,9 +67,9 @@ in {
 
   users.groups.borg = {};
 
-  # Install borgbackup for borg serve command
   environment.systemPackages = with pkgs; [
     borgbackup
+    nfs-utils # mount.nfs helper for systemd mount unit
   ];
 
   homelab.alerts.hosts = [
