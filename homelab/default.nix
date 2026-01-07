@@ -16,6 +16,7 @@
     ./jellyfin.nix
     ./loki.nix
     ./lorawan-gateway.nix
+    ./memos.nix
     ./ntfy.nix
     ./octoprint.nix
     ./prometheus.nix
