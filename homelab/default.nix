@@ -3,6 +3,12 @@
 # Enable via host.homelab.X.enable in flake/hosts.nix
 {...}: {
   imports = [
+    # Shared infrastructure
+    ./nginx.nix
+    ./postgresql.nix
+    ./redis.nix
+
+    # Services
     ./acme.nix
     ./grafana.nix
     ./immich.nix
