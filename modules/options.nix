@@ -91,6 +91,12 @@
         default = null;
         description = "Network interface";
       };
+
+      subnet = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "Network subnet for access control";
+      };
     };
   };
   # Global configuration submodule
