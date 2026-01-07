@@ -84,6 +84,10 @@
           enable = true;
           ip = "192.168.91.4";
         };
+        printer = {
+          enable = true;
+          ip = "192.168.91.5";
+        };
         prometheus.enable = true;
         wireguard = {
           enable = true;
@@ -226,6 +230,7 @@
     netbird = {
       interface = "nb0";
       port = 51820;
+      subnet = "100.76.0.0/16";
     };
   };
 

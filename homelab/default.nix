@@ -19,6 +19,7 @@
     ./memos.nix
     ./ntfy.nix
     ./octoprint.nix
+    ./printer.nix
     ./prometheus.nix
     ./webcam.nix
     ./wireguard.nix
