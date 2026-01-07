@@ -48,7 +48,7 @@ in {
     homelab.alerts.acme = [
       {
         alert = "AcmeFailed";
-        expr = ''node_systemd_unit_state{name="acme-krejci.io.service",state="failed"} > 0'';
+        expr = ''node_systemd_unit_state{name="acme-krejci.io.service",state="failed",host="${config.homelab.host.hostName}"} > 0'';
         labels = {
           severity = "critical";
           host = config.homelab.host.hostName;

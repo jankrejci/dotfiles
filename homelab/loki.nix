@@ -169,7 +169,7 @@ in {
     homelab.alerts.loki = [
       {
         alert = "LokiDown";
-        expr = ''node_systemd_unit_state{name="loki.service",state="active"} == 0'';
+        expr = ''node_systemd_unit_state{name="loki.service",state="active",host="${config.homelab.host.hostName}"} == 0'';
         labels = {
           severity = "critical";
           host = config.homelab.host.hostName;
@@ -179,7 +179,7 @@ in {
       }
       {
         alert = "PromtailDown";
-        expr = ''node_systemd_unit_state{name="promtail.service",state="active"} == 0'';
+        expr = ''node_systemd_unit_state{name="promtail.service",state="active",host="${config.homelab.host.hostName}"} == 0'';
         labels = {
           severity = "warning";
           host = config.homelab.host.hostName;
