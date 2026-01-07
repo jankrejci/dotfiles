@@ -1030,6 +1030,10 @@ in {
     touch $out
   '';
 
+  # Import Google Keep notes to Memos with preserved timestamps
+  # `nix run .#import-keep https://memos.example.com TOKEN ~/Keep`
+  import-keep = pkgs.callPackage ./pkgs/import-keep {};
+
   # Expose the shared library for testing
   inherit lib;
 
