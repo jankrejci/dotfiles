@@ -89,24 +89,17 @@ in {
       "d /var/lib/jellyfin/media/movies 2775 jellyfin jellyfin -"
     ];
 
-    # Wait for services interface before binding
-    systemd.services.nginx.after = ["sys-subsystem-net-devices-services.device"];
-
     # Nginx reverse proxy
-    services.nginx = {
-      enable = true;
-      virtualHosts.${jellyfinDomain} = {
-        listenAddresses = [cfg.ip];
-        # Enable HTTPS with Let's Encrypt wildcard certificate
-        forceSSL = true;
-        useACMEHost = "${global.domain}";
-        # Allow large media file uploads
-        extraConfig = "client_max_body_size 10G;";
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:${toString cfg.port}";
-          proxyWebsockets = true;
-          recommendedProxySettings = true;
-        };
+    services.nginx.virtualHosts.${jellyfinDomain} = {
+      listenAddresses = [cfg.ip];
+      forceSSL = true;
+      useACMEHost = "${global.domain}";
+      # Allow large media file uploads
+      extraConfig = "client_max_body_size 10G;";
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:${toString cfg.port}";
+        proxyWebsockets = true;
+        recommendedProxySettings = true;
       };
     };
 
@@ -114,7 +107,7 @@ in {
     homelab.alerts.jellyfin = [
       {
         alert = "JellyfinDown";
-        expr = ''node_systemd_unit_state{name="jellyfin.service",state="active"} == 0'';
+        expr = ''node_systemd_unit_state{name="jellyfin.service",state="active",host="${config.homelab.host.hostName}"} == 0'';
         labels = {
           severity = "critical";
           host = config.homelab.host.hostName;

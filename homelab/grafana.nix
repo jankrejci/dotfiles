@@ -71,26 +71,20 @@ in {
       };
     };
 
-    # Wait for services interface before binding
-    systemd.services.nginx.after = ["sys-subsystem-net-devices-services.device"];
-
-    services.nginx = {
-      enable = true;
-      virtualHosts.${serverDomain} = {
-        listenAddresses = [cfg.ip];
-        forceSSL = true;
-        useACMEHost = domain;
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:${toString cfg.port}";
-          proxyWebsockets = true;
-          recommendedProxySettings = true;
-        };
-        # Prometheus UI accessible at /prometheus/
-        locations."/prometheus/" = {
-          proxyPass = "http://127.0.0.1:${toString config.homelab.prometheus.port}";
-          proxyWebsockets = true;
-          recommendedProxySettings = true;
-        };
+    services.nginx.virtualHosts.${serverDomain} = {
+      listenAddresses = [cfg.ip];
+      forceSSL = true;
+      useACMEHost = domain;
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:${toString cfg.port}";
+        proxyWebsockets = true;
+        recommendedProxySettings = true;
+      };
+      # Prometheus UI accessible at /prometheus/
+      locations."/prometheus/" = {
+        proxyPass = "http://127.0.0.1:${toString config.homelab.prometheus.port}";
+        proxyWebsockets = true;
+        recommendedProxySettings = true;
       };
     };
 

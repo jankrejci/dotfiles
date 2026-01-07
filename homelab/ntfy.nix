@@ -73,23 +73,18 @@ in {
       "L+ /var/lib/ntfy-sh/templates/default.yml - - - - ${../assets/ntfy/default.yml}"
     ];
 
-    # Wait for services interface before binding
-    systemd.services.nginx.after = ["sys-subsystem-net-devices-services.device"];
-
-    services.nginx = {
-      enable = true;
-      virtualHosts.${ntfyDomain} = {
-        listenAddresses = [cfg.ip];
-        forceSSL = true;
-        useACMEHost = domain;
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:${toString cfg.port}";
-          proxyWebsockets = true;
-          recommendedProxySettings = true;
-        };
+    services.nginx.virtualHosts.${ntfyDomain} = {
+      listenAddresses = [cfg.ip];
+      forceSSL = true;
+      useACMEHost = domain;
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:${toString cfg.port}";
+        proxyWebsockets = true;
+        recommendedProxySettings = true;
       };
-      # Ntfy metrics via unified metrics proxy
-      virtualHosts."metrics".locations."/metrics/ntfy".proxyPass = "http://127.0.0.1:9091/metrics";
     };
+
+    # Ntfy metrics via unified metrics proxy
+    services.nginx.virtualHosts."metrics".locations."/metrics/ntfy".proxyPass = "http://127.0.0.1:9091/metrics";
   };
 }
