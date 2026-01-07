@@ -108,7 +108,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 6, "x": 0, "y": 5}, "id": 11,
+      "gridPos": {"h": 3, "w": 5, "x": 0, "y": 5}, "id": 11,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "node_systemd_unit_state{name=\"jellyfin.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Jellyfin", "type": "stat"
@@ -125,7 +125,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 6, "x": 6, "y": 5}, "id": 12,
+      "gridPos": {"h": 3, "w": 5, "x": 5, "y": 5}, "id": 12,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "node_systemd_unit_state{name=\"immich-server.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Immich", "type": "stat"
@@ -142,7 +142,24 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 6, "x": 12, "y": 5}, "id": 13,
+      "gridPos": {"h": 3, "w": 5, "x": 10, "y": 5}, "id": 13,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "node_systemd_unit_state{name=\"memos.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
+      "title": "Memos", "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "Down"}, "1": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 3, "w": 5, "x": 15, "y": 5}, "id": 14,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "up{job=\"octoprint\"}", "refId": "A"}],
       "title": "Octoprint", "type": "stat"
@@ -267,7 +284,7 @@
       },
       "gridPos": {"h": 3, "w": 2, "x": 4, "y": 13}, "id": 33,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"redis-immich.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
+      "targets": [{"expr": "node_systemd_unit_state{name=\"redis.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Redis", "type": "stat"
     },
     {
