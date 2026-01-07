@@ -121,6 +121,7 @@
   # Enable CUPS to print documents.
   services.printing = {
     enable = true;
+    browsed.enable = false;
     drivers = with pkgs; [
       cnijfilter_4_00
       gutenprint
@@ -128,24 +129,56 @@
     ];
   };
 
+  # Brother printer accessible via VPN. Uses IPP Everywhere, no driver needed.
+  # Custom service because NixOS ensurePrinters stops cups which loses config.
+  systemd.services.setup-printer = {
+    description = "Configure Brother printer";
+    wantedBy = ["multi-user.target"];
+    after = ["cups.service" "network-online.target"];
+    wants = ["network-online.target"];
+    path = [pkgs.cups];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      # Skip if already configured
+      lpstat -p Brother-DCP-T730DW &>/dev/null && exit 0
+
+      # Add printer with IPP Everywhere
+      lpadmin -p Brother-DCP-T730DW \
+        -v ipps://brother.krejci.io:443/ipp/print \
+        -m everywhere \
+        -D "Brother DCP-T730DW" \
+        -L "Home" \
+        -E || true
+
+      # Set as default
+      lpadmin -d Brother-DCP-T730DW || true
+    '';
+  };
+
   # Enable scanning support
   hardware.sane = {
     enable = true;
     extraBackends = with pkgs; [sane-airscan];
-    netConf = "192.168.0.136";
   };
 
-  systemd.tmpfiles.rules = [
-    "L+ /etc/sane-config/pixma.conf - - - - /dev/null"
-    "w /etc/sane-config/pixma.conf - - - - bjnp://192.168.0.136"
-  ];
+  # Brother scanner accessible via VPN, uses eSCL protocol
+  environment.etc."sane.d/airscan.conf".text = ''
+    [devices]
+    "Brother DCP-T730DW" = https://brother.krejci.io:443/eSCL
+  '';
 
-  # Enable Avahi for network device discovery
-  services.avahi = {
-    enable = true;
-    nssmdns4 = true;
-    openFirewall = true;
-  };
+  # Disable v4l backend so webcam doesn't appear as scanner
+  environment.etc."sane.d/v4l.conf".text = "";
+
+  # Disable escl backend, we use airscan instead
+  environment.etc."sane.d/escl.conf".text = "";
+
+  # Avahi disabled - causes random auto-appearing printers via CUPS dnssd backend
+  # VPN printer is preconfigured, no need for mDNS discovery
+  services.avahi.enable = false;
 
   networking.networkmanager = {
     enable = true;
