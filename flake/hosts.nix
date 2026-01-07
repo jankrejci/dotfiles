@@ -57,6 +57,11 @@
       device = "/dev/sda";
       swapSize = "8G";
       homelab = {
+        # Shared infrastructure
+        nginx.enable = true;
+        postgresql.enable = true;
+        redis.enable = true;
+        # Services
         acme.enable = true;
         grafana = {
           enable = true;
@@ -71,6 +76,10 @@
           ip = "192.168.91.3";
         };
         loki.enable = true;
+        memos = {
+          enable = true;
+          ip = "192.168.91.6";
+        };
         ntfy = {
           enable = true;
           ip = "192.168.91.4";
@@ -267,7 +276,10 @@
     withSystem "x86_64-linux" ({pkgs, ...}:
       lib.nixosSystem {
         system = "x86_64-linux";
-        specialArgs = {inherit inputs;};
+        specialArgs = {
+          inherit inputs;
+          backup = import ../lib/backup.nix {inherit lib pkgs;};
+        };
         modules =
           mkModulesList hostName host
           ++ [({...}: {nixpkgs.pkgs = pkgs;})];
@@ -285,6 +297,10 @@
       specialArgs = {
         inherit inputs cachedPkgs-aarch64;
         inherit (inputs) nixos-raspberrypi;
+        backup = import ../lib/backup.nix {
+          inherit lib;
+          pkgs = cachedPkgs-aarch64;
+        };
       };
       modules = mkModulesList hostName host;
     };
