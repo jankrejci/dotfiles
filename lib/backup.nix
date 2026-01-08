@@ -1,25 +1,44 @@
 # Helper function for borg backup configuration
 #
-# This is a helper function instead of a central NixOS module because the module
-# system causes infinite recursion when a module both defines and iterates over
-# config options. A central backup module that uses mapAttrsToList on
-# config.homelab.backup.jobs forces evaluation of all module contributions, but
-# those contributions are inside mkIf cfg.enable blocks that defer evaluation.
-# Each service module calls this function directly, avoiding the cycle.
+# Why native services.borgbackup instead of borgmatic:
+#   Borgmatic adds a YAML config layer that introduces bugs in the NixOS module:
+#   - pg_dump PATH issues: github.com/NixOS/nixpkgs/issues/329602
+#   - PostgreSQL format bug: github.com/NixOS/nixpkgs/issues/412113
+#   - Empty database crash: github.com/NixOS/nixpkgs/issues/437241
+#   The native module gives direct control over hooks and avoids these issues.
 #
-# Usage in service modules:
+# Why a helper function instead of a NixOS module:
+#   The module system causes infinite recursion when a module both defines and
+#   iterates over config options. A central backup module using mapAttrsToList
+#   on config.homelab.backup.jobs forces evaluation of all contributions, but
+#   those are inside mkIf cfg.enable blocks that defer evaluation. Each service
+#   module calls this function directly, avoiding the cycle.
+#
+# Architecture:
+#   - Two backup targets per service: local and remote
+#   - Local: /var/lib/borg-repos on the same machine, runs at HH:30
+#   - Remote: vpsfree server via SSH, runs at HH:00
+#   - Database dumps run as preHook before backup starts
+#   - Success timestamps written to textfile collector for Prometheus metrics
+#
+# Monitoring:
+#   - Prometheus alerts on failed systemd unit state
+#   - Grafana dashboard shows hours since last successful backup
+#   - Metrics exported via node_exporter textfile collector
+#
+# Usage:
 #   let
-#     backupConfig = import ../lib/backup.nix { inherit lib pkgs; };
+#     backup = import ../lib/backup.nix { inherit lib pkgs; };
 #   in {
 #     config = lib.mkMerge [
-#       (backupConfig.mkBorgBackup {
+#       (backup.mkBorgBackup {
 #         name = "memos";
 #         hostName = config.homelab.host.hostName;
 #         paths = ["/var/lib/memos"];
 #         excludes = ["/var/lib/memos/thumbnails"];
-#         database = "memos";
-#         service = "memos";
-#         hour = 2;
+#         database = "memos";  # optional: PostgreSQL database to dump
+#         service = "memos";   # systemd service to stop during restore
+#         hour = 2;            # hour to run backups (remote at :00, local at :30)
 #       })
 #       { /* other config */ }
 #     ];
@@ -42,6 +61,13 @@ in {
   }: let
     dbBackupDir = "/var/backup/${name}-db";
     hourStr = lib.fixedWidthString 2 "0" (toString hour);
+    metricsDir = "/var/lib/prometheus-node-exporter";
+
+    # Write success timestamp for Prometheus textfile collector
+    mkPostHook = target: ''
+      echo "borg_backup_last_success_timestamp{name=\"${name}\",target=\"${target}\"} $(date +%s)" > ${metricsDir}/borg-${name}-${target}.prom.tmp
+      mv ${metricsDir}/borg-${name}-${target}.prom.tmp ${metricsDir}/borg-${name}-${target}.prom
+    '';
 
     commonBorgConfig = {
       inherit paths;
@@ -54,6 +80,8 @@ in {
         weekly = 4;
         monthly = 6;
       };
+      # Allow writing metrics to textfile collector directory
+      readWritePaths = [metricsDir];
     };
 
     capitalizedName = let
@@ -99,9 +127,9 @@ in {
 
       ${optionalString (database != null) ''
         echo "Restoring database..."
-        sudo -u postgres dropdb ${database} || true
-        sudo -u postgres createdb -O ${database} ${database}
-        sudo -u postgres pg_restore -d ${database} ${dbBackupDir}/${name}.dump
+        sudo -u postgres ${pkgs.postgresql}/bin/dropdb ${database} || true
+        sudo -u postgres ${pkgs.postgresql}/bin/createdb -O ${database} ${database}
+        sudo -u postgres ${pkgs.postgresql}/bin/pg_restore -d ${database} ${dbBackupDir}/${name}.dump
       ''}
 
       echo "Starting ${service}..."
@@ -121,6 +149,7 @@ in {
             passCommand = "cat /root/secrets/borg-passphrase-remote";
           };
           environment.BORG_RSH = "ssh -i /root/.ssh/borg-backup-key";
+          postHook = mkPostHook "remote";
         }
         // optionalAttrs (database != null) {
           paths = paths ++ [dbBackupDir];
@@ -136,6 +165,7 @@ in {
             mode = "repokey-blake2";
             passCommand = "cat /root/secrets/borg-passphrase-local";
           };
+          postHook = mkPostHook "local";
         }
         // optionalAttrs (database != null) {
           paths = paths ++ [dbBackupDir];
@@ -146,11 +176,12 @@ in {
     systemd.services = optionalAttrs (database != null) {
       "${name}-db-dump" = {
         description = "Dump ${name} PostgreSQL database";
-        path = [pkgs.postgresql];
         serviceConfig = {
           Type = "oneshot";
           User = "postgres";
-          ExecStart = "pg_dump -Fc -f ${dbBackupDir}/${name}.dump ${database}";
+          # Full path required because systemd resolves ExecStart executables
+          # before PATH environment is set. Bare "pg_dump" fails with ENOENT.
+          ExecStart = "${pkgs.postgresql}/bin/pg_dump -Fc -f ${dbBackupDir}/${name}.dump ${database}";
         };
       };
     };
