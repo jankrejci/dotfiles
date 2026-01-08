@@ -128,8 +128,14 @@ in {
     enable = true;
     openFirewall = false;
     listenAddress = "127.0.0.1";
-    enabledCollectors = ["systemd"];
+    enabledCollectors = ["systemd" "textfile"];
+    extraFlags = ["--collector.textfile.directory=/var/lib/prometheus-node-exporter"];
   };
+
+  # Directory for textfile collector metrics written by backup jobs
+  systemd.tmpfiles.rules = [
+    "d /var/lib/prometheus-node-exporter 0755 root root -"
+  ];
 
   systemd.services.prometheus-node-exporter.serviceConfig = {
     Restart = "always";
