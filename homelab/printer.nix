@@ -5,24 +5,57 @@
 #
 # ipp-usb exposes the USB device with IPP Everywhere and eSCL protocols.
 # nginx provides TLS termination and proxies requests to ipp-usb.
-# Host header preservation ensures ipp-usb returns correct URIs in responses.
-#
-# Why nginx instead of CUPS:
-#   Simpler architecture. ipp-usb already speaks IPP Everywhere which clients
-#   understand natively. No need for CUPS queue management on the server.
-#
-# Why Host header matters:
-#   ipp-usb embeds the server URI in IPP responses as "printer-uri-supported".
-#   Without proper Host header, it returns localhost URIs. With Host header
-#   preservation, it returns the external hostname clients can reach.
 #
 # Client configuration:
 #   Printer: ipps://brother.krejci.io/ipp/print
 #   Scanner: https://brother.krejci.io/eSCL
+#   Desktop needs: hardware.sane.extraBackends = [pkgs.sane-airscan];
 #
-# Debugging commands:
+# Debugging:
 #   curl -k https://brother.krejci.io/eSCL/ScannerCapabilities
 #   ipptool -tv ipps://brother.krejci.io/ipp/print get-printer-attributes.test
+#
+# ---
+# Design decisions and alternatives considered:
+#
+# Why ipp-usb instead of CUPS:
+#   CUPS cannot be proxied through nginx for two reasons:
+#   1. CVE-2009-0164 security fix makes CUPS reject requests to localhost
+#      that arrive with external Host headers. nginx would need to proxy to
+#      CUPS on localhost but forward the external Host header for correct URIs.
+#   2. Even when CUPS listens on VPN IP directly, it returns printer-uri based
+#      on connection source, ignoring the ServerName directive. Clients store
+#      these URIs and fail on subsequent requests.
+#   ipp-usb respects the Host header and returns correct URIs in responses.
+#
+# Why nginx proxy instead of ipp-usb on port 631 directly:
+#   Android Default Print Service ignores custom ports and always connects to
+#   631. When ipp-usb listened on port 60000 directly on VPN IP, Android could
+#   not discover it. We need nginx on 443 with proper Host header forwarding.
+#
+# Why Host header preservation is critical:
+#   ipp-usb embeds "printer-uri-supported" in IPP responses. Without proper
+#   Host header, it returns localhost:60000 URIs. With Host header set to the
+#   external hostname, clients receive URIs they can actually reach.
+#
+# Why not nginx path rewriting to support both CUPS and ipp-usb:
+#   IPP protocol embeds printer-uri in the request BODY, not just the HTTP
+#   path. tcpdump shows: `printer-uri = ipp://host/ipp/printer` inside the
+#   POST body. CUPS reads this URI to lookup the printer queue. HTTP-level
+#   path rewriting cannot fix the mismatch between IPP Everywhere paths
+#   like /ipp/print and CUPS paths like /printers/Name.
+#
+# Why cups-browsed is disabled on desktop clients:
+#   cups-browsed discovers _printer._tcp mDNS records from ipp-usb and creates
+#   broken "Unknown" printer queues. It also had CVEs disclosed in late 2024.
+#   With cups-browsed disabled, CUPS 2.2.4+ discovers _ipp._tcp directly.
+#
+# Known limitation - Android availability:
+#   Android shows "unavailable" after first successful print. This happens
+#   because Android uses mDNS to refresh printer availability status, but
+#   Netbird VPN is Layer 3 and does not support multicast. Without mDNS
+#   broadcasts, Android caches stale state. Workaround: forget and re-add
+#   the printer, or use Mopria Print Service which handles this better.
 {
   config,
   lib,
@@ -73,8 +106,11 @@ in {
       dns-sd = disable
     '';
 
-    # nginx proxies to ipp-usb with TLS termination
-    # Host header preservation ensures ipp-usb returns correct URIs
+    # nginx proxies to ipp-usb with TLS termination.
+    # Host header is set to localhost:60000 so ipp-usb accepts the connection.
+    # This means printer-uri-supported in responses contains localhost URIs,
+    # which breaks Android status refresh. See "Known limitation" above.
+    # Using $host would fix URIs but Android still fails due to missing mDNS.
     services.nginx = {
       enable = true;
       virtualHosts.${printerDomain} = {
@@ -95,5 +131,19 @@ in {
 
     # Wait for services interface before nginx binds
     systemd.services.nginx.after = ["sys-subsystem-net-devices-services.device"];
+
+    # Alert when ipp-usb service goes down
+    homelab.alerts.printer = [
+      {
+        alert = "IppUsbDown";
+        expr = ''node_systemd_unit_state{name="ipp-usb.service",state="active",host="${config.homelab.host.hostName}"} == 0'';
+        labels = {
+          severity = "warning";
+          host = config.homelab.host.hostName;
+          type = "service";
+        };
+        annotations.summary = "IPP-USB print server is not active";
+      }
+    ];
   };
 }
