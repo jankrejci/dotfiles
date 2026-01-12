@@ -89,6 +89,23 @@ in {
       };
     }
 
+    # Health check
+    {
+      homelab.healthChecks = [
+        {
+          name = "Memos";
+          script = pkgs.writeShellApplication {
+            name = "health-check-memos";
+            runtimeInputs = [pkgs.systemd];
+            text = ''
+              systemctl is-active --quiet memos.service
+            '';
+          };
+          timeout = 10;
+        }
+      ];
+    }
+
     # Borg backup with database dump
     (backup.mkBorgBackup {
       name = "memos";

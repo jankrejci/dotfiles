@@ -86,5 +86,20 @@ in {
 
     # Ntfy metrics via unified metrics proxy
     services.nginx.virtualHosts."metrics".locations."/metrics/ntfy".proxyPass = "http://127.0.0.1:9091/metrics";
+
+    # Health check
+    homelab.healthChecks = [
+      {
+        name = "Ntfy";
+        script = pkgs.writeShellApplication {
+          name = "health-check-ntfy";
+          runtimeInputs = [pkgs.systemd];
+          text = ''
+            systemctl is-active --quiet ntfy-sh.service
+          '';
+        };
+        timeout = 10;
+      }
+    ];
   };
 }

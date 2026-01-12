@@ -2,6 +2,7 @@
 {
   config,
   lib,
+  pkgs,
   backup,
   ...
 }: let
@@ -181,6 +182,31 @@ in {
             type = "service";
           };
           annotations.summary = "Immich microservices are down";
+        }
+      ];
+
+      homelab.healthChecks = [
+        {
+          name = "Immich";
+          script = pkgs.writeShellApplication {
+            name = "health-check-immich";
+            runtimeInputs = [pkgs.systemd];
+            text = ''
+              systemctl is-active --quiet immich-server.service
+            '';
+          };
+          timeout = 10;
+        }
+        {
+          name = "Immich ML";
+          script = pkgs.writeShellApplication {
+            name = "health-check-immich-ml";
+            runtimeInputs = [pkgs.systemd];
+            text = ''
+              systemctl is-active --quiet immich-machine-learning.service
+            '';
+          };
+          timeout = 10;
         }
       ];
     }

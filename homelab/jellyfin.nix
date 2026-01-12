@@ -17,6 +17,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   cfg = config.homelab.jellyfin;
@@ -114,6 +115,20 @@ in {
           type = "service";
         };
         annotations.summary = "Jellyfin service is not active";
+      }
+    ];
+
+    homelab.healthChecks = [
+      {
+        name = "Jellyfin";
+        script = pkgs.writeShellApplication {
+          name = "health-check-jellyfin";
+          runtimeInputs = [pkgs.systemd];
+          text = ''
+            systemctl is-active --quiet jellyfin.service
+          '';
+        };
+        timeout = 10;
       }
     ];
   };

@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   cfg = config.homelab.acme;
@@ -55,6 +56,25 @@ in {
           type = "service";
         };
         annotations.summary = "ACME certificate renewal failed";
+      }
+    ];
+
+    # Health check
+    homelab.healthChecks = [
+      {
+        name = "ACME";
+        script = pkgs.writeShellApplication {
+          name = "health-check-acme";
+          runtimeInputs = [pkgs.systemd];
+          text = ''
+            result=$(systemctl show acme-krejci.io.service -p Result --value)
+            if [ "$result" = "failed" ]; then
+              echo "ACME renewal failed"
+              exit 1
+            fi
+          '';
+        };
+        timeout = 10;
       }
     ];
   };
