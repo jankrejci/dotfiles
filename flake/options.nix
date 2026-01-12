@@ -20,6 +20,11 @@ in {
             type = types.str;
             description = "VPN peer domain for internal access";
           };
+          adminEmails = mkOption {
+            type = types.listOf types.str;
+            default = [];
+            description = "Email addresses with admin access to services";
+          };
         };
       };
       description = "Global homelab configuration";
