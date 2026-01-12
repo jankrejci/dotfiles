@@ -14,6 +14,8 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
     # Some bleeding edge packages are fetched from unstable
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
+    # Master branch for packages not yet in unstable
+    nixpkgs-master.url = "github:nixos/nixpkgs/master";
     # A collection of NixOS modules covering hardware quirks
     nixos-hardware.url = "github:NixOS/nixos-hardware";
     # Manage a user environment
@@ -31,6 +33,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-flatpak.url = "github:gmodena/nix-flatpak/?ref=latest";
+    # SOPS for managing secrets via age encryption
+    sops-nix.url = "github:mic92/sops-nix";
     # Raspberry Pi NixOS support with RPi kernel and proper config.txt generation
     nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi";
   };
