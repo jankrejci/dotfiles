@@ -129,5 +129,19 @@ in {
       provisionGrafana = true;
       settings.server.addr = "127.0.0.1:8083";
     };
+
+    homelab.healthChecks = [
+      {
+        name = "Grafana";
+        script = pkgs.writeShellApplication {
+          name = "health-check-grafana";
+          runtimeInputs = [pkgs.systemd];
+          text = ''
+            systemctl is-active --quiet grafana.service
+          '';
+        };
+        timeout = 10;
+      }
+    ];
   };
 }

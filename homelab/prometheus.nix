@@ -18,6 +18,7 @@
 {
   config,
   lib,
+  pkgs,
   inputs,
   ...
 }: let
@@ -218,6 +219,21 @@ in {
       (builtins.toJSON {
         groups = alertGroups;
       })
+    ];
+
+    # Health check
+    homelab.healthChecks = [
+      {
+        name = "Prometheus";
+        script = pkgs.writeShellApplication {
+          name = "health-check-prometheus";
+          runtimeInputs = [pkgs.systemd];
+          text = ''
+            systemctl is-active --quiet prometheus.service
+          '';
+        };
+        timeout = 10;
+      }
     ];
   };
 }

@@ -2,6 +2,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   cfg = config.homelab.nginx;
@@ -53,6 +54,21 @@ in {
           type = "service";
         };
         annotations.summary = "Nginx service failed";
+      }
+    ];
+
+    # Health check
+    homelab.healthChecks = [
+      {
+        name = "Nginx";
+        script = pkgs.writeShellApplication {
+          name = "health-check-nginx";
+          runtimeInputs = [pkgs.systemd];
+          text = ''
+            systemctl is-active --quiet nginx.service
+          '';
+        };
+        timeout = 10;
       }
     ];
   };

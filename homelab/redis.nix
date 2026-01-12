@@ -2,6 +2,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   cfg = config.homelab.redis;
@@ -50,6 +51,21 @@ in {
           type = "service";
         };
         annotations.summary = "Redis is down";
+      }
+    ];
+
+    # Health check
+    homelab.healthChecks = [
+      {
+        name = "Redis";
+        script = pkgs.writeShellApplication {
+          name = "health-check-redis";
+          runtimeInputs = [pkgs.systemd];
+          text = ''
+            systemctl is-active --quiet redis.service
+          '';
+        };
+        timeout = 10;
       }
     ];
   };

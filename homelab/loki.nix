@@ -188,5 +188,31 @@ in {
         annotations.summary = "Promtail service is not active";
       }
     ];
+
+    # Health checks
+    homelab.healthChecks = [
+      {
+        name = "Loki";
+        script = pkgs.writeShellApplication {
+          name = "health-check-loki";
+          runtimeInputs = [pkgs.systemd];
+          text = ''
+            systemctl is-active --quiet loki.service
+          '';
+        };
+        timeout = 10;
+      }
+      {
+        name = "Promtail";
+        script = pkgs.writeShellApplication {
+          name = "health-check-promtail";
+          runtimeInputs = [pkgs.systemd];
+          text = ''
+            systemctl is-active --quiet promtail.service
+          '';
+        };
+        timeout = 10;
+      }
+    ];
   };
 }

@@ -2,6 +2,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   cfg = config.homelab.wireguard;
@@ -112,5 +113,46 @@ in {
         annotations.summary = "WireGuard tunnel has no recent handshake";
       }
     ];
+
+    # Health checks for WireGuard interface and peer connectivity
+    homelab.healthChecks =
+      [
+        {
+          name = "WireGuard wg0";
+          script = pkgs.writeShellApplication {
+            name = "health-check-wireguard";
+            runtimeInputs = [pkgs.iproute2 pkgs.wireguard-tools pkgs.gawk pkgs.coreutils];
+            text = ''
+              ip link show wg0 > /dev/null 2>&1 || {
+                echo "Interface down"
+                exit 1
+              }
+
+              handshake=$(wg show wg0 latest-handshakes | awk '{print $2}')
+              [ -z "$handshake" ] || [ "$handshake" = "0" ] && exit 0
+
+              current_time=$(date +%s)
+              age=$((current_time - handshake))
+              if [ "$age" -gt 180 ]; then
+                echo "Stale handshake ($age seconds)"
+                exit 1
+              fi
+            '';
+          };
+          timeout = 10;
+        }
+      ]
+      ++ map (peerName: {
+        name = "${peerName} (${allHosts.${peerName}.homelab.wireguard.ip})";
+        script = pkgs.writeShellApplication {
+          name = "health-check-ping-${peerName}";
+          runtimeInputs = [pkgs.iputils];
+          text = ''
+            ping -c 1 -W 2 ${allHosts.${peerName}.homelab.wireguard.ip} > /dev/null 2>&1
+          '';
+        };
+        timeout = 5;
+      })
+      cfg.peers;
   };
 }

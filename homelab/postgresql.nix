@@ -2,6 +2,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   cfg = config.homelab.postgresql;
@@ -47,6 +48,21 @@ in {
           type = "service";
         };
         annotations.summary = "PostgreSQL is down";
+      }
+    ];
+
+    # Health check
+    homelab.healthChecks = [
+      {
+        name = "PostgreSQL";
+        script = pkgs.writeShellApplication {
+          name = "health-check-postgresql";
+          runtimeInputs = [pkgs.systemd];
+          text = ''
+            systemctl is-active --quiet postgresql.service
+          '';
+        };
+        timeout = 10;
       }
     ];
   };
