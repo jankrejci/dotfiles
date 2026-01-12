@@ -20,6 +20,29 @@
   # Second disk for Immich data (NVMe)
   # Assumes partition is already created with label "disk-immich-luks"
   luksDevice = "/dev/disk/by-partlabel/disk-immich-luks";
+
+  # OAuth configuration for Dex SSO integration.
+  # Immich only supports OAuth config via JSON file or web UI, not environment
+  # variables. We generate a template here and substitute the secret at runtime
+  # to avoid storing secrets in the Nix store.
+  immichOAuthConfigTemplate = pkgs.writeText "immich-oauth-template.json" (builtins.toJSON {
+    oauth = {
+      enabled = true;
+      issuerUrl = "https://dex.${domain}";
+      clientId = "immich";
+      clientSecret = "@IMMICH_OAUTH_CLIENT_SECRET@";
+      scope = "openid email profile";
+      buttonText = "Login with SSO";
+      autoRegister = true;
+      autoLaunch = true;
+      mobileOverrideEnabled = true;
+      mobileRedirectUri = "https://immich.${domain}/api/oauth/mobile-redirect";
+    };
+    # Disable password login, force OAuth through Dex
+    passwordLogin.enabled = false;
+  });
+  immichOAuthConfigPath = "/var/lib/immich/config.json";
+  immichOAuthSecretPath = "/var/lib/dex/secrets/immich-client-secret";
 in {
   options.homelab.immich = {
     enable = lib.mkOption {
@@ -99,12 +122,23 @@ in {
         # Media stored on dedicated NVMe disk at /var/lib/immich (default)
         environment = {
           PUBLIC_IMMICH_SERVER_URL = "https://share.${domain}";
+          IMMICH_CONFIG_FILE = immichOAuthConfigPath;
           # Enable Prometheus metrics on 127.0.0.1
           IMMICH_TELEMETRY_INCLUDE = "all";
           IMMICH_API_METRICS_PORT = toString immichApiMetricsPort;
           IMMICH_MICROSERVICES_METRICS_PORT = toString immichMicroservicesMetricsPort;
         };
       };
+
+      # Generate OAuth config at runtime by substituting secret into template.
+      # Runs as root before service starts. Immich reads file via IMMICH_CONFIG_FILE.
+      systemd.services.immich-server.preStart = ''
+        if [ -f "${immichOAuthSecretPath}" ]; then
+          secret=$(cat "${immichOAuthSecretPath}")
+          ${pkgs.gnused}/bin/sed "s/@IMMICH_OAUTH_CLIENT_SECRET@/$secret/" \
+            "${immichOAuthConfigTemplate}" > "${immichOAuthConfigPath}"
+        fi
+      '';
 
       # Ensure required directory structure exists on the data disk
       systemd.tmpfiles.rules = [
