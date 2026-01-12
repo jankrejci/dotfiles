@@ -23,7 +23,25 @@
   cfg = config.homelab.jellyfin;
   global = config.homelab.global;
   services = config.homelab.services;
-  jellyfinDomain = "${cfg.subdomain}.${global.domain}";
+  domain = global.domain;
+  jellyfinDomain = "${cfg.subdomain}.${domain}";
+
+  # SSO configuration paths
+  ssoSecretPath = "/var/lib/dex/secrets/jellyfin-client-secret";
+  ssoConfigPath = "/var/lib/jellyfin/plugins/configurations/SSO-Auth.xml";
+  brandingConfigPath = "/var/lib/jellyfin/config/branding.xml";
+
+  # SSO config template with placeholders for runtime substitution
+  ssoConfigTemplate = pkgs.substitute {
+    src = ../assets/jellyfin/sso-config-template.xml;
+    substitutions = ["--replace-fail" "@DEX_ENDPOINT@" "https://dex.${domain}"];
+  };
+
+  # Branding config with SSO login button
+  brandingConfig = pkgs.substitute {
+    src = ../assets/jellyfin/branding-template.xml;
+    substitutions = ["--replace-fail" "@SSO_URL@" "https://${jellyfinDomain}/sso/OID/start/Dex"];
+  };
 in {
   options.homelab.jellyfin = {
     enable = lib.mkOption {
@@ -73,21 +91,45 @@ in {
     # Add jellyfin user to render and video groups for hardware transcoding
     users.users.jellyfin.extraGroups = ["render" "video"];
 
-    # Set published server URL for public sharing
-    systemd.services.jellyfin.environment = {
-      JELLYFIN_PublishedServerUrl = "https://${jellyfinDomain}";
+    # Set published server URL for public sharing and configure SSO
+    systemd.services.jellyfin = {
+      environment.JELLYFIN_PublishedServerUrl = "https://${jellyfinDomain}";
+
+      # Configure SSO plugin and branding before Jellyfin starts
+      preStart = ''
+        # Skip SSO setup if secret not provisioned yet
+        [[ ! -f "${ssoSecretPath}" ]] && {
+          echo "SSO secret not found at ${ssoSecretPath}, skipping SSO configuration"
+          exit 0
+        }
+
+        # Write branding config with SSO login button
+        cp "${brandingConfig}" "${brandingConfigPath}"
+
+        # Substitute secret into SSO config template
+        secret=$(cat "${ssoSecretPath}")
+        sed "s|@JELLYFIN_SSO_SECRET@|$secret|g" "${ssoConfigTemplate}" > "${ssoConfigPath}"
+
+        echo "Jellyfin SSO configuration updated"
+      '';
     };
 
     # Allow admin user to upload files directly
     users.users.admin.extraGroups = ["jellyfin"];
 
-    # Ensure required directory structure exists on the data disk
-    # setgid bit (2775) ensures new files inherit jellyfin group
+    # Ensure required directory structure exists
     systemd.tmpfiles.rules = [
+      # Root data directory on NVMe disk
       "d /mnt/immich-data/jellyfin 0755 jellyfin jellyfin -"
+      # Main state directory for bind mount target
       "d /var/lib/jellyfin 0750 jellyfin jellyfin -"
+      # Media directories with setgid bit so uploaded files inherit jellyfin group
       "d /var/lib/jellyfin/media 2775 jellyfin jellyfin -"
       "d /var/lib/jellyfin/media/movies 2775 jellyfin jellyfin -"
+      # Config directory for branding.xml
+      "d /var/lib/jellyfin/config 0750 jellyfin jellyfin -"
+      # Plugin config directory for SSO-Auth.xml
+      "d /var/lib/jellyfin/plugins/configurations 0750 jellyfin jellyfin -"
     ];
 
     # Nginx reverse proxy
