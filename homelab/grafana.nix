@@ -10,6 +10,12 @@
   services = config.homelab.services;
   domain = global.domain;
   serverDomain = "${cfg.subdomain}.${domain}";
+
+  # Build JMESPath expression for admin role assignment based on email
+  adminRolePath = let
+    emailChecks = map (email: "email == '${email}'") global.adminEmails;
+    adminCondition = lib.concatStringsSep " || " emailChecks;
+  in "(${adminCondition}) && 'Admin' || 'Viewer'";
 in {
   options.homelab.grafana = {
     enable = lib.mkOption {
@@ -62,12 +68,38 @@ in {
       declarativePlugins = with pkgs.grafanaPlugins; [
         yesoreyeram-infinity-datasource
       ];
-      settings.server = {
-        # 127.0.0.1 only - accessed via nginx proxy (defense in depth)
-        http_addr = "127.0.0.1";
-        http_port = cfg.port;
-        inherit domain;
-        root_url = "https://${serverDomain}";
+      settings = {
+        server = {
+          # 127.0.0.1 only - accessed via nginx proxy (defense in depth)
+          http_addr = "127.0.0.1";
+          http_port = cfg.port;
+          inherit domain;
+          root_url = "https://${serverDomain}";
+        };
+        # Disable native login, force OAuth through Dex
+        auth = {
+          disable_login_form = true;
+          oauth_auto_login = true;
+        };
+        "auth.generic_oauth" = {
+          enabled = true;
+          name = "Dex";
+          client_id = "grafana";
+          # Secret must match dex's grafana client secret. Manually provision:
+          # cp /var/lib/dex/secrets/grafana-client-secret /var/lib/grafana/secrets/dex-client-secret
+          # chown grafana:grafana /var/lib/grafana/secrets/dex-client-secret
+          client_secret = "$__file{/var/lib/grafana/secrets/dex-client-secret}";
+          scopes = "openid email profile";
+          auth_url = "https://dex.${domain}/auth";
+          token_url = "https://dex.${domain}/token";
+          api_url = "https://dex.${domain}/userinfo";
+          allow_sign_up = true;
+          # Use email as login identifier
+          login_attribute_path = "email";
+          name_attribute_path = "name";
+          # Assign Admin role based on global.adminEmails
+          role_attribute_path = adminRolePath;
+        };
       };
     };
 
