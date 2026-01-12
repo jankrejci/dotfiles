@@ -10,6 +10,7 @@
 
     # Services
     ./acme.nix
+    ./dex.nix
     ./grafana.nix
     ./immich.nix
     ./immich-public-proxy.nix
