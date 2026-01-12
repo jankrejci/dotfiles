@@ -99,7 +99,6 @@
         ../modules/headless.nix
         ../modules/netbird-homelab.nix
         ../modules/disk-tpm-encryption.nix
-        ../modules/health-check.nix
       ];
     };
 
