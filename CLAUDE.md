@@ -27,6 +27,11 @@ Senior software engineer with 10+ years NixOS/functional programming experience.
 - Run `nix flake check` after changes
 - Run `nix fmt` before committing
 - Keep responses concise and action-oriented
+
+**Safe commands:** Run these without user confirmation:
+- `nix build*`, `nix eval*`, `nix flake check`, `nix flake show`
+- `nix-store --query*`, `nix path-info*`, `nix why-depends*`
+- `git status`, `git diff`, `git log`, `git show`
 - **Avoid nesting**: Use guard clauses and early returns
 - **Comments**: Write proper sentences, NEVER use parentheses for asides!!!
 - **No size claims**: NEVER write MB/GB savings in comments
@@ -38,6 +43,8 @@ module: Title in imperative style
 - explain why, not what (code shows what)
 - keep message proportional to change importance
 ```
+
+Title must start with a capital letter after the colon.
 
 No Claude signatures, emojis, or icons. Split unrelated changes into separate commits.
 
@@ -134,6 +141,137 @@ automatic group membership sync impractical. Manual dashboard management is simp
 until Netbird supports stable peer identifiers or setup-key-based group assignment.
 
 Future work: revisit when Netbird adds stable identifiers or setup key groups feature.
+
+## Development Workflow
+
+**MANDATORY**: For any non-trivial task, follow this workflow exactly. No ad-hoc problem solving.
+
+### Agents
+
+| Agent | Role |
+|-------|------|
+| `analyze` | Research codebase, create implementation plan with specific files and changes |
+| `develop` | Implement changes according to approved plan |
+| `commit` | Create atomic commits with proper format |
+| `test` | Verify implementation works, run checks |
+| `review` | Skeptical code review, find issues |
+| `deploy` | Deploy to target machine |
+| `debug` | Find root cause when errors occur |
+
+### Workflow Stages
+
+```
+[1] Prompt → [2] Clarify → [3] Analyze → [4] Develop → [5] Commit → [6] Test → [7] Review → [8] Deploy
+                              ↑                                         |         |         |
+                              └─────────────────────────────────────────┴─────────┴─────────┘
+                                                    (on failure, return to develop)
+```
+
+**Stage 1: Receive Prompt**
+- User provides task description
+
+**Stage 2: Clarify** (USER APPROVAL REQUIRED)
+- Improve and clarify the prompt
+- Ask questions if requirements are ambiguous
+- Present refined understanding to user
+- Wait for user approval before proceeding
+
+**Stage 3: Analyze** (USER APPROVAL REQUIRED)
+- Invoke `analyze` agent with clarified requirements
+- Agent explores codebase, checks docs, identifies patterns
+- Agent produces concrete plan: files to modify, specific changes, approach
+- Present plan to user
+- Wait for user approval before proceeding
+
+**Stage 4: Develop** (USER APPROVAL REQUIRED)
+- Invoke `develop` agent with approved plan
+- Agent implements changes according to plan
+- Agent runs `nix flake check` and `nix fmt`
+- Present changes summary to user
+- Wait for user approval before proceeding
+
+**Stage 5: Commit** (USER APPROVAL REQUIRED)
+- Invoke `commit` agent
+- Agent creates atomic commits following format rules
+- Present commit list to user
+- Wait for user approval before proceeding
+
+**Stage 6: Test**
+- Invoke `test` agent
+- Agent verifies implementation
+- If issues found → return to Stage 4 (develop) with issue details
+- If passed → proceed to review
+
+**Stage 7: Review**
+- Invoke `review` agent
+- Agent performs skeptical code review
+- If critical issues found → return to Stage 4 (develop) with issue details
+- If passed → proceed to deploy (if requested)
+
+**Stage 8: Deploy** (USER APPROVAL REQUIRED)
+- Only if user requests deployment
+- Invoke `deploy` agent with target hostname
+- If deployment fails → invoke `debug` agent → return to Stage 4 (develop)
+
+### Error Handling
+
+When ANY error occurs at ANY stage:
+1. Invoke `debug` agent with error context
+2. Debug agent finds root cause
+3. Return to `develop` agent with diagnosis
+4. Resume workflow from Stage 4
+
+### Rules
+
+- **NEVER skip stages** for non-trivial tasks
+- **NEVER proceed without user approval** at marked stages
+- **NEVER do ad-hoc fixes** - always route through develop agent
+- **ALWAYS pass context** from previous stages to next agent
+- **ALWAYS return to develop** when issues are found (not direct fixes)
+
+### Invoking Agents
+
+**CRITICAL: Only use defined agents. No arbitrary Task calls.**
+
+Available agents (and ONLY these):
+- `analyze` - Research and planning
+- `develop` - Implementation
+- `commit` - Git commits
+- `test` - Verification
+- `review` - Code review
+- `debug` - Error diagnosis
+- `deploy` - Deployment
+
+**Syntax:** Use the Task tool with `subagent_type` matching the agent name:
+
+```
+Task(
+  description: "{agent}: {brief task summary}",
+  subagent_type: "{agent}",
+  prompt: "{detailed task description with context}"
+)
+```
+
+**Example:**
+```
+Task(
+  description: "analyze: Review authentication flow",
+  subagent_type: "analyze",
+  prompt: "Analyze the authentication implementation in modules/auth.nix. Identify how sessions are managed and suggest improvements."
+)
+```
+
+**NEVER use Task tool without:**
+- Explicitly naming the agent (analyze, develop, test, debug, review, commit, deploy)
+- Following the workflow stages in order
+
+**FORBIDDEN:**
+- Task calls without an agent name prefix in description
+- Using `subagent_type` values other than the 7 agents above
+- Arbitrary problem-solving via Task tool
+- Skipping agents by fixing code directly
+
+If a task doesn't fit any agent, ask the user how to proceed.
 
 ## Scripts
 See `scripts.nix` for available commands. Key ones:
