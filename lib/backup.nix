@@ -217,5 +217,74 @@ in {
         annotations.summary = "${capitalizedName} remote backup failed";
       }
     ];
+
+    homelab.healthChecks = [
+      {
+        name = "Backup ${name}-remote";
+        script = pkgs.writeShellApplication {
+          name = "health-check-backup-${name}-remote";
+          runtimeInputs = [pkgs.systemd pkgs.coreutils];
+          text = ''
+            systemctl is-enabled --quiet borgbackup-job-${name}-remote.timer || {
+              echo "Backup timer disabled"
+              exit 1
+            }
+
+            result=$(systemctl show borgbackup-job-${name}-remote.service -p Result --value)
+            if [ "$result" != "success" ] && [ -n "$result" ]; then
+              echo "Backup failed: $result"
+              exit 1
+            fi
+
+            last_run=$(systemctl show borgbackup-job-${name}-remote.service -p ActiveEnterTimestamp --value)
+            [ -z "$last_run" ] || [ "$last_run" = "n/a" ] && exit 0
+
+            last_run_epoch=$(date -d "$last_run" +%s 2>/dev/null || echo "0")
+            [ "$last_run_epoch" = "0" ] && exit 0
+
+            current_epoch=$(date +%s)
+            age_hours=$(( (current_epoch - last_run_epoch) / 3600 ))
+            if [ "$age_hours" -gt 48 ]; then
+              echo "Backup stale ($age_hours hours)"
+              exit 1
+            fi
+          '';
+        };
+        timeout = 15;
+      }
+      {
+        name = "Backup ${name}-local";
+        script = pkgs.writeShellApplication {
+          name = "health-check-backup-${name}-local";
+          runtimeInputs = [pkgs.systemd pkgs.coreutils];
+          text = ''
+            systemctl is-enabled --quiet borgbackup-job-${name}-local.timer || {
+              echo "Backup timer disabled"
+              exit 1
+            }
+
+            result=$(systemctl show borgbackup-job-${name}-local.service -p Result --value)
+            if [ "$result" != "success" ] && [ -n "$result" ]; then
+              echo "Backup failed: $result"
+              exit 1
+            fi
+
+            last_run=$(systemctl show borgbackup-job-${name}-local.service -p ActiveEnterTimestamp --value)
+            [ -z "$last_run" ] || [ "$last_run" = "n/a" ] && exit 0
+
+            last_run_epoch=$(date -d "$last_run" +%s 2>/dev/null || echo "0")
+            [ "$last_run_epoch" = "0" ] && exit 0
+
+            current_epoch=$(date +%s)
+            age_hours=$(( (current_epoch - last_run_epoch) / 3600 ))
+            if [ "$age_hours" -gt 48 ]; then
+              echo "Backup stale ($age_hours hours)"
+              exit 1
+            fi
+          '';
+        };
+        timeout = 15;
+      }
+    ];
   };
 }
