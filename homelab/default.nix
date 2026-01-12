@@ -23,5 +23,8 @@
     ./prometheus.nix
     ./webcam.nix
     ./wireguard.nix
+
+    # Health check aggregator
+    ./health-check.nix
   ];
 }

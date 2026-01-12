@@ -111,6 +111,12 @@
         type = types.str;
         description = "VPN peer domain for internal access";
       };
+
+      adminEmails = mkOption {
+        type = types.listOf types.str;
+        default = [];
+        description = "Email addresses with admin access to services";
+      };
     };
   };
 
@@ -158,6 +164,27 @@
       metricsPath = mkOption {
         type = types.str;
         description = "Path to metrics endpoint";
+      };
+    };
+  };
+
+  # Health check submodule for distributed health checks
+  healthCheckModule = types.submodule {
+    options = {
+      name = mkOption {
+        type = types.str;
+        description = "Display name for this health check";
+      };
+
+      script = mkOption {
+        type = types.package;
+        description = "Executable script that returns 0 on success, non-zero on failure";
+      };
+
+      timeout = mkOption {
+        type = types.int;
+        default = 30;
+        description = "Timeout in seconds";
       };
     };
   };
@@ -214,6 +241,15 @@ in {
       type = types.attrsOf (types.listOf alertRule);
       default = {};
       description = "Alert rules grouped by service";
+    };
+
+    # Health checks registered by service modules.
+    # Each service module contributes its health checks here.
+    # The health-check module iterates over all checks and runs them.
+    healthChecks = mkOption {
+      type = types.listOf healthCheckModule;
+      default = [];
+      description = "Health checks registered by service modules";
     };
   };
 }
