@@ -63,6 +63,10 @@
         redis.enable = true;
         # Services
         acme.enable = true;
+        dex = {
+          enable = true;
+          ip = "192.168.91.7";
+        };
         grafana = {
           enable = true;
           ip = "192.168.91.2";
@@ -213,6 +217,7 @@
   global = {
     domain = "krejci.io";
     peerDomain = "nb.krejci.io";
+    adminEmails = ["krejcijan@protonmail.com"];
   };
 
   # Shared service configuration
