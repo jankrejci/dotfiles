@@ -14,12 +14,21 @@
       };
     };
 
+    # Overlay for master branch packages
+    masterOverlay = final: _prev: {
+      master = import inputs.nixpkgs-master {
+        inherit system;
+        config.allowUnfree = true;
+      };
+    };
+
     # Configure pkgs with overlays
     pkgsWithOverlays = import inputs.nixpkgs {
       inherit system;
       config.allowUnfree = true;
       overlays = [
         unstableOverlay
+        masterOverlay
         (import ../pkgs/netbird-ui-white-icons.nix)
       ];
     };
