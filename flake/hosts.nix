@@ -58,6 +58,7 @@
       swapSize = "8G";
       homelab = {
         # Shared infrastructure
+        mosquitto.enable = true;
         nginx.enable = true;
         postgresql.enable = true;
         redis.enable = true;
@@ -70,6 +71,10 @@
         grafana = {
           enable = true;
           ip = "192.168.91.2";
+        };
+        home-assistant = {
+          enable = true;
+          ip = "192.168.91.8";
         };
         immich = {
           enable = true;
@@ -98,6 +103,7 @@
           ip = "192.168.99.1";
           peers = ["vpsfree"];
         };
+        zigbee2mqtt.enable = true;
       };
       extraModules = [
         ../modules/headless.nix
