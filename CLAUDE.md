@@ -40,13 +40,16 @@ Senior software engineer with 10+ years NixOS/functional programming experience.
 ```
 module: Title in imperative style
 
-- explain why, not what (code shows what)
-- keep message proportional to change importance
+- lowercase bullet describing implementation detail
+- another bullet if needed
 ```
 
-Title must start with a capital letter after the colon.
+**Rules:**
+- Title: capital letter after colon, imperative verb
+- Body: bullet points only, lowercase start, NO prose paragraphs
+- NO Co-Authored-By, NO Claude signatures, NO emojis
 
-No Claude signatures, emojis, or icons. Split unrelated changes into separate commits.
+Split unrelated changes into separate commits.
 
 **Atomic commits:** Each commit must:
 - Pass `nix flake check` and `nix fmt`
