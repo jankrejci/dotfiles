@@ -43,6 +43,13 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = config.homelab.postgresql.enable;
+        message = "homelab.grafana requires homelab.postgresql.enable = true";
+      }
+    ];
+
     # Register IP for services dummy interface
     homelab.serviceIPs = [cfg.ip];
     networking.hosts.${cfg.ip} = [serverDomain];
@@ -52,7 +59,20 @@ in {
       services.https.port
     ];
 
+    # Create grafana database in shared PostgreSQL instance
+    services.postgresql = {
+      ensureDatabases = ["grafana"];
+      ensureUsers = [
+        {
+          name = "grafana";
+          ensureDBOwnership = true;
+        }
+      ];
+    };
+
     systemd.services.grafana = {
+      after = ["postgresql.service"];
+      requires = ["postgresql.service"];
       restartTriggers = [
         (builtins.toJSON config.services.grafana.settings)
         (builtins.toJSON config.services.grafana.provision.datasources.settings)
@@ -69,6 +89,12 @@ in {
         yesoreyeram-infinity-datasource
       ];
       settings = {
+        database = {
+          type = "postgres";
+          host = "/run/postgresql";
+          name = "grafana";
+          user = "grafana";
+        };
         server = {
           # 127.0.0.1 only - accessed via nginx proxy (defense in depth)
           http_addr = "127.0.0.1";
