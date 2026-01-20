@@ -688,55 +688,6 @@ in {
       '';
     };
 
-  # Inject Cloudflare API token to remote host for ACME certificates
-  # `nix run .#inject-cloudflare-token hostname`
-  inject-cloudflare-token =
-    pkgs.writeShellApplication
-    {
-      name = "inject-cloudflare-token";
-      runtimeInputs = with pkgs; [
-        openssh
-      ];
-      text = ''
-        # shellcheck source=/dev/null
-        source ${lib}
-
-        readonly DOMAIN="krejci.io"
-        readonly PEER_DOMAIN="nb.krejci.io"
-        readonly TOKEN_PATH="/var/lib/acme/cloudflare-api-token"
-
-        function main() {
-          local -r hostname=$(require_and_validate_hostname "$@")
-          local -r target="admin@$hostname.$PEER_DOMAIN"
-
-          require_ssh_reachable "$target"
-
-          info "Injecting Cloudflare token to $hostname"
-
-          local -r token=$(ask_for_token "Cloudflare API token")
-          local -r token_content=$(concat \
-            "CLOUDFLARE_DNS_API_TOKEN=$token" \
-            "CF_ZONE_API_TOKEN=$token"
-          )
-
-          inject_secret \
-            --target "$target" \
-            --path "$TOKEN_PATH" \
-            --content "$token_content"
-
-          info "Cloudflare token successfully injected to $hostname"
-
-          info "Restarting ACME service to acquire certificate"
-          # shellcheck disable=SC2029 # DOMAIN intentionally expands on client side
-          ssh "$target" "sudo systemctl start acme-$DOMAIN.service"
-
-          info "Certificate acquisition initiated. Check status with: systemctl status acme-$DOMAIN.service"
-        }
-
-        main "$@"
-      '';
-    };
-
   # Re-enroll Netbird with new setup key (for adding extra DNS labels)
   # `nix run .#reenroll-netbird hostname`
   reenroll-netbird =
@@ -839,264 +790,265 @@ in {
       '';
     };
 
-  # Inject Borg passphrase to both server and client
-  # `nix run .#inject-borg-passphrase <server-host> <client-host>`
-  inject-borg-passphrase =
-    pkgs.writeShellApplication
-    {
-      name = "inject-borg-passphrase";
-      runtimeInputs = with pkgs; [
-        openssh
-      ];
-      text = ''
-        # shellcheck source=/dev/null
-        source ${lib}
-
-        readonly DOMAIN="nb.krejci.io"
-        readonly REPO_PATH="/var/lib/borg-repos/immich"
-
-        function init_repository() {
-          local -r server_target="$1"
-          local -r passphrase="$2"
-
-          # Client-side expansion intended - passphrase must not leak to logs
-          # shellcheck disable=SC2029
-          ssh "$server_target" \
-            "export BORG_PASSPHRASE='$passphrase' && \
-             sudo -E borg init --encryption=repokey-blake2 $REPO_PATH"
-        }
-
-        function main() {
-          if [ $# -ne 2 ]; then
-            error "Usage: inject-borg-passphrase <server-host> <client-host>"
-            info "Examples:"
-            info "  inject-borg-passphrase vpsfree thinkcenter  # remote backup"
-            info "  inject-borg-passphrase thinkcenter thinkcenter  # local backup"
-            exit 1
-          fi
-
-          local -r server_host="$1"
-          local -r client_host="$2"
-
-          local backup_type="remote"
-          [ "$server_host" = "$client_host" ] && backup_type="local"
-
-          local -r passphrase=$(ask_for_token "Borg $backup_type passphrase")
-          local -r server_target="admin@$server_host.$DOMAIN"
-          local -r client_target="admin@$client_host.$DOMAIN"
-
-          require_ssh_reachable "$server_target"
-          require_ssh_reachable "$client_target"
-
-          # Check if repository already exists
-          info "Checking repository on $server_host"
-          local repo_exists=false
-          # shellcheck disable=SC2029 # REPO_PATH intentionally expands on client side
-          ssh "$server_target" "[ -f $REPO_PATH/config ]" && repo_exists=true
-
-          if [ "$repo_exists" = false ]; then
-            init_repository "$server_target" "$passphrase"
-            info "Repository initialized"
-          fi
-
-          info "Injecting passphrase to $client_host"
-          inject_secret \
-            --target "$client_target" \
-            --path "/root/secrets/borg-passphrase-$backup_type" \
-            --content "$passphrase"
-
-          info "Done"
-        }
-
-        main "$@"
-      '';
-    };
-
-  # Inject ntfy token to Grafana
-  # `nix run .#inject-ntfy-token hostname`
-  inject-ntfy-token =
-    pkgs.writeShellApplication
-    {
-      name = "inject-ntfy-token";
-      runtimeInputs = with pkgs; [
-        openssh
-        coreutils
-        openssl
-      ];
-      text = ''
-        # shellcheck source=/dev/null
-        source ${lib}
-
-        readonly DOMAIN="nb.krejci.io"
-        readonly TOKEN_ENV_PATH="/var/lib/grafana/secrets/ntfy-token-env"
-        readonly TOKEN_TXT_PATH="/var/lib/alertmanager/ntfy-token.txt"
-
-        function create_ntfy_user() {
-          local -r target="$1"
-
-          info "Creating ntfy user 'grafana'"
-          local -r password=$(openssl rand -base64 32)
-          # shellcheck disable=SC2029 # password intentionally expands on client side
-          ssh "$target" "printf '%s\n%s\n' '$password' '$password' | sudo ntfy user add --role=admin grafana 2>&1 || true"
-        }
-
-        function generate_ntfy_token() {
-          local -r target="$1"
-
-          info "Generating ntfy token"
-          local token
-          token=$(ssh "$target" "sudo ntfy token add grafana" | grep -oP 'token \K[^ ]+')
-
-          if [ -z "$token" ]; then
-            error "Failed to generate token"
-            exit 1
-          fi
-
-          echo -n "$token"
-        }
-
-        function write_token_configs() {
-          local -r target="$1"
-          local -r token="$2"
-
-          info "Creating token configuration"
-
-          # Environment file for Grafana
-          inject_secret \
-            --target "$target" \
-            --path "$TOKEN_ENV_PATH" \
-            --content "NTFY_TOKEN=$token"
-
-          # Plain text file for Alertmanager credentials_file
-          inject_secret \
-            --target "$target" \
-            --path "$TOKEN_TXT_PATH" \
-            --content "$token"
-        }
-
-        function restart_services() {
-          local -r target="$1"
-
-          info "Restarting services"
-          ssh "$target" "sudo systemctl restart grafana.service 2>/dev/null || echo 'Grafana will start on next deployment'"
-          ssh "$target" "sudo systemctl restart alertmanager.service 2>/dev/null || echo 'Alertmanager will start on next deployment'"
-        }
-
-        function main() {
-          local -r hostname=$(require_and_validate_hostname "$@")
-          local -r target="admin@$hostname.$DOMAIN"
-
-          require_ssh_reachable "$target"
-
-          info "Setting up ntfy authentication for $hostname"
-
-          create_ntfy_user "$target"
-          local -r token=$(generate_ntfy_token "$target")
-
-          write_token_configs "$target" "$token"
-          restart_services "$target"
-
-          info "ntfy token successfully configured for $hostname"
-        }
-
-        main "$@"
-      '';
-    };
-
-  # Inject Dex OAuth client secrets for all services
-  # `nix run .#inject-dex-secrets hostname`
+  # Simplified secret injection script
   #
-  # Creates secrets for Dex and downstream services. Immich config is handled
-  # declaratively in immich.nix via systemd preStart, not here.
-  inject-dex-secrets =
+  # Each service declares secrets via homelab.secrets with:
+  # - generate: how to create the value (token or ask)
+  # - handler: script that receives secret on stdin, writes it, and restarts service
+  # - username: ID for registration with central service (if register is set)
+  # - register: central service to register with (ntfy or dex)
+  #
+  # Usage:
+  #   nix run .#inject-secrets -- --host thinkcenter --secret alertmanager-ntfy
+  #   nix run .#inject-secrets -- --host thinkcenter --all
+  #   nix run .#inject-secrets -- --host thinkcenter --list
+  inject-secrets =
     pkgs.writeShellApplication
     {
-      name = "inject-dex-secrets";
-      runtimeInputs = with pkgs; [openssh openssl];
+      name = "inject-secrets";
+      runtimeInputs = with pkgs; [openssh openssl jq nix];
       text = ''
         # shellcheck source=/dev/null
         source ${lib}
 
         readonly PEER_DOMAIN="nb.krejci.io"
-        readonly DEX_ISSUER="https://dex.krejci.io"
-        readonly DEX_SECRETS_DIR="/var/lib/dex/secrets"
-        readonly DEX_GOOGLE_OAUTH_FILE="$DEX_SECRETS_DIR/google-oauth"
-        readonly GRAFANA_SECRETS_DIR="/var/lib/grafana/secrets"
-        readonly DEX_CLIENTS=(grafana immich memos jellyfin)
 
-        function require_google_oauth() {
-          local -r target="$1"
-          # Variables expand locally before SSH to build remote command
-          # shellcheck disable=SC2029
-          ssh "$target" "[ -f $DEX_GOOGLE_OAUTH_FILE ]" && return
-          warn "Create $DEX_GOOGLE_OAUTH_FILE with GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET first"
+        DRY_RUN=false
+
+        function usage() {
+          echo "Usage: inject-secrets --host <hostname> <--secret <name>|--all|--list> [--dry-run]" >&2
+          echo "" >&2
+          echo "Options:" >&2
+          echo "  --host <name>    Target host" >&2
+          echo "  --secret <name>  Inject a single secret" >&2
+          echo "  --all            Inject all secrets for the host" >&2
+          echo "  --list           List available secrets" >&2
+          echo "  --dry-run        Show what would be done without doing it" >&2
           exit 1
         }
 
-        function generate_client_secrets() {
-          local -r target="$1"
-          for client in "''${DEX_CLIENTS[@]}"; do
-            local secret_file="$DEX_SECRETS_DIR/$client-client-secret"
-            # Variables expand locally before SSH to build remote command
-            # shellcheck disable=SC2029
-            ssh "$target" "[ -f $secret_file ]" && { info "$client secret exists"; continue; }
-            # Each service owns its secret so preStart can read it
-            inject_secret \
-              --target "$target" \
-              --path "$secret_file" \
-              --content "$(openssl rand -hex 32)" \
-              --owner "$client:$client"
+        function build_manifest() {
+          local -r hostname="$1"
+
+          info "Building secrets manifest for $hostname"
+          local manifest_path
+          manifest_path=$(nix build ".#nixosConfigurations.$hostname.config.system.build.secrets-manifest" --print-out-paths 2>/dev/null) || {
+            error "Failed to build secrets manifest"
+            info "This host may not have any secrets declared"
+            exit 1
+          }
+
+          cat "$manifest_path"
+        }
+
+        function list_secrets() {
+          local -r manifest="$1"
+
+          echo "Available secrets:" >&2
+          echo "$manifest" | jq -r 'to_entries[] | "  \(.key): register=\(.value.register // "none")"'
+        }
+
+        function secret_exists() {
+          local -r manifest="$1"
+          local -r secret_name="$2"
+
+          echo "$manifest" | jq -e --arg name "$secret_name" 'has($name)' >/dev/null
+        }
+
+        # Find which host runs a central service like ntfy or dex.
+        # Returns the hostname or exits with error if not found.
+        function find_service_host() {
+          local -r service_name="$1"
+
+          # Eval flake to find host with service enabled
+          local host
+          host=$(nix eval ".#hosts" --json 2>/dev/null | jq -r --arg svc "$service_name" '
+            to_entries[]
+            | select(.value.homelab[$svc].enable == true)
+            | .key
+          ' | head -1)
+
+          if [ -z "$host" ] || [ "$host" = "null" ]; then
+            error "No host found with $service_name.enable = true"
+            exit 1
+          fi
+
+          echo "$host"
+        }
+
+        # Get the register handler path for a central service
+        function get_register_handler() {
+          local -r service_name="$1"
+          local -r service_host="$2"
+
+          local handler_path
+          handler_path=$(nix eval ".#nixosConfigurations.$service_host.config.homelab.$service_name.registerHandler" --raw 2>/dev/null) || {
+            error "Failed to get $service_name.registerHandler from $service_host"
+            exit 1
+          }
+
+          echo "$handler_path"
+        }
+
+        function inject_single_secret() {
+          local -r hostname="$1"
+          local -r manifest="$2"
+          local -r secret_name="$3"
+
+          if ! secret_exists "$manifest" "$secret_name"; then
+            error "Secret '$secret_name' not found in manifest"
+            list_secrets "$manifest"
+            exit 1
+          fi
+
+          local generate_type handler_path username register_service
+          generate_type=$(echo "$manifest" | jq -r --arg name "$secret_name" '.[$name].generate')
+          handler_path=$(echo "$manifest" | jq -r --arg name "$secret_name" '.[$name].handler')
+          username=$(echo "$manifest" | jq -r --arg name "$secret_name" '.[$name].username // empty')
+          register_service=$(echo "$manifest" | jq -r --arg name "$secret_name" '.[$name].register // empty')
+
+          info "Injecting secret: $secret_name"
+          info "  Generate: $generate_type"
+          info "  Handler: $handler_path"
+          [ -n "$username" ] && info "  Username: $username"
+          [ -n "$register_service" ] && info "  Register: $register_service"
+
+          if [ "$DRY_RUN" = true ]; then
+            echo "[dry-run] Would generate/prompt for secret and run handler" >&2
+            [ -n "$register_service" ] && echo "[dry-run] Would register with $register_service" >&2
+            return
+          fi
+
+          # Generate or prompt for the secret value
+          local token
+          case "$generate_type" in
+            token)
+              token=$(openssl rand -hex 32)
+              ;;
+            ask)
+              echo "Enter value for $secret_name:" >&2
+              read -rs token
+              echo >&2
+              if [[ -z "$token" ]]; then
+                error "Empty value provided"
+                exit 1
+              fi
+              ;;
+            *)
+              error "Unknown generate type: $generate_type"
+              exit 1
+              ;;
+          esac
+
+          local -r target="admin@$hostname.$PEER_DOMAIN"
+
+          # Run the local handler to write the secret
+          info "Running handler on $hostname"
+          # shellcheck disable=SC2029 # store path expands client-side, glob expands server-side
+          echo "$token" | ssh "$target" "sudo $handler_path/bin/*" || {
+            error "Handler failed on $hostname"
+            exit 1
+          }
+
+          # If registration is needed, run the central service's register handler
+          if [ -n "$register_service" ] && [ -n "$username" ]; then
+            local register_host register_handler
+            register_host=$(find_service_host "$register_service")
+            register_handler=$(get_register_handler "$register_service" "$register_host")
+
+            info "Registering with $register_service on $register_host"
+            local -r register_target="admin@$register_host.$PEER_DOMAIN"
+
+            # shellcheck disable=SC2029 # store path expands client-side, glob expands server-side
+            echo "$token" | ssh "$register_target" "sudo $register_handler/bin/* '$username'" || {
+              error "Registration with $register_service failed"
+              exit 1
+            }
+
+            # Restart the central service to pick up new registration
+            info "Restarting $register_service on $register_host"
+            # shellcheck disable=SC2029 # service name intentionally expands on client side
+            ssh "$register_target" "sudo systemctl restart '$register_service'" || {
+              warn "Failed to restart $register_service"
+            }
+          fi
+
+          info "Secret $secret_name injected successfully"
+        }
+
+        function inject_all_secrets() {
+          local -r hostname="$1"
+          local -r manifest="$2"
+
+          local secret_names
+          secret_names=$(echo "$manifest" | jq -r 'keys[]')
+
+          if [ -z "$secret_names" ]; then
+            info "No secrets declared for this host"
+            return
+          fi
+
+          for secret_name in $secret_names; do
+            inject_single_secret "$hostname" "$manifest" "$secret_name"
+            echo "" >&2
           done
         }
 
-        function configure_grafana() {
-          local -r target="$1"
-          local -r dex_grafana_secret="$DEX_SECRETS_DIR/grafana-client-secret"
-          local -r grafana_dex_secret="$GRAFANA_SECRETS_DIR/dex-client-secret"
-          # Variables expand locally before SSH to build remote command
-          # shellcheck disable=SC2029
-          ssh "$target" "sudo mkdir -p $GRAFANA_SECRETS_DIR && \
-            sudo cp $dex_grafana_secret $grafana_dex_secret && \
-            sudo chown grafana:grafana $grafana_dex_secret"
-          info "Grafana secret configured"
-        }
-
-        function print_memos_instructions() {
-          local -r target="$1"
-          local -r dex_memos_secret="$DEX_SECRETS_DIR/memos-client-secret"
-          # Variables expand locally before SSH to build remote command
-          # shellcheck disable=SC2029
-          local -r secret=$(ssh "$target" "sudo cat $dex_memos_secret")
-          info "Memos: configure manually in Settings → SSO"
-          echo "  Client ID: memos"
-          echo "  Client Secret: $secret"
-          echo "  Issuer URL: $DEX_ISSUER"
-        }
-
-        function print_jellyfin_instructions() {
-          local -r target="$1"
-          local -r dex_jellyfin_secret="$DEX_SECRETS_DIR/jellyfin-client-secret"
-          # Variables expand locally before SSH to build remote command
-          # shellcheck disable=SC2029
-          local -r secret=$(ssh "$target" "sudo cat $dex_jellyfin_secret")
-          info "Jellyfin: install SSO plugin, then configure in Dashboard → Plugins → SSO"
-          echo "  Provider Name: dex"
-          echo "  OID Endpoint: $DEX_ISSUER"
-          echo "  Client ID: jellyfin"
-          echo "  Client Secret: $secret"
-          echo "  Enabled: checked"
-        }
-
         function main() {
-          local -r hostname=$(require_and_validate_hostname "$@")
-          local -r target="admin@$hostname.$PEER_DOMAIN"
-          require_ssh_reachable "$target"
+          local hostname=""
+          local action=""
+          local secret_name=""
 
-          require_google_oauth "$target"
-          generate_client_secrets "$target"
-          configure_grafana "$target"
-          print_memos_instructions "$target"
-          print_jellyfin_instructions "$target"
+          # Parse arguments
+          while [ $# -gt 0 ]; do
+            case "$1" in
+              --host)
+                [[ -z "''${2:-}" ]] && { error "--host requires an argument"; usage; }
+                hostname="$2"; shift
+                ;;
+              --secret)
+                [[ -z "''${2:-}" ]] && { error "--secret requires an argument"; usage; }
+                action="single"; secret_name="$2"; shift
+                ;;
+              --all) action="all" ;;
+              --list) action="list" ;;
+              --dry-run) DRY_RUN=true ;;
+              --help|-h) usage ;;
+              *)
+                error "Unknown option: $1"
+                usage
+                ;;
+            esac
+            shift
+          done
+
+          [ -z "$hostname" ] && {
+            error "--host is required"
+            usage
+          }
+          [ -z "$action" ] && {
+            error "One of --secret, --all, or --list is required"
+            usage
+          }
+
+          validate_hostname "$hostname"
+
+          local -r target="admin@$hostname.$PEER_DOMAIN"
+          local -r manifest=$(build_manifest "$hostname")
+
+          case "$action" in
+            list)
+              list_secrets "$manifest"
+              ;;
+            all)
+              require_ssh_reachable "$target"
+              inject_all_secrets "$hostname" "$manifest"
+              ;;
+            single)
+              require_ssh_reachable "$target"
+              inject_single_secret "$hostname" "$manifest" "$secret_name"
+              ;;
+          esac
         }
 
         main "$@"
