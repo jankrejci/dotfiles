@@ -48,6 +48,22 @@
   pkgs,
 }: let
   inherit (lib) optional optionalAttrs optionalString;
+
+  # Backup targets with their specific configuration
+  targets = {
+    remote = {
+      repo = name: "ssh://borg@vpsfree.nb.krejci.io/var/lib/borg-repos/${name}";
+      timeOffset = ":00";
+      passphrasePath = "/root/secrets/borg-passphrase-remote";
+      extraEnv = {BORG_RSH = "ssh -i /root/.ssh/borg-backup-key";};
+    };
+    local = {
+      repo = name: "/var/lib/borg-repos/${name}";
+      timeOffset = ":30";
+      passphrasePath = "/root/secrets/borg-passphrase-local";
+      extraEnv = {};
+    };
+  };
 in {
   # Generate borg backup config for a service
   mkBorgBackup = {
@@ -69,26 +85,81 @@ in {
       mv ${metricsDir}/borg-${name}-${target}.prom.tmp ${metricsDir}/borg-${name}-${target}.prom
     '';
 
-    commonBorgConfig = {
-      inherit paths;
-      exclude = excludes;
-      compression = "auto,zstd";
-      startAt = "daily";
-      persistentTimer = true;
-      prune.keep = {
-        daily = 7;
-        weekly = 4;
-        monthly = 6;
+    # Generate borg job config for a target
+    mkBorgJob = target: let
+      cfg = targets.${target};
+    in
+      {
+        inherit paths;
+        exclude = excludes;
+        compression = "auto,zstd";
+        persistentTimer = true;
+        prune.keep = {
+          daily = 7;
+          weekly = 4;
+          monthly = 6;
+        };
+        readWritePaths = [metricsDir];
+        repo = cfg.repo name;
+        startAt = "${hourStr}${cfg.timeOffset}";
+        encryption = {
+          mode = "repokey-blake2";
+          passCommand = "cat ${cfg.passphrasePath}";
+        };
+        environment = cfg.extraEnv;
+        postHook = mkPostHook target;
+      }
+      // optionalAttrs (database != null) {
+        paths = paths ++ [dbBackupDir];
+        preHook = "systemctl start ${name}-db-dump.service";
       };
-      # Allow writing metrics to textfile collector directory
-      readWritePaths = [metricsDir];
+
+    # Generate alert for a target
+    mkAlert = target: {
+      alert = "${name}-${target}-backup-failed";
+      expr = ''node_systemd_unit_state{name="borgbackup-job-${name}-${target}.service",state="failed",host="${hostName}"} > 0'';
+      labels = {
+        severity = "critical";
+        host = hostName;
+        type = "service";
+      };
+      annotations.summary = "${name} ${target} backup failed";
     };
 
-    capitalizedName = let
-      first = lib.toUpper (builtins.substring 0 1 name);
-      rest = builtins.substring 1 (-1) name;
-    in
-      first + rest;
+    # Generate health check for a target
+    mkHealthCheck = target: {
+      name = "Backup ${name}-${target}";
+      script = pkgs.writeShellApplication {
+        name = "health-check-backup-${name}-${target}";
+        runtimeInputs = [pkgs.systemd pkgs.coreutils];
+        text = ''
+          systemctl is-enabled --quiet borgbackup-job-${name}-${target}.timer || {
+            echo "Backup timer disabled"
+            exit 1
+          }
+
+          result=$(systemctl show borgbackup-job-${name}-${target}.service -p Result --value)
+          if [ "$result" != "success" ] && [ -n "$result" ]; then
+            echo "Backup failed: $result"
+            exit 1
+          fi
+
+          last_run=$(systemctl show borgbackup-job-${name}-${target}.service -p ActiveEnterTimestamp --value)
+          [ -z "$last_run" ] || [ "$last_run" = "n/a" ] && exit 0
+
+          last_run_epoch=$(date -d "$last_run" +%s 2>/dev/null || echo "0")
+          [ "$last_run_epoch" = "0" ] && exit 0
+
+          current_epoch=$(date +%s)
+          age_hours=$(( (current_epoch - last_run_epoch) / 3600 ))
+          if [ "$age_hours" -gt 48 ]; then
+            echo "Backup stale ($age_hours hours)"
+            exit 1
+          fi
+        '';
+      };
+      timeout = 15;
+    };
 
     restoreScript = pkgs.writeShellScriptBin "restore-${name}-backup" ''
       set -euo pipefail
@@ -137,41 +208,13 @@ in {
 
       echo "Restore complete!"
     '';
-  in {
-    services.borgbackup.jobs = {
-      "${name}-remote" =
-        commonBorgConfig
-        // {
-          repo = "ssh://borg@vpsfree.nb.krejci.io/var/lib/borg-repos/${name}";
-          startAt = "${hourStr}:00";
-          encryption = {
-            mode = "repokey-blake2";
-            passCommand = "cat /root/secrets/borg-passphrase-remote";
-          };
-          environment.BORG_RSH = "ssh -i /root/.ssh/borg-backup-key";
-          postHook = mkPostHook "remote";
-        }
-        // optionalAttrs (database != null) {
-          paths = paths ++ [dbBackupDir];
-          preHook = "systemctl start ${name}-db-dump.service";
-        };
 
-      "${name}-local" =
-        commonBorgConfig
-        // {
-          repo = "/var/lib/borg-repos/${name}";
-          startAt = "${hourStr}:30";
-          encryption = {
-            mode = "repokey-blake2";
-            passCommand = "cat /root/secrets/borg-passphrase-local";
-          };
-          postHook = mkPostHook "local";
-        }
-        // optionalAttrs (database != null) {
-          paths = paths ++ [dbBackupDir];
-          preHook = "systemctl start ${name}-db-dump.service";
-        };
-    };
+    targetNames = lib.attrNames targets;
+  in {
+    services.borgbackup.jobs =
+      lib.genAttrs
+      (map (t: "${name}-${t}") targetNames)
+      (jobName: mkBorgJob (lib.removePrefix "${name}-" jobName));
 
     systemd.services = optionalAttrs (database != null) {
       "${name}-db-dump" = {
@@ -179,8 +222,6 @@ in {
         serviceConfig = {
           Type = "oneshot";
           User = "postgres";
-          # Full path required because systemd resolves ExecStart executables
-          # before PATH environment is set. Bare "pg_dump" fails with ENOENT.
           ExecStart = "${pkgs.postgresql}/bin/pg_dump -Fc -f ${dbBackupDir}/${name}.dump ${database}";
         };
       };
@@ -195,96 +236,7 @@ in {
       restoreScript
     ];
 
-    homelab.alerts."${name}-backup" = [
-      {
-        alert = "${capitalizedName}LocalBackupFailed";
-        expr = ''node_systemd_unit_state{name="borgbackup-job-${name}-local.service",state="failed",host="${hostName}"} > 0'';
-        labels = {
-          severity = "critical";
-          host = hostName;
-          type = "service";
-        };
-        annotations.summary = "${capitalizedName} local backup failed";
-      }
-      {
-        alert = "${capitalizedName}RemoteBackupFailed";
-        expr = ''node_systemd_unit_state{name="borgbackup-job-${name}-remote.service",state="failed",host="${hostName}"} > 0'';
-        labels = {
-          severity = "critical";
-          host = hostName;
-          type = "service";
-        };
-        annotations.summary = "${capitalizedName} remote backup failed";
-      }
-    ];
-
-    homelab.healthChecks = [
-      {
-        name = "Backup ${name}-remote";
-        script = pkgs.writeShellApplication {
-          name = "health-check-backup-${name}-remote";
-          runtimeInputs = [pkgs.systemd pkgs.coreutils];
-          text = ''
-            systemctl is-enabled --quiet borgbackup-job-${name}-remote.timer || {
-              echo "Backup timer disabled"
-              exit 1
-            }
-
-            result=$(systemctl show borgbackup-job-${name}-remote.service -p Result --value)
-            if [ "$result" != "success" ] && [ -n "$result" ]; then
-              echo "Backup failed: $result"
-              exit 1
-            fi
-
-            last_run=$(systemctl show borgbackup-job-${name}-remote.service -p ActiveEnterTimestamp --value)
-            [ -z "$last_run" ] || [ "$last_run" = "n/a" ] && exit 0
-
-            last_run_epoch=$(date -d "$last_run" +%s 2>/dev/null || echo "0")
-            [ "$last_run_epoch" = "0" ] && exit 0
-
-            current_epoch=$(date +%s)
-            age_hours=$(( (current_epoch - last_run_epoch) / 3600 ))
-            if [ "$age_hours" -gt 48 ]; then
-              echo "Backup stale ($age_hours hours)"
-              exit 1
-            fi
-          '';
-        };
-        timeout = 15;
-      }
-      {
-        name = "Backup ${name}-local";
-        script = pkgs.writeShellApplication {
-          name = "health-check-backup-${name}-local";
-          runtimeInputs = [pkgs.systemd pkgs.coreutils];
-          text = ''
-            systemctl is-enabled --quiet borgbackup-job-${name}-local.timer || {
-              echo "Backup timer disabled"
-              exit 1
-            }
-
-            result=$(systemctl show borgbackup-job-${name}-local.service -p Result --value)
-            if [ "$result" != "success" ] && [ -n "$result" ]; then
-              echo "Backup failed: $result"
-              exit 1
-            fi
-
-            last_run=$(systemctl show borgbackup-job-${name}-local.service -p ActiveEnterTimestamp --value)
-            [ -z "$last_run" ] || [ "$last_run" = "n/a" ] && exit 0
-
-            last_run_epoch=$(date -d "$last_run" +%s 2>/dev/null || echo "0")
-            [ "$last_run_epoch" = "0" ] && exit 0
-
-            current_epoch=$(date +%s)
-            age_hours=$(( (current_epoch - last_run_epoch) / 3600 ))
-            if [ "$age_hours" -gt 48 ]; then
-              echo "Backup stale ($age_hours hours)"
-              exit 1
-            fi
-          '';
-        };
-        timeout = 15;
-      }
-    ];
+    homelab.alerts."${name}-backup" = map mkAlert targetNames;
+    homelab.healthChecks = map mkHealthCheck targetNames;
   };
 }
