@@ -72,13 +72,19 @@ nix run .#deploy-config optiplex
    vpsfree, borg, ssh-ed25519 AAAA... thinkcenter-backup
    ```
 
-3. Inject passphrases and initialize repositories:
+3. Inject passphrases:
    ```bash
-   # Remote backup (initializes repo on vpsfree, injects passphrase to thinkcenter)
-   nix run .#inject-borg-passphrase vpsfree thinkcenter
+   nix run .#inject-secrets -- --host thinkcenter --secret borg-passphrase-remote
+   nix run .#inject-secrets -- --host thinkcenter --secret borg-passphrase-local
+   ```
 
-   # Local backup (initializes repo on thinkcenter, injects passphrase to thinkcenter)
-   nix run .#inject-borg-passphrase thinkcenter thinkcenter
+4. Initialize repositories manually:
+   ```bash
+   # On thinkcenter (local backup target)
+   borg init --encryption=repokey /var/lib/borg-repos/immich
+
+   # On vpsfree (remote backup target)
+   borg init --encryption=repokey /var/lib/borg-repos/immich
    ```
 
 **Verification:**
