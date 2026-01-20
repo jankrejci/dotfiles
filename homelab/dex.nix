@@ -18,10 +18,13 @@
 # upstream providers. If that becomes painful, migrate to Zitadel since OIDC
 # is standardized and services don't care which broker they use.
 #
-# Local password database is enabled for fallback access when Google is down.
+# Secret management: Services declare their secrets via homelab.secrets with
+# register = "dex". The inject-secrets script calls dex.registerHandler to
+# write the secret to dex's secrets directory. Dex reads secrets from files.
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   cfg = config.homelab.dex;
@@ -29,6 +32,29 @@
   services = config.homelab.services;
   domain = global.domain;
   dexDomain = "${cfg.subdomain}.${domain}";
+
+  # Secret path for Google OAuth credentials
+  googleOAuthPath = "/var/lib/dex/secrets/google-oauth";
+
+  # Handler for registering Dex client secrets.
+  # Called by inject-secrets with client_id as $1 and secret on stdin.
+  registerHandler = pkgs.writeShellApplication {
+    name = "dex-register";
+    runtimeInputs = [pkgs.systemd];
+    text = ''
+      client_id="$1"
+      secret=$(cat)
+
+      # Write secret to dex's secrets directory atomically
+      install -d -m 700 -o dex -g dex /var/lib/dex/secrets
+      temp_file=$(mktemp /var/lib/dex/secrets/.tmp.XXXXXX)
+      echo -n "$secret" > "$temp_file"
+      chown dex:dex "$temp_file"
+      chmod 600 "$temp_file"
+      mv "$temp_file" "/var/lib/dex/secrets/$client_id"
+      systemctl restart dex
+    '';
+  };
 in {
   options.homelab.dex = {
     enable = lib.mkOption {
@@ -53,9 +79,62 @@ in {
       default = "dex";
       description = "Subdomain for Dex";
     };
+
+    # Expose registerHandler so inject-secrets can find it
+    registerHandler = lib.mkOption {
+      type = lib.types.package;
+      default = registerHandler;
+      description = "Handler script for registering Dex clients";
+      internal = true;
+    };
+
+    # Client registrations for staticClients configuration.
+    # Services add entries here, dex generates staticClients from them.
+    clients = lib.mkOption {
+      type = lib.types.listOf (lib.types.submodule {
+        options = {
+          id = lib.mkOption {
+            type = lib.types.str;
+            description = "Client ID used in OAuth flow";
+          };
+          name = lib.mkOption {
+            type = lib.types.str;
+            description = "Display name shown in Dex login";
+          };
+          redirectURIs = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            description = "Allowed OAuth redirect URIs";
+          };
+        };
+      });
+      default = [];
+      description = "OAuth clients that authenticate via Dex";
+    };
   };
 
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = config.homelab.postgresql.enable;
+        message = "homelab.dex requires homelab.postgresql.enable = true";
+      }
+    ];
+
+    # Google OAuth credentials secret, user provides GOOGLE_CLIENT_ID and
+    # GOOGLE_CLIENT_SECRET in KEY=value format when prompted.
+    homelab.secrets.google-oauth = {
+      generate = "ask";
+      handler = pkgs.writeShellApplication {
+        name = "dex-google-oauth-handler";
+        runtimeInputs = [pkgs.systemd];
+        text = ''
+          install -d -m 700 -o dex -g dex /var/lib/dex/secrets
+          install -m 600 -o dex -g dex /dev/stdin ${googleOAuthPath}
+          systemctl restart dex
+        '';
+      };
+    };
+
     # Register IP for services dummy interface
     homelab.serviceIPs = [cfg.ip];
     networking.hosts.${cfg.ip} = [dexDomain];
@@ -98,7 +177,8 @@ in {
         # Enable local password database for username/password login
         enablePasswordDB = true;
 
-        # Local users for password authentication
+        # Emergency fallback credentials for when Google OAuth is unavailable.
+        # These are not primary authentication, use Google sign-in for normal access.
         # Generate hash: htpasswd -bnBC 10 "" 'password' | tr -d ':\n'
         staticPasswords = [
           {
@@ -130,45 +210,20 @@ in {
           }
         ];
 
-        # Downstream OAuth clients
-        # Secrets loaded from files via sops-nix
-        staticClients = [
-          {
-            id = "grafana";
-            name = "Grafana";
-            redirectURIs = ["https://grafana.${domain}/login/generic_oauth"];
-            secretFile = "/var/lib/dex/secrets/grafana-client-secret";
-          }
-          {
-            id = "immich";
-            name = "Immich";
-            redirectURIs = [
-              "https://immich.${domain}/auth/login"
-              "https://immich.${domain}/user-settings"
-              "https://immich.${domain}/api/oauth/mobile-redirect"
-            ];
-            secretFile = "/var/lib/dex/secrets/immich-client-secret";
-          }
-          {
-            id = "memos";
-            name = "Memos";
-            redirectURIs = ["https://memos.${domain}/auth/callback"];
-            secretFile = "/var/lib/dex/secrets/memos-client-secret";
-          }
-          {
-            id = "jellyfin";
-            name = "Jellyfin";
-            redirectURIs = ["https://jellyfin.${domain}/sso/OID/redirect/Dex"];
-            secretFile = "/var/lib/dex/secrets/jellyfin-client-secret";
-          }
-        ];
+        # Downstream OAuth clients generated from homelab.dex.clients
+        staticClients =
+          map (client: {
+            inherit (client) id name redirectURIs;
+            secretFile = "/var/lib/dex/secrets/${client.id}";
+          })
+          cfg.clients;
       };
     };
 
     # Ensure dex starts after PostgreSQL
     systemd.services.dex.after = ["postgresql.service"];
     systemd.services.dex.requires = ["postgresql.service"];
-    systemd.services.dex.serviceConfig.EnvironmentFile = "/var/lib/dex/secrets/google-oauth";
+    systemd.services.dex.serviceConfig.EnvironmentFile = googleOAuthPath;
 
     # Nginx reverse proxy
     services.nginx.virtualHosts.${dexDomain} = {
