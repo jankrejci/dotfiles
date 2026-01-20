@@ -30,7 +30,19 @@
   metricsPort = toString services.metrics.port;
 
   # Ntfy credentials file for alertmanager
-  ntfyCredentialsFile = "/var/lib/alertmanager/ntfy-token.txt";
+  secretsDir = "/var/lib/prometheus/secrets";
+  ntfyTokenPath = "${secretsDir}/ntfy-token";
+
+  # Handler for writing ntfy token to prometheus secrets directory
+  ntfySecretHandler = pkgs.writeShellApplication {
+    name = "prometheus-ntfy-handler";
+    runtimeInputs = [pkgs.systemd];
+    text = ''
+      install -d -m 700 -o root -g root ${secretsDir}
+      install -m 600 -o root -g root /dev/stdin ${ntfyTokenPath}
+      systemctl restart alertmanager
+    '';
+  };
 in {
   options.homelab.prometheus = {
     enable = lib.mkOption {
@@ -55,6 +67,22 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = config.homelab.ntfy.enable;
+        message = "homelab.prometheus requires homelab.ntfy.enable = true for alertmanager notifications";
+      }
+    ];
+
+    # Declare ntfy token secret for alertmanager notifications.
+    # DynamicUser services can read root-owned files via LoadCredential.
+    homelab.secrets.alertmanager-ntfy = {
+      generate = "token";
+      handler = ntfySecretHandler;
+      username = "alertmanager";
+      register = "ntfy";
+    };
+
     services.prometheus = {
       enable = true;
       # Keep metrics for 6 months
@@ -126,28 +154,33 @@ in {
         # - Alerts must have type label (host or service) to route correctly
         # - Alerts without type label fall through to ntfy-default
         # - Oneshot alerts (oneshot=true) get 1-year repeat interval
+        # - More specific routes must come first to match correctly
         route = {
           receiver = "ntfy-default";
           group_by = ["alertname"];
           group_wait = "30s";
           group_interval = "5m";
           repeat_interval = "12h";
-          routes = let
-            # Sub-route for oneshot alerts - suppresses repeat notifications
-            oneshotRoute = {
-              match = {oneshot = "true";};
-              repeat_interval = "8760h";
-            };
-          in [
+          routes = [
+            # Oneshot routes first - suppress repeat notifications for persistent alerts
             {
-              match = {type = "host";};
+              matchers = ["type=\"host\"" "oneshot=\"true\""];
               receiver = "ntfy-host";
-              routes = [oneshotRoute];
+              repeat_interval = "8760h";
             }
             {
-              match = {type = "service";};
+              matchers = ["type=\"service\"" "oneshot=\"true\""];
               receiver = "ntfy-service";
-              routes = [oneshotRoute];
+              repeat_interval = "8760h";
+            }
+            # Regular routes for alerts without oneshot label
+            {
+              matchers = ["type=\"host\""];
+              receiver = "ntfy-host";
+            }
+            {
+              matchers = ["type=\"service\""];
+              receiver = "ntfy-service";
             }
           ];
         };
@@ -166,7 +199,7 @@ in {
                 http_config = {
                   authorization = {
                     type = "Bearer";
-                    credentials_file = ntfyCredentialsFile;
+                    credentials_file = ntfyTokenPath;
                   };
                 };
               }
