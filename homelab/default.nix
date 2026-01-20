@@ -10,6 +10,7 @@
 
     # Services
     ./acme.nix
+    ./backup-secrets.nix
     ./dex.nix
     ./grafana.nix
     ./immich.nix
