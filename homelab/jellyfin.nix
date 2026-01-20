@@ -23,11 +23,26 @@
   cfg = config.homelab.jellyfin;
   global = config.homelab.global;
   services = config.homelab.services;
+  hostName = config.homelab.host.hostName;
   domain = global.domain;
   jellyfinDomain = "${cfg.subdomain}.${domain}";
 
+  # Secret paths
+  secretsDir = "/var/lib/jellyfin/secrets";
+  dexClientSecretPath = "${secretsDir}/dex-client";
+
+  # Handler for writing dex client secret to jellyfin secrets directory
+  dexSecretHandler = pkgs.writeShellApplication {
+    name = "jellyfin-dex-handler";
+    runtimeInputs = [pkgs.systemd];
+    text = ''
+      install -d -m 700 -o jellyfin -g jellyfin ${secretsDir}
+      install -m 600 -o jellyfin -g jellyfin /dev/stdin ${dexClientSecretPath}
+      systemctl restart jellyfin
+    '';
+  };
+
   # SSO configuration paths
-  ssoSecretPath = "/var/lib/dex/secrets/jellyfin-client-secret";
   ssoConfigPath = "/var/lib/jellyfin/plugins/configurations/SSO-Auth.xml";
   brandingConfigPath = "/var/lib/jellyfin/config/branding.xml";
 
@@ -66,6 +81,30 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = config.homelab.dex.enable;
+        message = "homelab.jellyfin requires homelab.dex.enable = true for OAuth";
+      }
+    ];
+
+    # Declare dex client secret for OAuth authentication
+    homelab.secrets.jellyfin-dex = {
+      generate = "token";
+      handler = dexSecretHandler;
+      username = "jellyfin-${hostName}";
+      register = "dex";
+    };
+
+    # Register with Dex for OAuth authentication
+    homelab.dex.clients = [
+      {
+        id = "jellyfin-${hostName}";
+        name = "Jellyfin";
+        redirectURIs = ["https://jellyfin.${domain}/sso/OID/redirect/Dex"];
+      }
+    ];
+
     # Register IP for services dummy interface
     homelab.serviceIPs = [cfg.ip];
     networking.hosts.${cfg.ip} = [jellyfinDomain];
@@ -94,17 +133,17 @@ in {
 
       # Configure SSO plugin and branding before Jellyfin starts
       preStart = ''
-        # Skip SSO setup if secret not provisioned yet
-        [[ ! -f "${ssoSecretPath}" ]] && {
-          echo "SSO secret not found at ${ssoSecretPath}, skipping SSO configuration"
-          exit 0
+        # Fail if SSO secret not provisioned
+        [[ ! -f "${dexClientSecretPath}" ]] && {
+          echo "ERROR: SSO secret not found at ${dexClientSecretPath}" >&2
+          exit 1
         }
 
         # Write branding config with SSO login button
         cp "${brandingConfig}" "${brandingConfigPath}"
 
         # Substitute secret into SSO config template
-        secret=$(cat "${ssoSecretPath}")
+        secret=$(cat "${dexClientSecretPath}")
         sed "s|@JELLYFIN_SSO_SECRET@|$secret|g" "${ssoConfigTemplate}" > "${ssoConfigPath}"
 
         echo "Jellyfin SSO configuration updated"
@@ -182,11 +221,11 @@ in {
     # Alert rules for jellyfin
     homelab.alerts.jellyfin = [
       {
-        alert = "JellyfinDown";
-        expr = ''node_systemd_unit_state{name="jellyfin.service",state="active",host="${config.homelab.host.hostName}"} == 0'';
+        alert = "jellyfin-down";
+        expr = ''node_systemd_unit_state{name="jellyfin.service",state="active",host="${hostName}"} == 0'';
         labels = {
           severity = "critical";
-          host = config.homelab.host.hostName;
+          host = hostName;
           type = "service";
         };
         annotations.summary = "Jellyfin service is not active";
