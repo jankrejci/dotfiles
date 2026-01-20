@@ -9,6 +9,7 @@
   global = config.homelab.global;
   services = config.homelab.services;
   domain = global.domain;
+  hostName = config.homelab.host.hostName;
   serverDomain = "${cfg.subdomain}.${domain}";
 
   # Build JMESPath expression for admin role assignment based on email
@@ -16,6 +17,21 @@
     emailChecks = map (email: "email == '${email}'") global.adminEmails;
     adminCondition = lib.concatStringsSep " || " emailChecks;
   in "(${adminCondition}) && 'Admin' || 'Viewer'";
+
+  # Secret paths
+  secretsDir = "/var/lib/grafana/secrets";
+  dexClientSecretPath = "${secretsDir}/dex-client";
+
+  # Handler for writing dex client secret to grafana secrets directory
+  dexSecretHandler = pkgs.writeShellApplication {
+    name = "grafana-dex-handler";
+    runtimeInputs = [pkgs.systemd];
+    text = ''
+      install -d -m 700 -o grafana -g grafana ${secretsDir}
+      install -m 600 -o grafana -g grafana /dev/stdin ${dexClientSecretPath}
+      systemctl restart grafana
+    '';
+  };
 in {
   options.homelab.grafana = {
     enable = lib.mkOption {
@@ -47,6 +63,27 @@ in {
       {
         assertion = config.homelab.postgresql.enable;
         message = "homelab.grafana requires homelab.postgresql.enable = true";
+      }
+      {
+        assertion = config.homelab.dex.enable;
+        message = "homelab.grafana requires homelab.dex.enable = true for OAuth";
+      }
+    ];
+
+    # Declare dex client secret for OAuth authentication
+    homelab.secrets.grafana-dex = {
+      generate = "token";
+      handler = dexSecretHandler;
+      username = "grafana-${hostName}";
+      register = "dex";
+    };
+
+    # Register with Dex for OAuth authentication
+    homelab.dex.clients = [
+      {
+        id = "grafana-${hostName}";
+        name = "Grafana";
+        redirectURIs = ["https://grafana.${domain}/login/generic_oauth"];
       }
     ];
 
@@ -110,11 +147,8 @@ in {
         "auth.generic_oauth" = {
           enabled = true;
           name = "Dex";
-          client_id = "grafana";
-          # Secret must match dex's grafana client secret. Manually provision:
-          # cp /var/lib/dex/secrets/grafana-client-secret /var/lib/grafana/secrets/dex-client-secret
-          # chown grafana:grafana /var/lib/grafana/secrets/dex-client-secret
-          client_secret = "$__file{/var/lib/grafana/secrets/dex-client-secret}";
+          client_id = "grafana-${hostName}";
+          client_secret = "$__file{${dexClientSecretPath}}";
           scopes = "openid email profile";
           auth_url = "https://dex.${domain}/auth";
           token_url = "https://dex.${domain}/token";
