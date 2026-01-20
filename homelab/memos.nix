@@ -9,8 +9,26 @@
   cfg = config.homelab.memos;
   global = config.homelab.global;
   services = config.homelab.services;
+  hostName = config.homelab.host.hostName;
   domain = global.domain;
   memosDomain = "${cfg.subdomain}.${domain}";
+
+  # Secret paths
+  secretsDir = "/var/lib/memos/secrets";
+  dexClientSecretPath = "${secretsDir}/dex-client";
+
+  # Handler for writing dex client secret to memos secrets directory.
+  # Note: Memos reads OAuth secret from web UI, not from file. The admin
+  # must copy the secret from this file into Settings -> SSO.
+  dexSecretHandler = pkgs.writeShellApplication {
+    name = "memos-dex-handler";
+    runtimeInputs = [pkgs.systemd];
+    text = ''
+      install -d -m 700 -o memos -g memos ${secretsDir}
+      install -m 600 -o memos -g memos /dev/stdin ${dexClientSecretPath}
+      systemctl restart memos
+    '';
+  };
 in {
   options.homelab.memos = {
     enable = lib.mkOption {
@@ -39,6 +57,36 @@ in {
 
   config = lib.mkIf cfg.enable (lib.mkMerge [
     {
+      assertions = [
+        {
+          assertion = config.homelab.postgresql.enable;
+          message = "homelab.memos requires homelab.postgresql.enable = true";
+        }
+        {
+          assertion = config.homelab.dex.enable;
+          message = "homelab.memos requires homelab.dex.enable = true for OAuth";
+        }
+      ];
+
+      # Declare dex client secret for OAuth authentication.
+      # Memos does not read from file - admin must copy the secret from
+      # /var/lib/memos/secrets/dex-client into the Memos web UI.
+      homelab.secrets.memos-dex = {
+        generate = "token";
+        handler = dexSecretHandler;
+        username = "memos-${hostName}";
+        register = "dex";
+      };
+
+      # Register with Dex for OAuth authentication
+      homelab.dex.clients = [
+        {
+          id = "memos-${hostName}";
+          name = "Memos";
+          redirectURIs = ["https://memos.${domain}/auth/callback"];
+        }
+      ];
+
       # Register IP for services dummy interface
       homelab.serviceIPs = [cfg.ip];
       networking.hosts.${cfg.ip} = [memosDomain];
@@ -109,7 +157,7 @@ in {
     # Borg backup with database dump
     (backup.mkBorgBackup {
       name = "memos";
-      hostName = config.homelab.host.hostName;
+      hostName = hostName;
       paths = ["/var/lib/memos"];
       excludes = ["/var/lib/memos/thumbnails"];
       database = "memos";

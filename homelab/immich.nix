@@ -9,6 +9,7 @@
   cfg = config.homelab.immich;
   global = config.homelab.global;
   services = config.homelab.services;
+  hostName = config.homelab.host.hostName;
   domain = global.domain;
   immichDomain = "${cfg.subdomain}.${domain}";
   httpsPort = services.https.port;
@@ -21,6 +22,21 @@
   # Assumes partition is already created with label "disk-immich-luks"
   luksDevice = "/dev/disk/by-partlabel/disk-immich-luks";
 
+  # Secret paths
+  secretsDir = "/var/lib/immich/secrets";
+  dexClientSecretPath = "${secretsDir}/dex-client";
+
+  # Handler for writing dex client secret to immich secrets directory
+  dexSecretHandler = pkgs.writeShellApplication {
+    name = "immich-dex-handler";
+    runtimeInputs = [pkgs.systemd];
+    text = ''
+      install -d -m 700 -o immich -g immich ${secretsDir}
+      install -m 600 -o immich -g immich /dev/stdin ${dexClientSecretPath}
+      systemctl restart immich-server
+    '';
+  };
+
   # OAuth configuration for Dex SSO integration.
   # Immich only supports OAuth config via JSON file or web UI, not environment
   # variables. We generate a template here and substitute the secret at runtime
@@ -29,7 +45,7 @@
     oauth = {
       enabled = true;
       issuerUrl = "https://dex.${domain}";
-      clientId = "immich";
+      clientId = "immich-${hostName}";
       clientSecret = "@IMMICH_OAUTH_CLIENT_SECRET@";
       scope = "openid email profile";
       buttonText = "Login with SSO";
@@ -42,7 +58,6 @@
     passwordLogin.enabled = false;
   });
   immichOAuthConfigPath = "/var/lib/immich/config.json";
-  immichOAuthSecretPath = "/var/lib/dex/secrets/immich-client-secret";
 in {
   options.homelab.immich = {
     enable = lib.mkOption {
@@ -71,6 +86,34 @@ in {
 
   config = lib.mkIf cfg.enable (lib.mkMerge [
     {
+      assertions = [
+        {
+          assertion = config.homelab.dex.enable;
+          message = "homelab.immich requires homelab.dex.enable = true for OAuth";
+        }
+      ];
+
+      # Declare dex client secret for OAuth authentication
+      homelab.secrets.immich-dex = {
+        generate = "token";
+        handler = dexSecretHandler;
+        username = "immich-${hostName}";
+        register = "dex";
+      };
+
+      # Register with Dex for OAuth authentication
+      homelab.dex.clients = [
+        {
+          id = "immich-${hostName}";
+          name = "Immich";
+          redirectURIs = [
+            "https://immich.${domain}/auth/login"
+            "https://immich.${domain}/user-settings"
+            "https://immich.${domain}/api/oauth/mobile-redirect"
+          ];
+        }
+      ];
+
       # Register IP for services dummy interface
       homelab.serviceIPs = [cfg.ip];
       networking.hosts.${cfg.ip} = [immichDomain];
@@ -133,8 +176,8 @@ in {
       # Generate OAuth config at runtime by substituting secret into template.
       # Runs as root before service starts. Immich reads file via IMMICH_CONFIG_FILE.
       systemd.services.immich-server.preStart = ''
-        if [ -f "${immichOAuthSecretPath}" ]; then
-          secret=$(cat "${immichOAuthSecretPath}")
+        if [ -f "${dexClientSecretPath}" ]; then
+          secret=$(cat "${dexClientSecretPath}")
           ${pkgs.gnused}/bin/sed "s/@IMMICH_OAUTH_CLIENT_SECRET@/$secret/" \
             "${immichOAuthConfigTemplate}" > "${immichOAuthConfigPath}"
         fi
@@ -198,21 +241,21 @@ in {
       # Alert rules for immich service
       homelab.alerts.immich = [
         {
-          alert = "ImmichDown";
+          alert = "immich-down";
           expr = ''up{job="immich"} == 0'';
           labels = {
             severity = "critical";
-            host = config.homelab.host.hostName;
+            host = hostName;
             type = "service";
           };
           annotations.summary = "Immich server is down";
         }
         {
-          alert = "ImmichMicroservicesDown";
+          alert = "immich-microservices-down";
           expr = ''up{job="immich-microservices"} == 0'';
           labels = {
             severity = "critical";
-            host = config.homelab.host.hostName;
+            host = hostName;
             type = "service";
           };
           annotations.summary = "Immich microservices are down";
@@ -248,7 +291,7 @@ in {
     # Borg backup with database dump
     (backup.mkBorgBackup {
       name = "immich";
-      hostName = config.homelab.host.hostName;
+      hostName = hostName;
       paths = ["/var/lib/immich"];
       excludes = [
         "/var/lib/immich/thumbs"
