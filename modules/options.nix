@@ -1,6 +1,11 @@
 # NixOS-level homelab options
 # These are set by the flake and consumed by other modules
-{lib, ...}: let
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}: let
   inherit (lib) mkOption types;
 
   # Host configuration submodule
@@ -64,6 +69,34 @@
       };
     };
   });
+
+  # Secret declaration for inject-secrets script.
+  # Services declare what secrets they need and how to handle them.
+  secretModule = types.submodule {
+    options = {
+      generate = mkOption {
+        type = types.enum ["token" "ask"];
+        description = "How to generate the secret value: token = random, ask = prompt user";
+      };
+
+      handler = mkOption {
+        type = types.package;
+        description = "Script that receives secret on stdin and writes it to the right place";
+      };
+
+      username = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "Username or client ID for registration with central service";
+      };
+
+      register = mkOption {
+        type = types.nullOr (types.enum ["ntfy" "dex"]);
+        default = null;
+        description = "Central service to register with, if any";
+      };
+    };
+  };
 
   # Service configuration submodule
   serviceModule = types.submodule {
@@ -251,5 +284,19 @@ in {
       default = [];
       description = "Health checks registered by service modules";
     };
+
+    # Secret declarations for inject-secrets script.
+    # Services declare secrets they need with a local handler.
+    # If the secret needs registration with a central service, specify register and username.
+    secrets = mkOption {
+      type = types.attrsOf secretModule;
+      default = {};
+      description = "Secret declarations for inject-secrets script";
+    };
+  };
+
+  # Generate JSON manifest for inject-secrets script when secrets are declared
+  config = lib.mkIf (config.homelab.secrets != {}) {
+    system.build.secrets-manifest = pkgs.writeText "secrets.json" (builtins.toJSON config.homelab.secrets);
   };
 }
