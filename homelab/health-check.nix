@@ -17,14 +17,33 @@
   ...
 }: let
   healthChecks = config.homelab.healthChecks;
-  ntfyPort = config.homelab.ntfy.port;
+  global = config.homelab.global;
+  hostName = config.homelab.host.hostName;
   ntfyTopic = "system-health";
+
+  # Ntfy token file path
+  secretsDir = "/var/lib/health-check/secrets";
+  ntfyTokenPath = "${secretsDir}/ntfy-token";
+
+  # Handler for writing ntfy token to health-check secrets directory
+  ntfySecretHandler = pkgs.writeShellApplication {
+    name = "health-check-ntfy-handler";
+    text = ''
+      install -d -m 700 -o root -g root ${secretsDir}
+      token=$(cat)
+      # Escape single quotes for shell sourcing
+      sq="'"
+      escaped_token=$(printf '%s' "$token" | sed "s/$sq/$sq\\\\$sq$sq/g")
+      printf 'NTFY_TOKEN=%s%s%s\n' "$sq" "$escaped_token" "$sq" > ${ntfyTokenPath}
+      chmod 600 ${ntfyTokenPath}
+    '';
+  };
 
   healthCheckScript = pkgs.writeShellApplication {
     name = "system-health-check";
     runtimeInputs = [pkgs.coreutils pkgs.curl];
     text = ''
-      NTFY_TOKEN_PATH="/var/lib/health-check/secrets/ntfy-token-env"
+      NTFY_TOKEN_PATH="${ntfyTokenPath}"
       readonly NTFY_TOKEN_PATH
 
       [ -f "$NTFY_TOKEN_PATH" ] || {
@@ -49,7 +68,7 @@
       send_notification() {
         local title=$1 message=$2 priority=$3 tags=$4
         printf "%b" "$message" | curl -s -X POST \
-          "http://127.0.0.1:${toString ntfyPort}/${ntfyTopic}" \
+          "https://ntfy.${global.domain}/${ntfyTopic}" \
           -H "Authorization: Bearer $NTFY_TOKEN" \
           -H "Title: $title" \
           -H "Priority: $priority" \
@@ -64,17 +83,21 @@
         healthChecks)}
 
       if [ "$FAILED" -eq 0 ]; then
-        send_notification "All OK" "All services healthy" "default" "white_check_mark"
+        send_notification "${hostName} OK" "All services healthy" "default" "white_check_mark"
       else
-        send_notification "Attention Required" "$MESSAGE" "high" "warning"
+        send_notification "${hostName} Attention Required" "$MESSAGE" "high" "warning"
       fi
     '';
   };
 in {
   config = lib.mkIf (healthChecks != []) {
-    systemd.tmpfiles.rules = [
-      "d /var/lib/health-check/secrets 0700 root root -"
-    ];
+    # Declare ntfy token secret for health check notifications
+    homelab.secrets.health-check-ntfy = {
+      generate = "token";
+      handler = ntfySecretHandler;
+      username = "health-check";
+      register = "ntfy";
+    };
 
     systemd.services.system-health-check = {
       description = "System health check with ntfy notification";
