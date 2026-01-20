@@ -1,4 +1,8 @@
-# Ntfy notification service with homelab enable flag
+# Ntfy notification service
+#
+# Simplified architecture: services declare their own secrets via homelab.secrets
+# with register = "ntfy". The inject-secrets script calls ntfy.registerHandler
+# to create the user and token in ntfy's database.
 {
   config,
   lib,
@@ -7,9 +11,30 @@
 }: let
   cfg = config.homelab.ntfy;
   global = config.homelab.global;
-  services = config.homelab.services;
+  homelabServices = config.homelab.services;
   domain = global.domain;
   ntfyDomain = "${cfg.subdomain}.${domain}";
+
+  # Handler for registering ntfy users and tokens.
+  # Called by inject-secrets with username as $1 and token on stdin.
+  registerHandler = pkgs.writeShellApplication {
+    name = "ntfy-register";
+    runtimeInputs = [pkgs.unstable.ntfy-sh pkgs.openssl];
+    text = ''
+      username="$1"
+      token=$(cat)
+
+      # Create user if not exists. ntfy user add fails if user exists.
+      if ! ntfy user list 2>/dev/null | grep -q "^user $username"; then
+        password=$(openssl rand -base64 32)
+        printf '%s\n%s\n' "$password" "$password" | ntfy user add "$username"
+      fi
+
+      # Remove existing tokens and add the new one
+      ntfy token remove "$username" --all 2>/dev/null || true
+      ntfy token add --token "$token" "$username"
+    '';
+  };
 in {
   options.homelab.ntfy = {
     enable = lib.mkOption {
@@ -34,6 +59,14 @@ in {
       default = "ntfy";
       description = "Subdomain for ntfy";
     };
+
+    # Expose registerHandler so inject-secrets can find it
+    registerHandler = lib.mkOption {
+      type = lib.types.package;
+      default = registerHandler;
+      description = "Handler script for registering ntfy users";
+      internal = true;
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -42,8 +75,8 @@ in {
     networking.hosts.${cfg.ip} = [ntfyDomain];
 
     # Allow HTTPS on VPN interface only
-    networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [
-      services.https.port
+    networking.firewall.interfaces."${homelabServices.netbird.interface}".allowedTCPPorts = [
+      homelabServices.https.port
     ];
 
     # Use unstable ntfy-sh for template support (requires >= 2.14.0)
@@ -51,12 +84,11 @@ in {
       enable = true;
       package = pkgs.unstable.ntfy-sh;
       settings = {
-        # Listen on 127.0.0.1 only, accessed via nginx proxy (defense in depth)
+        # Listen on 127.0.0.1 only, accessed via nginx proxy
         listen-http = "127.0.0.1:${toString cfg.port}";
         base-url = "https://${ntfyDomain}";
         # Authentication: read-only by default, publishing requires tokens
         auth-default-access = "read-only";
-        # Grafana user can publish via token, everyone else can read
         auth-file = "/var/lib/ntfy-sh/user.db";
         # Template directory for custom webhook formatting
         template-dir = "/var/lib/ntfy-sh/templates";
