@@ -41,7 +41,14 @@ Critically review all code changes. Your job is to find problems, not validate w
    - Missing error handling where actually needed
    - Hardcoded values that should be configurable
 
-4. **Verify NixOS specifics**:
+4. **Check commit messages**:
+   - Format: `module: Title in imperative style` with capital after colon
+   - Body explains WHY, not WHAT
+   - No Claude signatures, emojis, or Co-Authored-By lines
+   - Message length proportional to change importance
+   - Atomic commits: one logical change per commit
+
+5. **Verify NixOS specifics**:
    - Are module options used correctly?
    - Do service dependencies make sense?
    - Will this work on first boot?
@@ -80,6 +87,7 @@ Critically review all code changes. Your job is to find problems, not validate w
 ## Verification
 - [ ] `nix flake check` passes
 - [ ] `nix fmt` shows no changes
+- [ ] Commit messages follow format guidelines
 - [ ] Changes match stated intent
 
 ## Summary
