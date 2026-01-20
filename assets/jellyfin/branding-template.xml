@@ -1,22 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <BrandingOptions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <LoginDisclaimer><![CDATA[
-    <form action="@SSO_URL@">
-      <button class="raised block emby-button button-submit">Sign in with SSO</button>
-    </form>
-  ]]></LoginDisclaimer>
+  <LoginDisclaimer></LoginDisclaimer>
   <CustomCss><![CDATA[
-    /* SSO button styling */
-    a.raised.emby-button {
-      padding: 0.9em 1em;
-      color: inherit !important;
-    }
-    .disclaimerContainer {
-      display: block;
-    }
-
-    /* Hide native login elements, show only SSO button */
+    /* Hide native login elements, SSO button injected via nginx sub_filter */
     #loginPage .manualLoginForm { display: none !important; }
     .btnForgotPassword { display: none !important; }
     .btnQuick { display: none !important; }

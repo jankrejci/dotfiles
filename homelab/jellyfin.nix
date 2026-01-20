@@ -37,11 +37,8 @@
     substitutions = ["--replace-fail" "@DEX_ENDPOINT@" "https://dex.${domain}"];
   };
 
-  # Branding config with SSO login button
-  brandingConfig = pkgs.substitute {
-    src = ../assets/jellyfin/branding-template.xml;
-    substitutions = ["--replace-fail" "@SSO_URL@" "https://${jellyfinDomain}/sso/OID/start/Dex"];
-  };
+  # Branding config hides native login, SSO button injected via nginx
+  brandingConfig = ../assets/jellyfin/branding-template.xml;
 in {
   options.homelab.jellyfin = {
     enable = lib.mkOption {
@@ -133,16 +130,52 @@ in {
     ];
 
     # Nginx reverse proxy
+    #
+    # SSO Button Injection:
+    # Jellyfin 10.9+ uses DOMPurify to sanitize the branding LoginDisclaimer field,
+    # which strips all HTML including forms and buttons. The official SSO plugin
+    # does not provide a built-in login button UI.
+    #
+    # Workaround: nginx sub_filter injects JavaScript that creates the SSO button
+    # dynamically. Uses setInterval to handle Jellyfin's SPA routing.
+    #
+    # If Jellyfin updates break this, check:
+    # - Selector ".loginDisclaimer, #loginPage" may need updating
+    # - https://github.com/9p4/jellyfin-plugin-sso for plugin compatibility
     services.nginx.virtualHosts.${jellyfinDomain} = {
       listenAddresses = [cfg.ip];
       forceSSL = true;
       useACMEHost = "${global.domain}";
-      # Allow large media file uploads
-      extraConfig = "client_max_body_size 10G;";
+      extraConfig = ''
+        client_max_body_size 10G;
+        sub_filter '</body>' '<script>
+          (function() {
+            const SSO_URL = "https://${jellyfinDomain}/sso/OID/start/Dex";
+            function addSsoButton() {
+              const container = document.querySelector(".loginDisclaimer, #loginPage");
+              if (container && !document.getElementById("ssoBtn")) {
+                const btn = document.createElement("a");
+                btn.id = "ssoBtn";
+                btn.href = SSO_URL;
+                btn.className = "raised block emby-button";
+                btn.style.cssText = "margin:1em auto;padding:1em 2em;display:block;text-align:center;max-width:25em;";
+                btn.textContent = "Sign in with SSO";
+                container.prepend(btn);
+                clearInterval(intervalId);
+              }
+            }
+            const intervalId = setInterval(addSsoButton, 500);
+          })();
+        </script></body>';
+        sub_filter_once on;
+        sub_filter_types text/html;
+      '';
       locations."/" = {
         proxyPass = "http://127.0.0.1:${toString cfg.port}";
         proxyWebsockets = true;
         recommendedProxySettings = true;
+        # Disable compression so sub_filter can modify response
+        extraConfig = "proxy_set_header Accept-Encoding '';";
       };
     };
 
