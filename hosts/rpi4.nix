@@ -9,7 +9,7 @@
 
   homelab.alerts.hosts = [
     {
-      alert = "Rpi4Down";
+      alert = "rpi4-down";
       expr = ''up{instance=~"rpi4.*", job="node"} == 0'';
       labels = {
         severity = "critical";

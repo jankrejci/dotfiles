@@ -18,7 +18,7 @@
   # Prometheus alert for host monitoring
   homelab.alerts.hosts = [
     {
-      alert = "Rak2245Down";
+      alert = "rak2245-down";
       expr = ''up{host="rak2245", job="node"} == 0'';
       labels = {
         severity = "critical";

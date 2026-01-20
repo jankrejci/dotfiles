@@ -6,6 +6,7 @@
   ...
 }: let
   cfg = config.homelab.redis;
+  hostName = config.homelab.host.hostName;
 in {
   options.homelab.redis = {
     enable = lib.mkOption {
@@ -43,11 +44,11 @@ in {
     # Alert
     homelab.alerts.redis = [
       {
-        alert = "RedisDown";
-        expr = ''redis_up{job="redis",host="${config.homelab.host.hostName}"} == 0'';
+        alert = "redis-down";
+        expr = ''redis_up{job="redis",host="${hostName}"} == 0'';
         labels = {
           severity = "critical";
-          host = config.homelab.host.hostName;
+          host = hostName;
           type = "service";
         };
         annotations.summary = "Redis is down";

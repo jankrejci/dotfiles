@@ -64,6 +64,7 @@
   cfg = config.homelab.printer;
   global = config.homelab.global;
   services = config.homelab.services;
+  hostName = config.homelab.host.hostName;
   printerDomain = "${cfg.subdomain}.${global.domain}";
 in {
   options.homelab.printer = {
@@ -135,11 +136,11 @@ in {
     # Alert when ipp-usb service goes down
     homelab.alerts.printer = [
       {
-        alert = "IppUsbDown";
-        expr = ''node_systemd_unit_state{name="ipp-usb.service",state="active",host="${config.homelab.host.hostName}"} == 0'';
+        alert = "ipp-usb-down";
+        expr = ''node_systemd_unit_state{name="ipp-usb.service",state="active",host="${hostName}"} == 0'';
         labels = {
           severity = "warning";
-          host = config.homelab.host.hostName;
+          host = hostName;
           type = "service";
         };
         annotations.summary = "IPP-USB print server is not active";

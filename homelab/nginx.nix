@@ -6,6 +6,7 @@
   ...
 }: let
   cfg = config.homelab.nginx;
+  hostName = config.homelab.host.hostName;
 in {
   options.homelab.nginx = {
     enable = lib.mkOption {
@@ -46,11 +47,11 @@ in {
     # Alert
     homelab.alerts.nginx = [
       {
-        alert = "NginxFailed";
-        expr = ''node_systemd_unit_state{name="nginx.service",state="failed",host="${config.homelab.host.hostName}"} > 0'';
+        alert = "nginx-failed";
+        expr = ''node_systemd_unit_state{name="nginx.service",state="failed",host="${hostName}"} > 0'';
         labels = {
           severity = "critical";
-          host = config.homelab.host.hostName;
+          host = hostName;
           type = "service";
         };
         annotations.summary = "Nginx service failed";

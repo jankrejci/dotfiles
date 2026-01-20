@@ -74,7 +74,7 @@ in {
 
   homelab.alerts.hosts = [
     {
-      alert = "VpsfreeDown";
+      alert = "vpsfree-down";
       expr = ''up{instance=~"vpsfree.*", job="node"} == 0'';
       labels = {
         severity = "critical";

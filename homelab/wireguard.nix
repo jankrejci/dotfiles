@@ -103,7 +103,7 @@ in {
     # Alert rules for wireguard tunnel
     homelab.alerts.wireguard = [
       {
-        alert = "WireGuardTunnelDown";
+        alert = "wireguard-tunnel-down";
         expr = ''wireguard_latest_handshake_delay_seconds{interface="wg0"} > 180'';
         labels = {
           severity = "critical";

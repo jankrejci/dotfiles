@@ -5,6 +5,7 @@
   ...
 }: let
   cfg = config.homelab.loki;
+  hostName = config.homelab.host.hostName;
   lokiDataDir = "/var/lib/loki";
 in {
   options.homelab.loki = {
@@ -168,21 +169,21 @@ in {
     # Alert rules for loki and promtail
     homelab.alerts.loki = [
       {
-        alert = "LokiDown";
-        expr = ''node_systemd_unit_state{name="loki.service",state="active",host="${config.homelab.host.hostName}"} == 0'';
+        alert = "loki-down";
+        expr = ''node_systemd_unit_state{name="loki.service",state="active",host="${hostName}"} == 0'';
         labels = {
           severity = "critical";
-          host = config.homelab.host.hostName;
+          host = hostName;
           type = "service";
         };
         annotations.summary = "Loki service is not active";
       }
       {
-        alert = "PromtailDown";
-        expr = ''node_systemd_unit_state{name="promtail.service",state="active",host="${config.homelab.host.hostName}"} == 0'';
+        alert = "promtail-down";
+        expr = ''node_systemd_unit_state{name="promtail.service",state="active",host="${hostName}"} == 0'';
         labels = {
           severity = "warning";
-          host = config.homelab.host.hostName;
+          host = hostName;
           type = "service";
         };
         annotations.summary = "Promtail service is not active";

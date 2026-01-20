@@ -6,7 +6,7 @@
 }: {
   homelab.alerts.hosts = [
     {
-      alert = "PrusaDown";
+      alert = "prusa-down";
       expr = ''up{instance=~"prusa.*", job="node"} == 0'';
       labels = {
         severity = "critical";

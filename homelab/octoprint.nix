@@ -121,7 +121,7 @@ in {
     # Alert rules for octoprint with oneshot label to prevent repeat notifications
     homelab.alerts.octoprint = [
       {
-        alert = "OctoprintDown";
+        alert = "octoprint-down";
         expr = ''up{job="octoprint"} == 0'';
         labels = {
           severity = "critical";

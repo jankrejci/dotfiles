@@ -6,6 +6,7 @@
   ...
 }: let
   cfg = config.homelab.postgresql;
+  hostName = config.homelab.host.hostName;
 in {
   options.homelab.postgresql = {
     enable = lib.mkOption {
@@ -40,11 +41,11 @@ in {
     # Alert
     homelab.alerts.postgres = [
       {
-        alert = "PostgresDown";
-        expr = ''pg_up{job="postgres",host="${config.homelab.host.hostName}"} == 0'';
+        alert = "postgres-down";
+        expr = ''pg_up{job="postgres",host="${hostName}"} == 0'';
         labels = {
           severity = "critical";
-          host = config.homelab.host.hostName;
+          host = hostName;
           type = "service";
         };
         annotations.summary = "PostgreSQL is down";
