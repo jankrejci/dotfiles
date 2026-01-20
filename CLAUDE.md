@@ -94,6 +94,7 @@ GIT_SEQUENCE_EDITOR='script.sh' git rebase -i origin/main
 - Technical terminology appropriate
 - No praise/validation - objective evaluation only
 - **No weasel words**: Never use "likely", "probably", "might be". Either you know the cause from evidence or you don't know. Say "I don't know" when uncertain.
+- **Questions are questions**: When user asks "do we need X?" or "is this useful?", answer the question with analysis. Do not treat questions as implicit instructions to change code. Only explicit imperatives are instructions.
 
 ## Connectivity Safety
 **CRITICAL: Never break your own access path**
@@ -157,6 +158,29 @@ Future work: revisit when Netbird adds stable identifiers or setup key groups fe
 | `review` | Skeptical code review, find issues |
 | `deploy` | Deploy to target machine |
 | `debug` | Find root cause when errors occur |
+
+### Token Efficiency
+
+**CRITICAL**: The main agent must minimize token usage by delegating work to specialized agents.
+
+**Main agent responsibilities:**
+- Quick analysis to understand the task
+- Identify which agent(s) to invoke
+- Present agent results to user
+- Coordinate between agents
+
+**Main agent must NOT:**
+- Execute multi-step implementation directly
+- Perform branch cleanup, rebasing, or commit organization directly
+- Read many files to understand codebase (delegate to analyze agent)
+- Make code changes (delegate to develop agent)
+
+**Examples:**
+- "compact this branch" → delegate to `commit` agent immediately
+- "implement feature X" → analyze agent → develop agent → commit agent
+- "why is this failing" → delegate to `debug` agent
+
+The main conversation context is expensive. Agents run in separate contexts and can do heavy lifting without bloating the main conversation.
 
 ### Workflow Stages
 
