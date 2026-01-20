@@ -43,10 +43,11 @@ Critically review all code changes. Your job is to find problems, not validate w
 
 4. **Check commit messages**:
    - Format: `module: Title in imperative style` with capital after colon
-   - Body explains WHY, not WHAT
+   - Body MUST be bullet points starting with `- ` and lowercase
+   - Body MUST NOT contain prose paragraphs or multi-line sentences
    - No Claude signatures, emojis, or Co-Authored-By lines
-   - Message length proportional to change importance
    - Atomic commits: one logical change per commit
+   - **REJECT any commit with prose paragraphs in body**
 
 5. **Verify NixOS specifics**:
    - Are module options used correctly?
