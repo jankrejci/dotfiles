@@ -82,6 +82,11 @@ in {
       ];
     };
 
+    # Secrets directory for SSO client secret
+    systemd.tmpfiles.rules = [
+      "d /var/lib/grafana/secrets 0750 grafana grafana -"
+    ];
+
     services.grafana = {
       enable = true;
       # Infinity plugin for querying external APIs like Binance
