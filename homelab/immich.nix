@@ -42,7 +42,7 @@
     passwordLogin.enabled = false;
   });
   immichOAuthConfigPath = "/var/lib/immich/config.json";
-  immichOAuthSecretPath = "/var/lib/dex/secrets/immich-client-secret";
+  immichOAuthSecretPath = "/var/lib/immich/secrets/dex-client-secret";
 in {
   options.homelab.immich = {
     enable = lib.mkOption {
@@ -153,6 +153,8 @@ in {
         "d /var/lib/immich/profile 0755 immich immich -"
         "d /var/lib/immich/encoded-video 0755 immich immich -"
         "d /var/lib/immich/backups 0755 immich immich -"
+        # Secrets directory for SSO client secret
+        "d /var/lib/immich/secrets 0750 immich immich -"
         "f /var/lib/immich/upload/.immich 0644 immich immich -"
         "f /var/lib/immich/library/.immich 0644 immich immich -"
         "f /var/lib/immich/thumbs/.immich 0644 immich immich -"

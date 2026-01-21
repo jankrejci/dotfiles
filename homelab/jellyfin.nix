@@ -27,7 +27,7 @@
   jellyfinDomain = "${cfg.subdomain}.${domain}";
 
   # SSO configuration paths
-  ssoSecretPath = "/var/lib/dex/secrets/jellyfin-client-secret";
+  ssoSecretPath = "/var/lib/jellyfin/secrets/dex-client-secret";
   ssoConfigPath = "/var/lib/jellyfin/plugins/configurations/SSO-Auth.xml";
   brandingConfigPath = "/var/lib/jellyfin/config/branding.xml";
 
@@ -127,6 +127,8 @@ in {
       "d /var/lib/jellyfin/config 0750 jellyfin jellyfin -"
       # Plugin config directory for SSO-Auth.xml
       "d /var/lib/jellyfin/plugins/configurations 0750 jellyfin jellyfin -"
+      # Secrets directory for SSO client secret
+      "d /var/lib/jellyfin/secrets 0750 jellyfin jellyfin -"
     ];
 
     # Nginx reverse proxy
