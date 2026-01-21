@@ -126,28 +126,33 @@ in {
         # - Alerts must have type label (host or service) to route correctly
         # - Alerts without type label fall through to ntfy-default
         # - Oneshot alerts (oneshot=true) get 1-year repeat interval
+        # - More specific routes must come first to match correctly
         route = {
           receiver = "ntfy-default";
           group_by = ["alertname"];
           group_wait = "30s";
           group_interval = "5m";
           repeat_interval = "12h";
-          routes = let
-            # Sub-route for oneshot alerts - suppresses repeat notifications
-            oneshotRoute = {
-              match = {oneshot = "true";};
-              repeat_interval = "8760h";
-            };
-          in [
+          routes = [
+            # Oneshot routes first - suppress repeat notifications for persistent alerts
             {
-              match = {type = "host";};
+              matchers = ["type=\"host\"" "oneshot=\"true\""];
               receiver = "ntfy-host";
-              routes = [oneshotRoute];
+              repeat_interval = "8760h";
             }
             {
-              match = {type = "service";};
+              matchers = ["type=\"service\"" "oneshot=\"true\""];
               receiver = "ntfy-service";
-              routes = [oneshotRoute];
+              repeat_interval = "8760h";
+            }
+            # Regular routes for alerts without oneshot label
+            {
+              matchers = ["type=\"host\""];
+              receiver = "ntfy-host";
+            }
+            {
+              matchers = ["type=\"service\""];
+              receiver = "ntfy-service";
             }
           ];
         };
