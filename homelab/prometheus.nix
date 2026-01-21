@@ -30,7 +30,7 @@
   metricsPort = toString services.metrics.port;
 
   # Ntfy credentials file for alertmanager
-  ntfyCredentialsFile = "/var/lib/alertmanager/ntfy-token.txt";
+  ntfyCredentialsFile = "/var/lib/alertmanager/secrets/ntfy-token.txt";
 in {
   options.homelab.prometheus = {
     enable = lib.mkOption {
@@ -219,6 +219,11 @@ in {
       (builtins.toJSON {
         groups = alertGroups;
       })
+    ];
+
+    # Secrets directory for ntfy token
+    systemd.tmpfiles.rules = [
+      "d /var/lib/alertmanager/secrets 0750 prometheus prometheus -"
     ];
 
     # Health check

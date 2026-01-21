@@ -929,7 +929,7 @@ in {
 
         readonly DOMAIN="nb.krejci.io"
         readonly TOKEN_ENV_PATH="/var/lib/grafana/secrets/ntfy-token-env"
-        readonly TOKEN_TXT_PATH="/var/lib/alertmanager/ntfy-token.txt"
+        readonly TOKEN_TXT_PATH="/var/lib/alertmanager/secrets/ntfy-token.txt"
 
         function create_ntfy_user() {
           local -r target="$1"
