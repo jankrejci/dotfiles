@@ -148,157 +148,88 @@ Future work: revisit when Netbird adds stable identifiers or setup key groups fe
 
 ## Development Workflow
 
-**MANDATORY**: For any non-trivial task, follow this workflow exactly. No ad-hoc problem solving.
+### Agents and Skills
 
-### Agents
+**Agents** run in isolated contexts for heavy lifting:
 
 | Agent | Role |
 |-------|------|
-| `analyze` | Research codebase, create implementation plan with specific files and changes |
-| `develop` | Implement changes according to approved plan |
-| `commit` | Create atomic commits with proper format |
-| `test` | Verify implementation works, run checks |
-| `review` | Skeptical code review, find issues |
+| `analyze` | Research codebase, create implementation plan |
+| `develop` | Implement changes according to plan |
+| `verify` | Run checks, test, and review code quality |
 | `deploy` | Deploy to target machine |
-| `debug` | Find root cause when errors occur |
+
+**Skills** are user-invoked workflows:
+
+| Skill | Purpose |
+|-------|---------|
+| `/commit` | Create atomic commits with chunk-based staging |
+| `/branch-cleanup` | Squash fixups before merge |
+| `/new-service` | Create homelab service module from template |
 
 ### Token Efficiency
 
-**CRITICAL**: The main agent must minimize token usage by delegating work to specialized agents.
-
-**Main agent responsibilities:**
+Main agent responsibilities:
 - Quick analysis to understand the task
-- Identify which agent(s) to invoke
-- Present agent results to user
-- Coordinate between agents
+- Delegate heavy work to agents
+- Present results to user
 
-**Main agent must NOT:**
-- Execute multi-step implementation directly
-- Perform branch cleanup, rebasing, or commit organization directly
-- Read many files to understand codebase (delegate to analyze agent)
-- Make code changes (delegate to develop agent)
+Main agent must NOT:
+- Read many files to understand codebase (delegate to analyze)
+- Make multi-file changes directly (delegate to develop)
 
-**Examples:**
-- "compact this branch" → delegate to `commit` agent immediately
-- "implement feature X" → analyze agent → develop agent → commit agent
-- "why is this failing" → delegate to `debug` agent
-
-The main conversation context is expensive. Agents run in separate contexts and can do heavy lifting without bloating the main conversation.
-
-### Workflow Stages
+### Iterative Workflow
 
 ```
-[1] Prompt → [2] Clarify → [3] Analyze → [4] Develop → [5] Commit → [6] Test → [7] Review → [8] Deploy
-                              ↑                                         |         |         |
-                              └─────────────────────────────────────────┴─────────┴─────────┘
-                                                    (on failure, return to develop)
+[1] Clarify → [2] Analyze → [3] Develop → [4] Commit → [5] User Review → [6] Deploy
+                  ↑                            ↓              |
+                  └────────────── fixup ───────┴──────────────┘
 ```
 
-**Stage 1: Receive Prompt**
-- User provides task description
-
-**Stage 2: Clarify** (USER APPROVAL REQUIRED)
-- Improve and clarify the prompt
+**Stage 1: Clarify**
 - Ask questions if requirements are ambiguous
-- Present refined understanding to user
-- Wait for user approval before proceeding
+- For trivial tasks, skip to develop
 
-**Stage 3: Analyze** (USER APPROVAL REQUIRED)
-- Invoke `analyze` agent with clarified requirements
-- Agent explores codebase, checks docs, identifies patterns
-- Agent produces concrete plan: files to modify, specific changes, approach
-- Present plan to user
-- Wait for user approval before proceeding
+**Stage 2: Analyze** (approval required)
+- Invoke `analyze` agent for non-trivial tasks
+- Present plan to user, wait for approval
 
-**Stage 4: Develop** (USER APPROVAL REQUIRED)
+**Stage 3: Develop**
 - Invoke `develop` agent with approved plan
-- Agent implements changes according to plan
-- Agent runs `nix flake check` and `nix fmt`
-- Present changes summary to user
-- Wait for user approval before proceeding
+- Agent implements ONE logical change
+- Agent runs `nix flake check`
 
-**Stage 5: Commit** (USER APPROVAL REQUIRED)
-- Invoke `commit` agent
-- Agent creates atomic commits following format rules
-- Present commit list to user
-- Wait for user approval before proceeding
+**Stage 4: Commit**
+- Use `/commit` skill or commit directly
+- Create ONE commit for the logical change
+- STOP for user review
 
-**Stage 6: Test**
-- Invoke `test` agent
-- Agent verifies implementation
-- If issues found → return to Stage 4 (develop) with issue details
-- If passed → proceed to review
+**Stage 5: User Review**
+- User reviews with tuicr or similar tool
+- If changes needed → create fixup commit → return to review
+- If approved → continue to next change or deploy
 
-**Stage 7: Review**
-- Invoke `review` agent
-- Agent performs skeptical code review
-- If critical issues found → return to Stage 4 (develop) with issue details
-- If passed → proceed to deploy (if requested)
+**Stage 6: Deploy** (approval required)
+- Only if user requests
+- Invoke `deploy` agent
 
-**Stage 8: Deploy** (USER APPROVAL REQUIRED)
-- Only if user requests deployment
-- Invoke `deploy` agent with target hostname
-- If deployment fails → invoke `debug` agent → return to Stage 4 (develop)
+### Fixup Workflow
 
-### Error Handling
+After review feedback:
+```bash
+# Make fixes, then:
+git commit --fixup=HEAD
 
-When ANY error occurs at ANY stage:
-1. Invoke `debug` agent with error context
-2. Debug agent finds root cause
-3. Return to `develop` agent with diagnosis
-4. Resume workflow from Stage 4
+# Before merge, user runs /branch-cleanup to squash
+```
 
 ### Rules
 
-- **NEVER skip stages** for non-trivial tasks
-- **NEVER proceed without user approval** at marked stages
-- **NEVER do ad-hoc fixes** - always route through develop agent
-- **ALWAYS pass context** from previous stages to next agent
-- **ALWAYS return to develop** when issues are found (not direct fixes)
-
-### Invoking Agents
-
-**CRITICAL: Only use defined agents. No arbitrary Task calls.**
-
-Available agents (and ONLY these):
-- `analyze` - Research and planning
-- `develop` - Implementation
-- `commit` - Git commits
-- `test` - Verification
-- `review` - Code review
-- `debug` - Error diagnosis
-- `deploy` - Deployment
-
-**Syntax:** Use the Task tool with `subagent_type` matching the agent name:
-
-```
-Task(
-  description: "{agent}: {brief task summary}",
-  subagent_type: "{agent}",
-  prompt: "{detailed task description with context}"
-)
-```
-
-**Example:**
-```
-Task(
-  description: "analyze: Review authentication flow",
-  subagent_type: "analyze",
-  prompt: "Analyze the authentication implementation in modules/auth.nix. Identify how sessions are managed and suggest improvements."
-)
-```
-
-**NEVER use Task tool without:**
-- Explicitly naming the agent (analyze, develop, test, debug, review, commit, deploy)
-- Following the workflow stages in order
-
-**FORBIDDEN:**
-- Task calls without an agent name prefix in description
-- Using `subagent_type` values other than the 7 agents above
-- Arbitrary problem-solving via Task tool
-- Skipping agents by fixing code directly
-
-If a task doesn't fit any agent, ask the user how to proceed.
+- Work iteratively: one logical change → commit → review → repeat
+- Use fixup commits for iterations, not branch reset
+- NEVER batch many commits without user review between them
+- NEVER push to remote
+- Delegate heavy exploration to agents to save main context tokens
 
 ## Scripts
 See `scripts.nix` for available commands. Key ones:
