@@ -170,6 +170,11 @@ in {
     systemd.services.dex.requires = ["postgresql.service"];
     systemd.services.dex.serviceConfig.EnvironmentFile = "/var/lib/dex/secrets/google-oauth";
 
+    # Secrets directory for Google OAuth and client secrets
+    systemd.tmpfiles.rules = [
+      "d /var/lib/dex/secrets 0750 dex dex -"
+    ];
+
     # Nginx reverse proxy
     services.nginx.virtualHosts.${dexDomain} = {
       listenAddresses = [cfg.ip];
