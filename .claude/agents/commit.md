@@ -38,16 +38,35 @@ Examples:
    - Separate unrelated changes into different commits
    - Order commits to build progressively
 
-3. **Create atomic commits**:
+3. **Stage using chunks** (not whole files):
+   - Use `git add -p <file>` for modified files
+   - For new files: `git add -N <file> && git add -p <file>`
+   - Verify staged changes: `git diff --cached`
+
+4. **Create atomic commits**:
    - Each commit must pass `nix flake check`
    - Each commit must pass `nix fmt`
    - One logical change per commit
 
-4. **Verify**:
+5. **Verify**:
    ```bash
    git log --oneline origin/main..HEAD
    nix flake check
    ```
+
+## Fixup Commits
+
+For iterations after review feedback, use fixup commits:
+```bash
+git commit --fixup=HEAD
+```
+
+Or target a specific commit:
+```bash
+git commit --fixup=<commit-hash>
+```
+
+Fixups will be squashed later with `/branch-cleanup` skill.
 
 ## Rules
 
@@ -75,27 +94,6 @@ Commit messages must look like they were written by a human developer. No attrib
 - Commits will be compacted before merge
 - Reviewability during development matters
 - Split CLAUDE.md changes from code commits
-
-## Branch Cleanup
-
-When consolidating before merge:
-
-1. Create backup: `git branch backup-<branch>`
-2. Soft reset: `git reset --soft origin/main`
-3. Unstage all: `git reset HEAD -- .`
-4. Commit in logical groups by file/feature
-5. Verify: `nix flake check`
-
-## Handling Interleaved Changes
-
-When commits are interleaved across files, soft reset is cleaner than rebase:
-
-```bash
-git branch backup-branch
-git reset --soft origin/main
-git reset HEAD -- .
-# Then commit in logical groups
-```
 
 ## Output
 
