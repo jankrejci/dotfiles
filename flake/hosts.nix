@@ -179,6 +179,7 @@
     };
 
     prusa = {
+      hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHyOwwhHylbrE+HztW0BaCOHypV73ESOIUgUJl/K/OvF";
       system = "aarch64-linux";
       isRpi = true;
       homelab = {
