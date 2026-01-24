@@ -224,6 +224,7 @@
     tlp
     brightnessctl
     age
+    agenix-rekey
     ssh-to-age
     neofetch
     git

@@ -30,6 +30,7 @@
         unstableOverlay
         masterOverlay
         (import ../pkgs/netbird-ui-white-icons.nix)
+        inputs.agenix-rekey.overlays.default
       ];
     };
 
