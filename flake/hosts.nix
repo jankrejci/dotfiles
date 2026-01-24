@@ -32,6 +32,7 @@
     ### Servers ###
 
     vpsfree = {
+      hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIcON6y4kzRaoHdLDUGf25OBqCvD1WY8iM1t2jUikaPf";
       homelab = {
         acme.enable = true;
         immich-public-proxy = {
@@ -54,6 +55,7 @@
     };
 
     thinkcenter = {
+      hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPEK336HnGuQlJl7d3XPw3zw4AhYGDLxx50ZbBuD+nu0";
       device = "/dev/sda";
       swapSize = "8G";
       homelab = {
@@ -135,6 +137,7 @@
     };
 
     framework = {
+      hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGmfq9F+krusOKm33U/uLgCfspYeno4sGYkGQQsb9VG1";
       device = "/dev/nvme0n1";
       swapSize = "8G";
       extraModules = [
@@ -166,6 +169,7 @@
     ### Raspberry Pi ###
 
     rpi4 = {
+      hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAbaTQOMDT3HYGiFVucqr4r1VbrwtMgltvnOeUNYbHMh";
       system = "aarch64-linux";
       isRpi = true;
       extraModules = [
@@ -192,6 +196,7 @@
     };
 
     rak2245 = {
+      hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOBKrxal9ON2M+bbKwBrDNQLi8jgadibM7WN51fYO6Ng";
       system = "aarch64-linux";
       isRpi = true;
       homelab = {
@@ -251,13 +256,20 @@
     inputs.agenix.nixosModules.default
     inputs.agenix-rekey.nixosModules.default
     # agenix-rekey configuration
-    ({...}: {
+    ({
+      config,
+      lib,
+      ...
+    }: let
+      pubkey = config.homelab.host.hostPubkey or null;
+    in {
       age.rekey = {
-        # Master identity on deploy machines only
-        masterIdentities = [../secrets/master-identity.pub];
-        # Storage location for rekeyed secrets
+        # Master identity private key on deploy machines only
+        masterIdentities = ["~/.age/master.txt"];
         storageMode = "local";
-        localStorageDir = ../secrets/rekeyed;
+        localStorageDir = ../secrets/rekeyed + "/${config.networking.hostName}";
+        # Host pubkey from host definition in hosts attrset above
+        hostPubkey = lib.mkIf (pubkey != null) pubkey;
       };
     })
     ../modules # Base system modules
