@@ -33,8 +33,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-flatpak.url = "github:gmodena/nix-flatpak/?ref=latest";
-    # SOPS for managing secrets via age encryption
-    sops-nix.url = "github:mic92/sops-nix";
     # Raspberry Pi NixOS support with RPi kernel and proper config.txt generation
     nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi";
   };

@@ -236,7 +236,6 @@
     nmap
     wireguard-tools
     nix-tree
-    sops
     sbctl
     lshw
     # GNOME extensions installed system-wide, enabled per-user via dconf
