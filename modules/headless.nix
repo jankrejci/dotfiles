@@ -9,7 +9,6 @@
     # System management
     gitMinimal
     nix-tree
-    sops
     sbctl
     lshw
   ];

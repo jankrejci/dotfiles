@@ -116,7 +116,7 @@ in {
         ];
 
         # Upstream identity provider: Google
-        # Credentials loaded from environment via sops-nix
+        # Credentials loaded from EnvironmentFile, see systemd service config below
         connectors = [
           {
             type = "google";
@@ -131,7 +131,7 @@ in {
         ];
 
         # Downstream OAuth clients
-        # Secrets loaded from files via sops-nix
+        # Secrets loaded from files in /var/lib/dex/secrets/
         staticClients = [
           {
             id = "grafana";
