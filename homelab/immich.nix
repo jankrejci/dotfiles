@@ -42,7 +42,6 @@
     passwordLogin.enabled = false;
   });
   immichOAuthConfigPath = "/var/lib/immich/config.json";
-  immichOAuthSecretPath = "/var/lib/immich/secrets/dex-client-secret";
 in {
   options.homelab.immich = {
     enable = lib.mkOption {
@@ -71,6 +70,12 @@ in {
 
   config = lib.mkIf cfg.enable (lib.mkMerge [
     {
+      # Dex client secret for SSO authentication
+      age.secrets.immich-dex-secret = {
+        rekeyFile = ../secrets/dex-immich-secret.age;
+        owner = "immich";
+      };
+
       # Register IP for services dummy interface
       homelab.serviceIPs = [cfg.ip];
       networking.hosts.${cfg.ip} = [immichDomain];
@@ -133,11 +138,9 @@ in {
       # Generate OAuth config at runtime by substituting secret into template.
       # Runs as root before service starts. Immich reads file via IMMICH_CONFIG_FILE.
       systemd.services.immich-server.preStart = ''
-        if [ -f "${immichOAuthSecretPath}" ]; then
-          secret=$(cat "${immichOAuthSecretPath}")
-          ${pkgs.gnused}/bin/sed "s/@IMMICH_OAUTH_CLIENT_SECRET@/$secret/" \
-            "${immichOAuthConfigTemplate}" > "${immichOAuthConfigPath}"
-        fi
+        secret=$(cat "${config.age.secrets.immich-dex-secret.path}")
+        ${pkgs.gnused}/bin/sed "s/@IMMICH_OAUTH_CLIENT_SECRET@/$secret/" \
+          "${immichOAuthConfigTemplate}" > "${immichOAuthConfigPath}"
       '';
 
       # Ensure required directory structure exists on the data disk
@@ -153,8 +156,6 @@ in {
         "d /var/lib/immich/profile 0755 immich immich -"
         "d /var/lib/immich/encoded-video 0755 immich immich -"
         "d /var/lib/immich/backups 0755 immich immich -"
-        # Secrets directory for SSO client secret
-        "d /var/lib/immich/secrets 0750 immich immich -"
         "f /var/lib/immich/upload/.immich 0644 immich immich -"
         "f /var/lib/immich/library/.immich 0644 immich immich -"
         "f /var/lib/immich/thumbs/.immich 0644 immich immich -"

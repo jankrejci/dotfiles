@@ -62,6 +62,24 @@ in {
       owner = "dex";
     };
 
+    # Client secrets for downstream OAuth clients
+    age.secrets.dex-grafana-secret = {
+      rekeyFile = ../secrets/dex-grafana-secret.age;
+      owner = "dex";
+    };
+    age.secrets.dex-immich-secret = {
+      rekeyFile = ../secrets/dex-immich-secret.age;
+      owner = "dex";
+    };
+    age.secrets.dex-memos-secret = {
+      rekeyFile = ../secrets/dex-memos-secret.age;
+      owner = "dex";
+    };
+    age.secrets.dex-jellyfin-secret = {
+      rekeyFile = ../secrets/dex-jellyfin-secret.age;
+      owner = "dex";
+    };
+
     # Register IP for services dummy interface
     homelab.serviceIPs = [cfg.ip];
     networking.hosts.${cfg.ip} = [dexDomain];
@@ -137,13 +155,12 @@ in {
         ];
 
         # Downstream OAuth clients
-        # Secrets loaded from files in /var/lib/dex/secrets/
         staticClients = [
           {
             id = "grafana";
             name = "Grafana";
             redirectURIs = ["https://grafana.${domain}/login/generic_oauth"];
-            secretFile = "/var/lib/dex/secrets/grafana-client-secret";
+            secretFile = config.age.secrets.dex-grafana-secret.path;
           }
           {
             id = "immich";
@@ -153,19 +170,19 @@ in {
               "https://immich.${domain}/user-settings"
               "https://immich.${domain}/api/oauth/mobile-redirect"
             ];
-            secretFile = "/var/lib/dex/secrets/immich-client-secret";
+            secretFile = config.age.secrets.dex-immich-secret.path;
           }
           {
             id = "memos";
             name = "Memos";
             redirectURIs = ["https://memos.${domain}/auth/callback"];
-            secretFile = "/var/lib/dex/secrets/memos-client-secret";
+            secretFile = config.age.secrets.dex-memos-secret.path;
           }
           {
             id = "jellyfin";
             name = "Jellyfin";
             redirectURIs = ["https://jellyfin.${domain}/sso/OID/redirect/Dex"];
-            secretFile = "/var/lib/dex/secrets/jellyfin-client-secret";
+            secretFile = config.age.secrets.dex-jellyfin-secret.path;
           }
         ];
       };
@@ -175,11 +192,6 @@ in {
     systemd.services.dex.after = ["postgresql.service"];
     systemd.services.dex.requires = ["postgresql.service"];
     systemd.services.dex.serviceConfig.EnvironmentFile = config.age.secrets.google-oauth.path;
-
-    # Secrets directory for Google OAuth and client secrets
-    systemd.tmpfiles.rules = [
-      "d /var/lib/dex/secrets 0750 dex dex -"
-    ];
 
     # Nginx reverse proxy
     services.nginx.virtualHosts.${dexDomain} = {

@@ -50,6 +50,12 @@ in {
       }
     ];
 
+    # Dex client secret for SSO authentication
+    age.secrets.grafana-dex-secret = {
+      rekeyFile = ../secrets/dex-grafana-secret.age;
+      owner = "grafana";
+    };
+
     # Register IP for services dummy interface
     homelab.serviceIPs = [cfg.ip];
     networking.hosts.${cfg.ip} = [serverDomain];
@@ -82,11 +88,6 @@ in {
       ];
     };
 
-    # Secrets directory for SSO client secret
-    systemd.tmpfiles.rules = [
-      "d /var/lib/grafana/secrets 0750 grafana grafana -"
-    ];
-
     services.grafana = {
       enable = true;
       # Infinity plugin for querying external APIs like Binance
@@ -116,10 +117,7 @@ in {
           enabled = true;
           name = "Dex";
           client_id = "grafana";
-          # Secret must match dex's grafana client secret. Manually provision:
-          # cp /var/lib/dex/secrets/grafana-client-secret /var/lib/grafana/secrets/dex-client-secret
-          # chown grafana:grafana /var/lib/grafana/secrets/dex-client-secret
-          client_secret = "$__file{/var/lib/grafana/secrets/dex-client-secret}";
+          client_secret = "$__file{${config.age.secrets.grafana-dex-secret.path}}";
           scopes = "openid email profile";
           auth_url = "https://dex.${domain}/auth";
           token_url = "https://dex.${domain}/token";

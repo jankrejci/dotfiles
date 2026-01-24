@@ -27,7 +27,6 @@
   jellyfinDomain = "${cfg.subdomain}.${domain}";
 
   # SSO configuration paths
-  ssoSecretPath = "/var/lib/jellyfin/secrets/dex-client-secret";
   ssoConfigPath = "/var/lib/jellyfin/plugins/configurations/SSO-Auth.xml";
   brandingConfigPath = "/var/lib/jellyfin/config/branding.xml";
 
@@ -66,6 +65,12 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    # Dex client secret for SSO authentication
+    age.secrets.jellyfin-dex-secret = {
+      rekeyFile = ../secrets/dex-jellyfin-secret.age;
+      owner = "jellyfin";
+    };
+
     # Register IP for services dummy interface
     homelab.serviceIPs = [cfg.ip];
     networking.hosts.${cfg.ip} = [jellyfinDomain];
@@ -94,17 +99,11 @@ in {
 
       # Configure SSO plugin and branding before Jellyfin starts
       preStart = ''
-        # Skip SSO setup if secret not provisioned yet
-        [[ ! -f "${ssoSecretPath}" ]] && {
-          echo "SSO secret not found at ${ssoSecretPath}, skipping SSO configuration"
-          exit 0
-        }
-
         # Write branding config with SSO login button
         cp "${brandingConfig}" "${brandingConfigPath}"
 
         # Substitute secret into SSO config template
-        secret=$(cat "${ssoSecretPath}")
+        secret=$(cat "${config.age.secrets.jellyfin-dex-secret.path}")
         sed "s|@JELLYFIN_SSO_SECRET@|$secret|g" "${ssoConfigTemplate}" > "${ssoConfigPath}"
 
         echo "Jellyfin SSO configuration updated"
@@ -127,8 +126,6 @@ in {
       "d /var/lib/jellyfin/config 0750 jellyfin jellyfin -"
       # Plugin config directory for SSO-Auth.xml
       "d /var/lib/jellyfin/plugins/configurations 0750 jellyfin jellyfin -"
-      # Secrets directory for SSO client secret
-      "d /var/lib/jellyfin/secrets 0750 jellyfin jellyfin -"
     ];
 
     # Nginx reverse proxy
