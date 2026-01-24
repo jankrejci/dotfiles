@@ -9,157 +9,227 @@ Current state:
 - Comments say "via sops-nix" but actually manual SSH injection
 - No per-host isolation: compromised host could expose other hosts' secrets
 
-## Solution: agenix-rekey or vaultix
+## Solution: agenix-rekey
 
-Both tools implement the same security model:
+agenix-rekey extends agenix with automatic rekeying using a master identity.
+vaultix was also considered but agenix-rekey was chosen for its built-in generators
+and more mature ecosystem.
+
+Security model:
 1. Master identity on deploy machine only (encrypted laptops)
 2. Secrets encrypted with master key in git (audit trail)
 3. Automatic rekeying: per-host copies encrypted for each host's SSH key
 4. Host compromise exposes only that host's secrets
 
-### Tool Comparison
-
-| Feature | vaultix | agenix-rekey |
-|---------|---------|--------------|
-| Generators | Manual only | Built-in (random, hex, ssh keys) |
-| flake-parts | Native | Works, more wiring |
-| Maturity | Newer | More established |
-| Multiple master keys | extraRecipients | Native list |
-| Hashed passwords | beforeUserborn | neededForUsers |
-| Shared secrets | Declare on each host | Declare on each host |
-| Host key bootstrap | ssh-keyscan or dummy | ssh-keyscan or dummy |
-
 Templates not needed: Dex, Grafana, ntfy all support `secretFile` or env vars natively.
-
-### Recommendation
-
-**agenix-rekey** because:
-- Generators for random tokens (ntfy, passwords)
-- More mature and battle-tested
-- Native multiple master keys support
-
-Both tools work similarly otherwise. vaultix is fine if flake-parts integration matters more.
 
 ## Architecture
 
 ```
 Master Identity (age key on encrypted deploy laptops)
-        │
-        ▼
+        |
+        v
    secrets/*.age  (master-encrypted, in git)
-        │
-        │  ── agenix rekey / nix run .#renc ──
-        │
-        ▼
-   secrets/rekeyed/<host>/  or  secrets/cache/<host-hash>/
-        │
-        │  ── nixos-rebuild ──
-        │
-        ▼
-   /run/secrets/<name>  (decrypted at boot via systemd)
+        |
+        |  -- agenix rekey -a --
+        |
+        v
+   secrets/rekeyed/<host>/  (host-encrypted, in git)
+        |
+        |  -- nixos-rebuild --
+        |
+        v
+   /run/agenix/<name>  (decrypted at boot via systemd)
 ```
 
-### How Host Keys Become Age Keys
+### Storage Mode
 
-agenix/vaultix use `ssh-to-age` to derive age keys from SSH Ed25519 host keys:
+Using local storage mode: rekeyed secrets stored in `secrets/rekeyed/<host>/`
+and committed to git. The main advantage is builds work without master key access,
+making CI and team collaboration straightforward.
 
-1. SSH Ed25519 keys use Edwards curve (signing)
-2. Age uses X25519 curve (encryption)
-3. `ssh-to-age` converts Ed25519 → X25519 via standard cryptographic transform
-4. Host's `/etc/ssh/ssh_host_ed25519_key` becomes decryption key at boot
+Derivation mode was considered but adds complexity without benefit for a private repo.
 
-To add a host to the rekey configuration:
+### Host Key Configuration
+
+agenix-rekey accepts SSH Ed25519 pubkeys directly (no ssh-to-age conversion needed):
+
 ```bash
 # Get host's SSH pubkey
-ssh-keyscan -t ed25519 hostname 2>/dev/null | grep ed25519
+ssh-keyscan -t ed25519 hostname 2>/dev/null
 
-# Convert to age pubkey
-ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub
-# Output: age1...
-
-# Add to host config
-age.rekey.hostPubkey = "age1...";
+# Add to host config (SSH format works directly)
+age.rekey.hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5...";
 ```
 
 ### Host Key Bootstrap
 
-Options for new hosts:
-
-**Option A: Host key as managed secret (recommended)**
-
-Store the host private key encrypted in the repo. It's just another secret managed by agenix:
+**Option A: Pre-generate key (recommended)**
 
 ```bash
 # 1. Generate host key locally
 ssh-keygen -t ed25519 -f /tmp/ssh_host_ed25519_key -N ""
 
-# 2. Convert to age pubkey for host config
-ssh-to-age < /tmp/ssh_host_ed25519_key.pub
-# Add output to age.rekey.hostPubkey in host config
+# 2. Add SSH pubkey to host config
+age.rekey.hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5...";
 
 # 3. Encrypt private key with master identity
 agenix edit secrets/hosts/newhost-ssh-key.age
 # Paste contents of /tmp/ssh_host_ed25519_key
 
 # 4. Rekey all secrets for new host
-agenix rekey
+agenix rekey -a
 
 # 5. Commit everything together
 git add . && git commit -m "host: Add newhost with secrets"
 
-# 6. Install (key decrypted and placed by agenix)
+# 6. Install
 nixos-anywhere --flake '.#newhost' root@target-ip
 ```
 
-Benefits:
-- Everything prepared before install, no commits during deploy
-- Key rotation is just re-encrypt and rekey
-- Consistent with how other secrets are managed
-- Host key becomes auditable in git history
+Alternatively, agenix-rekey supports dummy pubkeys for initial deploy but this
+requires two deploys and is not recommended.
 
-The host key secret needs special handling in NixOS config:
+## Flake Configuration
+
+### Flake inputs
+
 ```nix
-age.secrets.ssh-host-key = {
-  rekeyFile = ./secrets/hosts/${config.networking.hostName}-ssh-key.age;
-  path = "/etc/ssh/ssh_host_ed25519_key";
-  mode = "0600";
-  # Decrypt early so sshd starts correctly
+inputs = {
+  agenix.url = "github:ryantm/agenix";
+  agenix-rekey = {
+    url = "github:oddlama/agenix-rekey";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
 };
 ```
 
-**Option B: Dummy pubkey then update**
-
-Use agenix-rekey's dummy pubkey for initial deploy. Requires two deploys: first boot
-has failing secrets, then update with real pubkey from `ssh-keyscan`. Only use this
-if you can't pre-generate keys for some reason.
-
-### Shared Secrets
-
-Same source file, declared on each host that needs it:
+### flake-parts integration
 
 ```nix
-# secrets/dex-grafana-secret.age (master-encrypted)
+# flake/default.nix
+{inputs, ...}: {
+  imports = [
+    inputs.agenix-rekey.flakeModule
+    # ... other imports
+  ];
+}
 
-# On dex host
-age.secrets.grafana-client-secret = {
-  rekeyFile = ./secrets/dex-grafana-secret.age;
-  owner = "dex";
+# flake/packages.nix (perSystem)
+{
+  perSystem = {pkgs, ...}: {
+    agenix-rekey.nixosConfigurations = inputs.self.nixosConfigurations;
+  };
+}
+```
+
+### NixOS module configuration
+
+```nix
+# In baseModules or common config
+({config, lib, ...}: let
+  hostName = config.networking.hostName;
+  hostPubkeys = {
+    myhost = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5...";
+  };
+in {
+  age.rekey = {
+    # Private key path - absolute to avoid copying into nix store
+    masterIdentities = ["~/.age/master.txt"];
+    storageMode = "local";
+    # Path must use string concatenation, not path literal
+    localStorageDir = ../secrets/rekeyed + "/${hostName}";
+    hostPubkey = lib.mkIf (hostPubkeys ? ${hostName}) hostPubkeys.${hostName};
+  };
+})
+```
+
+**Critical:**
+- `masterIdentities` must point to the **private key**
+- Use absolute path to avoid copying private key into nix store
+- `localStorageDir` must use `path + "/string"` format
+
+## Rekey Workflow
+
+Commands:
+- `agenix edit <file>` - Create or edit secret (opens $EDITOR)
+- `agenix rekey` - Re-encrypt secrets for all hosts
+- `agenix rekey -a` - Rekey and auto-stage in git
+- `agenix generate` - Generate secrets that have generators defined
+- `agenix view` - View secrets with fzf picker
+
+Typical workflow:
+```bash
+# 1. Create/edit secret
+agenix edit secrets/my-secret.age
+
+# 2. Add declaration to NixOS config
+age.secrets.my-secret = {
+  rekeyFile = ../secrets/my-secret.age;
+  owner = "service-user";
 };
 
-# On grafana host
-age.secrets.grafana-client-secret = {
-  rekeyFile = ./secrets/dex-grafana-secret.age;
-  owner = "grafana";
+# 3. Rekey for all hosts (auto-stages)
+agenix rekey -a
+
+# 4. Commit and deploy
+git commit -m "secrets: Add my-secret"
+```
+
+Build fails with instructions if rekey needed, making it hard to forget.
+
+## Secret Declaration
+
+```nix
+age.secrets.example = {
+  rekeyFile = ../secrets/example.age;  # Master-encrypted source
+  owner = "service-user";
+  group = "service-group";
+  mode = "0400";
+};
+
+# For secrets needed before user creation
+age.secrets.password-hash = {
+  rekeyFile = ../secrets/password.age;
+  neededForUsers = true;  # Decrypts to /run/secrets-for-users/
 };
 ```
 
-Rekeying produces separate encrypted copies for each host.
+### Predefined Generators
+
+agenix-rekey includes these generators:
+- `alnum` - 48-character alphanumeric
+- `base64` - 32-byte base64 (length 44)
+- `hex` - 24-byte hexadecimal (length 48)
+- `passphrase` - 6-word passphrase
+- `dhparams` - 4096-bit DH parameters
+- `ssh-ed25519` - ED25519 SSH private key
+
+Usage:
+```nix
+# Define custom generator
+age.generators.my-token = {pkgs, ...}: ''
+  echo -n "tk_$(${pkgs.pwgen}/bin/pwgen -s 29 1)"
+'';
+
+# Use generator in secret
+age.secrets.my-token = {
+  rekeyFile = ../secrets/my-token.age;
+  generator.script = "my-token";  # Reference by name
+};
+
+# Or use predefined generator
+age.secrets.random-password = {
+  rekeyFile = ../secrets/random-password.age;
+  generator.script = "alnum";
+};
+```
+
+Run `agenix generate` to create secrets with generators defined.
 
 ## Service-Specific Configuration
 
 ### Dex (OAuth Provider)
-
-Already supports declarative secrets via `secretFile`:
 
 ```nix
 services.dex.settings.staticClients = [{
@@ -172,65 +242,7 @@ systemd.services.dex.serviceConfig.EnvironmentFile =
   config.age.secrets.google-oauth-env.path;
 ```
 
-No changes needed to dex.nix structure, just point paths to agenix/vaultix secrets.
-
-### ntfy (Notifications)
-
-Declarative token management via Nix options and preStart script:
-
-```nix
-# Generate tokens with agenix-rekey
-age.generators.ntfy-token = { pkgs, ... }: ''
-  echo -n "tk_$(${pkgs.pwgen}/bin/pwgen -s 29 1)"
-'';
-
-# Per-service token secrets
-age.secrets.ntfy-grafana-token = {
-  rekeyFile = ./secrets/ntfy-grafana-token.age;
-  generator.script = "ntfy-token";
-  owner = "ntfy-sh";
-};
-age.secrets.ntfy-alertmanager-token = {
-  rekeyFile = ./secrets/ntfy-alertmanager-token.age;
-  generator.script = "ntfy-token";
-  owner = "ntfy-sh";
-};
-```
-
-Declarative user/ACL config in Nix, tokens from secrets:
-
-```nix
-# Declare services and their permissions in Nix
-homelab.ntfy.clients = {
-  grafana = {
-    tokenFile = config.age.secrets.ntfy-grafana-token.path;
-    topics = [ "alerts-grafana" ];
-    permissions = "rw";
-  };
-  alertmanager = {
-    tokenFile = config.age.secrets.ntfy-alertmanager-token.path;
-    topics = [ "alerts" ];
-    permissions = "rw";
-  };
-  prusa = {
-    tokenFile = config.age.secrets.ntfy-prusa-token.path;
-    topics = [ "alerts-prusa" ];
-    permissions = "wo";  # write-only, no read
-  };
-};
-```
-
-The module generates a preStart script that:
-1. Creates users with random passwords (ntfy requires users for token ownership)
-2. Assigns tokens to users (read from secret files)
-3. Sets per-topic ACL based on declared permissions
-
-This keeps all config in Nix while tokens stay in age secrets. Per-topic ACL limits
-blast radius: compromised RPi can only spam its own topic.
-
 ### Grafana
-
-Supports `$__file{}` syntax:
 
 ```nix
 services.grafana.settings.auth.generic_oauth = {
@@ -239,14 +251,23 @@ services.grafana.settings.auth.generic_oauth = {
 };
 ```
 
-### User Password Hashes
+### ACME (Cloudflare)
 
-Use `neededForUsers` for secrets required before user creation:
+```nix
+age.secrets.cloudflare-api-token = {
+  rekeyFile = ../secrets/cloudflare-api-token.age;
+  owner = "acme";
+};
+
+security.acme.defaults.environmentFile = config.age.secrets.cloudflare-api-token.path;
+```
+
+### User Password Hashes
 
 ```nix
 age.secrets.jkr-password-hash = {
-  rekeyFile = ./secrets/jkr-password.age;
-  neededForUsers = true;  # Decrypts to /run/secrets-for-users/
+  rekeyFile = ../secrets/jkr-password.age;
+  neededForUsers = true;
 };
 
 users.users.jkr = {
@@ -254,50 +275,37 @@ users.users.jkr = {
 };
 ```
 
-No userborn/sysusers needed.
+### Shared Secrets
 
-### Borg Passphrase
-
-Same secret on both server and client:
+Same source file, declared on each host:
 
 ```nix
-# Shared source
-# secrets/borg-passphrase.age
-
-# On backup server
-age.secrets.borg-passphrase = {
-  rekeyFile = ./secrets/borg-passphrase.age;
-  owner = "root";
+# On dex host
+age.secrets.grafana-client-secret = {
+  rekeyFile = ../secrets/dex-grafana-secret.age;
+  owner = "dex";
 };
 
-# On backup client
-age.secrets.borg-passphrase = {
-  rekeyFile = ./secrets/borg-passphrase.age;
-  owner = "root";
+# On grafana host
+age.secrets.grafana-client-secret = {
+  rekeyFile = ../secrets/dex-grafana-secret.age;
+  owner = "grafana";
 };
 ```
 
-### Cloudflare API Token
-
-Manual input, no generator:
-
-```nix
-age.secrets.cloudflare-api-token = {
-  rekeyFile = ./secrets/cloudflare-api-token.age;
-  owner = "acme";
-};
-```
-
-Create with `agenix edit secrets/cloudflare-api-token.age` and paste token.
+Rekeying produces separate encrypted copies for each host.
 
 ## Implementation Phases
 
 ### Phase 1: Tool Setup
 
-1. Choose agenix-rekey or vaultix
-2. Add to flake inputs, import module
-3. Configure master identity path
-4. Set up `.sops.yaml` or equivalent for host keys
+1. Add agenix and agenix-rekey to flake inputs
+2. Import flakeModule in flake/default.nix
+3. Add perSystem agenix-rekey config in flake/packages.nix
+4. Add agenix modules to baseModules
+5. Configure masterIdentities path
+6. Configure storageMode = "local" and localStorageDir
+7. Add hostPubkey for each host (ssh-keyscan existing hosts)
 
 ### Phase 2: Migrate Static Secrets
 
@@ -308,11 +316,13 @@ Start with secrets that don't need generation:
 4. User password hashes
 
 For each:
-1. Create encrypted file: `agenix edit secrets/name.age`
-2. Add declaration to host config
-3. Update service to use `config.age.secrets.name.path`
-4. Test deploy
-5. Remove old injection script usage
+1. Extract current value from host or create new
+2. Create encrypted file: `agenix edit secrets/name.age`
+3. Add declaration to service module
+4. Update service to use `config.age.secrets.name.path`
+5. Run `agenix rekey -a`
+6. Test deploy
+7. Remove old injection script usage
 
 ### Phase 3: Generated Secrets
 
@@ -324,20 +334,14 @@ Add generators for:
 
 1. Remove old injection scripts
 2. Update documentation
-3. Remove sops.yaml if not using sops-nix
-
-## Related Plans
-
-- **Scripts refactor**: See `.claude/plans/scripts-refactor.md` for splitting `scripts.nix`
-  into modular files. Injection scripts will be removed after secrets migration.
 
 ## Migration Notes
 
 ### What Changes
 
 - Secrets stored encrypted in git (audit trail)
-- Rekeying step on deploy machine before deploy
-- Services reference `/run/secrets/` or `/run/agenix/` paths
+- Run `agenix rekey -a` before deploy when secrets change
+- Services reference `/run/agenix/` paths
 
 ### What Stays Same
 
@@ -349,5 +353,5 @@ Add generators for:
 
 Keep old injection scripts until new system proven. Both can coexist:
 - Old scripts write to `/var/lib/*/secrets/`
-- New system writes to `/run/secrets/`
+- New system writes to `/run/agenix/`
 - Update service paths one at a time
