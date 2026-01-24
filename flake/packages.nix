@@ -54,5 +54,8 @@
         inherit (scripts) script-lib-test validate-ssh-keys;
       }
       else {};
+
+    # agenix-rekey configuration
+    agenix-rekey.nixosConfigurations = inputs.self.nixosConfigurations;
   };
 }

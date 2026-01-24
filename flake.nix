@@ -33,6 +33,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-flatpak.url = "github:gmodena/nix-flatpak/?ref=latest";
+    # Secrets management with age encryption and automatic rekeying
+    agenix.url = "github:ryantm/agenix";
+    agenix-rekey = {
+      url = "github:oddlama/agenix-rekey";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     # Raspberry Pi NixOS support with RPi kernel and proper config.txt generation
     nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi";
   };
