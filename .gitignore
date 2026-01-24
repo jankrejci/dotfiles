@@ -2,3 +2,5 @@ result
 *-sdcard
 *-image
 .sops.yaml
+# Rekeyed secrets are generated and should not be committed
+secrets/rekeyed/

@@ -248,6 +248,18 @@
     inputs.home-manager.nixosModules.home-manager
     inputs.disko.nixosModules.disko
     inputs.nix-flatpak.nixosModules.nix-flatpak
+    inputs.agenix.nixosModules.default
+    inputs.agenix-rekey.nixosModules.default
+    # agenix-rekey configuration
+    ({...}: {
+      age.rekey = {
+        # Master identity on deploy machines only
+        masterIdentities = [../secrets/master-identity.pub];
+        # Storage location for rekeyed secrets
+        storageMode = "local";
+        localStorageDir = ../secrets/rekeyed;
+      };
+    })
     ../modules # Base system modules
     ../homelab # Service modules with enable pattern
     ../users/admin.nix
