@@ -33,7 +33,7 @@
       ];
     };
 
-    scripts = import ../scripts.nix {
+    scripts = import ../scripts {
       pkgs = pkgsWithOverlays;
       nixos-anywhere = inputs.nixos-anywhere.packages.${system}.nixos-anywhere;
     };
