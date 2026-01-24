@@ -1,4 +1,9 @@
-{...}: {
+{config, ...}: {
+  # Password hash for jkr user
+  age.secrets.jkr-password-hash = {
+    rekeyFile = ../secrets/jkr-password-hash.age;
+  };
+
   users.users = {
     jkr = {
       isNormalUser = true;
@@ -14,7 +19,7 @@
       ];
       # It's good practice to explicitly set the UID
       uid = 1000;
-      hashedPassword = "$y$j9T$u.2s1lYSq.YKGJd0QN7cr.$rQlNj0kYmBpMqmFTK83GpMtYciDcryxABItQziWmml5";
+      hashedPasswordFile = config.age.secrets.jkr-password-hash.path;
     };
   };
 
