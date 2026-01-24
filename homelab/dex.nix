@@ -56,6 +56,12 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    # Google OAuth credentials for upstream identity provider
+    age.secrets.google-oauth = {
+      rekeyFile = ../secrets/google-oauth.age;
+      owner = "dex";
+    };
+
     # Register IP for services dummy interface
     homelab.serviceIPs = [cfg.ip];
     networking.hosts.${cfg.ip} = [dexDomain];
@@ -168,7 +174,7 @@ in {
     # Ensure dex starts after PostgreSQL
     systemd.services.dex.after = ["postgresql.service"];
     systemd.services.dex.requires = ["postgresql.service"];
-    systemd.services.dex.serviceConfig.EnvironmentFile = "/var/lib/dex/secrets/google-oauth";
+    systemd.services.dex.serviceConfig.EnvironmentFile = config.age.secrets.google-oauth.path;
 
     # Secrets directory for Google OAuth and client secrets
     systemd.tmpfiles.rules = [
