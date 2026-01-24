@@ -60,9 +60,6 @@
   # when there's only one generation and no keyboard attached.
   boot.loader.timeout = 0;
 
-  # Add password for the admin user to be able to log in from local console
-  users.users.admin.hashedPassword = "$y$j9T$8qLqeoP/jNv9rFtFfyljl1$S/GqBaFaaCIluY88qW9app4APK49d9wFI.5CmfFnwH/";
-
   # Raspberry Pi utilities (vcgencmd for temperature, throttling, etc.)
   # With raspberry-pi-nix, vcgencmd works because the RPi kernel has vcio driver
   # iw is for WiFi diagnostics and TX power adjustment

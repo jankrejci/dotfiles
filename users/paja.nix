@@ -1,4 +1,9 @@
-{...}: {
+{config, ...}: {
+  # Password hash for paja user
+  age.secrets.paja-password-hash = {
+    rekeyFile = ../secrets/paja-password-hash.age;
+  };
+
   users.users = {
     paja = {
       isNormalUser = true;
@@ -10,7 +15,7 @@
         "paja"
       ];
       uid = 5000;
-      hashedPassword = "$y$j9T$osBbtqLvq0nOsFx1WThF40$oqcK0hbg8rgeLkX/ptVY5WJ32XTiRcuXkOT9DFMJ/i2";
+      hashedPasswordFile = config.age.secrets.paja-password-hash.path;
     };
   };
 
