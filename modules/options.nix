@@ -42,6 +42,12 @@
         description = "Swap partition size";
       };
 
+      hostPubkey = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "SSH Ed25519 public key for agenix-rekey";
+      };
+
       # Homelab service configuration for this host.
       # Injected into NixOS module system and merges with homelab/*.nix options.
       homelab = mkOption {
