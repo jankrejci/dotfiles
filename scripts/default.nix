@@ -17,10 +17,7 @@ in {
   deploy-config = callScript ./deploy-config.nix;
   nixos-install = callScriptWith {inherit nixos-anywhere;} ./nixos-install.nix;
   reenroll-netbird = callScript ./reenroll-netbird.nix;
-  inject-cloudflare-token = callScript ./inject-cloudflare-token.nix;
   inject-borg-passphrase = callScript ./inject-borg-passphrase.nix;
-  inject-ntfy-token = callScript ./inject-ntfy-token.nix;
-  inject-dex-secrets = callScript ./inject-dex-secrets.nix;
 
   # Validate ssh-authorized-keys.conf is parseable
   validate-ssh-keys = pkgs.runCommand "validate-ssh-keys" {} ''
