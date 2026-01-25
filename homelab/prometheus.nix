@@ -28,9 +28,6 @@
   domain = global.domain;
   peerDomain = global.peerDomain;
   metricsPort = toString services.metrics.port;
-
-  # Ntfy credentials file for alertmanager
-  ntfyCredentialsFile = "/var/lib/alertmanager/secrets/ntfy-token.txt";
 in {
   options.homelab.prometheus = {
     enable = lib.mkOption {
@@ -55,6 +52,12 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    # Ntfy token for alertmanager notifications
+    age.secrets.ntfy-token = {
+      rekeyFile = ../secrets/ntfy-token.age;
+      owner = "prometheus";
+    };
+
     services.prometheus = {
       enable = true;
       # Keep metrics for 6 months
@@ -171,7 +174,7 @@ in {
                 http_config = {
                   authorization = {
                     type = "Bearer";
-                    credentials_file = ntfyCredentialsFile;
+                    credentials_file = config.age.secrets.ntfy-token.path;
                   };
                 };
               }
@@ -224,11 +227,6 @@ in {
       (builtins.toJSON {
         groups = alertGroups;
       })
-    ];
-
-    # Secrets directory for ntfy token
-    systemd.tmpfiles.rules = [
-      "d /var/lib/alertmanager/secrets 0750 prometheus prometheus -"
     ];
 
     # Health check
