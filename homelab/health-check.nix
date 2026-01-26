@@ -26,7 +26,8 @@
       runtimeInputs = [pkgs.coreutils pkgs.curl];
       text = ''
           set -a
-          # shellcheck disable=SC1090
+          # Path is runtime agenix secret, not available at build time.
+          # shellcheck disable=SC1091
           source "${ntfyTokenPath}"
           set +a
           readonly NTFY_TOKEN
