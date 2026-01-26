@@ -327,10 +327,21 @@
           ++ [({...}: {nixpkgs.pkgs = pkgs;})];
       });
 
+  # Skip tests for packages built via QEMU emulation.
+  # Tests run under emulation are extremely slow.
+  skipTestsOverlay = final: prev: {
+    octoprint = prev.octoprint.override {
+      packageOverrides = _pyfinal: pyprev: {
+        octoprint = pyprev.octoprint.overridePythonAttrs {doCheck = false;};
+      };
+    };
+  };
+
   # Cached aarch64 packages for RPi overlay
   cachedPkgs-aarch64 = import inputs.nixpkgs {
     system = "aarch64-linux";
     config.allowUnfree = true;
+    overlays = [skipTestsOverlay];
   };
 
   # Create nixosConfiguration for RPi hosts
@@ -344,7 +355,9 @@
           pkgs = cachedPkgs-aarch64;
         };
       };
-      modules = mkModulesList hostName host;
+      modules =
+        mkModulesList hostName host
+        ++ [({...}: {nixpkgs.overlays = [skipTestsOverlay];})];
     };
 in {
   # Export configuration for other flake modules
