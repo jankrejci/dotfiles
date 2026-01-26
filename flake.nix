@@ -1,10 +1,16 @@
 {
   description = "NixOS multi host configuration";
 
-  # Binary cache for nixos-raspberrypi packages like ffmpeg-headless and kernel.
+  # Binary caches for pre-built packages.
   nixConfig = {
-    extra-substituters = ["https://nixos-raspberrypi.cachix.org"];
-    extra-trusted-public-keys = ["nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="];
+    extra-substituters = [
+      "https://nixos-raspberrypi.cachix.org"
+      "https://deploy-rs.cachix.org"
+    ];
+    extra-trusted-public-keys = [
+      "nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="
+      "deploy-rs.cachix.org-1:xfNobmiwF/vzvK1gpfediPwpdIP0rpDV2rYqx40zdSI="
+    ];
   };
 
   inputs = {

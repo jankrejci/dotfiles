@@ -10,20 +10,33 @@
   global = config.flake.global;
   nixosHosts = lib.filterAttrs (_: h: (h.kind or "nixos") == "nixos") hosts;
 
+  # Overlay that provides deploy-rs lib using cached nixpkgs binaries.
+  # Without this, deploy-rs builds from source via QEMU for aarch64.
+  deployRsOverlay = final: _prev: let
+    pkgs = import inputs.nixpkgs {inherit (final) system;};
+  in {
+    deploy-rs = {
+      inherit (pkgs) deploy-rs;
+      lib = (inputs.deploy-rs.overlays.default final _prev).deploy-rs.lib;
+    };
+  };
+
+  # Get deploy-rs lib for a target system
+  deployLib = system:
+    (import inputs.nixpkgs {
+      inherit system;
+      overlays = [deployRsOverlay];
+    })
+    .deploy-rs
+    .lib;
+
   # Create a deploy node entry
   mkNode = hostName: host: {
     hostname = "${hostName}.${global.peerDomain}";
     sshUser = "admin";
     profiles.system = {
       user = "root";
-      path =
-        inputs.deploy-rs.lib.${
-          if host.isRpi or false
-          then "aarch64-linux"
-          else "x86_64-linux"
-        }
-        .activate.nixos
-        self.nixosConfigurations.${hostName};
+      path = (deployLib host.system).activate.nixos self.nixosConfigurations.${hostName};
     };
   };
 in {
