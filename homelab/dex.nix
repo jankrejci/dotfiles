@@ -56,6 +56,15 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    # Create dex user early so agenix can chown secrets during activation.
+    # The dex service module also creates this user, but that happens after
+    # agenix runs, causing chown to fail.
+    users.users.dex = {
+      isSystemUser = true;
+      group = "dex";
+    };
+    users.groups.dex = {};
+
     # Google OAuth credentials for upstream identity provider
     age.secrets.google-oauth = {
       rekeyFile = ../secrets/google-oauth.age;
