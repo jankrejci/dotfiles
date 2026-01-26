@@ -9,9 +9,6 @@
   setupKeyFolder = "/var/lib/netbird-homelab";
   setupKeyPath = "${setupKeyFolder}/setup-key";
 in {
-  # Add password for the admin user to be able to log in from local console
-  users.users.admin.hashedPassword = "$y$j9T$8qLqeoP/jNv9rFtFfyljl1$S/GqBaFaaCIluY88qW9app4APK49d9wFI.5CmfFnwH/";
-
   # Embed the setup key in the ISO. The ISO uses read-only squashfs,
   # so we place it in /etc and copy to /var/lib on boot.
   environment.etc."netbird/setup-key" = {

@@ -17,6 +17,19 @@
     inputs.home-manager.nixosModules.home-manager
     inputs.disko.nixosModules.disko
     inputs.nix-flatpak.nixosModules.nix-flatpak
+    inputs.agenix.nixosModules.default
+    inputs.agenix-rekey.nixosModules.default
+    # agenix-rekey configuration
+    ({config, ...}: let
+      pubkey = config.homelab.host.hostPubkey or null;
+    in {
+      age.rekey = {
+        masterIdentities = ["~/.age/master.txt"];
+        storageMode = "local";
+        localStorageDir = ../secrets/rekeyed + "/${config.networking.hostName}";
+        hostPubkey = lib.mkIf (pubkey != null) pubkey;
+      };
+    })
     ../modules # Base system modules
     ../homelab # Service modules with enable pattern
     ../users/admin.nix
@@ -64,7 +77,11 @@ in {
     installer = withSystem "x86_64-linux" ({pkgs, ...}: let
       installerSystem = lib.nixosSystem {
         system = "x86_64-linux";
-        specialArgs = {inherit inputs;};
+        specialArgs = {
+          inherit inputs;
+          # Required by homelab modules even when backup is disabled
+          backup = import ../lib/backup.nix {inherit lib pkgs;};
+        };
         modules =
           mkModulesList {
             hostName = "iso";
@@ -73,10 +90,20 @@ in {
               "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
               ../modules/netbird-homelab.nix
               ../modules/load-keys.nix
-              ({...}: {
+              ({...}: let
+                # ISO_HOST_KEY is set by build-installer script after decrypting
+                # secrets/iso-host-key.age with the master key
+                isoHostKey = builtins.getEnv "ISO_HOST_KEY";
+              in {
                 isoImage.makeEfiBootable = true;
                 isoImage.makeUsbBootable = true;
                 isoImage.compressImage = false;
+
+                # Embed host key for agenix secret decryption at runtime
+                environment.etc."ssh/ssh_host_ed25519_key" = {
+                  text = isoHostKey;
+                  mode = "0600";
+                };
               })
             ];
           }
@@ -93,6 +120,11 @@ in {
         specialArgs = {
           inherit inputs cachedPkgs-aarch64;
           inherit (inputs) nixos-raspberrypi;
+          # Required by homelab modules even when backup is disabled
+          backup = import ../lib/backup.nix {
+            inherit lib;
+            pkgs = cachedPkgs-aarch64;
+          };
         };
         modules =
           mkModulesList {inherit hostName host;}
