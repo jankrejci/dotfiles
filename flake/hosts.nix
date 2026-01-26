@@ -214,9 +214,15 @@
 
     ### NixOS installer ###
 
+    # ISO uses a static host key so agenix can decrypt secrets at build time.
+    # The private key is embedded in the ISO in plain text.
+    #
+    # Security model: The only secret is admin-password-hash, a generic
+    # fallback password for emergency access. ISOs are ephemeral install media
+    # and do not contain sensitive service credentials. If the admin password
+    # is compromised, rotate it and rebuild the ISO with the new hash.
     iso = {
       kind = "installer";
-      # Static host key for agenix secret decryption. Private key embedded in ISO.
       hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGm0+8CuZ8AV3EsZ5I4T4kPeQGBG7Z7pcEg4fhnVr9ri";
     };
   };
