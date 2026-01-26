@@ -193,44 +193,11 @@ pkgs.writeShellScript "script-lib" ''
     echo -n "$token"
   }
 
-  # Try to get Netbird API token from sops secrets file
-  function get_netbird_token_from_sops() {
-    local -r secrets_file="secrets.yaml"
-    [ -f "$secrets_file" ] || return 1
-
-    local token
-    token=$(${pkgs.sops}/bin/sops -d --extract '["netbird"]["api_token"]' "$secrets_file" 2>/dev/null) || return 1
-    [ -n "$token" ] || return 1
-
-    echo -n "$token"
-  }
-
-  # Try to get WiFi credentials from sops secrets file
-  function get_wifi_from_sops() {
-    local -r secrets_file="secrets.yaml"
-    [ -f "$secrets_file" ] || return 1
-
-    local ssid password
-    ssid=$(${pkgs.sops}/bin/sops -d --extract '["wifi"]["ssid"]' "$secrets_file" 2>/dev/null) || return 1
-    password=$(${pkgs.sops}/bin/sops -d --extract '["wifi"]["password"]' "$secrets_file" 2>/dev/null) || return 1
-    [ -n "$ssid" ] && [ -n "$password" ] || return 1
-
-    WIFI_SSID="$ssid"
-    WIFI_PASSWORD="$password"
-    export WIFI_SSID WIFI_PASSWORD
-  }
-
-  # Ensure NETBIRD_API_TOKEN is set, trying sops then interactive prompt
+  # Ensure NETBIRD_API_TOKEN is set from environment or interactive prompt
   function require_netbird_token() {
     [ -n "''${NETBIRD_API_TOKEN:-}" ] && return
 
-    NETBIRD_API_TOKEN=$(get_netbird_token_from_sops) && {
-      info "Using Netbird API token from secrets.yaml"
-      export NETBIRD_API_TOKEN
-      return
-    }
-
-    warn "NETBIRD_API_TOKEN not found in environment or secrets.yaml"
+    warn "NETBIRD_API_TOKEN not set in environment"
     NETBIRD_API_TOKEN=$(ask_for_token "Netbird API token")
     export NETBIRD_API_TOKEN
   }

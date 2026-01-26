@@ -17,14 +17,9 @@ pkgs.writeShellApplication {
     source ${lib}
 
     function configure_wifi() {
-      get_wifi_from_sops && {
-        info "Using WiFi credentials from secrets.yaml for $WIFI_SSID"
-        return
-      }
-
       # Not in interactive terminal, skip WiFi
       [ -t 0 ] || {
-        info "No WiFi in secrets.yaml and not interactive, skipping"
+        info "Not interactive, skipping WiFi configuration"
         return
       }
 
