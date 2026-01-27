@@ -63,13 +63,32 @@
   # Raspberry Pi utilities (vcgencmd for temperature, throttling, etc.)
   # With raspberry-pi-nix, vcgencmd works because the RPi kernel has vcio driver
   # iw is for WiFi diagnostics and TX power adjustment
-  environment.systemPackages = [pkgs.libraspberrypi pkgs.iw];
+  # ethtool for ethernet diagnostics and EEE status
+  environment.systemPackages = [pkgs.libraspberrypi pkgs.iw pkgs.ethtool];
 
   # Allow video group to access VideoCore interface
   services.udev.extraRules = ''
     KERNEL=="vchiq", GROUP="video", MODE="0660"
     KERNEL=="vcio", GROUP="video", MODE="0660"
   '';
+
+  # Disable EEE on bcmgenet ethernet to prevent link drops. RPi4 ethernet PHY
+  # has unstable EEE implementation that causes frequent carrier loss events.
+  # See: https://github.com/raspberrypi/linux/issues/4289
+  #
+  # Cannot use systemd.link [EnergyEfficientEthernet] section because it runs
+  # during udev probe, before the driver initializes the PHY. The ethtool
+  # interface returns ENODEV at that point. This is a known systemd limitation:
+  # https://github.com/systemd/systemd/issues/16445
+  systemd.services.disable-eee = {
+    description = "Disable Energy Efficient Ethernet on bcmgenet";
+    after = ["network.target"];
+    wantedBy = ["network.target"];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.ethtool}/bin/ethtool --set-eee end0 eee off";
+    };
+  };
 
   # Define proper wifi channels
   boot.extraModprobeConfig = ''
