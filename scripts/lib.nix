@@ -193,11 +193,29 @@ pkgs.writeShellScript "script-lib" ''
     echo -n "$token"
   }
 
-  # Ensure NETBIRD_API_TOKEN is set from environment or interactive prompt
+  # Ensure NETBIRD_API_TOKEN is set from agenix secret, environment, or interactive prompt
   function require_netbird_token() {
     [ -n "''${NETBIRD_API_TOKEN:-}" ] && return
 
-    warn "NETBIRD_API_TOKEN not set in environment"
+    local -r master_key="$HOME/.age/master.txt"
+    local -r secret_file="secrets/netbird-api-token.age"
+
+    # Try to decrypt from agenix secret
+    if [ -f "$master_key" ] && [ -f "$secret_file" ]; then
+      local age_output
+      age_output=$(age -d -i "$master_key" "$secret_file" 2>&1) || {
+        error "Failed to decrypt Netbird API token from $secret_file"
+        error "$age_output"
+        exit 1
+      }
+      NETBIRD_API_TOKEN="$age_output"
+      export NETBIRD_API_TOKEN
+      info "Netbird API token loaded from agenix secret"
+      return
+    fi
+
+    # Fallback to interactive prompt if secret file doesn't exist
+    warn "NETBIRD_API_TOKEN not set and secret file not found"
     NETBIRD_API_TOKEN=$(ask_for_token "Netbird API token")
     export NETBIRD_API_TOKEN
   }
