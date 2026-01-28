@@ -1,3 +1,8 @@
+# Secondary user account with home-manager
+#
+# - printing and scanning groups
+# - Firefox as default browser
+# - GNOME extensions and Czech keyboard layout
 {config, ...}: {
   # Password hash for paja user
   age.secrets.paja-password-hash = {

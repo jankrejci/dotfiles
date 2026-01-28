@@ -1,3 +1,8 @@
+# Disk encryption with password-based LUKS
+#
+# - disko: 500MB ESP boot, LUKS-encrypted LVM
+# - ext4 root and swap partitions
+# - password shredded after first boot
 {
   config,
   pkgs,
@@ -6,7 +11,7 @@
   luksDevice = "/dev/disk/by-partlabel/disk-main-luks";
   diskPasswordFile = "/var/lib/disk-password";
 in {
-  # Boot parition and encrypted root partition
+  # Boot partition and encrypted root partition
   disko.devices = {
     disk = {
       main = {

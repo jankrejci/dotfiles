@@ -1,3 +1,8 @@
+# ACME wildcard certificates via Cloudflare DNS-01
+#
+# - wildcard cert for *.krejci.io
+# - Cloudflare API token managed by agenix
+# - cert readable by nginx group
 {
   config,
   lib,

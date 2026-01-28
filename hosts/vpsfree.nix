@@ -1,3 +1,8 @@
+# vpsAdminOS VPS container configuration
+#
+# - NFS mount from NAS for borg backups
+# - container-specific systemd workarounds
+# - fixed DNS since no DHCP in container
 {
   config,
   lib,

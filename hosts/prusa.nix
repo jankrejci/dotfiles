@@ -1,3 +1,8 @@
+# Raspberry Pi Zero 2 W with OctoPrint and camera
+#
+# - WiFi stability fixes for BCM43430
+# - over_voltage for SDIO stability
+# - OctoPrint serial port and camera access
 {
   config,
   inputs,

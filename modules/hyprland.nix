@@ -1,3 +1,8 @@
+# Hyprland window manager for home-manager
+#
+# - basic tiling with rofi launcher
+# - workspace switching and media keys
+# - experimental, GNOME is primary DE
 {
   wayland.windowManager.hyprland = {
     enable = true;

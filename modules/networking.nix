@@ -1,3 +1,9 @@
+# Network configuration with systemd-networkd
+#
+# - DHCP for ethernet and WiFi
+# - dummy interface for service IPs
+# - systemd-resolved for DNS
+# - prometheus node exporter with metrics proxy
 {
   config,
   lib,

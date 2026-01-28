@@ -1,3 +1,8 @@
+# Udev rules for embedded debugging hardware
+#
+# - plugdev group for device access
+# - Espressif USB JTAG and serial debug units
+# - required for probe-rs with ESP32
 {
   # Create the plugdev group
   users.groups.plugdev = {};

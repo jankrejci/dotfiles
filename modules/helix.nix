@@ -1,3 +1,8 @@
+# Helix editor for home-manager
+#
+# - LSP: nixd, bash, python, ltex, taplo
+# - formatters: alejandra, shfmt, ruff
+# - sonokai theme without underlines
 {pkgs, ...}: {
   home.packages = with pkgs; [
     ltex-ls # spell check language server

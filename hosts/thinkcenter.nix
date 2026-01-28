@@ -1,3 +1,7 @@
+# ThinkCentre server hardware overrides
+#
+# - Intel microcode updates
+# - process collector for detailed monitoring
 {lib, ...}: {
   hardware.cpu.intel.updateMicrocode = true;
 

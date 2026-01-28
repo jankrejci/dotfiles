@@ -1,3 +1,10 @@
+# Core NixOS settings for all hosts
+#
+# - nix flakes and experimental features
+# - boot config with initrd modules
+# - locale and timezone
+# - common packages and shell aliases
+# - server tools in headless.nix, desktop tools in desktop.nix
 {
   config,
   lib,
