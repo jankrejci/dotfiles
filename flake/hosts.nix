@@ -100,6 +100,10 @@
           ip = "192.168.99.1";
           peers = ["vpsfree"];
         };
+        backup = {
+          remote.enable = true;
+          local.enable = true;
+        };
       };
       extraModules = [
         ../modules/headless.nix
