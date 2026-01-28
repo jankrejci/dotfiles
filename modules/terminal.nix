@@ -1,3 +1,9 @@
+# Terminal environment for home-manager
+#
+# - alacritty, nushell, zellij
+# - git with delta diff viewer
+# - starship prompt with nerd fonts
+# - zoxide, broot, carapace completions
 {pkgs, ...}: {
   home.packages = with pkgs; [
     nerd-fonts.dejavu-sans-mono

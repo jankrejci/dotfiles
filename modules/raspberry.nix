@@ -1,3 +1,9 @@
+# Raspberry Pi base configuration
+#
+# - cachix binary cache for nixos-raspberrypi
+# - overlays for cached python and ffmpeg builds
+# - disables bluetooth for serial UART access
+# - minimal packages and disabled services
 {
   lib,
   pkgs,

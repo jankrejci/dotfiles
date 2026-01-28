@@ -1,3 +1,9 @@
+# Script registry and package exports
+#
+# - deployment scripts: deploy-config, nixos-install
+# - image builders: build-sdcard, build-installer
+# - utilities: add-ssh-key, reenroll-netbird
+# - validation checks for nix flake check
 {
   pkgs,
   nixos-anywhere,

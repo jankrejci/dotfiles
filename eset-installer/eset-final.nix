@@ -1,3 +1,7 @@
+# ESET Management Agent systemd service
+#
+# - duplicate of modules/eset-agent.nix for standalone use
+# - binary must be installed manually via eset-env.nix
 {
   config,
   lib,
