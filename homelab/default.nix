@@ -4,6 +4,7 @@
 {...}: {
   imports = [
     # Shared infrastructure
+    ./backup.nix
     ./nginx.nix
     ./postgresql.nix
     ./redis.nix
