@@ -166,6 +166,8 @@ Future work: revisit when Netbird adds stable identifiers or setup key groups fe
 | `/commit` | Create atomic commits with chunk-based staging |
 | `/branch-cleanup` | Squash fixups before merge |
 | `/new-service` | Create homelab service module from template |
+| `/nix-dev` | Develop and debug Nix expressions |
+| `/review` | Review code for correctness and patterns |
 
 ### Token Efficiency
 
