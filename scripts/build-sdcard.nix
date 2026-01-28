@@ -8,6 +8,7 @@
 pkgs.writeShellApplication {
   name = "build-sdcard";
   runtimeInputs = with pkgs; [
+    age
     coreutils
     curl
     jq
