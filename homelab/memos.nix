@@ -1,4 +1,8 @@
-# Memos note-taking service with homelab enable flag
+# Memos note-taking service
+#
+# - self-hosted notes with markdown support
+# - PostgreSQL backend with borg backup
+# - Dex SSO authentication
 {
   config,
   lib,

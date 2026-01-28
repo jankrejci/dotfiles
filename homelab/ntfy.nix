@@ -1,4 +1,8 @@
-# Ntfy notification service with homelab enable flag
+# Ntfy push notification service
+#
+# - receives alerts from prometheus alertmanager
+# - mobile app notifications via UnifiedPush
+# - nginx reverse proxy with TLS
 {
   config,
   lib,

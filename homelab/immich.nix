@@ -1,4 +1,8 @@
-# Immich photo library with homelab enable flag
+# Immich photo library service
+#
+# - Google Photos alternative with ML features
+# - PostgreSQL and Redis backends with borg backup
+# - metrics on port 8081/8082, Dex SSO
 {
   config,
   lib,

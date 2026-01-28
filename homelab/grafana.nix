@@ -1,4 +1,8 @@
-# Grafana monitoring dashboard with homelab enable flag
+# Grafana monitoring dashboard
+#
+# - Prometheus and Loki datasources
+# - Dex SSO with JMESPath admin role
+# - nginx reverse proxy with TLS
 {
   config,
   lib,

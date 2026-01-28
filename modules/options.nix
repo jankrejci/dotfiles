@@ -1,5 +1,10 @@
 # NixOS-level homelab options
-# These are set by the flake and consumed by other modules
+#
+# - host: current host metadata from flake
+# - hosts: all host definitions for cross-references
+# - global: domain, peerDomain, adminEmails
+# - services: shared service configuration
+# - scrapeTargets, alerts, healthChecks: monitoring
 {lib, ...}: let
   inherit (lib) mkOption types;
 

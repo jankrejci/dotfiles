@@ -1,4 +1,9 @@
-# perSystem outputs: formatter, packages, checks
+# Per-system flake outputs
+#
+# - formatter: alejandra for nix files
+# - packages: deployment scripts
+# - checks: validation tests
+# - overlays: unstable and master nixpkgs
 {inputs, ...}: {
   perSystem = {
     pkgs,
