@@ -220,6 +220,58 @@ pkgs.writeShellScript "script-lib" ''
     export NETBIRD_API_TOKEN
   }
 
+  # Load WiFi credentials from agenix secret
+  # Usage: load_wifi_credentials <ssid>
+  # Expects secrets/wifi-credentials.age to contain JSON: {"SSID": "password", ...}
+  function load_wifi_credentials() {
+    local -r ssid="$1"
+
+    [ -n "$ssid" ] || {
+      error "load_wifi_credentials: SSID required"
+      exit 1
+    }
+
+    local -r master_key="$HOME/.age/master.txt"
+    local -r secret_file="secrets/wifi-credentials.age"
+
+    [ -f "$master_key" ] || {
+      error "Master key not found at $master_key"
+      exit 1
+    }
+
+    [ -f "$secret_file" ] || {
+      error "WiFi credentials file not found at $secret_file"
+      exit 1
+    }
+
+    local credentials
+    local age_output
+    age_output=$(age -d -i "$master_key" "$secret_file" 2>&1) || {
+      error "Failed to decrypt WiFi credentials from $secret_file"
+      error "$age_output"
+      exit 1
+    }
+    credentials="$age_output"
+
+    local password
+    password=$(echo "$credentials" | jq -r --arg ssid "$ssid" '.[$ssid] // empty') || {
+      error "Failed to parse WiFi credentials JSON"
+      exit 1
+    }
+
+    [ -n "$password" ] || {
+      error "No credentials found for SSID '$ssid'"
+      info "Available SSIDs:"
+      echo "$credentials" | jq -r 'keys[]' | sed 's/^/  - /' >&2
+      exit 1
+    }
+
+    WIFI_SSID="$ssid"
+    WIFI_PASSWORD="$password"
+    export WIFI_SSID WIFI_PASSWORD
+    info "WiFi credentials loaded for $ssid"
+  }
+
   # Generate Netbird setup key via API
   # Usage: generate_netbird_key hostname [--reusable] [--allow-extra-dns]
   #   --reusable: Create reusable ephemeral key (for ISO installer)
