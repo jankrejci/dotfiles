@@ -11,6 +11,7 @@
 pkgs.writeShellApplication {
   name = "reenroll-netbird";
   runtimeInputs = with pkgs; [
+    age
     coreutils
     openssh
     curl
