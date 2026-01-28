@@ -1,6 +1,6 @@
 # Builds NixOS sdcard image that can be used for aarch64
 # Raspberry Pi machines.
-# `nix run .#build-sdcard hostname`
+# Usage: nix run .#build-sdcard <hostname> [--wifi <ssid>]
 {
   pkgs,
   lib,
@@ -12,6 +12,7 @@ pkgs.writeShellApplication {
     coreutils
     curl
     jq
+    nix
   ];
   text = ''
     # shellcheck source=/dev/null
@@ -40,13 +41,28 @@ pkgs.writeShellApplication {
     }
 
     function main() {
-      local -r hostname=$(require_and_validate_hostname "$@")
+      local hostname=""
+      local wifi_ssid=""
+
+      while [ $# -gt 0 ]; do
+        case "$1" in
+          --wifi) wifi_ssid="$2"; shift ;;
+          *) hostname="$1" ;;
+        esac
+        shift
+      done
+
+      hostname=$(require_and_validate_hostname "$hostname")
       local -r image_name="$hostname-sdcard"
 
       NETBIRD_SETUP_KEY=$(generate_netbird_key "$hostname")
       export NETBIRD_SETUP_KEY
 
-      configure_wifi
+      if [ -n "$wifi_ssid" ]; then
+        load_wifi_credentials "$wifi_ssid"
+      else
+        configure_wifi
+      fi
 
       info "Building image for host: $hostname"
 
