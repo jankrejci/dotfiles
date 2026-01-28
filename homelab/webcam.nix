@@ -1,4 +1,8 @@
-# Webcam streaming service for camera-streamer
+# Webcam streaming via camera-streamer
+#
+# - MJPEG streaming on port 8080
+# - libcamera backend for RPi camera
+# - used by OctoPrint for print monitoring
 {
   config,
   lib,

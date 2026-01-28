@@ -1,4 +1,8 @@
-# Shared PostgreSQL configuration for homelab services
+# Shared PostgreSQL database server
+#
+# - used by dex, grafana, immich, memos
+# - databases created per-service via ensureDatabases
+# - listens on localhost only
 {
   config,
   lib,

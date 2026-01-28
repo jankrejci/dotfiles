@@ -1,5 +1,9 @@
-# Re-enroll Netbird with new setup key (for adding extra DNS labels)
-# `nix run .#reenroll-netbird hostname`
+# Re-enroll Netbird with new setup key
+#
+# - generates fresh setup key via Netbird API
+# - injects key to target host via SSH
+# - triggers netbird-homelab-enroll service
+# - usage: nix run .#reenroll-netbird hostname
 {
   pkgs,
   lib,

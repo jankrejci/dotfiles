@@ -1,4 +1,8 @@
-# OctoPrint 3D printer control with homelab enable flag
+# OctoPrint 3D printer control
+#
+# - web interface for Prusa printer
+# - Obico AI failure detection plugin
+# - Prometheus metrics exporter
 {
   config,
   lib,

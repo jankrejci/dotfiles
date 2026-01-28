@@ -1,5 +1,8 @@
-# Patches netbird-ui to use white monochrome tray icons.
-# GNOME panels use white symbolic icons, the default orange stands out.
+# Netbird UI overlay for white tray icons
+#
+# - converts orange icons to white silhouettes
+# - matches GNOME symbolic icon style
+# - uses imagemagick colorize filter
 final: prev: {
   netbird-ui = prev.netbird-ui.overrideAttrs (old: {
     nativeBuildInputs = old.nativeBuildInputs ++ [final.imagemagick];
