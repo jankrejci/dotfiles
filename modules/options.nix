@@ -194,6 +194,44 @@
       };
     };
   };
+
+  # Backup job submodule for borg backups
+  backupJobModule = types.submodule {
+    options = {
+      name = mkOption {
+        type = types.str;
+        description = "Backup job name, used in systemd unit and repo path";
+      };
+
+      paths = mkOption {
+        type = types.listOf types.str;
+        description = "Paths to back up";
+      };
+
+      excludes = mkOption {
+        type = types.listOf types.str;
+        default = [];
+        description = "Paths to exclude from backup";
+      };
+
+      database = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "PostgreSQL database to dump before backup";
+      };
+
+      service = mkOption {
+        type = types.str;
+        description = "Systemd service to stop during restore";
+      };
+
+      hour = mkOption {
+        type = types.int;
+        default = 2;
+        description = "Hour to run backups at. Remote runs at :00, local at :30.";
+      };
+    };
+  };
 in {
   options.homelab = {
     # Current host configuration
@@ -256,6 +294,55 @@ in {
       type = types.listOf healthCheckModule;
       default = [];
       description = "Health checks registered by service modules";
+    };
+
+    # Backup configuration.
+    # Services register jobs via homelab.backup.jobs. The central backup module
+    # collects jobs from all hosts using the cross-host pattern and generates
+    # borgbackup configs, database dumps, restore scripts, alerts, and health checks.
+    backup = {
+      remote = {
+        enable = mkOption {
+          type = types.bool;
+          default = false;
+          description = "Enable remote backup to vpsfree server";
+        };
+
+        server = mkOption {
+          type = types.str;
+          default = "borg@vpsfree.nb.krejci.io";
+          description = "SSH connection string for remote borg server";
+        };
+
+        repoBase = mkOption {
+          type = types.str;
+          default = "/var/lib/borg-repos";
+          description = "Base path for borg repositories on remote server";
+        };
+      };
+
+      local = {
+        enable = mkOption {
+          type = types.bool;
+          default = false;
+          description = "Enable local backup to on-disk repository";
+        };
+
+        repoBase = mkOption {
+          type = types.str;
+          default = "/var/lib/borg-repos";
+          description = "Base path for local borg repositories";
+        };
+      };
+
+      # Backup jobs registered by service modules.
+      # The central backup module collects these from the current host only
+      # and generates all necessary configuration.
+      jobs = mkOption {
+        type = types.listOf backupJobModule;
+        default = [];
+        description = "Backup jobs registered by service modules";
+      };
     };
   };
 }
