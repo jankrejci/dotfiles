@@ -3,7 +3,6 @@
   config,
   lib,
   pkgs,
-  backup,
   ...
 }: let
   cfg = config.homelab.immich;
@@ -248,18 +247,21 @@ in {
       ];
     }
 
-    # Borg backup with database dump
-    (backup.mkBorgBackup {
-      name = "immich";
-      hostName = config.homelab.host.hostName;
-      paths = ["/var/lib/immich"];
-      excludes = [
-        "/var/lib/immich/thumbs"
-        "/var/lib/immich/encoded-video"
+    # Register backup job for borg backup with database dump
+    {
+      homelab.backup.jobs = [
+        {
+          name = "immich";
+          paths = ["/var/lib/immich"];
+          excludes = [
+            "/var/lib/immich/thumbs"
+            "/var/lib/immich/encoded-video"
+          ];
+          database = "immich";
+          service = "immich-server";
+          hour = 2;
+        }
       ];
-      database = "immich";
-      service = "immich-server";
-      hour = 2;
-    })
+    }
   ]);
 }

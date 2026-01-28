@@ -320,7 +320,6 @@
         system = "x86_64-linux";
         specialArgs = {
           inherit inputs;
-          backup = import ../lib/backup.nix {inherit lib pkgs;};
         };
         modules =
           mkModulesList hostName host
@@ -350,10 +349,6 @@
       specialArgs = {
         inherit inputs cachedPkgs-aarch64;
         inherit (inputs) nixos-raspberrypi;
-        backup = import ../lib/backup.nix {
-          inherit lib;
-          pkgs = cachedPkgs-aarch64;
-        };
       };
       modules =
         mkModulesList hostName host

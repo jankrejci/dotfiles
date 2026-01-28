@@ -3,7 +3,6 @@
   config,
   lib,
   pkgs,
-  backup,
   ...
 }: let
   cfg = config.homelab.memos;
@@ -106,15 +105,18 @@ in {
       ];
     }
 
-    # Borg backup with database dump
-    (backup.mkBorgBackup {
-      name = "memos";
-      hostName = config.homelab.host.hostName;
-      paths = ["/var/lib/memos"];
-      excludes = ["/var/lib/memos/thumbnails"];
-      database = "memos";
-      service = "memos";
-      hour = 2;
-    })
+    # Register backup job for borg backup with database dump
+    {
+      homelab.backup.jobs = [
+        {
+          name = "memos";
+          paths = ["/var/lib/memos"];
+          excludes = ["/var/lib/memos/thumbnails"];
+          database = "memos";
+          service = "memos";
+          hour = 2;
+        }
+      ];
+    }
   ]);
 }
