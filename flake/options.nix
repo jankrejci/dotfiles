@@ -1,5 +1,8 @@
 # Flake-level options for homelab configuration
-# These are used by hosts.nix, deploy.nix, and images.nix
+#
+# - global settings: domain, peerDomain, adminEmails
+# - host definitions: hostName, system, device, swapSize
+# - service definitions: port, subdomain, interface
 {
   inputs,
   lib ? inputs.nixpkgs.lib,

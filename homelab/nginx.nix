@@ -1,4 +1,8 @@
-# Shared nginx configuration for homelab services
+# Shared nginx reverse proxy
+#
+# - TLS termination for all services
+# - prometheus exporter on port 9113
+# - waits for services dummy interface
 {
   config,
   lib,
