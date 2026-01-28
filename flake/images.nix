@@ -79,8 +79,6 @@ in {
         system = "x86_64-linux";
         specialArgs = {
           inherit inputs;
-          # Required by homelab modules even when backup is disabled
-          backup = import ../lib/backup.nix {inherit lib pkgs;};
         };
         modules =
           mkModulesList {
@@ -120,11 +118,6 @@ in {
         specialArgs = {
           inherit inputs cachedPkgs-aarch64;
           inherit (inputs) nixos-raspberrypi;
-          # Required by homelab modules even when backup is disabled
-          backup = import ../lib/backup.nix {
-            inherit lib;
-            pkgs = cachedPkgs-aarch64;
-          };
         };
         modules =
           mkModulesList {inherit hostName host;}
