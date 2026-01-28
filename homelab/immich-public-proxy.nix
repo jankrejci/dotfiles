@@ -1,3 +1,8 @@
+# Immich public sharing proxy
+#
+# - exposes shared albums without exposing Immich
+# - runs on vpsfree VPS for public internet access
+# - connects to Immich via Netbird VPN
 {
   config,
   lib,

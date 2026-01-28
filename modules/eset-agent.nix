@@ -1,3 +1,7 @@
+# ESET Management Agent systemd service
+#
+# - runs ERA agent for centralized AV management
+# - binary installed manually via eset-installer/
 {
   config,
   lib,

@@ -1,4 +1,8 @@
-# Shared Redis configuration for homelab services
+# Shared Redis cache server
+#
+# - in-memory key-value store
+# - used by immich and other services
+# - listens on localhost only
 {
   config,
   lib,

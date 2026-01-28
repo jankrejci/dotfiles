@@ -1,3 +1,9 @@
+# Desktop environment with GNOME
+#
+# - GDM display manager with Plymouth boot splash
+# - flatpak apps and aarch64 cross-compilation
+# - CUPS printing with Brother IPP
+# - SANE scanning, pipewire audio, hyprland WM
 {
   lib,
   pkgs,

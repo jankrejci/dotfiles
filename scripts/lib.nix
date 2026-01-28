@@ -193,13 +193,77 @@ pkgs.writeShellScript "script-lib" ''
     echo -n "$token"
   }
 
-  # Ensure NETBIRD_API_TOKEN is set from environment or interactive prompt
+  # Ensure NETBIRD_API_TOKEN is set from agenix secret, environment, or interactive prompt
   function require_netbird_token() {
     [ -n "''${NETBIRD_API_TOKEN:-}" ] && return
 
-    warn "NETBIRD_API_TOKEN not set in environment"
+    local -r master_key="$HOME/.age/master.txt"
+    local -r secret_file="secrets/netbird-api-token.age"
+
+    # Try to decrypt from agenix secret
+    if [ -f "$master_key" ] && [ -f "$secret_file" ]; then
+      NETBIRD_API_TOKEN=$(age -d -i "$master_key" "$secret_file" 2>/dev/null) || {
+        error "Failed to decrypt Netbird API token from $secret_file"
+        exit 1
+      }
+      export NETBIRD_API_TOKEN
+      info "Netbird API token loaded from agenix secret"
+      return
+    fi
+
+    # Fallback to interactive prompt if secret file doesn't exist
+    warn "NETBIRD_API_TOKEN not set and secret file not found"
     NETBIRD_API_TOKEN=$(ask_for_token "Netbird API token")
     export NETBIRD_API_TOKEN
+  }
+
+  # Load WiFi credentials from agenix secret
+  # Usage: load_wifi_credentials <ssid>
+  # Expects secrets/wifi-credentials.age to contain JSON: {"SSID": "password", ...}
+  function load_wifi_credentials() {
+    local -r ssid="$1"
+
+    [ -n "$ssid" ] || {
+      error "load_wifi_credentials: SSID required"
+      exit 1
+    }
+
+    local -r master_key="$HOME/.age/master.txt"
+    local -r secret_file="secrets/wifi-credentials.age"
+
+    [ -f "$master_key" ] || {
+      error "Master key not found at $master_key"
+      exit 1
+    }
+
+    [ -f "$secret_file" ] || {
+      error "WiFi credentials file not found at $secret_file"
+      exit 1
+    }
+
+    local credentials
+    credentials=$(age -d -i "$master_key" "$secret_file" 2>/dev/null) || {
+      error "Failed to decrypt WiFi credentials from $secret_file"
+      exit 1
+    }
+
+    local password
+    password=$(echo "$credentials" | jq -r --arg ssid "$ssid" '.[$ssid] // empty') || {
+      error "Failed to parse WiFi credentials JSON"
+      exit 1
+    }
+
+    [ -n "$password" ] || {
+      error "No credentials found for SSID '$ssid'"
+      info "Available SSIDs:"
+      echo "$credentials" | jq -r 'keys[]' | sed 's/^/  - /' >&2
+      exit 1
+    }
+
+    WIFI_SSID="$ssid"
+    WIFI_PASSWORD="$password"
+    export WIFI_SSID WIFI_PASSWORD
+    info "WiFi credentials loaded for $ssid"
   }
 
   # Generate Netbird setup key via API

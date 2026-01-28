@@ -1,5 +1,8 @@
-# OctoPrint plugin for Prometheus metrics export
-# https://github.com/tg44/OctoPrint-Prometheus-Exporter
+# OctoPrint Prometheus metrics exporter plugin
+#
+# - exposes print job and temperature metrics
+# - scraped by prometheus for monitoring
+# - github.com/tg44/OctoPrint-Prometheus-Exporter
 {
   lib,
   fetchFromGitHub,

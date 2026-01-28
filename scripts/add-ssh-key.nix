@@ -1,3 +1,9 @@
+# Generate SSH key pair and authorize for target host
+#
+# - creates ed25519 key with password protection
+# - adds public key to ssh-authorized-keys.conf
+# - configures ~/.ssh/config entry
+# - commits changes to git
 {
   pkgs,
   lib,

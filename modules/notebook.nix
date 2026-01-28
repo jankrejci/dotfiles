@@ -1,3 +1,9 @@
+# Laptop hardware configuration
+#
+# - firmware updates via fwupd
+# - thermald and powertop autotuning
+# - bluetooth and fingerprint reader
+# - disables USB autosuspend for HID devices
 {pkgs, ...}: {
   # Device driver packages
   hardware.firmware = with pkgs; [

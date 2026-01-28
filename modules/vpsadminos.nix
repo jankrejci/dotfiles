@@ -1,10 +1,9 @@
-# This file provides compatibility for NixOS to run in a container on vpsAdminOS
-# hosts.
+# vpsAdminOS container compatibility
 #
-# If you're experiencing issues, try updating this file to the latest version
-# from vpsAdminOS repository:
-#
-#   https://github.com/vpsfreecz/vpsadminos/blob/staging/os/lib/nixos-container/vpsadminos.nix
+# - disables unsupported systemd services
+# - configures udev for container environment
+# - sets up networking via /ifcfg.add script
+# - upstream: github.com/vpsfreecz/vpsadminos
 {
   pkgs,
   lib,

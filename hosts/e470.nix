@@ -1,3 +1,9 @@
+# ThinkPad E470 hardware overrides
+#
+# - trackpoint with custom sensitivity
+# - Intel HD 620 graphics with VAAPI
+# - keyboard backlight via acpilight
+# - deep sleep on lid close
 {
   config,
   pkgs,
