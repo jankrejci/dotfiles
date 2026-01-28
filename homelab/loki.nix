@@ -1,3 +1,9 @@
+# Loki log aggregation with Promtail
+#
+# - receives logs from systemd journal via Promtail
+# - 30-day retention with auto-delete
+# - Grafana datasource auto-provisioned
+# - single-tenant mode for simplicity
 {
   config,
   lib,

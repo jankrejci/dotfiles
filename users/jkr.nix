@@ -1,3 +1,8 @@
+# Primary user account with home-manager
+#
+# - terminal, helix, hyprland configs imported
+# - development tools: rustup, espflash, probe-rs
+# - GNOME extensions and dconf settings
 {config, ...}: {
   # Password hash for jkr user
   age.secrets.jkr-password-hash = {

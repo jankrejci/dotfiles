@@ -1,3 +1,8 @@
+# ThinkPad T14 Gen1 AMD hardware overrides
+#
+# - AMD microcode updates
+# - ThinkPad ACPI and acpi_call modules
+# - mic mute LED sync with Pipewire state
 {
   config,
   pkgs,

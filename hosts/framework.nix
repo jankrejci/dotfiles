@@ -1,3 +1,8 @@
+# Framework 13 AMD laptop hardware overrides
+#
+# - amdgpu loaded early for Plymouth
+# - deep sleep and USB autosuspend disabled
+# - AMD microcode updates
 {...}: {
   boot = {
     kernelModules = ["kvm-amd"];

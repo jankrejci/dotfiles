@@ -1,3 +1,9 @@
+# Disk encryption with TPM2 and Secure Boot
+#
+# - disko: 500MB ESP boot, LUKS-encrypted LVM
+# - auto-enrolls secure boot keys on first boot
+# - TPM key sealed with PCR0+PCR7
+# - password slot kept for recovery
 {
   config,
   pkgs,
@@ -6,7 +12,7 @@
   luksDevice = "/dev/disk/by-partlabel/disk-main-luks";
   diskPasswordFile = "/var/lib/disk-password";
 in {
-  # Boot parition and encrypted root partition
+  # Boot partition and encrypted root partition
   disko.devices = {
     disk = {
       main = {

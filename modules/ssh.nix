@@ -1,3 +1,9 @@
+# SSH server with GitHub-backed authorized keys
+#
+# - fetches keys from repo at login time
+# - caches in /var/cache/ssh with 1-minute TTL
+# - restricts access to VPN interface only
+# - fail2ban for defense against internal threats
 {
   config,
   pkgs,

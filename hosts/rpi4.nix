@@ -1,3 +1,7 @@
+# Raspberry Pi 4 hardware overrides
+#
+# - imports nixos-raspberrypi base module
+# - prometheus alert for host monitoring
 {
   config,
   inputs,

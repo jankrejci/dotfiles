@@ -1,3 +1,8 @@
+# NixOS installer ISO configuration
+#
+# - embeds Netbird setup key for VPN during install
+# - root SSH login allowed for nixos-anywhere
+# - UCSI module disabled for Framework compatibility
 {
   lib,
   pkgs,

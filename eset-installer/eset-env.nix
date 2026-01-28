@@ -1,3 +1,8 @@
+# FHS environment for ESET installer
+#
+# - provides standard Linux filesystem layout
+# - includes dependencies required by ESET binary
+# - run with: nix-shell eset-env.nix
 {pkgs ? import <nixpkgs> {}}:
 pkgs.buildFHSEnv {
   name = "eset-installer-env";

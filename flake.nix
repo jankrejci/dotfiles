@@ -1,3 +1,16 @@
+# Root flake entry point for homelab NixOS configurations
+#
+# Uses flake-parts for modular organization. The ./flake directory contains
+# submodules for hosts, packages, deployment, and images. All host definitions
+# and service configurations flow through flake.hosts and flake.services options.
+#
+# Key inputs:
+# - nixpkgs stable: most packages
+# - nixpkgs-unstable/master: bleeding edge when needed
+# - nixos-raspberrypi: RPi kernel and config.txt generation
+# - agenix/agenix-rekey: secrets management with automatic rekeying
+# - deploy-rs: remote deployment
+# - disko: declarative disk partitioning
 {
   description = "NixOS multi host configuration";
 
