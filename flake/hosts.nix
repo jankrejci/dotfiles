@@ -35,6 +35,11 @@
       hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIcON6y4kzRaoHdLDUGf25OBqCvD1WY8iM1t2jUikaPf";
       homelab = {
         acme.enable = true;
+        healthCheck = {
+          enable = true;
+          ntfyUrl = "https://ntfy.krejci.io";
+          ntfyTopic = "system-health";
+        };
         immich-public-proxy = {
           enable = true;
           ip = "192.168.92.1";
@@ -65,6 +70,11 @@
         redis.enable = true;
         # Services
         acme.enable = true;
+        healthCheck = {
+          enable = true;
+          ntfyUrl = "https://ntfy.krejci.io";
+          ntfyTopic = "system-health";
+        };
         dex = {
           enable = true;
           ip = "192.168.91.7";
