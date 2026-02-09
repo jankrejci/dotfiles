@@ -16,34 +16,38 @@
   lib,
   ...
 }: let
+  cfg = config.homelab.healthCheck;
   healthChecks = config.homelab.healthChecks;
-  ntfyPort = config.homelab.ntfy.port;
-  ntfyTopic = "system-health";
+  hostname = config.networking.hostName;
+
+  ntfyEndpoint = "${cfg.ntfyUrl}:${toString cfg.ntfyPort}/${cfg.ntfyTopic}";
 
   mkHealthCheckScript = ntfyTokenPath:
     pkgs.writeShellApplication {
       name = "system-health-check";
       runtimeInputs = [pkgs.coreutils pkgs.curl];
       text = ''
-          set -a
-          # Path is runtime agenix secret, not available at build time.
-          # shellcheck disable=SC1091
-          source "${ntfyTokenPath}"
-          set +a
-          readonly NTFY_TOKEN
+        set -a
+        # Path is runtime agenix secret, not available at build time.
+        # shellcheck disable=SC1091
+        source "${ntfyTokenPath}"
+        set +a
+        readonly NTFY_TOKEN
 
         MESSAGE=""
         FAILED=0
+        hostname="${hostname}"
+        HOSTNAME="''${hostname^}"
 
-        report_failure() {
-          MESSAGE+="$1\n"
-          FAILED=$((FAILED + 1))
+        report_result() {
+          local name=$1 status=$2
+          MESSAGE+="$name $status\n"
         }
 
         send_notification() {
           local title=$1 message=$2 priority=$3 tags=$4
           printf "%b" "$message" | curl -s -X POST \
-            "http://127.0.0.1:${toString ntfyPort}/${ntfyTopic}" \
+            "${ntfyEndpoint}" \
             -H "Authorization: Bearer $NTFY_TOKEN" \
             -H "Title: $title" \
             -H "Priority: $priority" \
@@ -51,21 +55,50 @@
             --data-binary @-
         }
 
-        # Run each check
+        # Run each check and report result
         ${lib.concatStringsSep "\n" (map (check: ''
-            timeout ${toString check.timeout} ${lib.getExe check.script} || report_failure "${check.name}"
+            if timeout ${toString check.timeout} ${lib.getExe check.script}; then
+              report_result "${check.name}" "OK"
+            else
+              report_result "${check.name}" "FAILED"
+              FAILED=$((FAILED + 1))
+            fi
           '')
           healthChecks)}
 
         if [ "$FAILED" -eq 0 ]; then
-          send_notification "All OK" "All services healthy" "default" "white_check_mark"
+          send_notification "$HOSTNAME OK" "$MESSAGE" "default" "white_check_mark"
         else
-          send_notification "Attention Required" "$MESSAGE" "high" "warning"
+          send_notification "$HOSTNAME FAILED" "$MESSAGE" "high" "warning"
         fi
       '';
     };
 in {
-  config = lib.mkIf (healthChecks != []) {
+  options.homelab.healthCheck = {
+    enable = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable system health check notifications.";
+    };
+
+    ntfyUrl = lib.mkOption {
+      type = lib.types.str;
+      description = "Ntfy server URL without port.";
+    };
+
+    ntfyPort = lib.mkOption {
+      type = lib.types.port;
+      default = 443;
+      description = "Ntfy server port.";
+    };
+
+    ntfyTopic = lib.mkOption {
+      type = lib.types.str;
+      description = "Ntfy topic for health check notifications.";
+    };
+  };
+
+  config = lib.mkIf cfg.enable {
     # Ntfy token for health check notifications
     age.secrets.ntfy-token-env = {
       rekeyFile = ../secrets/ntfy-token-env.age;
