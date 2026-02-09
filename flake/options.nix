@@ -9,6 +9,65 @@
   ...
 }: let
   inherit (lib) mkOption types;
+
+  # Host submodule shared by flake.hosts and homelab.hosts
+  hostSubmodule = types.submodule ({name, ...}: {
+    options = {
+      hostName = mkOption {
+        type = types.str;
+        default = name;
+        description = "Hostname for this machine";
+      };
+
+      system = mkOption {
+        type = types.enum ["x86_64-linux" "aarch64-linux"];
+        default = "x86_64-linux";
+        description = "System architecture";
+      };
+
+      isRpi = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Whether this is a Raspberry Pi host";
+      };
+
+      kind = mkOption {
+        type = types.enum ["nixos" "installer"];
+        default = "nixos";
+        description = "Type of host configuration";
+      };
+
+      device = mkOption {
+        type = types.str;
+        default = "/dev/sda";
+        description = "Root disk device path";
+      };
+
+      swapSize = mkOption {
+        type = types.str;
+        default = "1G";
+        description = "Swap partition size";
+      };
+
+      hostPubkey = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "SSH Ed25519 public key for agenix-rekey";
+      };
+
+      homelab = mkOption {
+        type = types.attrs;
+        default = {};
+        description = "Homelab service configuration";
+      };
+
+      extraModules = mkOption {
+        type = types.listOf types.deferredModule;
+        default = [];
+        description = "Additional NixOS modules for this host";
+      };
+    };
+  });
 in {
   options.flake = {
     # Global configuration
@@ -35,7 +94,7 @@ in {
 
     # Host configurations
     hosts = mkOption {
-      type = types.attrsOf types.attrs;
+      type = types.attrsOf hostSubmodule;
       default = {};
       description = "Host configurations";
     };
@@ -51,70 +110,9 @@ in {
   # NixOS-level options - kept for backwards compatibility
   options.homelab = {
     hosts = mkOption {
-      description = "Host configurations for the homelab";
-      type = types.attrsOf (types.submodule ({name, ...}: {
-        options = {
-          hostName = mkOption {
-            type = types.str;
-            default = name;
-            description = "Hostname for this machine";
-          };
-
-          system = mkOption {
-            type = types.enum ["x86_64-linux" "aarch64-linux"];
-            default = "x86_64-linux";
-            description = "System architecture";
-          };
-
-          isRpi = mkOption {
-            type = types.bool;
-            default = false;
-            description = "Whether this is a Raspberry Pi host";
-          };
-
-          kind = mkOption {
-            type = types.enum ["nixos" "installer"];
-            default = "nixos";
-            description = "Type of host configuration";
-          };
-
-          device = mkOption {
-            type = types.str;
-            default = "/dev/sda";
-            description = "Root disk device path";
-          };
-
-          swapSize = mkOption {
-            type = types.str;
-            default = "1G";
-            description = "Swap partition size";
-          };
-
-          hostPubkey = mkOption {
-            type = types.nullOr types.str;
-            default = null;
-            description = "SSH Ed25519 public key for agenix-rekey";
-          };
-
-          # Homelab service configuration for this host.
-          # This attrset is injected directly into the NixOS module system
-          # and merges with homelab.* options defined in ../homelab/*.nix.
-          # Also used by cross-host references (e.g. wireguard peers).
-          homelab = mkOption {
-            type = types.attrs;
-            default = {};
-            description = "Homelab service configuration (injected as homelab.*)";
-          };
-
-          # Extra NixOS modules to include
-          extraModules = mkOption {
-            type = types.listOf types.deferredModule;
-            default = [];
-            description = "Additional NixOS modules for this host";
-          };
-        };
-      }));
+      type = types.attrsOf hostSubmodule;
       default = {};
+      description = "Host configurations for the homelab";
     };
 
     services = mkOption {
