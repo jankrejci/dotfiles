@@ -26,7 +26,7 @@
 
   # UI wrapper connected to user daemon socket
   netbirdUserUI = pkgs.writeShellScriptBin "netbird-user-ui" ''
-    exec ${pkgs.netbird-ui}/bin/netbird-ui \
+    exec ${pkgs.unstable.netbird-ui}/bin/netbird-ui \
       -daemon-addr "unix://$XDG_RUNTIME_DIR/netbird-user/sock" \
       "$@"
   '';
@@ -35,7 +35,7 @@ in {
   # Needs NET_ADMIN for interface creation, NET_RAW for raw sockets,
   # BPF for eBPF firewall, NET_BIND_SERVICE for DNS on port 53
   security.wrappers.netbird-user-daemon = {
-    source = "${pkgs.netbird}/bin/netbird";
+    source = "${pkgs.unstable.netbird}/bin/netbird";
     owner = "root";
     group = "root";
     capabilities = "cap_net_admin,cap_net_raw,cap_net_bind_service,cap_bpf+ep";
