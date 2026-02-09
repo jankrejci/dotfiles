@@ -114,45 +114,43 @@ in {
       }
     ];
 
-    # Health checks for WireGuard interface and peer connectivity
-    homelab.healthChecks =
-      [
-        {
-          name = "WireGuard wg0";
-          script = pkgs.writeShellApplication {
-            name = "health-check-wireguard";
-            runtimeInputs = [pkgs.iproute2 pkgs.wireguard-tools pkgs.gawk pkgs.coreutils];
-            text = ''
-              ip link show wg0 > /dev/null 2>&1 || {
-                echo "Interface down"
-                exit 1
-              }
+    # Health check for WireGuard interface and peer connectivity
+    homelab.healthChecks = [
+      {
+        name = "Wireguard";
+        script = pkgs.writeShellApplication {
+          name = "health-check-wireguard";
+          runtimeInputs = [pkgs.iproute2 pkgs.wireguard-tools pkgs.gawk pkgs.coreutils pkgs.iputils];
+          text = ''
+            # Check interface is up
+            ip link show wg0 > /dev/null 2>&1 || {
+              echo "Interface down"
+              exit 1
+            }
 
-              handshake=$(wg show wg0 latest-handshakes | awk '{print $2}')
-              [ -z "$handshake" ] || [ "$handshake" = "0" ] && exit 0
-
+            # Check handshake is recent
+            handshake=$(wg show wg0 latest-handshakes | awk '{print $2}')
+            if [ -n "$handshake" ] && [ "$handshake" != "0" ]; then
               current_time=$(date +%s)
               age=$((current_time - handshake))
               if [ "$age" -gt 180 ]; then
                 echo "Stale handshake ($age seconds)"
                 exit 1
               fi
-            '';
-          };
-          timeout = 10;
-        }
-      ]
-      ++ map (peerName: {
-        name = "${peerName} (${allHosts.${peerName}.homelab.wireguard.ip})";
-        script = pkgs.writeShellApplication {
-          name = "health-check-ping-${peerName}";
-          runtimeInputs = [pkgs.iputils];
-          text = ''
-            ping -c 1 -W 2 ${allHosts.${peerName}.homelab.wireguard.ip} > /dev/null 2>&1
+            fi
+
+            # Ping all peers
+            ${lib.concatMapStringsSep "\n" (peerName: ''
+                ping -c 1 -W 2 ${allHosts.${peerName}.homelab.wireguard.ip} > /dev/null 2>&1 || {
+                  echo "Cannot reach ${peerName}"
+                  exit 1
+                }
+              '')
+              cfg.peers}
           '';
         };
-        timeout = 5;
-      })
-      cfg.peers;
+        timeout = 15;
+      }
+    ];
   };
 }
