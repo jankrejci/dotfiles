@@ -3,6 +3,7 @@
 # - Google Photos alternative with ML features
 # - PostgreSQL and Redis backends with borg backup
 # - metrics on port 8081/8082, Dex SSO
+# - pinned to nixpkgs-immich input for controlled updates
 {
   config,
   lib,
@@ -124,6 +125,7 @@ in {
 
       services.immich = {
         enable = true;
+        package = pkgs.immich-pinned.immich;
         # Listen on 127.0.0.1 only, accessed via nginx proxy
         host = "127.0.0.1";
         port = cfg.port;

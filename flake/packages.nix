@@ -27,6 +27,14 @@
       };
     };
 
+    # Pinned nixpkgs for immich to control update timing
+    immichOverlay = final: _prev: {
+      immich-pinned = import inputs.nixpkgs-immich {
+        inherit system;
+        config.allowUnfree = true;
+      };
+    };
+
     # Configure pkgs with overlays
     pkgsWithOverlays = import inputs.nixpkgs {
       inherit system;
@@ -34,6 +42,7 @@
       overlays = [
         unstableOverlay
         masterOverlay
+        immichOverlay
         (import ../pkgs/netbird-ui-white-icons.nix)
         inputs.agenix-rekey.overlays.default
       ];
