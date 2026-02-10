@@ -128,11 +128,6 @@
   services.printing = {
     enable = true;
     browsed.enable = false;
-    drivers = with pkgs; [
-      cnijfilter_4_00
-      gutenprint
-      cups-bjnp
-    ];
   };
 
   # Brother printer accessible via VPN. Uses IPP Everywhere, no driver needed.
