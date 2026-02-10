@@ -50,6 +50,7 @@ pkgs.writeShellApplication {
 
       # Build the image using nixos-generators via flake output
       # Pass secrets via environment variables to Nix
+      # Use -L to print full build logs instead of progress bar
       nix build ".#image.installer" \
         --impure \
         -o "iso-image"
