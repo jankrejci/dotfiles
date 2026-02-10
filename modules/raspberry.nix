@@ -60,6 +60,25 @@
       (final: prev: {
         nix = cachedPkgs-aarch64.nix;
       })
+      # ShellCheck pulls in GHC which takes 2-4 hours to cross-compile.
+      # Also break glib → gi-docgen → pandoc → GHC chain.
+      (final: prev: {
+        inherit (cachedPkgs-aarch64) haskellPackages glib gobject-introspection graphviz;
+      })
+      # Rust CLI tools pull in rustc which takes 1-3 hours to cross-compile.
+      # eza also pulls pandoc → GHC for man page generation.
+      (final: prev: {
+        inherit (cachedPkgs-aarch64) fd ripgrep bat zoxide eza;
+      })
+      # Core system packages with many dependents
+      (final: prev: {
+        inherit (cachedPkgs-aarch64) systemd util-linux polkit dbus;
+      })
+      # Rust toolchain used by switch-to-configuration and security-wrappers.
+      # Without this overlay, LLVM and rustc are cross-compiled from source.
+      (final: prev: {
+        inherit (cachedPkgs-aarch64) rustc cargo clippy rustPlatform;
+      })
     ];
 
   # Skip boot menu on headless systems. Default 5 second timeout is unnecessary
