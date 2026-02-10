@@ -264,6 +264,21 @@ in {
         exit 0
       fi
 
+      # Prune stale entries from sbctl signing database.
+      # Bootloader generation cleanup removes old kernels from /boot but
+      # sbctl still tracks them, causing verify to fail with "does not exist".
+      verify_output=$(sbctl verify 2>&1 || true)
+      echo "$verify_output" | while IFS= read -r line; do
+        case "$line" in
+          *"does not exist")
+            file=''${line#*‼ }
+            file=''${file% does not exist}
+            echo "Removing stale entry: $file"
+            sbctl remove-file "$file" || true
+            ;;
+        esac
+      done
+
       echo "Signing bootloader files..."
       sbctl sign -s /boot/EFI/systemd/systemd-bootx64.efi
       sbctl sign -s /boot/EFI/BOOT/BOOTX64.EFI
@@ -366,7 +381,11 @@ in {
   systemd.services."verify-security-setup" = {
     description = "Verify secure boot and disk encryption setup";
     wantedBy = ["multi-user.target"];
-    after = ["enroll-tpm-key.service"];
+    # Direct dependency on sign-bootloader is needed because the indirect chain
+    # through enroll-tpm-key breaks during deploy. enroll-tpm-key has
+    # RemainAfterExit=true and no restartTriggers, so systemd considers it
+    # already satisfied and starts verify before sign-bootloader finishes.
+    after = ["sign-bootloader.service" "enroll-tpm-key.service"];
 
     path = with pkgs; [
       sbctl
