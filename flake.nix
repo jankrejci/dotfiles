@@ -33,6 +33,9 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
     # Some bleeding edge packages are fetched from unstable
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
+    # Immich is a critical service, pinned to decouple its updates from
+    # routine flake lock bumps. Update manually after testing.
+    nixpkgs-immich.url = "github:nixos/nixpkgs/d6c71932130818840fc8fe9509cf50be8c64634f";
     # Master branch for packages not yet in unstable
     nixpkgs-master.url = "github:nixos/nixpkgs/master";
     # A collection of NixOS modules covering hardware quirks
