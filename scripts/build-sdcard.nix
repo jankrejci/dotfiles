@@ -66,6 +66,7 @@ pkgs.writeShellApplication {
 
       info "Building image for host: $hostname"
 
+      # Use -L to print full build logs instead of progress bar
       nix build ".#image.sdcard.$hostname" \
         --impure \
         -o "$image_name"

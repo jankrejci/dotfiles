@@ -27,6 +27,7 @@ pkgs.writeShellApplication {
 
       info "Deploying to $hostname"
 
+      # Use '-- -L' to print full build logs instead of progress bar
       deploy \
         --skip-checks \
         ".#$hostname" "$@"
