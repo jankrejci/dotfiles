@@ -66,10 +66,12 @@ in {
       ExecStartPost = pkgs.writeShellScript "netbird-user-configure" ''
         sleep 3
         ${netbirdUser}/bin/netbird-user down 2>/dev/null || true
+        # Detect network changes for faster reconnection after suspend or roaming.
         timeout 5 ${netbirdUser}/bin/netbird-user up \
           --interface-name ${services.netbird.interface} \
           --wireguard-port ${toString services.netbird.port} \
-          --hostname ${hostname} || true
+          --hostname ${hostname} \
+          --network-monitor || true
       '';
       Restart = "on-failure";
       RestartSec = 5;
