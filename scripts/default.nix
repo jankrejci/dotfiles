@@ -56,6 +56,9 @@ in {
   # `nix run .#import-keep https://memos.example.com TOKEN ~/Keep`
   import-keep = pkgs.callPackage ../pkgs/import-keep {};
 
+  # MCP server for Runalyze health and fitness data
+  runalyze-mcp-server = pkgs.callPackage ../pkgs/runalyze-mcp-server.nix {};
+
   # Expose the shared library for testing
   inherit lib;
 
