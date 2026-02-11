@@ -289,16 +289,6 @@
           ++ [({...}: {nixpkgs.pkgs = pkgs;})];
       });
 
-  # Skip tests for packages built via QEMU emulation.
-  # Tests run under emulation are extremely slow.
-  skipTestsOverlay = final: prev: {
-    octoprint = prev.octoprint.override {
-      packageOverrides = _pyfinal: pyprev: {
-        octoprint = pyprev.octoprint.overridePythonAttrs {doCheck = false;};
-      };
-    };
-  };
-
   # Create nixosConfiguration for RPi hosts.
   # Uses lib.nixosSystem with our nixpkgs so standard package hashes match
   # cache.nixos.org. The inject-overlays module adds RPi kernel, firmware,
@@ -318,7 +308,6 @@
           ({...}: {
             # Override the x86_64-linux default from common.nix
             nixpkgs.hostPlatform = "aarch64-linux";
-            nixpkgs.overlays = [skipTestsOverlay];
           })
         ];
     };
