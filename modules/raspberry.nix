@@ -2,10 +2,12 @@
 #
 # - cachix binary cache for nixos-raspberrypi
 # - overlays for RPi-optimized ffmpeg
-# - uboot.env for instant boot without recompiling u-boot
+# - board-specific u-boot from cache.nixos.org
+# - uboot.env for instant boot
 # - disables bluetooth for serial UART access
 # - minimal packages and disabled services
 {
+  config,
   lib,
   pkgs,
   modulesPath,
@@ -41,6 +43,19 @@ in {
       gpsd = prev.gpsd.override {guiSupport = false;};
     })
   ];
+
+  # Use board-specific u-boot from nixpkgs instead of the generic
+  # ubootRaspberryPi_64bit from nixos-raspberrypi's bootloader overlay.
+  # The overlay creates a custom derivation with no binary cache coverage.
+  # Board-specific packages are built by Hydra and cached on cache.nixos.org.
+  boot.loader.raspberry-pi.ubootPackage =
+    {
+      "02" = pkgs.ubootRaspberryPi3_64bit;
+      "3" = pkgs.ubootRaspberryPi3_64bit;
+      "4" = pkgs.ubootRaspberryPi4_64bit;
+    }.${
+      config.boot.loader.raspberry-pi.variant
+    };
 
   # Install uboot.env to firmware partition on deploy. The automount on
   # /boot/firmware triggers transparently when the path is accessed.
