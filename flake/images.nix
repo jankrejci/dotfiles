@@ -28,6 +28,7 @@
         storageMode = "local";
         localStorageDir = ../secrets/rekeyed + "/${config.networking.hostName}";
         hostPubkey = lib.mkIf (pubkey != null) pubkey;
+        agePlugins = [];
       };
     })
     ../modules # Base system modules
