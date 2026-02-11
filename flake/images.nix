@@ -25,6 +25,11 @@
     in {
       age.rekey = {
         masterIdentities = ["~/.age/master.txt"];
+        # Both master keys can decrypt all secrets independently
+        extraEncryptionPubkeys = [
+          "age1ctfxxgl7laucsyca94ucxe6cdnq59e480pfjukmtjq25m4r874zsf8kvmf" # framework
+          "age190jnchn50yr6w428un7sz62n7pwd7q9n8h3r8wpu3830kus97fcsnk0ftq" # t14
+        ];
         storageMode = "local";
         localStorageDir = ../secrets/rekeyed + "/${config.networking.hostName}";
         hostPubkey = lib.mkIf (pubkey != null) pubkey;
