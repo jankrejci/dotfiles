@@ -125,6 +125,7 @@
     ### Desktops ###
 
     e470 = {
+      hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBuVvVmSeaoUPKqiPqxwJEWDgdClxQpp6KjttCy/kFIq";
       device = "/dev/sda";
       swapSize = "8G";
       extraModules = [
@@ -139,6 +140,7 @@
     };
 
     optiplex = {
+      hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBmzspcGU4YVye6UtIB0fRPoonamNPrdGqEvyXm9Gbg5";
       device = "/dev/sda";
       swapSize = "8G";
       extraModules = [
