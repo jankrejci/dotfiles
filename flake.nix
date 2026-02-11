@@ -61,8 +61,11 @@
       url = "github:oddlama/agenix-rekey";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # Raspberry Pi NixOS support with RPi kernel and proper config.txt generation
-    nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi";
+    # Pinned to PR#131 (remove-options-compat) which switches to upstream nixpkgs,
+    # eliminating the nvmd/nixpkgs fork that caused ~88 cache misses per RPi build.
+    # TODO: switch back to main branch once PR#131 is released.
+    # See: https://github.com/nvmd/nixos-raspberrypi/pull/131
+    nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi/remove-options-compat";
   };
 
   outputs = inputs:

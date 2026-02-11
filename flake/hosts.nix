@@ -299,24 +299,28 @@
     };
   };
 
-  # Cached aarch64 packages for RPi overlay
-  cachedPkgs-aarch64 = import inputs.nixpkgs {
-    system = "aarch64-linux";
-    config.allowUnfree = true;
-    overlays = [skipTestsOverlay];
-  };
-
-  # Create nixosConfiguration for RPi hosts
+  # Create nixosConfiguration for RPi hosts.
+  # Uses lib.nixosSystem with our nixpkgs so standard package hashes match
+  # cache.nixos.org. The inject-overlays module adds RPi kernel, firmware,
+  # and vendor packages on top.
   mkRpiSystem = hostName: host:
-    inputs.nixos-raspberrypi.lib.nixosSystem {
+    lib.nixosSystem {
       specialArgs = {
-        inherit inputs cachedPkgs-aarch64;
+        inherit inputs;
         inherit (inputs) nixos-raspberrypi;
       };
       modules =
         shared.baseModules
         ++ shared.mkModulesList {inherit hostName host;}
-        ++ [({...}: {nixpkgs.overlays = [skipTestsOverlay];})];
+        ++ [
+          inputs.nixos-raspberrypi.lib.inject-overlays
+          inputs.nixos-raspberrypi.nixosModules.nixpkgs-rpi
+          ({...}: {
+            # Override the x86_64-linux default from common.nix
+            nixpkgs.hostPlatform = "aarch64-linux";
+            nixpkgs.overlays = [skipTestsOverlay];
+          })
+        ];
     };
 in {
   # Export configuration for other flake modules

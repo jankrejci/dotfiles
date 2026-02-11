@@ -13,12 +13,6 @@
   };
   nixosHosts = lib.filterAttrs (_: h: (h.kind or "nixos") == "nixos") hosts;
   rpiHosts = lib.filterAttrs (_: h: h.isRpi or false) nixosHosts;
-
-  # Cached aarch64 packages for RPi overlay
-  cachedPkgs-aarch64 = import inputs.nixpkgs {
-    system = "aarch64-linux";
-    config.allowUnfree = true;
-  };
 in {
   flake.image = {
     # USB stick installer ISO
@@ -63,19 +57,22 @@ in {
     sdcard = lib.genAttrs (builtins.attrNames rpiHosts) (hostName: let
       host = hosts.${hostName};
     in
-      (inputs.nixos-raspberrypi.lib.nixosSystem {
+      (lib.nixosSystem {
         specialArgs = {
-          inherit inputs cachedPkgs-aarch64;
+          inherit inputs;
           inherit (inputs) nixos-raspberrypi;
         };
         modules =
           shared.baseModules
           ++ shared.mkModulesList {inherit hostName host;}
           ++ [
+            inputs.nixos-raspberrypi.lib.inject-overlays
+            inputs.nixos-raspberrypi.nixosModules.nixpkgs-rpi
             inputs.nixos-raspberrypi.nixosModules.sd-image
             ../modules/load-keys.nix
             ../modules/load-wifi.nix
             ({lib, ...}: {
+              nixpkgs.hostPlatform = "aarch64-linux";
               sdImage.compressImage = false;
               sdImage.firmwareSize = lib.mkForce 256;
             })

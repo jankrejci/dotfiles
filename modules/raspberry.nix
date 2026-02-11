@@ -1,14 +1,13 @@
 # Raspberry Pi base configuration
 #
 # - cachix binary cache for nixos-raspberrypi
-# - overlays for cached python and ffmpeg builds
+# - overlays for RPi-optimized ffmpeg and instant u-boot
 # - disables bluetooth for serial UART access
 # - minimal packages and disabled services
 {
   lib,
   pkgs,
   modulesPath,
-  cachedPkgs-aarch64,
   ...
 }: {
   # Disable base.nix profile imported by sd-image module.
@@ -24,62 +23,25 @@
     trusted-public-keys = ["nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="];
   };
 
-  # Overlays for RPi builds:
-  # 1. ffmpeg: Use RPi-optimized headless variant from nixos-raspberrypi cache.
-  # 2. python3: Source from standard nixpkgs to hit cache.nixos.org.
-  # 3. u-boot: Disable "Hit any key" prompt before loading extlinux.
-  #
-  # nixos-raspberrypi uses nvmd/nixpkgs fork that doesn't match cache.nixos.org.
-  # By overlaying from standard nixpkgs, derivation hashes match the cache.
-  nixpkgs.overlays =
-    [
-      (final: prev: {
-        ffmpeg = final.rpi.ffmpeg-headless;
-        # Disable xgps and other GUI tools that pull in GTK and X11 dependencies.
-        gpsd = prev.gpsd.override {guiSupport = false;};
-      })
-      # Disable U-Boot "Hit any key" prompt. Default bootdelay=2 waits for keypress.
-      # -2 skips autoboot delay entirely. Combined with boot.loader.timeout=0
-      # for extlinux menu, this gives instant boot on headless systems.
-      (final: prev: {
-        ubootRaspberryPi_64bit = prev.ubootRaspberryPi_64bit.override {
-          extraConfig = ''
-            CONFIG_BOOTDELAY=-2
-          '';
-        };
-      })
-    ]
-    ++ [
-      (final: prev: {
-        python3 = cachedPkgs-aarch64.python3;
-        python3Packages = cachedPkgs-aarch64.python3Packages;
-        # Don't overlay octoprint so it uses our ffmpeg-headless overlay.
-      })
-      # Source nix from standard nixpkgs to avoid building graphviz, pandoc, mdbook.
-      # nixos-raspberrypi fork builds nix with manual which pulls GTK dependencies.
-      (final: prev: {
-        nix = cachedPkgs-aarch64.nix;
-      })
-      # ShellCheck pulls in GHC which takes 2-4 hours to cross-compile.
-      # Also break glib → gi-docgen → pandoc → GHC chain.
-      (final: prev: {
-        inherit (cachedPkgs-aarch64) haskellPackages glib gobject-introspection graphviz;
-      })
-      # Rust CLI tools pull in rustc which takes 1-3 hours to cross-compile.
-      # eza also pulls pandoc → GHC for man page generation.
-      (final: prev: {
-        inherit (cachedPkgs-aarch64) fd ripgrep bat zoxide eza;
-      })
-      # Core system packages with many dependents
-      (final: prev: {
-        inherit (cachedPkgs-aarch64) systemd util-linux polkit dbus;
-      })
-      # Rust toolchain used by switch-to-configuration and security-wrappers.
-      # Without this overlay, LLVM and rustc are cross-compiled from source.
-      (final: prev: {
-        inherit (cachedPkgs-aarch64) rustc cargo clippy rustPlatform;
-      })
-    ];
+  # Overlays for RPi builds
+  nixpkgs.overlays = [
+    (final: prev: {
+      # Use RPi-optimized headless ffmpeg from nixos-raspberrypi cache
+      ffmpeg = final.rpi.ffmpeg-headless;
+      # Disable xgps and other GUI tools that pull in GTK and X11 dependencies
+      gpsd = prev.gpsd.override {guiSupport = false;};
+    })
+    # Disable U-Boot "Hit any key" prompt. Default bootdelay=2 waits for keypress.
+    # -2 skips autoboot delay entirely. Combined with boot.loader.timeout=0
+    # for extlinux menu, this gives instant boot on headless systems.
+    (final: prev: {
+      ubootRaspberryPi_64bit = prev.ubootRaspberryPi_64bit.override {
+        extraConfig = ''
+          CONFIG_BOOTDELAY=-2
+        '';
+      };
+    })
+  ];
 
   # Skip boot menu on headless systems. Default 5 second timeout is unnecessary
   # when there's only one generation and no keyboard attached.
