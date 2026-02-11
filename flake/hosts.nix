@@ -293,6 +293,8 @@
         localStorageDir = ../secrets/rekeyed + "/${config.networking.hostName}";
         # Host pubkey from host definition in hosts attrset above
         hostPubkey = lib.mkIf (pubkey != null) pubkey;
+        # No hardware key plugins needed, use plain age only
+        agePlugins = [];
       };
     })
     ../modules # Base system modules
