@@ -12,6 +12,8 @@
   ...
 }: {
   nix.settings.experimental-features = ["nix-command" "flakes"];
+  # Trust flake.nix nixConfig settings such as extra-substituters
+  nix.settings.accept-flake-config = true;
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
 
