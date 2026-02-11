@@ -1,7 +1,8 @@
 # Raspberry Pi base configuration
 #
 # - cachix binary cache for nixos-raspberrypi
-# - overlays for RPi-optimized ffmpeg and instant u-boot
+# - overlays for RPi-optimized ffmpeg
+# - uboot.env for instant boot without recompiling u-boot
 # - disables bluetooth for serial UART access
 # - minimal packages and disabled services
 {
@@ -9,7 +10,15 @@
   pkgs,
   modulesPath,
   ...
-}: {
+}: let
+  # U-Boot environment file for instant boot. The stock u-boot binary has
+  # CONFIG_ENV_IS_IN_FAT=y which reads uboot.env from the firmware partition,
+  # overriding compiled defaults. This avoids recompiling u-boot entirely.
+  ubootEnv = pkgs.runCommand "uboot-env" {nativeBuildInputs = [pkgs.ubootTools];} ''
+    printf 'bootdelay=-2\0' > env.txt
+    mkenvimage -s 0x4000 -o $out env.txt
+  '';
+in {
   # Disable base.nix profile imported by sd-image module.
   # It adds recovery tools like w3m, testdisk, ddrescue that aren't needed on deployed RPi.
   disabledModules = ["${modulesPath}/profiles/base.nix"];
@@ -31,17 +40,13 @@
       # Disable xgps and other GUI tools that pull in GTK and X11 dependencies
       gpsd = prev.gpsd.override {guiSupport = false;};
     })
-    # Disable U-Boot "Hit any key" prompt. Default bootdelay=2 waits for keypress.
-    # -2 skips autoboot delay entirely. Combined with boot.loader.timeout=0
-    # for extlinux menu, this gives instant boot on headless systems.
-    (final: prev: {
-      ubootRaspberryPi_64bit = prev.ubootRaspberryPi_64bit.override {
-        extraConfig = ''
-          CONFIG_BOOTDELAY=-2
-        '';
-      };
-    })
   ];
+
+  # Install uboot.env to firmware partition on deploy. The automount on
+  # /boot/firmware triggers transparently when the path is accessed.
+  system.activationScripts.ubootEnv.text = ''
+    install -Dm644 ${ubootEnv} /boot/firmware/uboot.env
+  '';
 
   # Skip boot menu on headless systems. Default 5 second timeout is unnecessary
   # when there's only one generation and no keyboard attached.

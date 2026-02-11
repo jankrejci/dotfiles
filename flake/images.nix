@@ -71,10 +71,26 @@ in {
             inputs.nixos-raspberrypi.nixosModules.sd-image
             ../modules/load-keys.nix
             ../modules/load-wifi.nix
-            ({lib, ...}: {
+            ({
+              lib,
+              pkgs,
+              ...
+            }: let
+              # Same derivation as in raspberry.nix. Nix deduplicates by store path
+              # so this does not cause a redundant build.
+              ubootEnv = pkgs.runCommand "uboot-env" {nativeBuildInputs = [pkgs.ubootTools];} ''
+                printf 'bootdelay=-2\0' > env.txt
+                mkenvimage -s 0x4000 -o $out env.txt
+              '';
+            in {
               nixpkgs.hostPlatform = "aarch64-linux";
               sdImage.compressImage = false;
               sdImage.firmwareSize = lib.mkForce 256;
+              # Activation scripts do not run during image build, so we must
+              # populate the firmware partition explicitly for SD card images.
+              sdImage.populateFirmwareCommands = lib.mkAfter ''
+                cp ${ubootEnv} firmware/uboot.env
+              '';
             })
           ];
       })
