@@ -15,6 +15,17 @@
   # Trust flake.nix nixConfig settings such as extra-substituters
   nix.settings.accept-flake-config = true;
 
+  # Binary caches for pre-built packages. deploy-rs builds derivations
+  # directly, bypassing the flake's nixConfig extra-substituters.
+  nix.settings.extra-substituters = [
+    "https://nixos-raspberrypi.cachix.org"
+    "https://deploy-rs.cachix.org"
+  ];
+  nix.settings.extra-trusted-public-keys = [
+    "nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="
+    "deploy-rs.cachix.org-1:xfNobmiwF/vzvK1gpfediPwpdIP0rpDV2rYqx40zdSI="
+  ];
+
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
 
   # Consider users with the root access trustfull enough
