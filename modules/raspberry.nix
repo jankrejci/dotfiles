@@ -1,8 +1,8 @@
 # Raspberry Pi base configuration
 #
 # - cachix binary cache for nixos-raspberrypi
-# - board-specific u-boot from cache.nixos.org
-# - uboot.env for instant boot
+# - board-specific u-boot from cache with custom env
+# - uboot.env to disable autoboot prompt without recompiling u-boot
 # - disables bluetooth for serial UART access
 # - minimal packages and disabled services
 {
@@ -12,13 +12,41 @@
   modulesPath,
   ...
 }: let
-  # U-Boot environment file for instant boot. The stock u-boot binary has
-  # CONFIG_ENV_IS_IN_FAT=y which reads uboot.env from the firmware partition,
-  # overriding compiled defaults. This avoids recompiling u-boot entirely.
-  ubootEnv = pkgs.runCommand "uboot-env" {nativeBuildInputs = [pkgs.ubootTools];} ''
-    printf 'bootdelay=-2\0' > env.txt
-    mkenvimage -s 0x4000 -o $out env.txt
-  '';
+  envSize = "0x4000";
+
+  ubootPkg =
+    {
+      "02" = pkgs.ubootRaspberryPi3_64bit;
+      "3" = pkgs.ubootRaspberryPi3_64bit;
+      "4" = pkgs.ubootRaspberryPi4_64bit;
+    }.${
+      config.boot.loader.raspberry-pi.variant
+    };
+
+  # Build uboot.env from the stock u-boot binary's default environment
+  # with bootdelay=-2. Serial-connected GPS modules send NMEA data that
+  # triggers the "Hit any key" autoboot prompt and halts boot.
+  # bootdelay=-2 skips the prompt entirely.
+  #
+  # CONFIG_ENV_IS_IN_FAT=y (Kconfig default for ARCH_BCM283X) makes u-boot
+  # read uboot.env from the firmware FAT partition, replacing the entire
+  # compiled-in default environment.
+  #
+  # Pipeline: strings (extract) -> mkenvimage (pack) -> fw_setenv (patch)
+  # -> fw_printenv (verify). No u-boot recompilation needed.
+  ubootEnv =
+    pkgs.runCommand "uboot-env" {
+      nativeBuildInputs = [pkgs.ubootTools pkgs.binutils];
+    } ''
+      strings ${ubootPkg}/u-boot.bin \
+        | grep -E '^[a-zA-Z_][a-zA-Z0-9_]*=.' \
+        > env.txt
+
+      mkenvimage -s ${envSize} -o $out env.txt
+      echo "$out 0x0000 ${envSize}" > fw_env.config
+      fw_setenv -c fw_env.config -l $TMPDIR bootdelay -- -2
+      fw_printenv -c fw_env.config -l $TMPDIR bootdelay | grep -q 'bootdelay=-2'
+    '';
 in {
   # Disable base.nix profile imported by sd-image module.
   # It adds recovery tools like w3m, testdisk, ddrescue that aren't needed on deployed RPi.
@@ -33,23 +61,17 @@ in {
     trusted-public-keys = ["nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="];
   };
 
-  # Use board-specific u-boot from nixpkgs instead of the generic
-  # ubootRaspberryPi_64bit from nixos-raspberrypi's bootloader overlay.
-  # The overlay creates a custom derivation with no binary cache coverage.
-  # Board-specific packages are built by Hydra and cached on cache.nixos.org.
-  boot.loader.raspberry-pi.ubootPackage =
-    {
-      "02" = pkgs.ubootRaspberryPi3_64bit;
-      "3" = pkgs.ubootRaspberryPi3_64bit;
-      "4" = pkgs.ubootRaspberryPi4_64bit;
-    }.${
-      config.boot.loader.raspberry-pi.variant
-    };
+  # Use stock board-specific u-boot from nixpkgs binary cache.
+  # Autoboot prompt is disabled via uboot.env, not u-boot recompilation.
+  boot.loader.raspberry-pi.ubootPackage = ubootPkg;
 
-  # Install uboot.env to firmware partition on deploy. The automount on
-  # /boot/firmware triggers transparently when the path is accessed.
+  # Install uboot.env to firmware partition on activation.
+  # u-boot reads this from the FAT partition, replacing the compiled-in
+  # default environment with our bootdelay=-2 version.
   system.activationScripts.ubootEnv.text = ''
-    install -Dm644 ${ubootEnv} /boot/firmware/uboot.env
+    if [ -d /boot/firmware ]; then
+      install -m 644 ${ubootEnv} /boot/firmware/uboot.env
+    fi
   '';
 
   # Skip boot menu on headless systems. Default 5 second timeout is unnecessary
