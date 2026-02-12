@@ -178,6 +178,15 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    # Disable xgps and other GUI tools that pull in GTK and X11 dependencies.
+    # This causes gpsd to be recompiled from source since the override changes
+    # the derivation hash, but avoids pulling in the entire GTK/X11 stack.
+    nixpkgs.overlays = [
+      (final: prev: {
+        gpsd = prev.gpsd.override {guiSupport = false;};
+      })
+    ];
+
     services.gpsd = lib.mkIf cfg.gnss.enable {
       enable = true;
       devices = [cfg.gnss.device];
