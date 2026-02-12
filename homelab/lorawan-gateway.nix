@@ -4,7 +4,10 @@
 # - chirpstack-concentratord: hardware abstraction for SX1301 concentrator
 # - chirpstack-udp-forwarder: forwards packets to TTN via Semtech UDP protocol
 #
-# Gateway ID is derived from MAC address at runtime using EUI-64 conversion.
+# Gateway EUI-64 identifier is set declaratively per host.
+# Derive it from the MAC address: read /sys/class/net/<iface>/address,
+# remove colons, uppercase, insert FFFE after first 6 hex chars.
+# Example: b8:27:eb:c5:ec:e3 -> B827EBFFFEC5ECE3
 #
 # GNSS Architecture for RAK2245:
 #
@@ -47,8 +50,6 @@
 }: let
   cfg = config.homelab.lorawan-gateway;
   tomlFormat = pkgs.formats.toml {};
-  runtimeDir = "lorawan-gateway";
-
   # UDP forwarder configuration
   udpForwarderConfig = tomlFormat.generate "udp-forwarder.toml" {
     udp_forwarder = {
@@ -83,8 +84,7 @@
     867900000
   ];
 
-  # Concentratord config template with GATEWAY_ID placeholder
-  concentratordConfigTemplate = tomlFormat.generate "concentratord.toml.template" {
+  concentratordConfig = tomlFormat.generate "concentratord.toml" {
     concentratord = {
       log_level = "INFO";
       log_to_syslog = false;
@@ -100,7 +100,7 @@
         lorawan_public = true;
         model = cfg.model;
         region = cfg.region;
-        gateway_id = "GATEWAY_ID_PLACEHOLDER";
+        gateway_id = cfg.eui;
         time_fallback_enabled = true;
         concentrator = {
           multi_sf_channels = eu868Channels;
@@ -132,27 +132,15 @@
       sleep 0.1
     '';
   };
-
-  # Script to generate concentratord config with gateway ID from MAC
-  generateConcentratordConfigScript = pkgs.writeShellApplication {
-    name = "generate-concentratord-config";
-    runtimeInputs = [pkgs.gnused];
-    text = ''
-      # Get MAC address from first available interface
-      MAC=$(cat /sys/class/net/eth0/address 2>/dev/null || cat /sys/class/net/wlan0/address)
-
-      # Convert MAC to EUI-64 by inserting FFFE in middle
-      # Example: b8:27:eb:12:34:56 -> B827EBFFFE123456
-      EUI=$(echo "$MAC" | tr -d ':' | tr '[:lower:]' '[:upper:]' | sed 's/\(......\)/\1FFFE/')
-
-      echo "Generated gateway ID: $EUI"
-
-      sed "s/GATEWAY_ID_PLACEHOLDER/$EUI/" ${concentratordConfigTemplate} > /run/${runtimeDir}/concentratord.toml
-    '';
-  };
 in {
   options.homelab.lorawan-gateway = {
     enable = lib.mkEnableOption "LoRaWAN gateway services";
+
+    eui = lib.mkOption {
+      type = lib.types.strMatching "[0-9A-Fa-f]{16}";
+      description = "Gateway EUI-64 identifier, 16 hex characters";
+      example = "B827EBFFFEC5ECE3";
+    };
 
     model = lib.mkOption {
       type = lib.types.enum ["rak_2245" "rak_2287" "rak_2247"];
@@ -210,31 +198,16 @@ in {
       };
     };
 
-    # Generate concentratord config with gateway ID from MAC address
-    systemd.services.lorawan-gateway-config = {
-      description = "Generate LoRaWAN gateway configuration";
-      wantedBy = ["multi-user.target"];
-      after = ["network.target"];
-      before = ["chirpstack-concentratord.service"];
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        RuntimeDirectory = runtimeDir;
-        RuntimeDirectoryPreserve = true;
-        ExecStart = lib.getExe generateConcentratordConfigScript;
-      };
-    };
-
     # ChirpStack Concentratord - hardware abstraction for SX1301
     systemd.services.chirpstack-concentratord = {
       description = "ChirpStack Concentratord";
       wantedBy = ["multi-user.target"];
       after =
-        ["sx1301-reset.service" "lorawan-gateway-config.service"]
+        ["sx1301-reset.service"]
         ++ lib.optionals cfg.gnss.enable ["gpsd.service"];
-      requires = ["sx1301-reset.service" "lorawan-gateway-config.service"];
+      requires = ["sx1301-reset.service"];
       serviceConfig = {
-        ExecStart = "${pkgs.chirpstack-concentratord}/bin/chirpstack-concentratord-sx1301 -c /run/lorawan-gateway/concentratord.toml";
+        ExecStart = "${pkgs.chirpstack-concentratord}/bin/chirpstack-concentratord-sx1301 -c ${concentratordConfig}";
         Restart = "on-failure";
         RestartSec = "5s";
         User = "root";

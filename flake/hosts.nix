@@ -220,6 +220,7 @@
       homelab = {
         lorawan-gateway = {
           enable = true;
+          eui = "B827EBFFFEC5ECE3";
           gnss.enable = true;
         };
       };
