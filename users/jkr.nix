@@ -144,7 +144,7 @@
           };
           "org/gnome/shell/extensions/dash-to-panel" = {
             panel-positions = ''
-              {"0":"TOP","1":"TOP","2":"TOP","3":"TOP","IVM-12501511B1706":"TOP","BOE-0x00000000":"TOP","IVM-12381JQC00201":"TOP"}
+              {"0":"TOP","1":"TOP","2":"TOP","3":"TOP","IVM-12501511B1706":"TOP","BOE-0x00000000":"TOP","IVM-12381JQC00201":"TOP","AUO-0x00000000":"TOP"}
             '';
           };
         };
