@@ -1,7 +1,6 @@
 # Raspberry Pi base configuration
 #
 # - cachix binary cache for nixos-raspberrypi
-# - overlays for RPi-optimized ffmpeg
 # - board-specific u-boot from cache.nixos.org
 # - uboot.env for instant boot
 # - disables bluetooth for serial UART access
@@ -33,16 +32,6 @@ in {
     substituters = ["https://nixos-raspberrypi.cachix.org"];
     trusted-public-keys = ["nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="];
   };
-
-  # Overlays for RPi builds
-  nixpkgs.overlays = [
-    (final: prev: {
-      # Use RPi-optimized headless ffmpeg from nixos-raspberrypi cache
-      ffmpeg = final.rpi.ffmpeg-headless;
-      # Disable xgps and other GUI tools that pull in GTK and X11 dependencies
-      gpsd = prev.gpsd.override {guiSupport = false;};
-    })
-  ];
 
   # Use board-specific u-boot from nixpkgs instead of the generic
   # ubootRaspberryPi_64bit from nixos-raspberrypi's bootloader overlay.

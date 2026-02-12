@@ -29,6 +29,14 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    # Use RPi-optimized headless ffmpeg from nixos-raspberrypi cache.
+    # camera-streamer and libcamera depend on ffmpeg.
+    nixpkgs.overlays = [
+      (final: prev: {
+        ffmpeg = final.rpi.ffmpeg-headless;
+      })
+    ];
+
     # Expose nginx location config for other modules
     homelab.webcam.nginxLocation = {
       proxyPass = "http://127.0.0.1:${toString port}/";
