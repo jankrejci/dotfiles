@@ -15,6 +15,7 @@
   # Service IPs registered by homelab modules via homelab.serviceIPs
   serviceIPs = config.homelab.serviceIPs;
   hasServices = serviceIPs != [];
+  metricsDir = "/var/lib/prometheus-node-exporter";
 in {
   # Avoid collision of the dhcp with the sysystemd.network
   networking = {
@@ -135,13 +136,33 @@ in {
     openFirewall = false;
     listenAddress = "127.0.0.1";
     enabledCollectors = ["systemd" "textfile"];
-    extraFlags = ["--collector.textfile.directory=/var/lib/prometheus-node-exporter"];
+    extraFlags = ["--collector.textfile.directory=${metricsDir}"];
   };
 
-  # Directory for textfile collector metrics written by backup jobs
+  # Directory for textfile collector metrics written by systemd services and backup jobs
   systemd.tmpfiles.rules = [
-    "d /var/lib/prometheus-node-exporter 0755 root root -"
+    "d ${metricsDir} 0755 root root -"
   ];
+
+  # Write deploy timestamp metric so Grafana can show deploy age per host.
+  # Triggered on boot and on every config change via restartTriggers.
+  systemd.services.prometheus-nixos-deploy = {
+    wantedBy = ["multi-user.target"];
+    after = ["local-fs.target"];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    restartTriggers = [
+      config.system.nixos.version
+      (config.system.configurationRevision or "")
+    ];
+    script = ''
+      version=$(cat /run/current-system/nixos-version)
+      echo "nixos_deploy_timestamp{version=\"$version\"} $(date +%s)" > ${metricsDir}/deploy.prom.tmp
+      mv ${metricsDir}/deploy.prom.tmp ${metricsDir}/deploy.prom
+    '';
+  };
 
   systemd.services.prometheus-node-exporter.serviceConfig = {
     Restart = "always";
