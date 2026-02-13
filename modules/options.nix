@@ -61,6 +61,12 @@
         description = "Homelab service configuration";
       };
 
+      scrapedBy = mkOption {
+        type = types.listOf types.str;
+        default = ["thinkcenter"];
+        description = "Prometheus instances that scrape this host's targets";
+      };
+
       extraModules = mkOption {
         type = types.listOf types.unspecified;
         default = [];
