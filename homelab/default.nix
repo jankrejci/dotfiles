@@ -23,6 +23,7 @@
     ./octoprint.nix
     ./printer.nix
     ./prometheus.nix
+    ./watchdog.nix
     ./webcam.nix
     ./wireguard.nix
 
