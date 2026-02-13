@@ -1,18 +1,18 @@
 # Prometheus monitoring stack
 #
 # Architecture:
-# - Prometheus scrapes metrics from all nixos hosts via VPN
-# - Alertmanager routes alerts to ntfy with custom templates
+# - Prometheus scrapes metrics from hosts listed in scrapedBy via VPN
+# - Alertmanager routes alerts via ntfy (primary) or email (secondary)
 # - Metrics exposed via nginx proxy at /metrics/prometheus
 #
 # Scrape target discovery:
 # - Each service module registers homelab.scrapeTargets
-# - This module collects targets from all nixos hosts
+# - This module collects targets from hosts where scrapedBy includes this host
 # - Targets are grouped by job and scraped via {host}.nb.krejci.io:9999
 #
 # Alert aggregation:
 # - Each service module registers homelab.alerts
-# - This module collects alerts from all nixos hosts
+# - This module collects alerts from hosts in this instance's scrapedBy scope
 # - Alerts must have type label (host or service) for correct routing
 #
 {
@@ -41,6 +41,41 @@ in {
       default = 9090;
       description = "Port for Prometheus server";
     };
+
+    retention = lib.mkOption {
+      type = lib.types.str;
+      default = "360d";
+      description = "How long to keep metrics data";
+    };
+
+    alerting = {
+      method = lib.mkOption {
+        type = lib.types.enum ["ntfy" "email"];
+        default = "ntfy";
+        description = "How alertmanager delivers notifications";
+      };
+
+      email = {
+        # Standard SMTP term for the relay that handles outbound mail
+        smarthost = lib.mkOption {
+          type = lib.types.str;
+          default = "127.0.0.1:1025";
+          description = "SMTP smarthost in host:port format";
+        };
+
+        from = lib.mkOption {
+          type = lib.types.str;
+          default = "";
+          description = "Sender email address";
+        };
+
+        to = lib.mkOption {
+          type = lib.types.str;
+          default = "";
+          description = "Recipient email address";
+        };
+      };
+    };
   };
 
   options.homelab.alertmanager = {
@@ -51,34 +86,49 @@ in {
     };
   };
 
-  config = lib.mkIf cfg.enable {
-    # Ntfy token for alertmanager notifications
-    age.secrets.ntfy-token = {
+  config = lib.mkIf cfg.enable (let
+    myHostName = config.homelab.host.hostName;
+  in {
+    # Ntfy token for alertmanager webhook authentication
+    age.secrets.ntfy-token = lib.mkIf (cfg.alerting.method == "ntfy") {
       rekeyFile = ../secrets/ntfy-token.age;
+      owner = "prometheus";
+    };
+
+    # SMTP password for Protonmail Bridge authentication
+    age.secrets.smtp-token = lib.mkIf (cfg.alerting.method == "email") {
+      rekeyFile = ../secrets/smtp-token.age;
       owner = "prometheus";
     };
 
     services.prometheus = {
       enable = true;
-      # Keep metrics for 6 months
-      retentionTime = "180d";
+      retentionTime = cfg.retention;
       # 127.0.0.1 only - accessed via nginx proxy (defense in depth)
       listenAddress = "127.0.0.1";
-      # Serve from subpath /prometheus/ (shares domain with Grafana)
-      extraFlags = [
-        "--web.external-url=https://${config.homelab.grafana.subdomain}.${domain}/prometheus"
-        "--web.route-prefix=/prometheus"
-        "--web.enable-admin-api"
-      ];
+      # Subpath only when sharing domain with Grafana.
+      # Assumes Grafana runs on the same machine as Prometheus.
+      extraFlags =
+        lib.optionals config.homelab.grafana.enable [
+          "--web.external-url=https://${config.homelab.grafana.subdomain}.${domain}/prometheus"
+          "--web.route-prefix=/prometheus"
+        ]
+        ++ ["--web.enable-admin-api"];
       globalConfig.scrape_interval = "10s";
       # Scrape configs aggregated from homelab.scrapeTargets across all nixos hosts.
       # Each service module registers its scrape target, prometheus collects them all.
       scrapeConfigs = let
         allConfigs = inputs.self.nixosConfigurations;
 
-        # Filter to nixos hosts only, excluding installer ISO
+        # Only scrape hosts that list this prometheus instance in scrapedBy
         nixosHostNames = lib.attrNames (
-          lib.filterAttrs (_: h: (h.kind or "nixos") == "nixos") config.homelab.hosts
+          lib.filterAttrs (
+            _: host:
+              (host.kind or "nixos")
+              == "nixos"
+              && builtins.elem myHostName (host.scrapedBy or [])
+          )
+          config.homelab.hosts
         );
 
         # Collect targets from all hosts, attach hostName to each
@@ -119,17 +169,10 @@ in {
       ];
     };
 
-    # Alertmanager sends directly to ntfy using custom templates
-    services.prometheus.alertmanager = {
-      enable = true;
-      listenAddress = "127.0.0.1";
-      port = config.homelab.alertmanager.port;
-      configuration = {
-        # Alertmanager routing tree:
-        # - Alerts must have type label (host or service) to route correctly
-        # - Alerts without type label fall through to ntfy-default
-        # - Oneshot alerts (oneshot=true) get 1-year repeat interval
-        # - More specific routes must come first to match correctly
+    # Alertmanager routes alerts via ntfy webhooks or email depending on method
+    services.prometheus.alertmanager = let
+      # Ntfy webhook alertmanager config with template-based routing
+      ntfyConfig = {
         route = {
           receiver = "ntfy-default";
           group_by = ["alertname"];
@@ -148,7 +191,6 @@ in {
               receiver = "ntfy-service";
               repeat_interval = "8760h";
             }
-            # Regular routes for alerts without oneshot label
             {
               matchers = ["type=\"host\""];
               receiver = "ntfy-host";
@@ -159,11 +201,6 @@ in {
             }
           ];
         };
-        # Receivers send alerts to ntfy with different templates:
-        # - ntfy-host: host down alerts with hostname in title
-        # - ntfy-service: service alerts with service name in title
-        # - ntfy-default: fallback for misconfigured alerts
-        # Templates are defined in assets/ntfy/*.yml
         receivers = let
           mkReceiver = name: template: {
             inherit name;
@@ -186,10 +223,46 @@ in {
           (mkReceiver "ntfy-default" "default")
         ];
       };
+
+      # Email alertmanager config for secondary prometheus via Protonmail Bridge
+      emailConfig = {
+        global = {
+          smtp_smarthost = cfg.alerting.email.smarthost;
+          smtp_from = cfg.alerting.email.from;
+          smtp_auth_username = cfg.alerting.email.from;
+          smtp_auth_password_file = config.age.secrets.smtp-token.path;
+          # Protonmail Bridge on localhost handles TLS upstream
+          smtp_require_tls = false;
+        };
+        route = {
+          receiver = "email";
+          group_by = ["alertname"];
+          group_wait = "30s";
+          group_interval = "5m";
+          repeat_interval = "12h";
+        };
+        receivers = [
+          {
+            name = "email";
+            email_configs = [{to = cfg.alerting.email.to;}];
+          }
+        ];
+      };
+    in {
+      enable = true;
+      listenAddress = "127.0.0.1";
+      port = config.homelab.alertmanager.port;
+      configuration =
+        if cfg.alerting.method == "ntfy"
+        then ntfyConfig
+        else emailConfig;
     };
 
     # Prometheus metrics via nginx proxy
-    services.nginx.virtualHosts."metrics".locations."/metrics/prometheus".proxyPass = "http://127.0.0.1:${toString cfg.port}/prometheus/metrics";
+    services.nginx.virtualHosts."metrics".locations."/metrics/prometheus".proxyPass =
+      if config.homelab.grafana.enable
+      then "http://127.0.0.1:${toString cfg.port}/prometheus/metrics"
+      else "http://127.0.0.1:${toString cfg.port}/metrics";
 
     homelab.scrapeTargets = [
       {
@@ -204,12 +277,18 @@ in {
     services.prometheus.rules = let
       localAlerts = config.homelab.alerts;
 
-      # Collect alerts from other nixos hosts
+      # Collect alerts from other hosts in this instance's scrapedBy scope
       allConfigs = inputs.self.nixosConfigurations;
       otherHostNames =
         lib.filter
-        (name: name != config.homelab.host.hostName)
-        (lib.attrNames (lib.filterAttrs (_: h: (h.kind or "nixos") == "nixos") config.homelab.hosts));
+        (name: name != myHostName)
+        (lib.attrNames (lib.filterAttrs (
+            _: host:
+              (host.kind or "nixos")
+              == "nixos"
+              && builtins.elem myHostName (host.scrapedBy or [])
+          )
+          config.homelab.hosts));
       remoteAlerts = lib.foldAttrs (a: b: a ++ b) [] (
         map (name: allConfigs.${name}.config.homelab.alerts or {}) otherHostNames
       );
@@ -243,5 +322,5 @@ in {
         timeout = 10;
       }
     ];
-  };
+  });
 }
