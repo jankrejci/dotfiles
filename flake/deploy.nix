@@ -34,9 +34,11 @@
   mkNode = hostName: host: {
     hostname = "${hostName}.${global.peerDomain}";
     sshUser = "admin";
+    # VPN-based deploys need extra time for nftables reload and SSH reconnection
     profiles.system = {
       user = "root";
       path = (deployLib host.system).activate.nixos self.nixosConfigurations.${hostName};
+      confirmTimeout = 60;
     };
   };
 in {
