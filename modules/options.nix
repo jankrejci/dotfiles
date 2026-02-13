@@ -4,7 +4,7 @@
 # - hosts: all host definitions for cross-references
 # - global: domain, peerDomain, adminEmails
 # - services: shared service configuration
-# - scrapeTargets, alerts, healthChecks: monitoring
+# - scrapeTargets, watchdogTargets, alerts, healthChecks: monitoring
 {lib, ...}: let
   inherit (lib) mkOption types;
 
@@ -170,6 +170,23 @@
     };
   };
 
+  # Watchdog target submodule for external monitoring enrollment.
+  # Services register here when watchdog = true, and the watchdog module
+  # auto-generates up/down alerts for each registered target.
+  watchdogTarget = types.submodule {
+    options = {
+      job = mkOption {
+        type = types.str;
+        description = "Prometheus job name to monitor";
+      };
+
+      host = mkOption {
+        type = types.str;
+        description = "Host running the service";
+      };
+    };
+  };
+
   # Scrape target submodule for prometheus
   scrapeTarget = types.submodule {
     options = {
@@ -287,6 +304,15 @@ in {
       type = types.listOf scrapeTarget;
       default = [];
       description = "Prometheus scrape targets for this host";
+    };
+
+    # Watchdog targets registered by service modules.
+    # The watchdog module collects targets from all hosts and auto-generates
+    # up/down alerts for each enrolled service.
+    watchdogTargets = mkOption {
+      type = types.listOf watchdogTarget;
+      default = [];
+      description = "Services enrolled in external watchdog monitoring";
     };
 
     # Alert rules grouped by service name.
