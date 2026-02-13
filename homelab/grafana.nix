@@ -145,12 +145,6 @@ in {
         proxyWebsockets = true;
         recommendedProxySettings = true;
       };
-      # Prometheus UI accessible at /prometheus/
-      locations."/prometheus/" = {
-        proxyPass = "http://127.0.0.1:${toString config.homelab.prometheus.port}";
-        proxyWebsockets = true;
-        recommendedProxySettings = true;
-      };
     };
 
     services.grafana.provision.datasources.settings = {
@@ -160,7 +154,7 @@ in {
           name = "Prometheus";
           type = "prometheus";
           access = "proxy";
-          url = "http://127.0.0.1:${toString config.homelab.prometheus.port}/prometheus";
+          url = "http://127.0.0.1:${toString config.homelab.prometheus.port}";
           isDefault = true;
           # Fixed UID for dashboard references
           uid = "prometheus";

@@ -45,15 +45,12 @@
           ip = "192.168.92.1";
           interface = "venet0";
         };
-        prometheus = {
+        watchdog = {
           enable = true;
-          retention = "1d";
-          alerting = {
-            method = "email";
-            email = {
-              from = "admin@krejci.io";
-              to = "admin@krejci.io";
-            };
+          ip = "192.168.92.2";
+          email = {
+            from = "admin@krejci.io";
+            to = "admin@krejci.io";
           };
         };
         wireguard = {
@@ -72,7 +69,6 @@
 
     thinkcenter = {
       hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPEK336HnGuQlJl7d3XPw3zw4AhYGDLxx50ZbBuD+nu0";
-      scrapedBy = ["thinkcenter" "vpsfree"];
       device = "/dev/sda";
       swapSize = "8G";
       homelab = {
@@ -111,12 +107,17 @@
         ntfy = {
           enable = true;
           ip = "192.168.91.4";
+          watchdog = true;
         };
         printer = {
           enable = true;
           ip = "192.168.91.5";
         };
-        prometheus.enable = true;
+        prometheus = {
+          enable = true;
+          ip = "192.168.91.8";
+          watchdog = true;
+        };
         wireguard = {
           enable = true;
           ip = "192.168.99.1";
