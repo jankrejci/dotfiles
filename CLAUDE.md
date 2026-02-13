@@ -167,7 +167,7 @@ Future work: revisit when Netbird adds stable identifiers or setup key groups fe
 | `/branch-cleanup` | Squash fixups before merge |
 | `/new-service` | Create homelab service module from template |
 | `/nix-dev` | Develop and debug Nix expressions |
-| `/review` | Review code for correctness and patterns |
+| `/review-branch` | Review all branch changes against origin/main |
 
 ### Token Efficiency
 
