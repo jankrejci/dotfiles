@@ -45,6 +45,17 @@
           ip = "192.168.92.1";
           interface = "venet0";
         };
+        prometheus = {
+          enable = true;
+          retention = "1d";
+          alerting = {
+            method = "email";
+            email = {
+              from = "admin@krejci.io";
+              to = "admin@krejci.io";
+            };
+          };
+        };
         wireguard = {
           enable = true;
           ip = "192.168.99.2";
@@ -61,6 +72,7 @@
 
     thinkcenter = {
       hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPEK336HnGuQlJl7d3XPw3zw4AhYGDLxx50ZbBuD+nu0";
+      scrapedBy = ["thinkcenter" "vpsfree"];
       device = "/dev/sda";
       swapSize = "8G";
       homelab = {
