@@ -91,6 +91,13 @@ in {
     # Ntfy metrics via unified metrics proxy
     services.nginx.virtualHosts."metrics".locations."/metrics/ntfy".proxyPass = "http://127.0.0.1:9091/metrics";
 
+    homelab.scrapeTargets = [
+      {
+        job = "ntfy";
+        metricsPath = "/metrics/ntfy";
+      }
+    ];
+
     # Health check
     homelab.healthChecks = [
       {
