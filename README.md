@@ -51,7 +51,8 @@ top level and service configuration under `homelab`, which maps directly to
 | optiplex | x86_64 | Dell OptiPlex |
 
 All desktops run GNOME + Hyprland, Plymouth, TPM or password encryption,
-and the netbird user VPN client.
+the netbird user VPN client, and flatpak with Flathub for desktop apps
+(browsers, CAD tools, slicers) that auto-update on activation.
 
 ### Raspberry Pi
 
@@ -107,7 +108,7 @@ health checks, and backup jobs.
 | Module | Purpose |
 |--------|---------|
 | wireguard | Backup tunnel between thinkcenter and vpsfree |
-| backup | Borg backup with local + remote targets, database dumps, restore scripts |
+| backup | Borg backup to local and remote (vpsfree) targets with automatic PostgreSQL dumps, per-service restore scripts, Prometheus staleness alerts, and health checks. Retention: 7 daily, 4 weekly, 6 monthly. Remote traffic goes over a dedicated WireGuard tunnel. |
 | lorawan-gateway | ChirpStack with u-blox GPS time sync |
 
 ## Base Modules
@@ -160,8 +161,8 @@ cannot run simultaneously due to routing table conflicts.
 - **User client** (`netbird-user`, port 51821) - Desktops. SSO login via tray
   UI, runs as systemd user service.
 
-Services are accessible at `<service>.krejci.io` via Netbird DNS. Internal
-peer resolution uses `<host>.nb.krejci.io`.
+Services are accessible at `<service>.<domain>` via Netbird DNS. Internal
+peer resolution uses `<host>.nb.<domain>`.
 
 ### Service IPs
 
