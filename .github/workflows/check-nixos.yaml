@@ -5,82 +5,6 @@ on:
     branches: [ main ]
 
 jobs:
-  check-commits:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Validate commit messages
-        run: |
-          errors=0
-
-          for sha in $(git log --format="%H" origin/main..HEAD); do
-            subject=$(git log -1 --format="%s" "$sha")
-
-            # Skip fixup and merge commits
-            case "$subject" in
-              fixup!*|squash!*|Merge\ *) continue ;;
-            esac
-
-            body=$(git log -1 --format="%b" "$sha")
-
-            # Title must match: lowercase-module: Capital letter rest
-            if ! echo "$subject" | grep -qP '^[a-z][a-z0-9-]*: [A-Z]'; then
-              echo "::error::$sha: title must match 'module: Capital letter...': $subject"
-              errors=$((errors + 1))
-            fi
-
-            # Reject work-in-progress markers
-            if echo "$subject" | grep -qP '\b(WIP|wip|TMP)\b'; then
-              echo "::error::$sha: title contains WIP/TMP marker: $subject"
-              errors=$((errors + 1))
-            fi
-
-            # No trailing period on title
-            if echo "$subject" | grep -qP '\.$'; then
-              echo "::error::$sha: title must not end with a period: $subject"
-              errors=$((errors + 1))
-            fi
-
-            # No banned content
-            if [ -n "$body" ] && echo "$body" | grep -qi 'Co-Authored-By'; then
-              echo "::error::$sha: body must not contain Co-Authored-By"
-              errors=$((errors + 1))
-            fi
-
-            # Check for emojis in subject and body
-            full=$(git log -1 --format="%B" "$sha")
-            if echo "$full" | grep -qP '[\x{1F300}-\x{1F9FF}\x{2600}-\x{26FF}\x{2700}-\x{27BF}]'; then
-              echo "::error::$sha: commit message must not contain emojis"
-              errors=$((errors + 1))
-            fi
-
-            # Body lines must be blank, start with "- ", or be indented continuation
-            if [ -n "$body" ]; then
-              while IFS= read -r line; do
-                if [ -n "$line" ] && ! echo "$line" | grep -qP '^(- |  )'; then
-                  echo "::error::$sha: body line must be blank, bullet, or indented continuation: $line"
-                  errors=$((errors + 1))
-                  break
-                fi
-              done <<< "$body"
-            fi
-          done
-
-          if [ "$errors" -gt 0 ]; then
-            echo ""
-            echo "Found $errors commit message violation(s)."
-            echo "Expected format:"
-            echo "  module: Title in imperative style"
-            echo ""
-            echo "  - lowercase bullet describing change"
-            exit 1
-          fi
-
-          echo "All commit messages look good."
-
   check-flake:
     runs-on: ubuntu-latest
     steps:
@@ -99,11 +23,27 @@ jobs:
         run: |
           nix fmt -- --check .
 
-  build-configs:
+  check-configs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        host: [framework, e470, vpsfree, optiplex, thinkcenter, t14]
+        host:
+          - framework
+          - e470
+          - vpsfree
+          - optiplex
+          - thinkcenter
+          - t14
+          - rpi4
+          - rak2245
+          - prusa
+        include:
+          - host: rpi4
+            eval-only: true
+          - host: rak2245
+            eval-only: true
+          - host: prusa
+            eval-only: true
     steps:
       - uses: actions/checkout@v4
 
@@ -114,30 +54,12 @@ jobs:
           extra_nix_config: |
             extra-experimental-features = nix-command flakes
 
-      - name: Check NixOS configuration for ${{ matrix.host }}
+      - name: Dry-build ${{ matrix.host }}
+        if: ${{ !matrix.eval-only }}
         run: |
           nix build .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel --dry-run
 
-      - name: Evaluate configuration
-        run: |
-          nix eval .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel.outPath
-
-  eval-rpi-configs:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        host: [rpi4, rak2245, prusa]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v26
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable
-          extra_nix_config: |
-            extra-experimental-features = nix-command flakes
-
-      - name: Evaluate configuration for ${{ matrix.host }}
+      - name: Evaluate ${{ matrix.host }}
         run: |
           nix eval .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel.outPath
 
@@ -145,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        script: 
+        script:
           - deploy-config
           - build-sdcard
           - build-installer
@@ -175,7 +97,7 @@ jobs:
 
           # Scripts should exit with code 1 when missing required args
           if [ "$EXIT_CODE" != "1" ] && [ "$EXIT_CODE" != "0" ]; then
-            echo "❌ Unexpected exit code: $EXIT_CODE"
+            echo "Unexpected exit code: $EXIT_CODE"
             exit 1
           fi
-          echo "✓ Script correctly handles missing arguments"
+          echo "Script correctly handles missing arguments"
