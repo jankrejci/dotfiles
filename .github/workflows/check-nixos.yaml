@@ -122,7 +122,26 @@ jobs:
         run: |
           nix eval .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel.outPath
 
-  check-scripts:  # This should be at the same level as build-configs and check-flake
+  eval-rpi-configs:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        host: [rpi4, rak2245, prusa]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v26
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+          extra_nix_config: |
+            extra-experimental-features = nix-command flakes
+
+      - name: Evaluate configuration for ${{ matrix.host }}
+        run: |
+          nix eval .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel.outPath
+
+  check-scripts:
     runs-on: ubuntu-latest
     strategy:
       matrix:
