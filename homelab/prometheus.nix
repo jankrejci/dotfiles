@@ -1,18 +1,18 @@
 # Prometheus monitoring stack
 #
 # Architecture:
-# - Prometheus scrapes metrics from hosts listed in scrapedBy via VPN
-# - Alertmanager routes alerts via ntfy (primary) or email (secondary)
-# - Metrics exposed via nginx proxy at /metrics/prometheus
+# - Prometheus scrapes metrics from all nixos hosts via VPN
+# - Alertmanager routes alerts via ntfy webhooks
+# - Own domain with nginx reverse proxy
 #
 # Scrape target discovery:
 # - Each service module registers homelab.scrapeTargets
-# - This module collects targets from hosts where scrapedBy includes this host
+# - This module collects targets from all nixos hosts
 # - Targets are grouped by job and scraped via {host}.nb.krejci.io:9999
 #
 # Alert aggregation:
 # - Each service module registers homelab.alerts
-# - This module collects alerts from hosts in this instance's scrapedBy scope
+# - This module collects alerts from all nixos hosts
 # - Alerts must have type label (host or service) for correct routing
 #
 {
@@ -28,12 +28,24 @@
   domain = global.domain;
   peerDomain = global.peerDomain;
   metricsPort = toString services.metrics.port;
+  promDomain = "${cfg.subdomain}.${domain}";
 in {
   options.homelab.prometheus = {
     enable = lib.mkOption {
       type = lib.types.bool;
       default = false;
       description = "Enable Prometheus metrics collection";
+    };
+
+    ip = lib.mkOption {
+      type = lib.types.str;
+      description = "IP address for nginx to listen on";
+    };
+
+    subdomain = lib.mkOption {
+      type = lib.types.str;
+      default = "prometheus";
+      description = "Subdomain for Prometheus UI";
     };
 
     port = lib.mkOption {
@@ -49,35 +61,6 @@ in {
       default = "360d";
       description = "How long to keep metrics data";
     };
-
-    alerting = {
-      method = lib.mkOption {
-        type = lib.types.enum ["ntfy" "email"];
-        default = "ntfy";
-        description = "How alertmanager delivers notifications";
-      };
-
-      email = {
-        # Standard SMTP term for the relay that handles outbound mail
-        smarthost = lib.mkOption {
-          type = lib.types.str;
-          default = "127.0.0.1:1025";
-          description = "SMTP smarthost in host:port format";
-        };
-
-        from = lib.mkOption {
-          type = lib.types.str;
-          default = "";
-          description = "Sender email address";
-        };
-
-        to = lib.mkOption {
-          type = lib.types.str;
-          default = "";
-          description = "Recipient email address";
-        };
-      };
-    };
   };
 
   options.homelab.alertmanager = {
@@ -91,44 +74,45 @@ in {
   config = lib.mkIf cfg.enable (let
     myHostName = config.homelab.host.hostName;
   in {
+    assertions = [
+      {
+        assertion = config.homelab.ntfy.enable;
+        message = "homelab.prometheus requires homelab.ntfy.enable = true for alertmanager notifications";
+      }
+    ];
+
     # Ntfy token for alertmanager webhook authentication
-    age.secrets.ntfy-token = lib.mkIf (cfg.alerting.method == "ntfy") {
+    age.secrets.ntfy-token = {
       rekeyFile = ../secrets/ntfy-token.age;
       owner = "prometheus";
     };
 
-    # SMTP password for Protonmail Bridge authentication
-    age.secrets.smtp-token = lib.mkIf (cfg.alerting.method == "email") {
-      rekeyFile = ../secrets/smtp-token.age;
-      owner = "prometheus";
-    };
+    # Register IP for services dummy interface
+    homelab.serviceIPs = [cfg.ip];
+    networking.hosts.${cfg.ip} = [promDomain];
+
+    # Allow HTTPS on VPN interface only
+    networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [
+      services.https.port
+    ];
 
     services.prometheus = {
       enable = true;
       retentionTime = cfg.retention;
       # 127.0.0.1 only - accessed via nginx proxy (defense in depth)
       listenAddress = "127.0.0.1";
-      # Subpath only when sharing domain with Grafana.
-      # Assumes Grafana runs on the same machine as Prometheus.
-      extraFlags =
-        lib.optionals config.homelab.grafana.enable [
-          "--web.external-url=https://${config.homelab.grafana.subdomain}.${domain}/prometheus"
-          "--web.route-prefix=/prometheus"
-        ]
-        ++ ["--web.enable-admin-api"];
+      extraFlags = ["--web.enable-admin-api"];
       globalConfig.scrape_interval = "10s";
       # Scrape configs aggregated from homelab.scrapeTargets across all nixos hosts.
       # Each service module registers its scrape target, prometheus collects them all.
       scrapeConfigs = let
         allConfigs = inputs.self.nixosConfigurations;
 
-        # Only scrape hosts that list this prometheus instance in scrapedBy
+        # Scrape all nixos hosts
         nixosHostNames = lib.attrNames (
           lib.filterAttrs (
             _: host:
-              (host.kind or "nixos")
-              == "nixos"
-              && builtins.elem myHostName (host.scrapedBy or [])
+              (host.kind or "nixos") == "nixos"
           )
           config.homelab.hosts
         );
@@ -171,10 +155,12 @@ in {
       ];
     };
 
-    # Alertmanager routes alerts via ntfy webhooks or email depending on method
-    services.prometheus.alertmanager = let
-      # Ntfy webhook alertmanager config with template-based routing
-      ntfyConfig = {
+    # Alertmanager routes alerts via ntfy webhooks with template-based routing
+    services.prometheus.alertmanager = {
+      enable = true;
+      listenAddress = "127.0.0.1";
+      port = config.homelab.alertmanager.port;
+      configuration = {
         route = {
           receiver = "ntfy-default";
           group_by = ["alertname"];
@@ -225,46 +211,21 @@ in {
           (mkReceiver "ntfy-default" "default")
         ];
       };
-
-      # Email alertmanager config for secondary prometheus via Protonmail Bridge
-      emailConfig = {
-        global = {
-          smtp_smarthost = cfg.alerting.email.smarthost;
-          smtp_from = cfg.alerting.email.from;
-          smtp_auth_username = cfg.alerting.email.from;
-          smtp_auth_password_file = config.age.secrets.smtp-token.path;
-          # Protonmail Bridge on localhost handles TLS upstream
-          smtp_require_tls = false;
-        };
-        route = {
-          receiver = "email";
-          group_by = ["alertname"];
-          group_wait = "30s";
-          group_interval = "5m";
-          repeat_interval = "12h";
-        };
-        receivers = [
-          {
-            name = "email";
-            email_configs = [{to = cfg.alerting.email.to;}];
-          }
-        ];
-      };
-    in {
-      enable = true;
-      listenAddress = "127.0.0.1";
-      port = config.homelab.alertmanager.port;
-      configuration =
-        if cfg.alerting.method == "ntfy"
-        then ntfyConfig
-        else emailConfig;
     };
 
-    # Prometheus metrics via nginx proxy
-    services.nginx.virtualHosts."metrics".locations."/metrics/prometheus".proxyPass =
-      if config.homelab.grafana.enable
-      then "http://127.0.0.1:${toString cfg.port}/prometheus/metrics"
-      else "http://127.0.0.1:${toString cfg.port}/metrics";
+    services.nginx.virtualHosts.${promDomain} = {
+      listenAddresses = [cfg.ip];
+      forceSSL = true;
+      useACMEHost = domain;
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:${toString cfg.port}";
+        proxyWebsockets = true;
+        recommendedProxySettings = true;
+      };
+    };
+
+    # Prometheus metrics via unified metrics proxy
+    services.nginx.virtualHosts."metrics".locations."/metrics/prometheus".proxyPass = "http://127.0.0.1:${toString cfg.port}/metrics";
 
     homelab.scrapeTargets = [
       {
@@ -287,16 +248,14 @@ in {
     services.prometheus.rules = let
       localAlerts = config.homelab.alerts;
 
-      # Collect alerts from other hosts in this instance's scrapedBy scope
+      # Collect alerts from all other nixos hosts
       allConfigs = inputs.self.nixosConfigurations;
       otherHostNames =
         lib.filter
         (name: name != myHostName)
         (lib.attrNames (lib.filterAttrs (
             _: host:
-              (host.kind or "nixos")
-              == "nixos"
-              && builtins.elem myHostName (host.scrapedBy or [])
+              (host.kind or "nixos") == "nixos"
           )
           config.homelab.hosts));
       remoteAlerts = lib.foldAttrs (a: b: a ++ b) [] (

@@ -86,13 +86,24 @@ in {
   config = lib.mkIf cfg.enable (let
     allConfigs = inputs.self.nixosConfigurations;
 
+    # Capitalize first letter of a string for PascalCase alert names
+    capitalize = s: lib.toUpper (builtins.substring 0 1 s) + builtins.substring 1 (-1) s;
+
+    # Only collect from nixos hosts, skip installer ISO
+    nixosHostNames = lib.attrNames (
+      lib.filterAttrs (
+        _: host: (host.kind or "nixos") == "nixos"
+      )
+      config.homelab.hosts
+    );
+
     # Collect watchdog targets from all nixos hosts
     allWatchdogTargets = lib.flatten (
       map (
         name:
           allConfigs.${name}.config.homelab.watchdogTargets or []
       )
-      (lib.attrNames allConfigs)
+      nixosHostNames
     );
 
     # Unique hosts that have at least one watchdog target
@@ -139,7 +150,7 @@ in {
       # Per-host node down alert
       hostAlerts =
         map (host: {
-          alert = "${host}Down";
+          alert = "${capitalize host}Down";
           expr = ''up{job="node",host="${host}"} == 0'';
           for = "5m";
           labels = {
@@ -154,7 +165,7 @@ in {
       # Per-service down alert
       serviceAlerts =
         map (t: {
-          alert = "${t.host}${lib.strings.toUpper (lib.substring 0 1 t.job) + lib.substring 1 (-1) t.job}Down";
+          alert = "${capitalize t.host}${capitalize t.job}Down";
           expr = ''up{job="${t.job}",host="${t.host}"} == 0'';
           for = "5m";
           labels = {
