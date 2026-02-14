@@ -1,0 +1,1576 @@
+{
+  "groups": [
+    {
+      "id": "d4qiqoqfadhs73dqhjl0",
+      "issued": "api",
+      "name": "hosts-backup",
+      "peers": [
+        {
+          "id": "d4pfr6qfadhs73dqdvsg",
+          "name": "thinkcenter"
+        }
+      ],
+      "peers_count": 1,
+      "resources": null,
+      "resources_count": 0
+    },
+    {
+      "id": "d4tvvb2fadhs73ejr68g",
+      "issued": "api",
+      "name": "users-media",
+      "peers": [
+        {
+          "id": "d4mrmnjl0ubs73bkr4n0",
+          "name": "paja"
+        },
+        {
+          "id": "d4peai2fadhs73dqdnj0",
+          "name": "vpsfree"
+        },
+        {
+          "id": "d4u2h7rl0ubs73adimk0",
+          "name": "framework"
+        },
+        {
+          "id": "d4u4bmafadhs73fhei70",
+          "name": "t14"
+        },
+        {
+          "id": "d50sdh2fadhs73cguplg",
+          "name": "e470"
+        },
+        {
+          "id": "d51gagrl0ubs73e7ml9g",
+          "name": "optiplex"
+        },
+        {
+          "id": "d5btgnqfadhs73bq6no0",
+          "name": "x15"
+        },
+        {
+          "id": "d68421afadhs73dkibt0",
+          "name": "e470"
+        }
+      ],
+      "peers_count": 8,
+      "resources": null,
+      "resources_count": 0
+    },
+    {
+      "id": "d4tvv7afadhs73ejr680",
+      "issued": "api",
+      "name": "users-admin",
+      "peers": [
+        {
+          "id": "d4u2h7rl0ubs73adimk0",
+          "name": "framework"
+        },
+        {
+          "id": "d4u4bmafadhs73fhei70",
+          "name": "t14"
+        },
+        {
+          "id": "d50sdh2fadhs73cguplg",
+          "name": "e470"
+        },
+        {
+          "id": "d51gagrl0ubs73e7ml9g",
+          "name": "optiplex"
+        },
+        {
+          "id": "d5btgnqfadhs73bq6no0",
+          "name": "x15"
+        }
+      ],
+      "peers_count": 5,
+      "resources": null,
+      "resources_count": 0
+    },
+    {
+      "id": "d4qiq0rl0ubs73f796vg",
+      "issued": "api",
+      "name": "server-backup",
+      "peers": [
+        {
+          "id": "d4peai2fadhs73dqdnj0",
+          "name": "vpsfree"
+        }
+      ],
+      "peers_count": 1,
+      "resources": null,
+      "resources_count": 0
+    },
+    {
+      "id": "d47mnhbl0ubs738qv4dg",
+      "issued": "api",
+      "name": "All",
+      "peers": [
+        {
+          "id": "d4mrmnjl0ubs73bkr4n0",
+          "name": "paja"
+        },
+        {
+          "id": "d4peai2fadhs73dqdnj0",
+          "name": "vpsfree"
+        },
+        {
+          "id": "d4pfr6qfadhs73dqdvsg",
+          "name": "thinkcenter"
+        },
+        {
+          "id": "d4rhvmqfadhs73dqm4lg",
+          "name": "rpi4"
+        },
+        {
+          "id": "d4trtmjl0ubs73ebobv0",
+          "name": "prusa"
+        },
+        {
+          "id": "d4u2h7rl0ubs73adimk0",
+          "name": "framework"
+        },
+        {
+          "id": "d4u4bmafadhs73fhei70",
+          "name": "t14"
+        },
+        {
+          "id": "d50sdh2fadhs73cguplg",
+          "name": "e470"
+        },
+        {
+          "id": "d51gagrl0ubs73e7ml9g",
+          "name": "optiplex"
+        },
+        {
+          "id": "d53g8gjl0ubs738p02pg",
+          "name": "rak2245"
+        },
+        {
+          "id": "d5btgnqfadhs73bq6no0",
+          "name": "x15"
+        },
+        {
+          "id": "d68421afadhs73dkibt0",
+          "name": "e470"
+        }
+      ],
+      "peers_count": 12,
+      "resources": null,
+      "resources_count": 0
+    },
+    {
+      "id": "d4q1hvifadhs73dqfssg",
+      "issued": "api",
+      "name": "server-monitoring",
+      "peers": [
+        {
+          "id": "d4pfr6qfadhs73dqdvsg",
+          "name": "thinkcenter"
+        }
+      ],
+      "peers_count": 1,
+      "resources": [
+        {
+          "id": "d4pg583l0ubs73f75o9g",
+          "type": "domain"
+        },
+        {
+          "id": "d4pg36ifadhs73dqe160",
+          "type": "domain"
+        },
+        {
+          "id": "d673t32fadhs73dq2q00",
+          "type": "subnet"
+        }
+      ],
+      "resources_count": 3
+    },
+    {
+      "id": "d4q2tpjl0ubs73f77nr0",
+      "issued": "api",
+      "name": "hosts-ssh",
+      "peers": [
+        {
+          "id": "d4peai2fadhs73dqdnj0",
+          "name": "vpsfree"
+        },
+        {
+          "id": "d4pfr6qfadhs73dqdvsg",
+          "name": "thinkcenter"
+        },
+        {
+          "id": "d4rhvmqfadhs73dqm4lg",
+          "name": "rpi4"
+        },
+        {
+          "id": "d4trtmjl0ubs73ebobv0",
+          "name": "prusa"
+        },
+        {
+          "id": "d4u4bmafadhs73fhei70",
+          "name": "t14"
+        },
+        {
+          "id": "d50sdh2fadhs73cguplg",
+          "name": "e470"
+        },
+        {
+          "id": "d51gagrl0ubs73e7ml9g",
+          "name": "optiplex"
+        },
+        {
+          "id": "d53g8gjl0ubs738p02pg",
+          "name": "rak2245"
+        }
+      ],
+      "peers_count": 8,
+      "resources": null,
+      "resources_count": 0
+    },
+    {
+      "id": "d4q5ouafadhs73dqgcug",
+      "issued": "api",
+      "name": "hosts-metrics",
+      "peers": [
+        {
+          "id": "d4peai2fadhs73dqdnj0",
+          "name": "vpsfree"
+        },
+        {
+          "id": "d4pfr6qfadhs73dqdvsg",
+          "name": "thinkcenter"
+        },
+        {
+          "id": "d4rhvmqfadhs73dqm4lg",
+          "name": "rpi4"
+        },
+        {
+          "id": "d4trtmjl0ubs73ebobv0",
+          "name": "prusa"
+        },
+        {
+          "id": "d4u2h7rl0ubs73adimk0",
+          "name": "framework"
+        },
+        {
+          "id": "d4u4bmafadhs73fhei70",
+          "name": "t14"
+        },
+        {
+          "id": "d50sdh2fadhs73cguplg",
+          "name": "e470"
+        },
+        {
+          "id": "d51gagrl0ubs73e7ml9g",
+          "name": "optiplex"
+        },
+        {
+          "id": "d53g8gjl0ubs738p02pg",
+          "name": "rak2245"
+        }
+      ],
+      "peers_count": 9,
+      "resources": null,
+      "resources_count": 0
+    },
+    {
+      "id": "d4q940rl0ubs73f78dlg",
+      "issued": "api",
+      "name": "server-octoprint",
+      "peers": [
+        {
+          "id": "d4trtmjl0ubs73ebobv0",
+          "name": "prusa"
+        }
+      ],
+      "peers_count": 1,
+      "resources": [
+        {
+          "id": "d4q940qfadhs73dqgpcg",
+          "type": "domain"
+        },
+        {
+          "id": "d4r8dmafadhs73dqkch0",
+          "type": "subnet"
+        }
+      ],
+      "resources_count": 2
+    },
+    {
+      "id": "d4u08vqfadhs7390f1g0",
+      "issued": "api",
+      "name": "server-media",
+      "peers": [
+        {
+          "id": "d4pfr6qfadhs73dqdvsg",
+          "name": "thinkcenter"
+        }
+      ],
+      "peers_count": 1,
+      "resources": [
+        {
+          "id": "d4piup2fadhs73dqeh20",
+          "type": "domain"
+        },
+        {
+          "id": "d4piukbl0ubs73f7670g",
+          "type": "domain"
+        },
+        {
+          "id": "d4r8dujl0ubs73f7c08g",
+          "type": "subnet"
+        },
+        {
+          "id": "d5egvarl0ubs73fbn3bg",
+          "type": "domain"
+        },
+        {
+          "id": "d5buqpafadhs73bvg2v0",
+          "type": "domain"
+        },
+        {
+          "id": "d5h7q82fadhs73fs9mjg",
+          "type": "domain"
+        },
+        {
+          "id": "d4pg583l0ubs73f75o9g",
+          "type": "domain"
+        },
+        {
+          "id": "d673t32fadhs73dq2q00",
+          "type": "subnet"
+        }
+      ],
+      "resources_count": 8
+    }
+  ],
+  "policies": [
+    {
+      "description": "",
+      "enabled": true,
+      "id": "d4q5ocifadhs73dqgcs0",
+      "name": "ping",
+      "rules": [
+        {
+          "action": "accept",
+          "bidirectional": false,
+          "description": "",
+          "destinations": [
+            {
+              "id": "d47mnhbl0ubs738qv4dg",
+              "name": "All",
+              "peers_count": 12,
+              "resources_count": 0
+            }
+          ],
+          "enabled": true,
+          "id": "d4q5ocifadhs73dqgcs0",
+          "name": "ping",
+          "protocol": "all",
+          "sources": [
+            {
+              "id": "d4tvv7afadhs73ejr680",
+              "name": "users-admin",
+              "peers_count": 5,
+              "resources_count": 0
+            },
+            {
+              "id": "d47mnhbl0ubs738qv4dg",
+              "name": "All",
+              "peers_count": 12,
+              "resources_count": 0
+            }
+          ]
+        }
+      ],
+      "source_posture_checks": []
+    },
+    {
+      "description": "",
+      "enabled": true,
+      "id": "d4pf10bl0ubs73f75i1g",
+      "name": "media",
+      "rules": [
+        {
+          "action": "accept",
+          "bidirectional": false,
+          "description": "",
+          "destinations": [
+            {
+              "id": "d4u08vqfadhs7390f1g0",
+              "name": "server-media",
+              "peers_count": 1,
+              "resources_count": 8
+            }
+          ],
+          "enabled": true,
+          "id": "d4pf10bl0ubs73f75i1g",
+          "name": "media",
+          "ports": [
+            "443"
+          ],
+          "protocol": "tcp",
+          "sources": [
+            {
+              "id": "d4tvvb2fadhs73ejr68g",
+              "name": "users-media",
+              "peers_count": 8,
+              "resources_count": 0
+            }
+          ]
+        }
+      ],
+      "source_posture_checks": []
+    },
+    {
+      "description": "",
+      "enabled": true,
+      "id": "d4q5qsbl0ubs73f7825g",
+      "name": "metrics",
+      "rules": [
+        {
+          "action": "accept",
+          "bidirectional": false,
+          "description": "",
+          "destinations": [
+            {
+              "id": "d4q5ouafadhs73dqgcug",
+              "name": "hosts-metrics",
+              "peers_count": 9,
+              "resources_count": 0
+            }
+          ],
+          "enabled": true,
+          "id": "d4q5qsbl0ubs73f7825g",
+          "name": "metrics",
+          "ports": [
+            "9999"
+          ],
+          "protocol": "tcp",
+          "sources": [
+            {
+              "id": "d4q1hvifadhs73dqfssg",
+              "name": "server-monitoring",
+              "peers_count": 1,
+              "resources_count": 0
+            }
+          ]
+        }
+      ],
+      "source_posture_checks": []
+    },
+    {
+      "description": "",
+      "enabled": true,
+      "id": "d4pg3tqfadhs73dqe19g",
+      "name": "monitoring",
+      "rules": [
+        {
+          "action": "accept",
+          "bidirectional": false,
+          "description": "",
+          "destinations": [
+            {
+              "id": "d4q1hvifadhs73dqfssg",
+              "name": "server-monitoring",
+              "peers_count": 1,
+              "resources_count": 3
+            }
+          ],
+          "enabled": true,
+          "id": "d4pg3tqfadhs73dqe19g",
+          "name": "monitoring",
+          "ports": [
+            "443"
+          ],
+          "protocol": "tcp",
+          "sources": [
+            {
+              "id": "d4tvv7afadhs73ejr680",
+              "name": "users-admin",
+              "peers_count": 5,
+              "resources_count": 0
+            }
+          ]
+        }
+      ],
+      "source_posture_checks": null
+    },
+    {
+      "description": "",
+      "enabled": true,
+      "id": "d4q2ubbl0ubs73f77nsg",
+      "name": "ssh",
+      "rules": [
+        {
+          "action": "accept",
+          "bidirectional": false,
+          "description": "",
+          "destinations": [
+            {
+              "id": "d4q2tpjl0ubs73f77nr0",
+              "name": "hosts-ssh",
+              "peers_count": 8,
+              "resources_count": 0
+            }
+          ],
+          "enabled": true,
+          "id": "d4q2ubbl0ubs73f77nsg",
+          "name": "ssh",
+          "ports": [
+            "22"
+          ],
+          "protocol": "tcp",
+          "sources": [
+            {
+              "id": "d4tvv7afadhs73ejr680",
+              "name": "users-admin",
+              "peers_count": 5,
+              "resources_count": 0
+            }
+          ]
+        }
+      ],
+      "source_posture_checks": []
+    },
+    {
+      "description": "",
+      "enabled": true,
+      "id": "d4q947bl0ubs73f78dn0",
+      "name": "octoprint",
+      "rules": [
+        {
+          "action": "accept",
+          "bidirectional": false,
+          "description": "",
+          "destinations": [
+            {
+              "id": "d4q940rl0ubs73f78dlg",
+              "name": "server-octoprint",
+              "peers_count": 1,
+              "resources_count": 2
+            }
+          ],
+          "enabled": true,
+          "id": "d4q947bl0ubs73f78dn0",
+          "name": "octoprint",
+          "ports": [
+            "443"
+          ],
+          "protocol": "tcp",
+          "sources": [
+            {
+              "id": "d4tvv7afadhs73ejr680",
+              "name": "users-admin",
+              "peers_count": 5,
+              "resources_count": 0
+            }
+          ]
+        }
+      ],
+      "source_posture_checks": []
+    },
+    {
+      "description": "",
+      "enabled": true,
+      "id": "d4qiq0rl0ubs73f79700",
+      "name": "backups",
+      "rules": [
+        {
+          "action": "accept",
+          "bidirectional": false,
+          "description": "",
+          "destinations": [
+            {
+              "id": "d4qiq0rl0ubs73f796vg",
+              "name": "server-backup",
+              "peers_count": 1,
+              "resources_count": 0
+            }
+          ],
+          "enabled": true,
+          "id": "d4qiq0rl0ubs73f79700",
+          "name": "backups",
+          "ports": [
+            "22"
+          ],
+          "protocol": "tcp",
+          "sources": [
+            {
+              "id": "d4qiqoqfadhs73dqhjl0",
+              "name": "hosts-backup",
+              "peers_count": 1,
+              "resources_count": 0
+            }
+          ]
+        }
+      ],
+      "source_posture_checks": []
+    }
+  ],
+  "peers": [
+    {
+      "accessible_peers_count": 0,
+      "approval_required": false,
+      "city_name": "Prague",
+      "connected": true,
+      "connection_ip": "2a02:8308:7187:5200:9235:65de:e97d:e763",
+      "country_code": "CZ",
+      "created_at": "2025-12-17T19:32:19.101898Z",
+      "dns_label": "optiplex.nb.krejci.io",
+      "ephemeral": false,
+      "extra_dns_labels": [],
+      "geoname_id": 3067696,
+      "groups": [
+        {
+          "id": "d4tvvb2fadhs73ejr68g",
+          "name": "users-media",
+          "peers_count": 8,
+          "resources_count": 0
+        },
+        {
+          "id": "d4tvv7afadhs73ejr680",
+          "name": "users-admin",
+          "peers_count": 5,
+          "resources_count": 0
+        },
+        {
+          "id": "d47mnhbl0ubs738qv4dg",
+          "name": "All",
+          "peers_count": 12,
+          "resources_count": 0
+        },
+        {
+          "id": "d4q2tpjl0ubs73f77nr0",
+          "name": "hosts-ssh",
+          "peers_count": 8,
+          "resources_count": 0
+        },
+        {
+          "id": "d4q5ouafadhs73dqgcug",
+          "name": "hosts-metrics",
+          "peers_count": 9,
+          "resources_count": 0
+        }
+      ],
+      "hostname": "optiplex",
+      "id": "d51gagrl0ubs73e7ml9g",
+      "inactivity_expiration_enabled": true,
+      "ip": "100.76.174.75",
+      "kernel_version": "6.12.59",
+      "last_login": "2025-12-17T19:32:19.101898Z",
+      "last_seen": "2026-02-11T16:07:05.808005Z",
+      "local_flags": {
+        "block_inbound": false,
+        "block_lan_access": false,
+        "disable_client_routes": false,
+        "disable_dns": false,
+        "disable_firewall": false,
+        "disable_server_routes": false,
+        "lazy_connection_enabled": false,
+        "rosenpass_enabled": false,
+        "rosenpass_permissive": false,
+        "server_ssh_allowed": false
+      },
+      "login_expiration_enabled": true,
+      "login_expired": false,
+      "name": "optiplex",
+      "os": "NixOS 25.11",
+      "serial_number": "",
+      "ssh_enabled": false,
+      "ui_version": "netbird-desktop-ui/0.60.2",
+      "user_id": "auth0|690f6b860143de324d76fc7c",
+      "version": "0.60.2"
+    },
+    {
+      "accessible_peers_count": 0,
+      "approval_required": false,
+      "city_name": "Prague",
+      "connected": false,
+      "connection_ip": "2a02:8308:7187:5200:fc7d:caea:277f:49d1",
+      "country_code": "CZ",
+      "created_at": "2025-12-16T20:53:24.352032Z",
+      "dns_label": "e470.nb.krejci.io",
+      "ephemeral": false,
+      "extra_dns_labels": [],
+      "geoname_id": 3067696,
+      "groups": [
+        {
+          "id": "d4tvvb2fadhs73ejr68g",
+          "name": "users-media",
+          "peers_count": 8,
+          "resources_count": 0
+        },
+        {
+          "id": "d4tvv7afadhs73ejr680",
+          "name": "users-admin",
+          "peers_count": 5,
+          "resources_count": 0
+        },
+        {
+          "id": "d47mnhbl0ubs738qv4dg",
+          "name": "All",
+          "peers_count": 12,
+          "resources_count": 0
+        },
+        {
+          "id": "d4q2tpjl0ubs73f77nr0",
+          "name": "hosts-ssh",
+          "peers_count": 8,
+          "resources_count": 0
+        },
+        {
+          "id": "d4q5ouafadhs73dqgcug",
+          "name": "hosts-metrics",
+          "peers_count": 9,
+          "resources_count": 0
+        }
+      ],
+      "hostname": "e470",
+      "id": "d50sdh2fadhs73cguplg",
+      "inactivity_expiration_enabled": true,
+      "ip": "100.76.15.183",
+      "kernel_version": "6.12.69",
+      "last_login": "2025-12-16T20:53:24.352032Z",
+      "last_seen": "2026-02-14T10:25:06.19611Z",
+      "local_flags": {
+        "block_inbound": false,
+        "block_lan_access": false,
+        "disable_client_routes": false,
+        "disable_dns": false,
+        "disable_firewall": false,
+        "disable_server_routes": false,
+        "lazy_connection_enabled": true,
+        "rosenpass_enabled": false,
+        "rosenpass_permissive": false,
+        "server_ssh_allowed": false
+      },
+      "login_expiration_enabled": true,
+      "login_expired": false,
+      "name": "e470",
+      "os": "NixOS 25.11",
+      "serial_number": "",
+      "ssh_enabled": false,
+      "ui_version": "netbird-desktop-ui/0.64.5",
+      "user_id": "auth0|690f6b860143de324d76fc7c",
+      "version": "0.64.5"
+    },
+    {
+      "accessible_peers_count": 0,
+      "approval_required": false,
+      "city_name": "Prague",
+      "connected": true,
+      "connection_ip": "2a02:8308:7187:5200::5e93",
+      "country_code": "CZ",
+      "created_at": "2025-12-20T20:17:06.459074Z",
+      "dns_label": "rak2245.nb.krejci.io",
+      "ephemeral": false,
+      "extra_dns_labels": [],
+      "geoname_id": 3067696,
+      "groups": [
+        {
+          "id": "d47mnhbl0ubs738qv4dg",
+          "name": "All",
+          "peers_count": 12,
+          "resources_count": 0
+        },
+        {
+          "id": "d4q2tpjl0ubs73f77nr0",
+          "name": "hosts-ssh",
+          "peers_count": 8,
+          "resources_count": 0
+        },
+        {
+          "id": "d4q5ouafadhs73dqgcug",
+          "name": "hosts-metrics",
+          "peers_count": 9,
+          "resources_count": 0
+        }
+      ],
+      "hostname": "rak2245",
+      "id": "d53g8gjl0ubs738p02pg",
+      "inactivity_expiration_enabled": false,
+      "ip": "100.76.71.98",
+      "kernel_version": "6.12.34",
+      "last_login": "2025-12-20T20:17:06.459074Z",
+      "last_seen": "2026-02-12T13:15:10.822067Z",
+      "local_flags": {
+        "block_inbound": false,
+        "block_lan_access": false,
+        "disable_client_routes": false,
+        "disable_dns": false,
+        "disable_firewall": false,
+        "disable_server_routes": false,
+        "lazy_connection_enabled": false,
+        "rosenpass_enabled": false,
+        "rosenpass_permissive": false,
+        "server_ssh_allowed": true
+      },
+      "login_expiration_enabled": false,
+      "login_expired": false,
+      "name": "rak2245",
+      "os": "NixOS 25.11",
+      "serial_number": "00000000fa90b9b6",
+      "ssh_enabled": false,
+      "ui_version": "",
+      "user_id": "",
+      "version": "0.60.2"
+    },
+    {
+      "accessible_peers_count": 0,
+      "approval_required": false,
+      "city_name": "Prague",
+      "connected": false,
+      "connection_ip": "2a02:8308:7187:5200:686c:7c66:9757:c2c3",
+      "country_code": "CZ",
+      "created_at": "2026-02-14T09:31:49.354963Z",
+      "dns_label": "e470-150-116.nb.krejci.io",
+      "ephemeral": false,
+      "extra_dns_labels": [],
+      "geoname_id": 3067696,
+      "groups": [
+        {
+          "id": "d4tvvb2fadhs73ejr68g",
+          "name": "users-media",
+          "peers_count": 8,
+          "resources_count": 0
+        },
+        {
+          "id": "d47mnhbl0ubs738qv4dg",
+          "name": "All",
+          "peers_count": 12,
+          "resources_count": 0
+        }
+      ],
+      "hostname": "e470",
+      "id": "d68421afadhs73dkibt0",
+      "inactivity_expiration_enabled": true,
+      "ip": "100.76.150.116",
+      "kernel_version": "6.12.69",
+      "last_login": "2026-02-14T09:31:49.354963Z",
+      "last_seen": "2026-02-14T10:26:41.059265Z",
+      "local_flags": {
+        "block_inbound": false,
+        "block_lan_access": false,
+        "disable_client_routes": false,
+        "disable_dns": false,
+        "disable_firewall": false,
+        "disable_server_routes": false,
+        "lazy_connection_enabled": false,
+        "rosenpass_enabled": false,
+        "rosenpass_permissive": false,
+        "server_ssh_allowed": false
+      },
+      "login_expiration_enabled": true,
+      "login_expired": false,
+      "name": "e470",
+      "os": "NixOS 25.11",
+      "serial_number": "",
+      "ssh_enabled": false,
+      "ui_version": "netbird-desktop-ui/0.64.5",
+      "user_id": "auth0|692dbad86d1e493d4d82638a",
+      "version": "0.64.5"
+    },
+    {
+      "accessible_peers_count": 0,
+      "approval_required": false,
+      "city_name": "Kutná Hora",
+      "connected": true,
+      "connection_ip": "88.146.248.2",
+      "country_code": "CZ",
+      "created_at": "2025-12-12T14:37:19.199646Z",
+      "dns_label": "framework.nb.krejci.io",
+      "ephemeral": false,
+      "extra_dns_labels": [],
+      "geoname_id": 3072463,
+      "groups": [
+        {
+          "id": "d4tvvb2fadhs73ejr68g",
+          "name": "users-media",
+          "peers_count": 8,
+          "resources_count": 0
+        },
+        {
+          "id": "d4tvv7afadhs73ejr680",
+          "name": "users-admin",
+          "peers_count": 5,
+          "resources_count": 0
+        },
+        {
+          "id": "d47mnhbl0ubs738qv4dg",
+          "name": "All",
+          "peers_count": 12,
+          "resources_count": 0
+        },
+        {
+          "id": "d4q5ouafadhs73dqgcug",
+          "name": "hosts-metrics",
+          "peers_count": 9,
+          "resources_count": 0
+        }
+      ],
+      "hostname": "framework",
+      "id": "d4u2h7rl0ubs73adimk0",
+      "inactivity_expiration_enabled": true,
+      "ip": "100.76.33.90",
+      "kernel_version": "6.12.69",
+      "last_login": "2025-12-12T14:37:19.199646Z",
+      "last_seen": "2026-02-11T08:31:45.475352Z",
+      "local_flags": {
+        "block_inbound": false,
+        "block_lan_access": false,
+        "disable_client_routes": false,
+        "disable_dns": false,
+        "disable_firewall": false,
+        "disable_server_routes": true,
+        "lazy_connection_enabled": true,
+        "rosenpass_enabled": false,
+        "rosenpass_permissive": false,
+        "server_ssh_allowed": false
+      },
+      "login_expiration_enabled": true,
+      "login_expired": false,
+      "name": "framework",
+      "os": "NixOS 25.11",
+      "serial_number": "",
+      "ssh_enabled": false,
+      "ui_version": "netbird-desktop-ui/0.64.5",
+      "user_id": "auth0|690f6b860143de324d76fc7c",
+      "version": "0.64.5"
+    },
+    {
+      "accessible_peers_count": 0,
+      "approval_required": false,
+      "city_name": "Prague",
+      "connected": true,
+      "connection_ip": "86.49.249.193",
+      "country_code": "CZ",
+      "created_at": "2025-12-08T18:58:35.481934Z",
+      "dns_label": "rpi4.nb.krejci.io",
+      "ephemeral": false,
+      "extra_dns_labels": [],
+      "geoname_id": 3067696,
+      "groups": [
+        {
+          "id": "d47mnhbl0ubs738qv4dg",
+          "name": "All",
+          "peers_count": 12,
+          "resources_count": 0
+        },
+        {
+          "id": "d4q2tpjl0ubs73f77nr0",
+          "name": "hosts-ssh",
+          "peers_count": 8,
+          "resources_count": 0
+        },
+        {
+          "id": "d4q5ouafadhs73dqgcug",
+          "name": "hosts-metrics",
+          "peers_count": 9,
+          "resources_count": 0
+        }
+      ],
+      "hostname": "rpi4",
+      "id": "d4rhvmqfadhs73dqm4lg",
+      "inactivity_expiration_enabled": false,
+      "ip": "100.76.30.141",
+      "kernel_version": "6.12.34",
+      "last_login": "2025-12-08T18:58:35.481934Z",
+      "last_seen": "2026-02-11T20:38:19.114995Z",
+      "local_flags": {
+        "block_inbound": false,
+        "block_lan_access": false,
+        "disable_client_routes": false,
+        "disable_dns": false,
+        "disable_firewall": false,
+        "disable_server_routes": false,
+        "lazy_connection_enabled": false,
+        "rosenpass_enabled": false,
+        "rosenpass_permissive": false,
+        "server_ssh_allowed": true
+      },
+      "login_expiration_enabled": false,
+      "login_expired": false,
+      "name": "rpi4",
+      "os": "NixOS 25.11",
+      "serial_number": "1000000052ced290",
+      "ssh_enabled": false,
+      "ui_version": "",
+      "user_id": "",
+      "version": "0.60.2"
+    },
+    {
+      "accessible_peers_count": 0,
+      "approval_required": false,
+      "city_name": "Prague",
+      "connected": true,
+      "connection_ip": "2a02:8308:7187:5200:ba8:13bd:875f:c34e",
+      "country_code": "CZ",
+      "created_at": "2025-12-12T07:06:02.272077Z",
+      "dns_label": "prusa.nb.krejci.io",
+      "ephemeral": false,
+      "extra_dns_labels": [],
+      "geoname_id": 3067696,
+      "groups": [
+        {
+          "id": "d47mnhbl0ubs738qv4dg",
+          "name": "All",
+          "peers_count": 12,
+          "resources_count": 0
+        },
+        {
+          "id": "d4q2tpjl0ubs73f77nr0",
+          "name": "hosts-ssh",
+          "peers_count": 8,
+          "resources_count": 0
+        },
+        {
+          "id": "d4q5ouafadhs73dqgcug",
+          "name": "hosts-metrics",
+          "peers_count": 9,
+          "resources_count": 0
+        },
+        {
+          "id": "d4q940rl0ubs73f78dlg",
+          "name": "server-octoprint",
+          "peers_count": 1,
+          "resources_count": 2
+        }
+      ],
+      "hostname": "prusa",
+      "id": "d4trtmjl0ubs73ebobv0",
+      "inactivity_expiration_enabled": false,
+      "ip": "100.76.93.199",
+      "kernel_version": "6.12.34",
+      "last_login": "2025-12-12T07:06:02.272077Z",
+      "last_seen": "2026-02-12T16:51:43.694081Z",
+      "local_flags": {
+        "block_inbound": false,
+        "block_lan_access": false,
+        "disable_client_routes": false,
+        "disable_dns": false,
+        "disable_firewall": false,
+        "disable_server_routes": false,
+        "lazy_connection_enabled": false,
+        "rosenpass_enabled": false,
+        "rosenpass_permissive": false,
+        "server_ssh_allowed": true
+      },
+      "login_expiration_enabled": false,
+      "login_expired": false,
+      "name": "prusa",
+      "os": "NixOS 25.11",
+      "serial_number": "00000000a3e662ca",
+      "ssh_enabled": false,
+      "ui_version": "",
+      "user_id": "",
+      "version": "0.60.2"
+    },
+    {
+      "accessible_peers_count": 0,
+      "approval_required": false,
+      "city_name": "Prague",
+      "connected": false,
+      "connection_ip": "2a02:8308:7187:5200:e8:4da1:97c9:83e6",
+      "country_code": "CZ",
+      "created_at": "2025-12-01T15:59:26.548978Z",
+      "dns_label": "paja.nb.krejci.io",
+      "ephemeral": false,
+      "extra_dns_labels": [],
+      "geoname_id": 3067696,
+      "groups": [
+        {
+          "id": "d4tvvb2fadhs73ejr68g",
+          "name": "users-media",
+          "peers_count": 8,
+          "resources_count": 0
+        },
+        {
+          "id": "d47mnhbl0ubs738qv4dg",
+          "name": "All",
+          "peers_count": 12,
+          "resources_count": 0
+        }
+      ],
+      "hostname": "tanzanite_eea",
+      "id": "d4mrmnjl0ubs73bkr4n0",
+      "inactivity_expiration_enabled": true,
+      "ip": "100.76.11.98",
+      "kernel_version": "5.10.236-android12-9-00020-gf997514b333d-ab13743839",
+      "last_login": "2025-12-01T15:59:26.548978Z",
+      "last_seen": "2026-02-09T05:19:15.091582Z",
+      "local_flags": {
+        "block_inbound": true,
+        "block_lan_access": false,
+        "disable_client_routes": false,
+        "disable_dns": false,
+        "disable_firewall": false,
+        "disable_server_routes": true,
+        "lazy_connection_enabled": false,
+        "rosenpass_enabled": false,
+        "rosenpass_permissive": false,
+        "server_ssh_allowed": false
+      },
+      "login_expiration_enabled": true,
+      "login_expired": false,
+      "name": "paja",
+      "os": "Android 15",
+      "serial_number": "",
+      "ssh_enabled": false,
+      "ui_version": "v0.3.2",
+      "user_id": "auth0|692dbad86d1e493d4d82638a",
+      "version": "0.64.1"
+    },
+    {
+      "accessible_peers_count": 0,
+      "approval_required": false,
+      "city_name": "Prague",
+      "connected": true,
+      "connection_ip": "2a02:8308:7187:5200:70f9:cc9a:9c89:4a12",
+      "country_code": "CZ",
+      "created_at": "2025-12-12T16:42:01.169939Z",
+      "dns_label": "t14.nb.krejci.io",
+      "ephemeral": false,
+      "extra_dns_labels": [],
+      "geoname_id": 3067696,
+      "groups": [
+        {
+          "id": "d4tvvb2fadhs73ejr68g",
+          "name": "users-media",
+          "peers_count": 8,
+          "resources_count": 0
+        },
+        {
+          "id": "d4tvv7afadhs73ejr680",
+          "name": "users-admin",
+          "peers_count": 5,
+          "resources_count": 0
+        },
+        {
+          "id": "d47mnhbl0ubs738qv4dg",
+          "name": "All",
+          "peers_count": 12,
+          "resources_count": 0
+        },
+        {
+          "id": "d4q2tpjl0ubs73f77nr0",
+          "name": "hosts-ssh",
+          "peers_count": 8,
+          "resources_count": 0
+        },
+        {
+          "id": "d4q5ouafadhs73dqgcug",
+          "name": "hosts-metrics",
+          "peers_count": 9,
+          "resources_count": 0
+        }
+      ],
+      "hostname": "t14",
+      "id": "d4u4bmafadhs73fhei70",
+      "inactivity_expiration_enabled": true,
+      "ip": "100.76.162.208",
+      "kernel_version": "6.12.69",
+      "last_login": "2025-12-12T16:42:01.169939Z",
+      "last_seen": "2026-02-14T11:21:51.35527Z",
+      "local_flags": {
+        "block_inbound": false,
+        "block_lan_access": false,
+        "disable_client_routes": false,
+        "disable_dns": false,
+        "disable_firewall": false,
+        "disable_server_routes": false,
+        "lazy_connection_enabled": true,
+        "rosenpass_enabled": false,
+        "rosenpass_permissive": false,
+        "server_ssh_allowed": false
+      },
+      "login_expiration_enabled": true,
+      "login_expired": false,
+      "name": "t14",
+      "os": "NixOS 25.11",
+      "serial_number": "",
+      "ssh_enabled": false,
+      "ui_version": "netbird-desktop-ui/0.64.5",
+      "user_id": "auth0|690f6b860143de324d76fc7c",
+      "version": "0.64.5"
+    },
+    {
+      "accessible_peers_count": 0,
+      "approval_required": false,
+      "city_name": "Prague",
+      "connected": true,
+      "connection_ip": "2a02:8308:7187:5200:918c:b2bc:dcca:52d7",
+      "country_code": "CZ",
+      "created_at": "2025-12-05T15:43:23.721485Z",
+      "dns_label": "thinkcenter.nb.krejci.io",
+      "ephemeral": false,
+      "extra_dns_labels": [],
+      "geoname_id": 3067696,
+      "groups": [
+        {
+          "id": "d4qiqoqfadhs73dqhjl0",
+          "name": "hosts-backup",
+          "peers_count": 1,
+          "resources_count": 0
+        },
+        {
+          "id": "d47mnhbl0ubs738qv4dg",
+          "name": "All",
+          "peers_count": 12,
+          "resources_count": 0
+        },
+        {
+          "id": "d4q1hvifadhs73dqfssg",
+          "name": "server-monitoring",
+          "peers_count": 1,
+          "resources_count": 3
+        },
+        {
+          "id": "d4q2tpjl0ubs73f77nr0",
+          "name": "hosts-ssh",
+          "peers_count": 8,
+          "resources_count": 0
+        },
+        {
+          "id": "d4q5ouafadhs73dqgcug",
+          "name": "hosts-metrics",
+          "peers_count": 9,
+          "resources_count": 0
+        },
+        {
+          "id": "d4u08vqfadhs7390f1g0",
+          "name": "server-media",
+          "peers_count": 1,
+          "resources_count": 8
+        }
+      ],
+      "hostname": "thinkcenter",
+      "id": "d4pfr6qfadhs73dqdvsg",
+      "inactivity_expiration_enabled": false,
+      "ip": "100.76.138.201",
+      "kernel_version": "6.12.69",
+      "last_login": "2025-12-05T15:43:23.721485Z",
+      "last_seen": "2026-02-11T00:02:35.742872Z",
+      "local_flags": {
+        "block_inbound": false,
+        "block_lan_access": false,
+        "disable_client_routes": false,
+        "disable_dns": false,
+        "disable_firewall": false,
+        "disable_server_routes": false,
+        "lazy_connection_enabled": false,
+        "rosenpass_enabled": false,
+        "rosenpass_permissive": false,
+        "server_ssh_allowed": true
+      },
+      "login_expiration_enabled": false,
+      "login_expired": false,
+      "name": "thinkcenter",
+      "os": "NixOS 25.11",
+      "serial_number": "",
+      "ssh_enabled": false,
+      "ui_version": "",
+      "user_id": "",
+      "version": "0.60.2"
+    },
+    {
+      "accessible_peers_count": 0,
+      "approval_required": false,
+      "city_name": "Prague",
+      "connected": true,
+      "connection_ip": "2001:1aef:177:274b:c84f:6fff:fe06:1583",
+      "country_code": "CZ",
+      "created_at": "2026-01-02T14:38:23.733839Z",
+      "dns_label": "x15.nb.krejci.io",
+      "ephemeral": false,
+      "extra_dns_labels": [],
+      "geoname_id": 3067696,
+      "groups": [
+        {
+          "id": "d4tvvb2fadhs73ejr68g",
+          "name": "users-media",
+          "peers_count": 8,
+          "resources_count": 0
+        },
+        {
+          "id": "d4tvv7afadhs73ejr680",
+          "name": "users-admin",
+          "peers_count": 5,
+          "resources_count": 0
+        },
+        {
+          "id": "d47mnhbl0ubs738qv4dg",
+          "name": "All",
+          "peers_count": 12,
+          "resources_count": 0
+        }
+      ],
+      "hostname": "dada_eea",
+      "id": "d5btgnqfadhs73bq6no0",
+      "inactivity_expiration_enabled": false,
+      "ip": "100.76.246.130",
+      "kernel_version": "6.6.77-android15-8-g63ce7556864c-ab13994517-4k",
+      "last_login": "2026-01-02T14:38:23.733839Z",
+      "last_seen": "2026-02-14T10:17:40.412658Z",
+      "local_flags": {
+        "block_inbound": true,
+        "block_lan_access": false,
+        "disable_client_routes": false,
+        "disable_dns": false,
+        "disable_firewall": false,
+        "disable_server_routes": true,
+        "lazy_connection_enabled": false,
+        "rosenpass_enabled": false,
+        "rosenpass_permissive": false,
+        "server_ssh_allowed": false
+      },
+      "login_expiration_enabled": true,
+      "login_expired": false,
+      "name": "x15",
+      "os": "Android 16",
+      "serial_number": "",
+      "ssh_enabled": false,
+      "ui_version": "v0.3.2",
+      "user_id": "auth0|690f6b860143de324d76fc7c",
+      "version": "0.64.1"
+    },
+    {
+      "accessible_peers_count": 0,
+      "approval_required": false,
+      "city_name": "",
+      "connected": true,
+      "connection_ip": "2a03:3b40:fe:861::1",
+      "country_code": "CZ",
+      "created_at": "2025-12-05T13:59:36.643168Z",
+      "dns_label": "vpsfree.nb.krejci.io",
+      "ephemeral": false,
+      "extra_dns_labels": [],
+      "geoname_id": 0,
+      "groups": [
+        {
+          "id": "d4tvvb2fadhs73ejr68g",
+          "name": "users-media",
+          "peers_count": 8,
+          "resources_count": 0
+        },
+        {
+          "id": "d4qiq0rl0ubs73f796vg",
+          "name": "server-backup",
+          "peers_count": 1,
+          "resources_count": 0
+        },
+        {
+          "id": "d47mnhbl0ubs738qv4dg",
+          "name": "All",
+          "peers_count": 12,
+          "resources_count": 0
+        },
+        {
+          "id": "d4q2tpjl0ubs73f77nr0",
+          "name": "hosts-ssh",
+          "peers_count": 8,
+          "resources_count": 0
+        },
+        {
+          "id": "d4q5ouafadhs73dqgcug",
+          "name": "hosts-metrics",
+          "peers_count": 9,
+          "resources_count": 0
+        }
+      ],
+      "hostname": "vpsfree",
+      "id": "d4peai2fadhs73dqdnj0",
+      "inactivity_expiration_enabled": false,
+      "ip": "100.76.212.53",
+      "kernel_version": "6.12.59",
+      "last_login": "2025-12-05T13:59:36.643168Z",
+      "last_seen": "2026-02-13T22:13:13.670895Z",
+      "local_flags": {
+        "block_inbound": false,
+        "block_lan_access": false,
+        "disable_client_routes": false,
+        "disable_dns": false,
+        "disable_firewall": false,
+        "disable_server_routes": false,
+        "lazy_connection_enabled": false,
+        "rosenpass_enabled": false,
+        "rosenpass_permissive": false,
+        "server_ssh_allowed": true
+      },
+      "login_expiration_enabled": false,
+      "login_expired": false,
+      "name": "vpsfree",
+      "os": "NixOS 25.11",
+      "serial_number": "",
+      "ssh_enabled": false,
+      "ui_version": "",
+      "user_id": "",
+      "version": "0.60.2"
+    }
+  ],
+  "networks": [
+    {
+      "description": "",
+      "id": "d4pg2njl0ubs73f75nv0",
+      "name": "thinkcenter",
+      "policies": [
+        "d4pf10bl0ubs73f75i1g",
+        "d4pg3tqfadhs73dqe19g"
+      ],
+      "resources": [
+        "d5h7q82fadhs73fs9mjg",
+        "d5egvarl0ubs73fbn3bg",
+        "d5buqpafadhs73bvg2v0",
+        "d4pg36ifadhs73dqe160",
+        "d4pg583l0ubs73f75o9g",
+        "d4piukbl0ubs73f7670g",
+        "d4piup2fadhs73dqeh20",
+        "d673t32fadhs73dq2q00"
+      ],
+      "routers": [
+        "d4pg402fadhs73dqe1a0"
+      ],
+      "routing_peers_count": 1
+    },
+    {
+      "description": "",
+      "id": "d67oiu3l0ubs73cqu14g",
+      "name": "vpsfree",
+      "policies": [],
+      "resources": [
+        "d67ojjqfadhs73av5mv0",
+        "d67ok4jl0ubs73cr27m0"
+      ],
+      "routers": [],
+      "routing_peers_count": 0
+    },
+    {
+      "description": "",
+      "id": "d4q93p2fadhs73dqgpbg",
+      "name": "prusa",
+      "policies": [
+        "d4q947bl0ubs73f78dn0"
+      ],
+      "resources": [
+        "d4q940qfadhs73dqgpcg",
+        "d4r8dmafadhs73dqkch0"
+      ],
+      "routers": [
+        "d4trtt3l0ubs73eboc00"
+      ],
+      "routing_peers_count": 1
+    }
+  ],
+  "dns_nameservers": [],
+  "dns_settings": {
+    "disabled_management_groups": []
+  },
+  "setup-keys": [
+    {
+      "allow_extra_dns_labels": false,
+      "auto_groups": [],
+      "ephemeral": false,
+      "expires": "2026-02-27T14:22:09.683275Z",
+      "id": "d5t1n4afadhs73fkijk0",
+      "key": "4A2E4****",
+      "last_used": "0001-01-01T00:00:00Z",
+      "name": "rpi4",
+      "revoked": false,
+      "state": "valid",
+      "type": "one-off",
+      "updated_at": "2026-01-28T14:22:09.683277Z",
+      "usage_limit": 1,
+      "used_times": 0,
+      "valid": true
+    },
+    {
+      "allow_extra_dns_labels": false,
+      "auto_groups": [],
+      "ephemeral": false,
+      "expires": "2026-02-27T16:31:26.660037Z",
+      "id": "d5t3jnifadhs73fue8ng",
+      "key": "F2C10****",
+      "last_used": "0001-01-01T00:00:00Z",
+      "name": "rpi4",
+      "revoked": false,
+      "state": "valid",
+      "type": "one-off",
+      "updated_at": "2026-01-28T16:31:26.66004Z",
+      "usage_limit": 1,
+      "used_times": 0,
+      "valid": true
+    },
+    {
+      "allow_extra_dns_labels": false,
+      "auto_groups": [],
+      "ephemeral": false,
+      "expires": "2026-02-27T16:31:39.377464Z",
+      "id": "d5t3jqrl0ubs738nq740",
+      "key": "C4E64****",
+      "last_used": "0001-01-01T00:00:00Z",
+      "name": "rpi4",
+      "revoked": false,
+      "state": "valid",
+      "type": "one-off",
+      "updated_at": "2026-01-28T16:31:39.377467Z",
+      "usage_limit": 1,
+      "used_times": 0,
+      "valid": true
+    },
+    {
+      "allow_extra_dns_labels": false,
+      "auto_groups": [],
+      "ephemeral": true,
+      "expires": "2026-01-15T19:51:03.579102Z",
+      "id": "d50rg9rl0ubs73be6vn0",
+      "key": "3FD1A****",
+      "last_used": "2025-12-16T19:58:38.149237Z",
+      "name": "iso",
+      "revoked": false,
+      "state": "expired",
+      "type": "reusable",
+      "updated_at": "2025-12-16T19:51:03.579105Z",
+      "usage_limit": 0,
+      "used_times": 1,
+      "valid": false
+    }
+  ],
+  "accounts": [
+    {
+      "created_at": "2025-11-08T16:11:49.483898Z",
+      "created_by": "auth0|690f6b860143de324d76fc7c",
+      "domain": "protonmail.com",
+      "domain_category": "",
+      "onboarding": {
+        "onboarding_flow_pending": false,
+        "signup_form_pending": false
+      },
+      "settings": {
+        "auto_update_version": "disabled",
+        "dns_domain": "nb.krejci.io",
+        "embedded_idp_enabled": false,
+        "extra": {
+          "network_traffic_logs_enabled": false,
+          "network_traffic_logs_groups": null,
+          "network_traffic_packet_counter_enabled": false,
+          "peer_approval_enabled": false,
+          "user_approval_required": false
+        },
+        "groups_propagation_enabled": true,
+        "jwt_allow_groups": [],
+        "jwt_groups_claim_name": "",
+        "jwt_groups_enabled": false,
+        "lazy_connection_enabled": true,
+        "local_auth_disabled": false,
+        "peer_inactivity_expiration": 600,
+        "peer_inactivity_expiration_enabled": false,
+        "peer_login_expiration": 86400,
+        "peer_login_expiration_enabled": false,
+        "regular_users_view_blocked": true,
+        "routing_peer_dns_resolution_enabled": true
+      }
+    }
+  ],
+  "posture-checks": [],
+  "_exported": "2026-02-14T13:18:14+01:00"
+}
