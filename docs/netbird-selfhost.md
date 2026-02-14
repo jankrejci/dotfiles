@@ -40,7 +40,8 @@ Internet clients
 │  dashboard               (service IP)   │
 │    - static files served by nginx       │
 │    - API calls → https://api.krejci.io  │
-│    - VPN-only access                    │
+│    - VPN-only access, NOT exposed to    │
+│      the internet                       │
 │                                         │
 │  nginx (:443 on WG IP 192.168.99.1)    │
 │    - proxies management for vpsfree     │
@@ -128,17 +129,44 @@ settings.StoreConfig = {
 };
 ```
 
-## NixOS Module Status
+## Packages and NixOS Modules
 
-Nixpkgs (version 0.60.2) provides:
+Use nixpkgs-unstable (0.64.6) for all Netbird components via `pkgs.unstable.*`.
+Stable nixpkgs has 0.60.2 which predates the built-in auth feature (v0.62).
+The NixOS modules are identical between stable and unstable.
 
 | Component | NixOS module | Package | Status |
 |-----------|-------------|---------|--------|
 | Management | `services.netbird.server.management` | `netbird-management` | Usable, supports secrets via `_secret` pattern |
 | Signal | `services.netbird.server.signal` | `netbird-signal` | Usable, simple gRPC server |
 | Dashboard | `services.netbird.server.dashboard` | `netbird-dashboard` | Usable, static file builder with env templating |
-| Relay | **None** | `netbird-relay` | Package exists, no NixOS module. Need custom systemd service. |
-| Coturn | `services.netbird.server.coturn` | `coturn` | Legacy, replaced by relay with embedded STUN |
+| Relay | **No NixOS module** | `netbird-relay` | Package exists. Custom systemd service needed. |
+| Coturn | `services.netbird.server.coturn` | `coturn` | Legacy, skip. Relay has embedded STUN. |
+
+Override packages in modules to use unstable:
+```nix
+services.netbird.server.management.package = pkgs.unstable.netbird-management;
+services.netbird.server.signal.package = pkgs.unstable.netbird-signal;
+services.netbird.server.dashboard.package = pkgs.unstable.netbird-dashboard;
+```
+
+### Relay Service Configuration
+
+No NixOS module exists. Write a custom systemd service using the relay binary
+from `pkgs.unstable.netbird-relay`. Key flags:
+
+```
+netbird-relay
+  --listen-address :33080          # DERP relay listen port
+  --exposed-address api.krejci.io:33080  # address distributed to peers
+  --enable-stun                    # embedded STUN server
+  --stun-ports 3478                # STUN on standard UDP port
+  --tls-cert-file /path/cert.pem   # TLS certificate
+  --tls-key-file /path/key.pem     # TLS key
+  --auth-secret <secret>           # shared secret with management
+  --log-file console
+  --log-level info
+```
 
 ### Approach
 
@@ -184,10 +212,12 @@ New file: `homelab/netbird-signal.nix` (or extend vpsfree host config)
    - NixOS module `services.netbird.server.signal`
    - Listen on localhost:8012
 2. Configure relay service (custom systemd unit):
-   - Package: `netbird-relay`
+   - Package: `pkgs.unstable.netbird-relay`
    - Listen port: 33080 (DERP relay)
+   - Exposed address: `api.krejci.io:33080`
    - Embedded STUN on UDP 3478
-   - TLS via existing ACME cert
+   - TLS cert/key from ACME
+   - Auth secret shared with management server (via agenix)
 3. Configure nginx at `api.krejci.io:443`:
    - `/api/*` → proxy_pass to `http://192.168.99.1:8011` (thinkcenter via WG)
    - `/management.ManagementService/*` → grpc_pass to `192.168.99.1:8011`
@@ -208,9 +238,10 @@ New file: `homelab/netbird-signal.nix` (or extend vpsfree host config)
 Modify `modules/netbird-homelab.nix` and `modules/netbird-user.nix`:
 
 1. Add configurable management URL (default: `https://api.krejci.io`)
-2. Keep existing setup key enrollment logic
-3. Update client config to point to self-hosted management
-4. Signal and relay URLs come from management server automatically
+2. Use `pkgs.unstable.netbird` for client (0.64.6 to match server)
+3. Keep existing setup key enrollment logic
+4. Update client config to point to self-hosted management
+5. Signal and relay URLs come from management server automatically
 
 ### Phase 5: Testing
 
@@ -250,13 +281,13 @@ See: https://github.com/netbirdio/netbird/issues/446
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| NixOS module immaturity | Build/runtime failures | Pin nixpkgs version, test thoroughly before migration |
-| No relay NixOS module | Manual service config | Write minimal systemd unit, package is available |
+| NixOS module immaturity | Build/runtime failures | Use unstable 0.64.6, test thoroughly before migration |
+| No relay NixOS module | Manual service config | Write minimal systemd unit, relay flags are well-defined |
 | WG tunnel single point of failure | Management unreachable | Clients cache config, short outage tolerable. Fix WG tunnel. |
 | Peer IDs change on re-enrollment | Groups/policies break | Recreate policies before migration, automate via API |
 | OIDC claim mismatch | Auth failures | Test Dex token claims include `name` (required by Netbird) |
 | Migration downtime | All peers lose mesh access | Schedule maintenance window, pre-stage everything |
-| Embedded Dex conflict behind reverse proxy | Auth deadlock | Known issue netbirdio/netbird#5084, test carefully |
+| Embedded Dex conflict behind reverse proxy | Auth deadlock | Known issue netbirdio/netbird#5084 (v0.62.0), may be fixed in 0.64.6 |
 | VPSFree LXC constraints | Relay/STUN issues | All components are userspace Go binaries, no kernel deps |
 
 ## File Changes Summary
@@ -266,6 +297,7 @@ See: https://github.com/netbirdio/netbird/issues/446
 - `homelab/netbird-signal.nix` - signal + relay module for vpsfree
 - `secrets/dex-netbird-secret.age` - Dex client secret
 - `secrets/netbird-datastore-key.age` - management encryption key
+- `secrets/netbird-relay-secret.age` - relay auth secret (shared with management)
 
 **Modified files:**
 - `homelab/default.nix` - import new modules
@@ -276,14 +308,11 @@ See: https://github.com/netbirdio/netbird/issues/446
 
 ## Open Questions
 
-1. **Relay configuration**: The netbird-relay binary's exact flags and env vars
-   need investigation. No NixOS module exists, documentation is sparse.
-2. **Embedded Dex conflict**: Issue #5084 reports deadlocks when running behind
-   external reverse proxy. May need workaround or version pinning.
-3. **PKCE flow for mobile**: The mobile app uses device authorization flow. Need
+1. **Embedded Dex conflict**: Issue #5084 reports deadlocks when running behind
+   external reverse proxy (reported on v0.62.0). May be fixed in 0.64.6 but needs
+   testing.
+2. **PKCE flow for mobile**: The mobile app uses device authorization flow. Need
    to verify Dex supports this or if the management server handles it internally.
-4. **Version compatibility**: Client v0.60.2 vs self-hosted server v0.60.2 should
-   match. Verify no breaking changes between versions.
-5. **Dashboard access during setup**: During initial configuration, dashboard is
+3. **Dashboard access during setup**: During initial configuration, dashboard is
    VPN-only. Admin accesses via old cloud mesh. After migration, via new mesh.
    Verify this bootstrap path works.
