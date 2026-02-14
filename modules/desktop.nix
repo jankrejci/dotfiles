@@ -132,19 +132,26 @@
 
   # Brother printer accessible via VPN. Uses IPP Everywhere, no driver needed.
   # Custom service because NixOS ensurePrinters stops cups which loses config.
+  # Requires VPN because "-m everywhere" fetches capabilities from the printer.
+  # Timer-based to avoid blocking activation when VPN is not yet up.
   systemd.services.setup-printer = {
     description = "Configure Brother printer";
-    wantedBy = ["multi-user.target"];
-    after = ["cups.service" "network-online.target"];
-    wants = ["network-online.target"];
+    after = ["cups.service"];
     path = [pkgs.cups];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-    };
+    serviceConfig.Type = "oneshot";
     script = ''
-      # Skip if already configured
+      # Skip if already configured correctly
       lpstat -p Brother-DCP-T730DW &>/dev/null && exit 0
+
+      # Require VPN connectivity. The "-m everywhere" option fetches printer
+      # capabilities via IPP.
+      getent hosts brother.krejci.io >/dev/null \
+        || { echo "brother.krejci.io not resolvable, will retry"; exit 1; }
+
+      # Remove stale cups-browsed printer if present. cups-browsed creates
+      # printers with underscores and a generic "driverless" PPD that sends
+      # raw PDF, which the Brother cannot render.
+      lpadmin -x Brother_DCP_T730DW 2>/dev/null || true
 
       # Add printer with IPP Everywhere
       lpadmin -p Brother-DCP-T730DW \
@@ -152,11 +159,22 @@
         -m everywhere \
         -D "Brother DCP-T730DW" \
         -L "Home" \
-        -E || true
+        -E
 
       # Set as default
       lpadmin -d Brother-DCP-T730DW || true
     '';
+  };
+
+  systemd.timers.setup-printer = {
+    description = "Retry printer setup until configured";
+    wantedBy = ["timers.target"];
+    timerConfig = {
+      OnBootSec = "10s";
+      OnUnitInactiveSec = "60s";
+      # Stop firing once the service succeeds
+      RemainAfterElapse = false;
+    };
   };
 
   # Enable scanning support
