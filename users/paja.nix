@@ -37,13 +37,14 @@
       paja = {lib, ...}: {
         home.username = "paja";
         home.homeDirectory = "/home/paja";
+        home.language.base = "cs_CZ.UTF-8";
 
         xdg.mimeApps = {
           enable = true;
           defaultApplications = {
-            "x-scheme-handler/http" = "firefox.desktop";
-            "x-scheme-handler/https" = "firefox.desktop";
-            "text/html" = "firefox.desktop";
+            "x-scheme-handler/http" = "org.mozilla.firefox.desktop";
+            "x-scheme-handler/https" = "org.mozilla.firefox.desktop";
+            "text/html" = "org.mozilla.firefox.desktop";
           };
         };
 
@@ -66,12 +67,12 @@
           # Generated via dconf2nix: https://github.com/nix-commmunity/dconf2nix
           "org/gnome/desktop/input-sources" = {
             mru-sources = [
-              (mkTuple ["xkb" "cz+qwertz"])
               (mkTuple ["xkb" "us"])
+              (mkTuple ["xkb" "cz+winkeys"])
             ];
             sources = [
-              (mkTuple ["xkb" "cz+qwertz"])
               (mkTuple ["xkb" "us"])
+              (mkTuple ["xkb" "cz+winkeys"])
             ];
             xkb-options = [];
           };
@@ -89,7 +90,7 @@
             show-battery-percentage = true;
           };
           "org/gnome/shell" = {
-            favorite-apps = ["firefox.desktop" "org.gnome.Nautilus.desktop"];
+            favorite-apps = ["org.mozilla.firefox.desktop" "org.gnome.Nautilus.desktop"];
           };
           "org/gnome/shell/extensions/dash-to-panel" = {
             panel-positions = ''
