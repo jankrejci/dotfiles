@@ -197,9 +197,11 @@ in {
       };
     };
 
-    # Ensure dex starts after PostgreSQL
-    systemd.services.dex.after = ["postgresql.service"];
+    # Ensure dex starts after PostgreSQL and network is online.
+    # Dex fetches Google OIDC discovery at startup which needs working DNS.
+    systemd.services.dex.after = ["postgresql.service" "network-online.target"];
     systemd.services.dex.requires = ["postgresql.service"];
+    systemd.services.dex.wants = ["network-online.target"];
     systemd.services.dex.serviceConfig.EnvironmentFile = config.age.secrets.google-oauth.path;
 
     # Nginx reverse proxy
