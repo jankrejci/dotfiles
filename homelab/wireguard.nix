@@ -65,6 +65,8 @@ in {
       netdevConfig = {
         Kind = "wireguard";
         Name = "wg0";
+        # VPS containers often have constrained outer MTU, 1280 works everywhere
+        MTUBytes = "1280";
       };
       wireguardConfig = {
         PrivateKeyFile = privateKeyFile;
