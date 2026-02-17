@@ -10,12 +10,14 @@ Create atomic commits for staged/unstaged changes using chunk-based staging.
 ## Commit Format
 
 Title: `module: Verb in imperative style`
-- Lowercase module name before colon
-- Capital letter after colon
+- Must match regex: `^[a-z][a-z0-9-]*: [A-Z]`
+- Max 72 characters
+- NO WIP/TMP
 - Imperative verb: Add, Fix, Update, Remove, Refactor
 
 Body: Bullet points only
-- Lowercase start for each bullet
+- Lines must be blank, start with `- `, or be indented continuation
+- Max 120 characters per line
 - NO prose paragraphs
 - NO Co-Authored-By
 - NO Claude signatures
@@ -42,6 +44,7 @@ Body: Bullet points only
      )"
      ```
 5. Run `git log --oneline -5` to verify
+6. Run `nix run nixpkgs#gitlint -- --commits origin/main..HEAD` to validate all branch commit messages
 
 ## Fixup Commits
 
