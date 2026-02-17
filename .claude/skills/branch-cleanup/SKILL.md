@@ -25,6 +25,7 @@ Consolidate fixup commits into clean logical commits before merge.
 5. Verify result: `nix flake check`
 6. Compare with backup: `git diff backup-*..HEAD` should be empty
 7. Show final commits: `git log --oneline origin/main..HEAD`
+8. Run `nix run nixpkgs#gitlint -- --commits origin/main..HEAD` to validate all commit messages
 
 ## Manual Cleanup (requires user approval)
 
