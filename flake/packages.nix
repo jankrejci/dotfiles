@@ -4,37 +4,39 @@
 # - packages: deployment scripts
 # - checks: validation tests
 # - overlays: unstable and master nixpkgs
-{inputs, ...}: {
+{inputs, ...}: let
+  # Nixpkgs overlays using final.system so they work for any architecture
+  unstableOverlay = final: _prev: {
+    unstable = import inputs.nixpkgs-unstable {
+      system = final.stdenv.hostPlatform.system;
+      config.allowUnfree = true;
+    };
+  };
+
+  masterOverlay = final: _prev: {
+    master = import inputs.nixpkgs-master {
+      system = final.stdenv.hostPlatform.system;
+      config.allowUnfree = true;
+    };
+  };
+
+  immichOverlay = final: _prev: {
+    immich-pinned = import inputs.nixpkgs-immich {
+      system = final.stdenv.hostPlatform.system;
+      config.allowUnfree = true;
+    };
+  };
+in {
+  flake.overlays = {
+    inherit unstableOverlay masterOverlay immichOverlay;
+  };
+
   perSystem = {
     pkgs,
     system,
     self',
     ...
   }: let
-    # Overlay for unstable packages
-    unstableOverlay = final: _prev: {
-      unstable = import inputs.nixpkgs-unstable {
-        inherit system;
-        config.allowUnfree = true;
-      };
-    };
-
-    # Overlay for master branch packages
-    masterOverlay = final: _prev: {
-      master = import inputs.nixpkgs-master {
-        inherit system;
-        config.allowUnfree = true;
-      };
-    };
-
-    # Pinned nixpkgs for immich to control update timing
-    immichOverlay = final: _prev: {
-      immich-pinned = import inputs.nixpkgs-immich {
-        inherit system;
-        config.allowUnfree = true;
-      };
-    };
-
     # Configure pkgs with overlays
     pkgsWithOverlays = import inputs.nixpkgs {
       inherit system;
