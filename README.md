@@ -39,7 +39,7 @@ top level and service configuration under `homelab`, which maps directly to
 | Host | Arch | Role |
 |------|------|------|
 | thinkcenter | x86_64 | Primary homelab server. Runs Grafana, Prometheus, Immich, Jellyfin, Ntfy, Memos, Dex, PostgreSQL, Redis, nginx. TPM-encrypted root + NVMe data. |
-| vpsfree | x86_64 | Remote VPS on vpsadminOS. WireGuard endpoint, Immich public proxy, ACME, borg backup target. |
+| vpsfree | x86_64 | Remote VPS on vpsadminOS. Tunnel endpoint with TLS proxy, ACME, watchdog, borg backup target. |
 
 ### Desktops
 
@@ -97,7 +97,7 @@ health checks, and backup jobs.
 | Module | Purpose |
 |--------|---------|
 | immich | Photo library with Dex SSO and ML features |
-| immich-public-proxy | Public share links via vpsfree |
+| immich-public-proxy | Public share links via tunnel proxy |
 | jellyfin | Media server with Dex SSO |
 | memos | Note-taking app |
 | octoprint | 3D printer controller with Obico monitoring |
@@ -107,7 +107,7 @@ health checks, and backup jobs.
 ### Network and Backup
 | Module | Purpose |
 |--------|---------|
-| wireguard | Backup tunnel between thinkcenter and vpsfree |
+| tunnel | Encrypted tunnel with L4 TLS proxy for public service exposure |
 | backup | Borg backup to local and remote (vpsfree) targets with automatic PostgreSQL dumps, per-service restore scripts, Prometheus staleness alerts, and health checks. Retention: 7 daily, 4 weekly, 6 monthly. Remote traffic goes over a dedicated WireGuard tunnel. |
 | lorawan-gateway | ChirpStack with u-blox GPS time sync |
 
@@ -170,11 +170,12 @@ Services get dedicated IPs on a dummy interface, routed via Netbird:
 
 ```
 thinkcenter (192.168.91.x):
-  .1 immich    .2 grafana   .3 jellyfin  .4 ntfy
-  .5 printer   .6 memos     .7 dex
+  .1 immich    .2 grafana   .3 jellyfin    .4 ntfy
+  .5 printer   .6 memos     .7 dex         .8 prometheus
+  .10 immich-public-proxy
 
 vpsfree (192.168.92.x):
-  .1 immich-public-proxy
+  .2 watchdog
 
 prusa (192.168.93.x):
   .1 octoprint
@@ -185,10 +186,12 @@ prusa (192.168.93.x):
 Services bind to localhost only. Nginx handles TLS termination. Firewall
 restricts access to the VPN interface.
 
-### WireGuard Backup Tunnel
+### Tunnel
 
-Persistent tunnel between thinkcenter (192.168.99.1) and vpsfree
-(192.168.99.2) for borg backup traffic, independent of Netbird.
+Persistent WireGuard tunnel between thinkcenter (192.168.99.1) and vpsfree
+(192.168.99.2), independent of Netbird. Used for borg backup traffic and the
+L4 TLS proxy that exposes selected services to the public internet via
+SNI-based routing through vpsfree.
 
 ## Secrets Management
 
