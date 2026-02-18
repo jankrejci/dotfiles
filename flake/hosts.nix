@@ -324,6 +324,7 @@
           ({...}: {
             # Override the x86_64-linux default from common.nix
             nixpkgs.hostPlatform = "aarch64-linux";
+            nixpkgs.overlays = [config.flake.overlays.unstableOverlay];
           })
         ];
     };

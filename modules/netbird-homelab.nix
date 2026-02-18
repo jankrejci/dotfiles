@@ -67,10 +67,10 @@ in {
         set -euo pipefail
 
         # Down existing connection to allow re-enrollment
-        ${pkgs.netbird}/bin/netbird down --daemon-addr ${daemonAddr} 2>/dev/null || true
+        ${pkgs.unstable.netbird}/bin/netbird down --daemon-addr ${daemonAddr} 2>/dev/null || true
 
         # Enroll with setup key
-        ${pkgs.netbird}/bin/netbird up \
+        ${pkgs.unstable.netbird}/bin/netbird up \
           --daemon-addr ${daemonAddr} \
           --hostname ${config.networking.hostName} \
           --setup-key "$(cat ${setupKeyFile})"
