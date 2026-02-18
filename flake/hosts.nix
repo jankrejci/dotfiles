@@ -48,11 +48,15 @@
             to = "admin@krejci.io";
           };
         };
-        wireguard = {
+        tunnel = {
           enable = true;
           ip = "192.168.99.2";
           server = true;
           peers = ["thinkcenter"];
+          proxy = {
+            enable = true;
+            domains = ["share.krejci.io"];
+          };
         };
       };
       extraModules = [
@@ -111,13 +115,14 @@
         immich-public-proxy = {
           enable = true;
           ip = "192.168.91.10";
+          tunnel = true;
         };
         prometheus = {
           enable = true;
           ip = "192.168.91.8";
           watchdog = true;
         };
-        wireguard = {
+        tunnel = {
           enable = true;
           ip = "192.168.99.1";
           peers = ["vpsfree"];

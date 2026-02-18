@@ -12,9 +12,6 @@
   services = config.homelab.services;
   domain = global.domain;
   shareDomain = "${cfg.subdomain}.${domain}";
-
-  # WG tunnel IP so vpsfree can proxy share traffic
-  wgIp = config.homelab.wireguard.ip;
 in {
   options.homelab.immich-public-proxy = {
     enable = lib.mkOption {
@@ -39,13 +36,19 @@ in {
       default = "share";
       description = "Subdomain for public sharing";
     };
+
+    tunnel = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Expose via public tunnel through VPS";
+    };
   };
 
   config = lib.mkIf cfg.enable {
-    assertions = [
+    assertions = lib.optionals cfg.tunnel [
       {
-        assertion = config.homelab.wireguard.enable;
-        message = "immich-public-proxy requires homelab.wireguard for vpsfree proxy";
+        assertion = config.homelab.tunnel.enable;
+        message = "immich-public-proxy tunnel requires homelab.tunnel";
       }
     ];
 
@@ -74,9 +77,14 @@ in {
       services.https.port
     ];
 
-    # Nginx reverse proxy, accessible via VPN and WG tunnel from vpsfree
+    # Allow HTTPS on tunnel interface for proxy traffic from VPS
+    networking.firewall.interfaces."wg0".allowedTCPPorts = lib.mkIf cfg.tunnel [
+      services.https.port
+    ];
+
+    # Nginx reverse proxy, accessible via VPN and optionally via tunnel
     services.nginx.virtualHosts.${shareDomain} = {
-      listenAddresses = [cfg.ip wgIp];
+      listenAddresses = [cfg.ip] ++ lib.optional cfg.tunnel config.homelab.tunnel.ip;
       forceSSL = true;
       useACMEHost = domain;
       locations."/" = {
