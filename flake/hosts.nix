@@ -40,11 +40,6 @@
           ntfyUrl = "https://ntfy.krejci.io";
           ntfyTopic = "system-health";
         };
-        immich-public-proxy = {
-          enable = true;
-          ip = "192.168.92.1";
-          interface = "venet0";
-        };
         watchdog = {
           enable = true;
           ip = "192.168.92.2";
@@ -112,6 +107,10 @@
         printer = {
           enable = true;
           ip = "192.168.91.5";
+        };
+        immich-public-proxy = {
+          enable = true;
+          ip = "192.168.91.10";
         };
         prometheus = {
           enable = true;
