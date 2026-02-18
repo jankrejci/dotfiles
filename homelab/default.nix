@@ -23,9 +23,9 @@
     ./octoprint.nix
     ./printer.nix
     ./prometheus.nix
+    ./tunnel.nix
     ./watchdog.nix
     ./webcam.nix
-    ./wireguard.nix
 
     # Health check aggregator
     ./health-check.nix
