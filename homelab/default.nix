@@ -12,6 +12,8 @@
     # Services
     ./acme.nix
     ./dex.nix
+    ./netbird-gateway.nix
+    ./netbird-server.nix
     ./grafana.nix
     ./immich.nix
     ./immich-public-proxy.nix
