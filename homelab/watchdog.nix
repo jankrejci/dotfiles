@@ -13,6 +13,7 @@
   config,
   lib,
   inputs,
+  pkgs,
   ...
 }: let
   cfg = config.homelab.watchdog;
@@ -187,6 +188,7 @@ in {
 
     # Register IP for services dummy interface
     homelab.serviceIPs = [cfg.ip];
+    homelab.nginx.publicDomains = [watchdogDomain];
     networking.hosts.${cfg.ip} = [watchdogDomain];
 
     # Allow HTTPS on VPN interface only
@@ -272,6 +274,34 @@ in {
       {
         job = "watchdog";
         metricsPath = "/metrics/watchdog";
+      }
+    ];
+
+    # Primary prometheus monitors watchdog, watchdog monitors primary via email
+    homelab.alerts.watchdog = [
+      {
+        alert = "WatchdogDown";
+        expr = ''up{job="watchdog"} == 0'';
+        labels = {
+          severity = "critical";
+          host = config.homelab.host.hostName;
+          type = "service";
+        };
+        annotations.summary = "Watchdog monitoring is down";
+      }
+    ];
+
+    homelab.healthChecks = [
+      {
+        name = "Watchdog Prometheus";
+        script = pkgs.writeShellApplication {
+          name = "health-check-watchdog";
+          runtimeInputs = [pkgs.systemd];
+          text = ''
+            systemctl is-active --quiet prometheus.service
+          '';
+        };
+        timeout = 10;
       }
     ];
   });

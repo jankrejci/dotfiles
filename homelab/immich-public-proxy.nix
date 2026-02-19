@@ -5,6 +5,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   cfg = config.homelab.immich-public-proxy;
@@ -93,5 +94,32 @@ in {
         recommendedProxySettings = true;
       };
     };
+
+    homelab.alerts.immich-public-proxy = [
+      {
+        alert = "ImmichPublicProxyDown";
+        expr = ''node_systemd_unit_state{name="immich-public-proxy.service",state="active",host="${config.homelab.host.hostName}"} == 0'';
+        labels = {
+          severity = "warning";
+          host = config.homelab.host.hostName;
+          type = "service";
+        };
+        annotations.summary = "Immich public proxy is down";
+      }
+    ];
+
+    homelab.healthChecks = [
+      {
+        name = "Immich Public Proxy";
+        script = pkgs.writeShellApplication {
+          name = "health-check-immich-public-proxy";
+          runtimeInputs = [pkgs.systemd];
+          text = ''
+            systemctl is-active --quiet immich-public-proxy.service
+          '';
+        };
+        timeout = 10;
+      }
+    ];
   };
 }

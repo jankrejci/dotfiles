@@ -59,6 +59,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   cfg = config.homelab.printer;
@@ -143,6 +144,20 @@ in {
           type = "service";
         };
         annotations.summary = "IPP-USB print server is not active";
+      }
+    ];
+
+    homelab.healthChecks = [
+      {
+        name = "IPP-USB";
+        script = pkgs.writeShellApplication {
+          name = "health-check-ipp-usb";
+          runtimeInputs = [pkgs.systemd];
+          text = ''
+            systemctl is-active --quiet ipp-usb.service
+          '';
+        };
+        timeout = 10;
       }
     ];
   };

@@ -6,6 +6,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   cfg = config.homelab.octoprint;
@@ -134,6 +135,20 @@ in {
           oneshot = "true";
         };
         annotations.summary = "OctoPrint is down";
+      }
+    ];
+
+    homelab.healthChecks = [
+      {
+        name = "OctoPrint";
+        script = pkgs.writeShellApplication {
+          name = "health-check-octoprint";
+          runtimeInputs = [pkgs.systemd];
+          text = ''
+            systemctl is-active --quiet octoprint.service
+          '';
+        };
+        timeout = 10;
       }
     ];
   };
