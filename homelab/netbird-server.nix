@@ -36,6 +36,9 @@
 
   wgIp = config.homelab.tunnel.ip;
   certDir = config.security.acme.certs.${domain}.directory;
+
+  # Google's public STUN server for NAT traversal discovery
+  googleStunUri = "stun:stun.l.google.com:19302";
 in {
   options.homelab.netbird-server = {
     enable = lib.mkOption {
@@ -204,14 +207,14 @@ in {
         Stuns = [
           {
             Proto = "udp";
-            URI = "stun:stun.l.google.com:19302";
+            URI = googleStunUri;
           }
         ];
 
         # Signal server runs locally, clients reach it via vpsfree proxy
         Signal = {
           Proto = "https";
-          URI = "${apiDomain}:443";
+          URI = "${apiDomain}:${toString services.https.port}";
           Username = "";
           Password = null;
         };
@@ -232,6 +235,7 @@ in {
             AuthorizationEndpoint = "https://${dexDomain}/auth";
             TokenEndpoint = "https://${dexDomain}/token";
             Scope = "openid profile email";
+            # Port 53000 is hardcoded in the Netbird client PKCE callback listener
             RedirectURLs = ["http://localhost:53000"];
             UseIDToken = true;
           };

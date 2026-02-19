@@ -21,6 +21,10 @@
 
   privateKeyFile = "/var/lib/wireguard/wg-${host.hostName}-private";
 
+  # Internal port where nginx http block listens when the stream SNI proxy
+  # occupies port 443. Stream routes unknown domains here for L7 processing.
+  internalHttpsPort = 8443;
+
   mkPeer = peerName: let
     peerHost = allHosts.${peerName};
     peerCfg = peerHost.homelab.tunnel;
@@ -195,7 +199,7 @@ in {
     # loops back to the http block on an internal port for L7 processing.
     # This avoids overlapping 0.0.0.0:443 and service-IP:443 binds
     # which fail on LXC containers.
-    services.nginx.defaultSSLListenPort = lib.mkIf cfg.proxy.enable 8443;
+    services.nginx.defaultSSLListenPort = lib.mkIf cfg.proxy.enable internalHttpsPort;
 
     services.nginx.streamConfig = lib.mkIf cfg.proxy.enable (let
       peerName = builtins.head cfg.peers;
@@ -212,15 +216,15 @@ in {
       }
 
       upstream backend_tunnel {
-          server ${backend}:443;
+          server ${backend}:${toString services.https.port};
       }
 
       upstream backend_local {
-          server 127.0.0.1:8443;
+          server 127.0.0.1:${toString internalHttpsPort};
       }
 
       server {
-          listen 0.0.0.0:443;
+          listen 0.0.0.0:${toString services.https.port};
           ssl_preread on;
           proxy_pass $tunnel_backend;
           proxy_connect_timeout 5s;
