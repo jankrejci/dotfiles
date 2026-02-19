@@ -129,6 +129,19 @@ Two-tier VPN setup for different access patterns:
 - Used by: desktops via desktop.nix
 - User must authenticate via tray UI before VPN works
 
+**Server components** (all on thinkcenter):
+- Management: control plane with PostgreSQL, port 8011
+- Signal: peer connection handshake broker, port 8012
+- Relay: fallback traffic path with own TLS, port 33080
+- Dashboard: static admin UI, VPN-only access
+- Module: `homelab/netbird-server.nix`
+
+**Public proxy** (vpsfree, stateless):
+- nginx http: proxies management API, signal gRPC, Dex OIDC on port 443
+- nginx stream: relay TLS passthrough on port 33080, STUN UDP on 3478
+- All traffic forwarded to thinkcenter via WG backup tunnel
+- Module: `homelab/netbird-gateway.nix`
+
 **Module structure:**
 - `networking.nix` - general networking, no netbird config
 - `netbird-homelab.nix` - system client for servers/RPi
