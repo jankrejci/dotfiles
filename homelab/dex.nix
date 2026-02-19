@@ -22,6 +22,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   cfg = config.homelab.dex;
@@ -29,6 +30,12 @@
   services = config.homelab.services;
   domain = global.domain;
   dexDomain = "${cfg.subdomain}.${domain}";
+
+  # Dex native telemetry endpoint for Prometheus metrics
+  dexMetricsPort = 5558;
+
+  # WG tunnel IP so vpsfree can proxy dex traffic for pre-enrollment SSO
+  wgIp = config.homelab.tunnel.ip;
 in {
   options.homelab.dex = {
     enable = lib.mkOption {
@@ -56,6 +63,13 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = config.homelab.tunnel.enable;
+        message = "dex requires homelab.tunnel for vpsfree SSO proxy";
+      }
+    ];
+
     # Create dex user early so agenix can chown secrets during activation.
     # The dex service module also creates this user, but that happens after
     # agenix runs, causing chown to fail.
@@ -88,13 +102,17 @@ in {
       rekeyFile = ../secrets/dex-jellyfin-secret.age;
       owner = "dex";
     };
+    # Netbird client is public (SPA), no secret needed
 
     # Register IP for services dummy interface
     homelab.serviceIPs = [cfg.ip];
     networking.hosts.${cfg.ip} = [dexDomain];
 
-    # Allow HTTPS on VPN interface
+    # Allow HTTPS on VPN and WG tunnel interfaces
     networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [
+      services.https.port
+    ];
+    networking.firewall.interfaces."wg0".allowedTCPPorts = [
       services.https.port
     ];
 
@@ -126,6 +144,10 @@ in {
 
         web = {
           http = "127.0.0.1:${toString cfg.port}";
+        };
+
+        telemetry = {
+          http = "127.0.0.1:${toString dexMetricsPort}";
         };
 
         # Enable local password database for username/password login
@@ -193,6 +215,17 @@ in {
             redirectURIs = ["https://jellyfin.${domain}/sso/OID/redirect/Dex"];
             secretFile = config.age.secrets.dex-jellyfin-secret.path;
           }
+          {
+            id = "netbird";
+            name = "Netbird";
+            # Public client: dashboard is a SPA that cannot hold a secret
+            public = true;
+            redirectURIs = [
+              "https://netbird.${domain}/#callback"
+              "https://netbird.${domain}/#silent-callback"
+              "http://localhost:53000"
+            ];
+          }
         ];
       };
     };
@@ -204,15 +237,64 @@ in {
     systemd.services.dex.wants = ["network-online.target"];
     systemd.services.dex.serviceConfig.EnvironmentFile = config.age.secrets.google-oauth.path;
 
-    # Nginx reverse proxy
+    # Nginx reverse proxy with CORS for dashboard and CLI OIDC flows.
+    # Listens on both VPN service IP and WG tunnel IP so vpsfree can proxy
+    # dex traffic for clients that haven't joined the mesh yet.
     services.nginx.virtualHosts.${dexDomain} = {
-      listenAddresses = [cfg.ip];
+      listenAddresses = [cfg.ip wgIp];
       forceSSL = true;
       useACMEHost = domain;
       locations."/" = {
         proxyPass = "http://127.0.0.1:${toString cfg.port}";
         recommendedProxySettings = true;
+        extraConfig = ''
+          # CORS: dashboard SPA fetches OIDC discovery cross-origin
+          add_header Access-Control-Allow-Origin "https://netbird.${domain}" always;
+          add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
+          add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
+
+          if ($request_method = OPTIONS) {
+            return 204;
+          }
+        '';
       };
     };
+
+    # Dex metrics via unified metrics proxy
+    services.nginx.virtualHosts."metrics".locations."/metrics/dex".proxyPass = "http://127.0.0.1:${toString dexMetricsPort}/metrics";
+
+    homelab.scrapeTargets = [
+      {
+        job = "dex";
+        metricsPath = "/metrics/dex";
+      }
+    ];
+
+    homelab.alerts.dex = [
+      {
+        alert = "DexDown";
+        expr = ''up{job="dex"} == 0'';
+        labels = {
+          severity = "critical";
+          host = config.homelab.host.hostName;
+          type = "service";
+        };
+        annotations.summary = "Dex OIDC provider is down";
+      }
+    ];
+
+    homelab.healthChecks = [
+      {
+        name = "Dex";
+        script = pkgs.writeShellApplication {
+          name = "health-check-dex";
+          runtimeInputs = [pkgs.systemd];
+          text = ''
+            systemctl is-active --quiet dex.service
+          '';
+        };
+        timeout = 10;
+      }
+    ];
   };
 }
