@@ -9,6 +9,10 @@
   pkgs,
   ...
 }: {
+  homelab.netbird-user.profiles = {
+    cloud = "{}";
+    selfhosted = ''{"ManagementURL":{"Scheme":"https","Host":"api.krejci.io:443"}}'';
+  };
   imports = [
     ./probe-rs.nix # udev rules for the probe-rs
   ];
