@@ -37,7 +37,9 @@
   wgIp = config.homelab.tunnel.ip;
   certDir = config.security.acme.certs.${domain}.directory;
 
-  # Google's public STUN server for NAT traversal discovery
+  # STUN is a stateless protocol that tells a client its public IP:port mapping.
+  # No credentials or data flow through the STUN server. Google operates free
+  # public STUN servers that are the de-facto standard for WebRTC and VPN tools.
   googleStunUri = "stun:stun.l.google.com:19302";
 in {
   options.homelab.netbird-server = {

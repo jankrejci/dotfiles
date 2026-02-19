@@ -43,14 +43,16 @@ in {
       description = "IP address for nginx to listen on";
     };
 
-    port = lib.mkOption {
-      type = lib.types.port;
-      description = "Port for Dex server";
-    };
+    port = {
+      dex = lib.mkOption {
+        type = lib.types.port;
+        description = "Port for Dex server";
+      };
 
-    metricsPort = lib.mkOption {
-      type = lib.types.port;
-      description = "Port for Dex telemetry endpoint";
+      metrics = lib.mkOption {
+        type = lib.types.port;
+        description = "Port for Dex telemetry endpoint";
+      };
     };
 
     subdomain = lib.mkOption {
@@ -141,11 +143,11 @@ in {
         };
 
         web = {
-          http = "127.0.0.1:${toString cfg.port}";
+          http = "127.0.0.1:${toString cfg.port.dex}";
         };
 
         telemetry = {
-          http = "127.0.0.1:${toString cfg.metricsPort}";
+          http = "127.0.0.1:${toString cfg.port.metrics}";
         };
 
         # Enable local password database for username/password login
@@ -243,7 +245,7 @@ in {
       forceSSL = true;
       useACMEHost = domain;
       locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString cfg.port}";
+        proxyPass = "http://127.0.0.1:${toString cfg.port.dex}";
         recommendedProxySettings = true;
         extraConfig = ''
           # CORS: dashboard SPA fetches OIDC discovery cross-origin
@@ -259,7 +261,7 @@ in {
     };
 
     # Dex metrics via unified metrics proxy
-    services.nginx.virtualHosts."metrics".locations."/metrics/dex".proxyPass = "http://127.0.0.1:${toString cfg.metricsPort}/metrics";
+    services.nginx.virtualHosts."metrics".locations."/metrics/dex".proxyPass = "http://127.0.0.1:${toString cfg.port.metrics}/metrics";
 
     homelab.scrapeTargets = [
       {

@@ -27,20 +27,22 @@ in {
       description = "IP address for nginx to listen on";
     };
 
-    port = lib.mkOption {
-      type = lib.types.port;
-      description = "Port for ntfy server";
+    port = {
+      ntfy = lib.mkOption {
+        type = lib.types.port;
+        description = "Port for ntfy server";
+      };
+
+      metrics = lib.mkOption {
+        type = lib.types.port;
+        description = "Port for Prometheus metrics endpoint";
+      };
     };
 
     subdomain = lib.mkOption {
       type = lib.types.str;
       default = "ntfy";
       description = "Subdomain for ntfy";
-    };
-
-    metricsPort = lib.mkOption {
-      type = lib.types.port;
-      description = "Port for Prometheus metrics endpoint";
     };
 
     watchdog = lib.mkEnableOption "watchdog monitoring for this ntfy instance";
@@ -62,7 +64,7 @@ in {
       package = pkgs.unstable.ntfy-sh;
       settings = {
         # Listen on 127.0.0.1 only, accessed via nginx proxy (defense in depth)
-        listen-http = "127.0.0.1:${toString cfg.port}";
+        listen-http = "127.0.0.1:${toString cfg.port.ntfy}";
         base-url = "https://${ntfyDomain}";
         # Authentication: read-only by default, publishing requires tokens
         auth-default-access = "read-only";
@@ -71,7 +73,7 @@ in {
         # Template directory for custom webhook formatting
         template-dir = "/var/lib/ntfy-sh/templates";
         # Expose Prometheus metrics on 127.0.0.1 only
-        metrics-listen-http = "127.0.0.1:${toString cfg.metricsPort}";
+        metrics-listen-http = "127.0.0.1:${toString cfg.port.metrics}";
       };
     };
 
@@ -88,14 +90,14 @@ in {
       forceSSL = true;
       useACMEHost = domain;
       locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString cfg.port}";
+        proxyPass = "http://127.0.0.1:${toString cfg.port.ntfy}";
         proxyWebsockets = true;
         recommendedProxySettings = true;
       };
     };
 
     # Ntfy metrics via unified metrics proxy
-    services.nginx.virtualHosts."metrics".locations."/metrics/ntfy".proxyPass = "http://127.0.0.1:${toString cfg.metricsPort}/metrics";
+    services.nginx.virtualHosts."metrics".locations."/metrics/ntfy".proxyPass = "http://127.0.0.1:${toString cfg.port.metrics}/metrics";
 
     homelab.scrapeTargets = [
       {

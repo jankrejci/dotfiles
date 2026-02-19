@@ -153,7 +153,7 @@ in {
           name = "Prometheus";
           type = "prometheus";
           access = "proxy";
-          url = "http://127.0.0.1:${toString config.homelab.prometheus.port}";
+          url = "http://127.0.0.1:${toString config.homelab.prometheus.port.prometheus}";
           isDefault = true;
           # Fixed UID for dashboard references
           uid = "prometheus";

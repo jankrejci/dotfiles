@@ -43,8 +43,10 @@
         watchdog = {
           enable = true;
           ip = "192.168.92.2";
-          port = 9095;
-          alertmanagerPort = 9094;
+          port = {
+            watchdog = 9095;
+            alertmanager = 9094;
+          };
           email = {
             from = "admin@krejci.io";
             to = "admin@krejci.io";
@@ -59,7 +61,10 @@
         tunnel = {
           enable = true;
           ip = "192.168.99.2";
-          port = 51821;
+          port = {
+            wireguard = 51821;
+            internalHttps = 8443;
+          };
           server = true;
           peers = ["thinkcenter"];
           proxy = {
@@ -94,8 +99,10 @@
         dex = {
           enable = true;
           ip = "192.168.91.7";
-          port = 5556;
-          metricsPort = 5558;
+          port = {
+            dex = 5556;
+            metrics = 5558;
+          };
         };
         grafana = {
           enable = true;
@@ -114,8 +121,10 @@
         };
         loki = {
           enable = true;
-          port = 3100;
-          promtailPort = 9080;
+          port = {
+            loki = 3100;
+            promtail = 9080;
+          };
         };
         memos = {
           enable = true;
@@ -132,8 +141,10 @@
         ntfy = {
           enable = true;
           ip = "192.168.91.4";
-          port = 2586;
-          metricsPort = 9091;
+          port = {
+            ntfy = 2586;
+            metrics = 9091;
+          };
           watchdog = true;
         };
         printer = {
@@ -149,14 +160,19 @@
         prometheus = {
           enable = true;
           ip = "192.168.91.8";
-          port = 9090;
+          port = {
+            prometheus = 9090;
+            alertmanager = 9093;
+          };
           watchdog = true;
         };
-        alertmanager.port = 9093;
         tunnel = {
           enable = true;
           ip = "192.168.99.1";
-          port = 51821;
+          port = {
+            wireguard = 51821;
+            internalHttps = 8443;
+          };
           peers = ["vpsfree"];
         };
         backup = {
