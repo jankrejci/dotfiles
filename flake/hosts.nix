@@ -48,6 +48,12 @@
             to = "admin@krejci.io";
           };
         };
+        netbird-gateway = {
+          enable = true;
+          ip = "192.168.92.3";
+          interface = "venet0";
+          managementHost = "thinkcenter";
+        };
         tunnel = {
           enable = true;
           ip = "192.168.99.2";
@@ -55,7 +61,7 @@
           peers = ["thinkcenter"];
           proxy = {
             enable = true;
-            domains = ["share.krejci.io"];
+            domains = ["share.krejci.io" "dex.krejci.io"];
           };
         };
       };
@@ -102,6 +108,10 @@
         memos = {
           enable = true;
           ip = "192.168.91.6";
+        };
+        netbird-server = {
+          enable = true;
+          ip = "192.168.91.9";
         };
         ntfy = {
           enable = true;
@@ -280,9 +290,17 @@
       port = 9999;
     };
 
+    # Overlay network uses CGNAT range (RFC 6598) to avoid conflicts with
+    # RFC 1918 private ranges on LANs. Same approach as Tailscale.
+    # The subnet is stored in the management database at account creation
+    # and cannot be changed via config files, only via REST API or dashboard.
     netbird = {
       interface = "nb0";
-      port = 51820;
+      port = {
+        nb = 51820;
+        relay = 33080;
+        signal = 8012;
+      };
       subnet = "100.76.0.0/16";
     };
   };

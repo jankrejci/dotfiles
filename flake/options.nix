@@ -120,9 +120,9 @@ in {
       type = types.attrsOf (types.submodule {
         options = {
           port = mkOption {
-            type = types.nullOr types.port;
+            type = types.nullOr (types.either types.port (types.attrsOf types.port));
             default = null;
-            description = "Service port";
+            description = "Service port or named port set";
           };
 
           subdomain = mkOption {
