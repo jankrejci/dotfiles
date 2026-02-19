@@ -89,7 +89,7 @@ in {
 
       environment = {
         NB_INTERFACE_NAME = services.netbird.interface;
-        NB_WIREGUARD_PORT = toString services.netbird.port.nb;
+        NB_WIREGUARD_PORT = toString services.netbird.port.wireguard;
         NB_LOG_LEVEL = "info";
         # Establish peer connections on demand instead of full mesh.
         # Requires server-side lazy_connection_enabled in dashboard too.
@@ -133,7 +133,7 @@ in {
     '';
 
     # Open firewall for WireGuard port
-    networking.firewall.allowedUDPPorts = [services.netbird.port.nb];
+    networking.firewall.allowedUDPPorts = [services.netbird.port.wireguard];
 
     # Exclude user interface from NetworkManager and DHCP
     networking.networkmanager.unmanaged = lib.mkAfter [services.netbird.interface];

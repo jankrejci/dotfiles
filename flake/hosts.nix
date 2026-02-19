@@ -297,7 +297,8 @@
     netbird = {
       interface = "nb0";
       port = {
-        nb = 51820;
+        wireguard = 51820;
+        stun = 3478;
         relay = 33080;
         signal = 8012;
       };

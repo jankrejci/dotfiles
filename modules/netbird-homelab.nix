@@ -22,7 +22,7 @@ in {
 
   config = {
     services.netbird.clients.${clientName} = {
-      port = services.netbird.port.nb;
+      port = services.netbird.port.wireguard;
       interface = services.netbird.interface;
     };
 
