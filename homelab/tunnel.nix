@@ -1,11 +1,12 @@
 # Encrypted tunnel between thinkcenter and vpsfree
 #
 # Provides encrypted transport for borg backups and the TLS proxy.
-# The proxy (when enabled) runs as a separate nginx process doing L4
-# SNI-based routing. It forwards listed domains to the backend peer
-# while blackholing unknown domains. The main nginx instance is unaffected
-# since the proxy binds 0.0.0.0:443 and Linux dispatches to the more-specific
-# service IP bindings first.
+# The proxy (when enabled) adds L4 SNI-based routing to the main nginx
+# via streamConfig. ALL port 443 traffic flows through the stream block:
+# configured domains get forwarded to the backend peer, everything else
+# is routed to the http block on an internal port for L7 processing.
+# Service modules register their domains via homelab.nginx.publicDomains
+# so the listen override is automatic.
 {
   config,
   lib,
@@ -111,9 +112,22 @@ in {
     };
 
     # WireGuard metrics via common metrics vhost
-    services.nginx.virtualHosts."metrics".locations."/metrics/wireguard" = {
-      proxyPass = "http://127.0.0.1:9586/metrics";
-    };
+    services.nginx.virtualHosts = lib.mkMerge [
+      {
+        "metrics".locations."/metrics/wireguard" = {
+          proxyPass = "http://127.0.0.1:9586/metrics";
+        };
+      }
+
+      # Add 127.0.0.1 to public domain vhosts so the stream proxy can
+      # reach them on the internal port. Service modules still set their
+      # service IP via listenAddresses which gets merged with this.
+      (lib.mkIf cfg.proxy.enable (
+        lib.genAttrs config.homelab.nginx.publicDomains (_: {
+          listenAddresses = ["127.0.0.1"];
+        })
+      ))
+    ];
 
     # Scrape target for prometheus
     homelab.scrapeTargets = [
@@ -176,68 +190,47 @@ in {
       }
     ];
 
-    # TLS proxy: separate nginx process for L4 SNI-based routing.
-    # Runs independently from the main nginx so a proxy failure cannot take
-    # down local services like watchdog. Uses 0.0.0.0:443 which coexists with
-    # main nginx on specific service IPs thanks to Linux socket dispatch.
-    networking.firewall.allowedTCPPorts = lib.mkIf cfg.proxy.enable [443];
+    # TLS proxy: ALL port 443 traffic routed through stream SNI map.
+    # Configured domains pass through to the WG peer. Everything else
+    # loops back to the http block on an internal port for L7 processing.
+    # This avoids overlapping 0.0.0.0:443 and service-IP:443 binds
+    # which fail on LXC containers.
+    services.nginx.defaultSSLListenPort = lib.mkIf cfg.proxy.enable 8443;
 
-    systemd.services.tunnel-proxy = lib.mkIf cfg.proxy.enable (let
+    services.nginx.streamConfig = lib.mkIf cfg.proxy.enable (let
       peerName = builtins.head cfg.peers;
       backend = allHosts.${peerName}.homelab.tunnel.ip;
 
       sniMap =
         lib.concatMapStringsSep "\n"
-        (d: "            ${d} backend;")
+        (d: "        ${d} backend_tunnel;")
         cfg.proxy.domains;
+    in ''
+      map $ssl_preread_server_name $tunnel_backend {
+      ${sniMap}
+          default backend_local;
+      }
 
-      proxyConfig = pkgs.writeText "tunnel-proxy.conf" ''
-        error_log syslog:server=unix:/dev/log;
-        pid /run/tunnel-proxy/tunnel-proxy.pid;
+      upstream backend_tunnel {
+          server ${backend}:443;
+      }
 
-        events {
-            worker_connections 512;
-        }
+      upstream backend_local {
+          server 127.0.0.1:8443;
+      }
 
-        stream {
-            map $ssl_preread_server_name $tunnel_backend {
-        ${sniMap}
-                default blackhole;
-            }
+      server {
+          listen 0.0.0.0:443;
+          ssl_preread on;
+          proxy_pass $tunnel_backend;
+          proxy_connect_timeout 5s;
+      }
+    '');
 
-            upstream backend {
-                server ${backend}:443;
-            }
-
-            # Unknown domains get connection refused
-            upstream blackhole {
-                server 127.0.0.1:1;
-            }
-
-            server {
-                listen 0.0.0.0:443;
-                ssl_preread on;
-                proxy_pass $tunnel_backend;
-                proxy_connect_timeout 5s;
-            }
-        }
-      '';
-    in {
-      description = "TLS tunnel proxy for public service exposure";
-      after = ["network-online.target" "sys-subsystem-net-devices-wg0.device"];
-      wants = ["network-online.target"];
-      wantedBy = ["multi-user.target"];
-
-      serviceConfig = {
-        ExecStartPre = "${pkgs.nginx}/bin/nginx -t -c ${proxyConfig} -e /run/tunnel-proxy/error.log -q";
-        ExecStart = "${pkgs.nginx}/bin/nginx -c ${proxyConfig} -e /run/tunnel-proxy/error.log -g 'daemon off;'";
-        ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";
-        Restart = "on-failure";
-        RuntimeDirectory = "tunnel-proxy";
-        DynamicUser = true;
-        AmbientCapabilities = ["CAP_NET_BIND_SERVICE"];
-      };
-    });
+    # Nginx must wait for WG tunnel interface before starting
+    systemd.services.nginx.after = lib.mkIf cfg.proxy.enable [
+      "sys-subsystem-net-devices-wg0.device"
+    ];
 
     assertions = lib.optionals cfg.proxy.enable [
       {
