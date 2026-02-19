@@ -31,9 +31,6 @@
   domain = global.domain;
   dexDomain = "${cfg.subdomain}.${domain}";
 
-  # Dex native telemetry endpoint for Prometheus metrics
-  dexMetricsPort = 5558;
-
   # WG tunnel IP so vpsfree can proxy dex traffic for pre-enrollment SSO
   wgIp = config.homelab.tunnel.ip;
 in {
@@ -53,6 +50,12 @@ in {
       type = lib.types.port;
       default = 5556;
       description = "Port for Dex server";
+    };
+
+    metricsPort = lib.mkOption {
+      type = lib.types.port;
+      default = 5558;
+      description = "Port for Dex telemetry endpoint";
     };
 
     subdomain = lib.mkOption {
@@ -147,7 +150,7 @@ in {
         };
 
         telemetry = {
-          http = "127.0.0.1:${toString dexMetricsPort}";
+          http = "127.0.0.1:${toString cfg.metricsPort}";
         };
 
         # Enable local password database for username/password login
@@ -261,7 +264,7 @@ in {
     };
 
     # Dex metrics via unified metrics proxy
-    services.nginx.virtualHosts."metrics".locations."/metrics/dex".proxyPass = "http://127.0.0.1:${toString dexMetricsPort}/metrics";
+    services.nginx.virtualHosts."metrics".locations."/metrics/dex".proxyPass = "http://127.0.0.1:${toString cfg.metricsPort}/metrics";
 
     homelab.scrapeTargets = [
       {

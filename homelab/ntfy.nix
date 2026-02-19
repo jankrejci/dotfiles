@@ -39,6 +39,12 @@ in {
       description = "Subdomain for ntfy";
     };
 
+    metricsPort = lib.mkOption {
+      type = lib.types.port;
+      default = 9091;
+      description = "Port for Prometheus metrics endpoint";
+    };
+
     watchdog = lib.mkEnableOption "watchdog monitoring for this ntfy instance";
   };
 
@@ -67,7 +73,7 @@ in {
         # Template directory for custom webhook formatting
         template-dir = "/var/lib/ntfy-sh/templates";
         # Expose Prometheus metrics on 127.0.0.1 only
-        metrics-listen-http = "127.0.0.1:9091";
+        metrics-listen-http = "127.0.0.1:${toString cfg.metricsPort}";
       };
     };
 
@@ -91,7 +97,7 @@ in {
     };
 
     # Ntfy metrics via unified metrics proxy
-    services.nginx.virtualHosts."metrics".locations."/metrics/ntfy".proxyPass = "http://127.0.0.1:9091/metrics";
+    services.nginx.virtualHosts."metrics".locations."/metrics/ntfy".proxyPass = "http://127.0.0.1:${toString cfg.metricsPort}/metrics";
 
     homelab.scrapeTargets = [
       {
