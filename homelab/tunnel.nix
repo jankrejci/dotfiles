@@ -229,8 +229,8 @@ in {
       wantedBy = ["multi-user.target"];
 
       serviceConfig = {
-        ExecStartPre = "${pkgs.nginx}/bin/nginx -t -c ${proxyConfig} -q";
-        ExecStart = "${pkgs.nginx}/bin/nginx -c ${proxyConfig} -g 'daemon off;'";
+        ExecStartPre = "${pkgs.nginx}/bin/nginx -t -c ${proxyConfig} -e /run/tunnel-proxy/error.log -q";
+        ExecStart = "${pkgs.nginx}/bin/nginx -c ${proxyConfig} -e /run/tunnel-proxy/error.log -g 'daemon off;'";
         ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";
         Restart = "on-failure";
         RuntimeDirectory = "tunnel-proxy";
