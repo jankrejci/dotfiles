@@ -142,6 +142,7 @@ in {
     # Allow users to configure DNS via systemd-resolved for VPN.
     # Netbird needs to set DNS servers and routing domains for peer resolution.
     # Same pattern used by OpenVPN's update-systemd-resolved script.
+    # See also: netbird-homelab.nix has a similar rule for the system service.
     security.polkit.extraConfig = ''
       polkit.addRule(function(action, subject) {
         var start = "org.freedesktop.resolve1.";

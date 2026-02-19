@@ -30,9 +30,6 @@
   services = config.homelab.services;
   domain = global.domain;
   dexDomain = "${cfg.subdomain}.${domain}";
-
-  # WG tunnel IP so vpsfree can proxy dex traffic for pre-enrollment SSO
-  wgIp = config.homelab.tunnel.ip;
 in {
   options.homelab.dex = {
     enable = lib.mkOption {
@@ -242,7 +239,7 @@ in {
     # Listens on both VPN service IP and WG tunnel IP so vpsfree can proxy
     # dex traffic for clients that haven't joined the mesh yet.
     services.nginx.virtualHosts.${dexDomain} = {
-      listenAddresses = [cfg.ip wgIp];
+      listenAddresses = [cfg.ip config.homelab.tunnel.ip];
       forceSSL = true;
       useACMEHost = domain;
       locations."/" = {

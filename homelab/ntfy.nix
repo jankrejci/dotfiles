@@ -104,6 +104,9 @@ in {
       }
     ];
 
+    # Bootstrap limitation: NtfyDown alert routes through ntfy itself, so it
+    # cannot fire when ntfy is actually down. The watchdog email path on vpsfree
+    # covers this case independently.
     homelab.alerts.ntfy = [
       {
         alert = "NtfyDown";
