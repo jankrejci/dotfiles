@@ -100,6 +100,19 @@ in {
       }
     ];
 
+    homelab.alerts.ntfy = [
+      {
+        alert = "NtfyDown";
+        expr = ''up{job="ntfy"} == 0'';
+        labels = {
+          severity = "critical";
+          host = config.homelab.host.hostName;
+          type = "service";
+        };
+        annotations.summary = "Ntfy notification service is down";
+      }
+    ];
+
     # Register with external watchdog when enabled
     homelab.watchdogTargets = lib.optionals cfg.watchdog [
       {

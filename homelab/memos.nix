@@ -92,8 +92,21 @@ in {
       };
     }
 
-    # Health check
+    # Alert and health check
     {
+      homelab.alerts.memos = [
+        {
+          alert = "MemosDown";
+          expr = ''node_systemd_unit_state{name="memos.service",state="active",host="${config.homelab.host.hostName}"} == 0'';
+          labels = {
+            severity = "warning";
+            host = config.homelab.host.hostName;
+            type = "service";
+          };
+          annotations.summary = "Memos note-taking service is down";
+        }
+      ];
+
       homelab.healthChecks = [
         {
           name = "Memos";
