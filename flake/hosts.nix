@@ -43,6 +43,8 @@
         watchdog = {
           enable = true;
           ip = "192.168.92.2";
+          port = 9095;
+          alertmanagerPort = 9094;
           email = {
             from = "admin@krejci.io";
             to = "admin@krejci.io";
@@ -57,6 +59,7 @@
         tunnel = {
           enable = true;
           ip = "192.168.99.2";
+          port = 51821;
           server = true;
           peers = ["thinkcenter"];
           proxy = {
@@ -91,31 +94,46 @@
         dex = {
           enable = true;
           ip = "192.168.91.7";
+          port = 5556;
+          metricsPort = 5558;
         };
         grafana = {
           enable = true;
           ip = "192.168.91.2";
+          port = 3000;
         };
         immich = {
           enable = true;
           ip = "192.168.91.1";
+          port = 2283;
         };
         jellyfin = {
           enable = true;
           ip = "192.168.91.3";
+          port = 8096;
         };
-        loki.enable = true;
+        loki = {
+          enable = true;
+          port = 3100;
+          promtailPort = 9080;
+        };
         memos = {
           enable = true;
           ip = "192.168.91.6";
+          port = 5230;
         };
         netbird-server = {
           enable = true;
           ip = "192.168.91.9";
+          port.management = 8011;
+          port.metrics = 9096;
+          port.relayMetrics = 9097;
         };
         ntfy = {
           enable = true;
           ip = "192.168.91.4";
+          port = 2586;
+          metricsPort = 9091;
           watchdog = true;
         };
         printer = {
@@ -125,16 +143,20 @@
         immich-public-proxy = {
           enable = true;
           ip = "192.168.91.10";
+          port = 2284;
           tunnel = true;
         };
         prometheus = {
           enable = true;
           ip = "192.168.91.8";
+          port = 9090;
           watchdog = true;
         };
+        alertmanager.port = 9093;
         tunnel = {
           enable = true;
           ip = "192.168.99.1";
+          port = 51821;
           peers = ["vpsfree"];
         };
         backup = {
@@ -231,6 +253,7 @@
         octoprint = {
           enable = true;
           ip = "192.168.93.1";
+          port = 5000;
         };
         webcam.enable = true;
       };
