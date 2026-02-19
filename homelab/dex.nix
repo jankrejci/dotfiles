@@ -48,13 +48,11 @@ in {
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 5556;
       description = "Port for Dex server";
     };
 
     metricsPort = lib.mkOption {
       type = lib.types.port;
-      default = 5558;
       description = "Port for Dex telemetry endpoint";
     };
 

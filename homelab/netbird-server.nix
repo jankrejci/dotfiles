@@ -61,19 +61,16 @@ in {
     port = {
       management = lib.mkOption {
         type = lib.types.port;
-        default = 8011;
         description = "Management API listen port";
       };
 
       metrics = lib.mkOption {
         type = lib.types.port;
-        default = 9096;
         description = "Management metrics listen port";
       };
 
       relayMetrics = lib.mkOption {
         type = lib.types.port;
-        default = 9097;
         description = "Relay metrics listen port";
       };
     };

@@ -35,7 +35,6 @@ in {
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 3000;
       description = "Port for Grafana web interface";
     };
 

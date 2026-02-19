@@ -53,7 +53,6 @@ in {
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 8096;
       description = "Port for Jellyfin server";
     };
 

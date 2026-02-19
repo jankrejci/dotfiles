@@ -46,13 +46,11 @@ in {
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 9095;
       description = "Port for watchdog prometheus instance";
     };
 
     alertmanagerPort = lib.mkOption {
       type = lib.types.port;
-      default = 9094;
       description = "Port for watchdog alertmanager";
     };
 

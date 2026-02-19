@@ -29,7 +29,6 @@ in {
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 5230;
       description = "Port for memos server";
     };
 

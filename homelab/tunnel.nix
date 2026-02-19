@@ -53,7 +53,6 @@ in {
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 51821;
       description = "Port for WireGuard transport";
     };
 

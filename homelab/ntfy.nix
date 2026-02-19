@@ -29,7 +29,6 @@ in {
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 2586;
       description = "Port for ntfy server";
     };
 
@@ -41,7 +40,6 @@ in {
 
     metricsPort = lib.mkOption {
       type = lib.types.port;
-      default = 9091;
       description = "Port for Prometheus metrics endpoint";
     };
 

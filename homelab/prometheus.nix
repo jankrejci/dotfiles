@@ -50,7 +50,6 @@ in {
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 9090;
       description = "Port for Prometheus server";
     };
 
@@ -66,7 +65,6 @@ in {
   options.homelab.alertmanager = {
     port = lib.mkOption {
       type = lib.types.port;
-      default = 9093;
       description = "Port for Alertmanager";
     };
   };

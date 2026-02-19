@@ -22,13 +22,11 @@ in {
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 3100;
       description = "Port for Loki server";
     };
 
     promtailPort = lib.mkOption {
       type = lib.types.port;
-      default = 9080;
       description = "Port for Promtail agent";
     };
   };
