@@ -21,7 +21,7 @@
   pkgs,
   ...
 }: let
-  cfg = config.homelab.netbird-gateway;
+  cfg = config.homelab.netbird-signal;
   global = config.homelab.global;
   services = config.homelab.services;
   allHosts = config.homelab.hosts;
@@ -31,7 +31,7 @@
   # Management server is on a different host, reached via WG backup tunnel
   managementWgIp = allHosts.${cfg.managementHost}.homelab.tunnel.ip;
 in {
-  options.homelab.netbird-gateway = {
+  options.homelab.netbird-signal = {
     enable = lib.mkOption {
       type = lib.types.bool;
       default = false;
