@@ -17,6 +17,12 @@ in {
       default = false;
       description = "Enable nginx reverse proxy";
     };
+
+    publicDomains = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [];
+      description = "SSL domains that need public access through stream proxy";
+    };
   };
 
   config = lib.mkIf cfg.enable {
