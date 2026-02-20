@@ -74,6 +74,9 @@ in {
     nfs-utils # mount.nfs helper for systemd mount unit
   ];
 
+  # Point to self-hosted Netbird instance instead of cloud
+  homelab.netbird-homelab.managementUrl = "https://api.krejci.io";
+
   homelab.alerts.hosts = [
     {
       alert = "VpsfreeDown";
