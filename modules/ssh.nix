@@ -6,6 +6,7 @@
 # - fail2ban for defense against internal threats
 {
   config,
+  lib,
   pkgs,
   ...
 }: let
@@ -149,8 +150,9 @@ in {
     };
   };
 
-  # Restrict SSH access to VPN interface only
-  networking.firewall.interfaces.${services.netbird.interface}.allowedTCPPorts = [22];
+  # Restrict SSH access to VPN and WG tunnel interfaces only
+  networking.firewall.interfaces.${services.netbird.interface}.allowedTCPPorts = config.services.openssh.ports;
+  networking.firewall.interfaces."wg0".allowedTCPPorts = lib.mkIf config.homelab.tunnel.enable config.services.openssh.ports;
 
   systemd.services.sshd.serviceConfig = {
     Restart = "always";
