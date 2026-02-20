@@ -63,7 +63,8 @@
           ip = "192.168.99.2";
           port = {
             wireguard = 51821;
-            internalHttps = 8443;
+            https = 8443;
+            exporter = 9586;
           };
           server = true;
           peers = ["thinkcenter"];
@@ -171,7 +172,8 @@
           ip = "192.168.99.1";
           port = {
             wireguard = 51821;
-            internalHttps = 8443;
+            https = 8443;
+            exporter = 9586;
           };
           peers = ["vpsfree"];
         };

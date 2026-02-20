@@ -56,9 +56,14 @@ in {
       # Internal port where nginx http block listens when the stream SNI proxy
       # occupies the public HTTPS port. Stream routes unknown domains here for
       # L7 processing.
-      internalHttps = lib.mkOption {
+      https = lib.mkOption {
         type = lib.types.port;
         description = "Internal port for nginx http block behind SNI proxy";
+      };
+
+      exporter = lib.mkOption {
+        type = lib.types.port;
+        description = "Port for Prometheus wireguard exporter";
       };
     };
 
@@ -115,7 +120,7 @@ in {
     # Prometheus exporter for WireGuard metrics
     services.prometheus.exporters.wireguard = {
       enable = true;
-      port = 9586;
+      port = cfg.port.exporter;
       listenAddress = "127.0.0.1";
       openFirewall = false;
     };
@@ -204,7 +209,7 @@ in {
     # loops back to the http block on an internal port for L7 processing.
     # This avoids overlapping 0.0.0.0:443 and service-IP:443 binds
     # which fail on LXC containers.
-    services.nginx.defaultSSLListenPort = lib.mkIf cfg.proxy.enable cfg.port.internalHttps;
+    services.nginx.defaultSSLListenPort = lib.mkIf cfg.proxy.enable cfg.port.https;
 
     services.nginx.streamConfig = lib.mkIf cfg.proxy.enable (let
       peerName = builtins.head cfg.peers;
@@ -225,7 +230,7 @@ in {
       }
 
       upstream backend_local {
-          server 127.0.0.1:${toString cfg.port.internalHttps};
+          server 127.0.0.1:${toString cfg.port.https};
       }
 
       server {
