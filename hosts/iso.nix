@@ -14,6 +14,9 @@
   setupKeyFolder = "/var/lib/netbird-homelab";
   setupKeyPath = "${setupKeyFolder}/setup-key";
 in {
+  # Point to self-hosted Netbird instance instead of cloud
+  homelab.netbird-homelab.managementUrl = "https://api.krejci.io";
+
   # Embed the setup key in the ISO. The ISO uses read-only squashfs,
   # so we place it in /etc and copy to /var/lib on boot.
   environment.etc."netbird/setup-key" = {
