@@ -21,6 +21,7 @@ in {
   };
 
   config = {
+    services.netbird.package = pkgs.unstable.netbird;
     services.netbird.clients.${clientName} = {
       port = services.netbird.port.wireguard;
       interface = services.netbird.interface;
