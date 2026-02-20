@@ -7,6 +7,9 @@
 }: {
   imports = [inputs.nixos-raspberrypi.nixosModules.raspberry-pi-3.base];
 
+  # Point to self-hosted Netbird instance instead of cloud
+  homelab.netbird-homelab.managementUrl = "https://api.krejci.io";
+
   # Enable SPI for RAK2245 communication with SX1301 concentrator
   # Enable uart0 overlay to properly configure GPIO14/15 for UART TX/RX.
   # Without this, GPIO14 stays in GPIO mode instead of ALT0 UART function.
