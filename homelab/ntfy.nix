@@ -130,6 +130,14 @@ in {
       }
     ];
 
+    homelab.dashboardEntries = [
+      {
+        name = "Ntfy";
+        url = "https://${ntfyDomain}";
+        icon = ../assets/dashboard-icons/ntfy.svg;
+      }
+    ];
+
     # Health check
     homelab.healthChecks = [
       {

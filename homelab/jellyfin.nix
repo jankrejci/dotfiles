@@ -191,6 +191,14 @@ in {
       }
     ];
 
+    homelab.dashboardEntries = [
+      {
+        name = "Jellyfin";
+        url = "https://${jellyfinDomain}";
+        icon = ../assets/dashboard-icons/jellyfin.svg;
+      }
+    ];
+
     homelab.healthChecks = [
       {
         name = "Jellyfin";

@@ -137,6 +137,14 @@ in {
       }
     ];
 
+    homelab.dashboardEntries = [
+      {
+        name = "OctoPrint";
+        url = "https://${serverDomain}";
+        icon = ../assets/dashboard-icons/octoprint.svg;
+      }
+    ];
+
     homelab.healthChecks = [
       {
         name = "OctoPrint";

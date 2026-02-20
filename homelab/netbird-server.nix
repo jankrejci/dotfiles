@@ -356,6 +356,14 @@ in {
       }
     ];
 
+    homelab.dashboardEntries = [
+      {
+        name = "Netbird";
+        url = "https://${dashboardDomain}";
+        icon = ../assets/dashboard-icons/netbird.svg;
+      }
+    ];
+
     homelab.healthChecks = [
       {
         name = "Netbird Management";

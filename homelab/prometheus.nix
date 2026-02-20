@@ -275,6 +275,14 @@ in {
       })
     ];
 
+    homelab.dashboardEntries = [
+      {
+        name = "Prometheus";
+        url = "https://${promDomain}";
+        icon = ../assets/dashboard-icons/prometheus.svg;
+      }
+    ];
+
     # Health check
     homelab.healthChecks = [
       {

@@ -11,6 +11,7 @@
 
     # Services
     ./acme.nix
+    ./dashboard.nix
     ./dex.nix
     ./netbird-signal.nix
     ./netbird-server.nix
