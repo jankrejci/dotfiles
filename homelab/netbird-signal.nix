@@ -21,7 +21,7 @@
   pkgs,
   ...
 }: let
-  cfg = config.homelab.netbird-gateway;
+  cfg = config.homelab.netbird-signal;
   global = config.homelab.global;
   services = config.homelab.services;
   allHosts = config.homelab.hosts;
@@ -31,7 +31,7 @@
   # Management server is on a different host, reached via WG backup tunnel
   managementWgIp = allHosts.${cfg.managementHost}.homelab.tunnel.ip;
 in {
-  options.homelab.netbird-gateway = {
+  options.homelab.netbird-signal = {
     enable = lib.mkOption {
       type = lib.types.bool;
       default = false;
@@ -115,16 +115,16 @@ in {
             proxy_pass ${managementWgIp}:${toString services.netbird.port.relay};
         }
         server {
-            listen 3478 udp;
-            proxy_pass ${managementWgIp}:3478;
+            listen ${toString services.netbird.port.stun} udp;
+            proxy_pass ${managementWgIp}:${toString services.netbird.port.stun};
         }
       '';
     };
 
     # HTTPS for API/signal, relay TCP passthrough, STUN UDP passthrough
     networking.firewall.interfaces.${cfg.interface} = {
-      allowedTCPPorts = [443 services.netbird.port.relay];
-      allowedUDPPorts = [3478];
+      allowedTCPPorts = [services.https.port services.netbird.port.relay];
+      allowedUDPPorts = [services.netbird.port.stun];
     };
   };
 }

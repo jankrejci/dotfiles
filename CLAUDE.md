@@ -140,7 +140,7 @@ Two-tier VPN setup for different access patterns:
 - nginx http: proxies management API, signal gRPC, Dex OIDC on port 443
 - nginx stream: relay TLS passthrough on port 33080, STUN UDP on 3478
 - All traffic forwarded to thinkcenter via WG backup tunnel
-- Module: `homelab/netbird-gateway.nix`
+- Module: `homelab/netbird-signal.nix`
 
 **Module structure:**
 - `networking.nix` - general networking, no netbird config
