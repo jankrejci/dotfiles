@@ -23,9 +23,18 @@
 }: let
   cfg = config.homelab.netbird-user;
   services = config.homelab.services;
+  global = config.homelab.global;
   wrapperDir = config.security.wrapperDir;
   hostname = config.networking.hostName;
   netbirdDir = ".local/netbird-user";
+
+  # Minimal profile JSON with correct interface name. Netbird fills in defaults
+  # for missing fields and enriches the JSON after connecting.
+  mkProfile = attrs: builtins.toJSON ({WgIface = services.netbird.interface;} // attrs);
+  mkManagementUrl = host: {
+    Scheme = "https";
+    Host = "${host}:443";
+  };
 
   # CLI wrapper that uses the setcap binary and user daemon socket.
   # No --config flag needed: the daemon derives it from NB_STATE_DIR.
@@ -48,13 +57,20 @@ in {
       default = {};
       description = "Named profiles for netbird-user. Keys are profile names, values are JSON config strings using Go url.URL struct format for ManagementURL.";
       example = {
-        cloud = "{}";
-        selfhosted = ''{"ManagementURL":{"Scheme":"https","Host":"api.example.com:443"}}'';
+        selfhosted = ''{"ManagementURL":{"Scheme":"https","Host":"api.example.com:443"},"WgIface":"nb0"}'';
       };
     };
   };
 
   config = {
+    # Default profile for self-hosted Netbird instance.
+    # Sets WgIface to match NB_INTERFACE_NAME so stored config is consistent.
+    homelab.netbird-user.profiles = lib.mkDefault {
+      selfhosted = mkProfile {
+        ManagementURL = mkManagementUrl "api.${global.domain}";
+      };
+    };
+
     # Seed profile JSON files into the per-user profile directory on first login.
     # Type "d" ensures directory exists with 0700 perms, working around the
     # netbird bug that creates it with 0600.
@@ -89,7 +105,7 @@ in {
 
       environment = {
         NB_INTERFACE_NAME = services.netbird.interface;
-        NB_WIREGUARD_PORT = toString services.netbird.port.nb;
+        NB_WIREGUARD_PORT = toString services.netbird.port.wireguard;
         NB_LOG_LEVEL = "info";
         # Establish peer connections on demand instead of full mesh.
         # Requires server-side lazy_connection_enabled in dashboard too.
@@ -133,7 +149,7 @@ in {
     '';
 
     # Open firewall for WireGuard port
-    networking.firewall.allowedUDPPorts = [services.netbird.port.nb];
+    networking.firewall.allowedUDPPorts = [services.netbird.port.wireguard];
 
     # Exclude user interface from NetworkManager and DHCP
     networking.networkmanager.unmanaged = lib.mkAfter [services.netbird.interface];
@@ -142,6 +158,7 @@ in {
     # Allow users to configure DNS via systemd-resolved for VPN.
     # Netbird needs to set DNS servers and routing domains for peer resolution.
     # Same pattern used by OpenVPN's update-systemd-resolved script.
+    # See also: netbird-homelab.nix has a similar rule for the system service.
     security.polkit.extraConfig = ''
       polkit.addRule(function(action, subject) {
         var start = "org.freedesktop.resolve1.";
