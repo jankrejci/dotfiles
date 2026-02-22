@@ -12,7 +12,7 @@
     # Services
     ./acme.nix
     ./dex.nix
-    ./netbird-gateway.nix
+    ./netbird-signal.nix
     ./netbird-server.nix
     ./grafana.nix
     ./immich.nix

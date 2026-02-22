@@ -48,7 +48,7 @@
             to = "admin@krejci.io";
           };
         };
-        netbird-gateway = {
+        netbird-signal = {
           enable = true;
           ip = "192.168.92.3";
           interface = "venet0";
