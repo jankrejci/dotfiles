@@ -70,8 +70,11 @@
         }
         .grid {
           display: grid;
-          grid-template-columns: repeat(4, 160px);
+          grid-template-columns: repeat(auto-fill, minmax(140px, 160px));
+          justify-content: center;
           gap: 1.25rem;
+          width: 100%;
+          max-width: 720px;
         }
         .tile {
           display: flex;
