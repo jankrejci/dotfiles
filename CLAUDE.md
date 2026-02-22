@@ -281,6 +281,21 @@ scripts.nix            # Deployment and utility scripts
 2. Add to `homelab/default.nix` imports
 3. Enable in host definition in `flake/hosts.nix`
 
+## Port and IP Patterns
+
+**Port declaration:** Module options define port types without defaults. All port
+values live in `flake/hosts.nix` host definitions. This enforces a single source
+of truth and makes port conflicts visible at a glance.
+
+**Shared service ports** like `services.https.port` and `services.netbird.port.*`
+are defined in the `services` attrset in `flake/hosts.nix` and referenced by
+modules via `config.homelab.services`.
+
+**IP patterns:**
+- `listenAddresses` on nginx vhosts use dummy service IPs from the 192.168.91-93 ranges
+- `proxyPass` always uses `127.0.0.1` since the backend service runs on localhost
+- These are intentionally different: the service IP is for external routing, localhost is for internal forwarding
+
 ## LoRaWAN Gateway
 
 See `homelab/lorawan-gateway.nix` for full GNSS architecture documentation.
