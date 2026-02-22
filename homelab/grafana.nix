@@ -188,6 +188,13 @@ in {
       settings.server.addr = "127.0.0.1:8083";
     };
 
+    homelab.dashboardEntries = [
+      {
+        name = "Grafana";
+        url = "https://${serverDomain}";
+        icon = ../assets/dashboard-icons/grafana.svg;
+      }
+    ];
 
     homelab.healthChecks = [
       {

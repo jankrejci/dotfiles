@@ -217,6 +217,28 @@
     };
   };
 
+  # Dashboard entry for the homelab landing page.
+  # Services with web UIs register here so the dashboard module
+  # can auto-generate the landing page.
+  dashboardEntry = types.submodule {
+    options = {
+      name = mkOption {
+        type = types.str;
+        description = "Display name for the service";
+      };
+
+      url = mkOption {
+        type = types.str;
+        description = "Full URL to the service";
+      };
+
+      icon = mkOption {
+        type = types.path;
+        description = "Path to SVG icon file";
+      };
+    };
+  };
+
   # Backup job submodule for borg backups
   backupJobModule = types.submodule {
     options = {
@@ -325,6 +347,15 @@ in {
       type = types.listOf healthCheckModule;
       default = [];
       description = "Health checks registered by service modules";
+    };
+
+    # Dashboard entries registered by service modules.
+    # Services with web UIs register here.
+    # The dashboard module collects entries from all hosts.
+    dashboardEntries = mkOption {
+      type = types.listOf dashboardEntry;
+      default = [];
+      description = "Dashboard entries for the homelab landing page";
     };
 
     # Backup configuration.
