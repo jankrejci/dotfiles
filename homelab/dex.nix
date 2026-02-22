@@ -30,12 +30,6 @@
   services = config.homelab.services;
   domain = global.domain;
   dexDomain = "${cfg.subdomain}.${domain}";
-
-  # Dex native telemetry endpoint for Prometheus metrics
-  dexMetricsPort = 5558;
-
-  # WG tunnel IP so vpsfree can proxy dex traffic for pre-enrollment SSO
-  wgIp = config.homelab.tunnel.ip;
 in {
   options.homelab.dex = {
     enable = lib.mkOption {
@@ -49,10 +43,16 @@ in {
       description = "IP address for nginx to listen on";
     };
 
-    port = lib.mkOption {
-      type = lib.types.port;
-      default = 5556;
-      description = "Port for Dex server";
+    port = {
+      dex = lib.mkOption {
+        type = lib.types.port;
+        description = "Port for Dex server";
+      };
+
+      metrics = lib.mkOption {
+        type = lib.types.port;
+        description = "Port for Dex telemetry endpoint";
+      };
     };
 
     subdomain = lib.mkOption {
@@ -143,11 +143,11 @@ in {
         };
 
         web = {
-          http = "127.0.0.1:${toString cfg.port}";
+          http = "127.0.0.1:${toString cfg.port.dex}";
         };
 
         telemetry = {
-          http = "127.0.0.1:${toString dexMetricsPort}";
+          http = "127.0.0.1:${toString cfg.port.metrics}";
         };
 
         # Enable local password database for username/password login
@@ -241,11 +241,11 @@ in {
     # Listens on both VPN service IP and WG tunnel IP so vpsfree can proxy
     # dex traffic for clients that haven't joined the mesh yet.
     services.nginx.virtualHosts.${dexDomain} = {
-      listenAddresses = [cfg.ip wgIp];
+      listenAddresses = [cfg.ip config.homelab.tunnel.ip];
       forceSSL = true;
       useACMEHost = domain;
       locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString cfg.port}";
+        proxyPass = "http://127.0.0.1:${toString cfg.port.dex}";
         recommendedProxySettings = true;
         extraConfig = ''
           # CORS: dashboard SPA fetches OIDC discovery cross-origin
@@ -261,7 +261,7 @@ in {
     };
 
     # Dex metrics via unified metrics proxy
-    services.nginx.virtualHosts."metrics".locations."/metrics/dex".proxyPass = "http://127.0.0.1:${toString dexMetricsPort}/metrics";
+    services.nginx.virtualHosts."metrics".locations."/metrics/dex".proxyPass = "http://127.0.0.1:${toString cfg.port.metrics}/metrics";
 
     homelab.scrapeTargets = [
       {

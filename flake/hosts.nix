@@ -43,6 +43,10 @@
         watchdog = {
           enable = true;
           ip = "192.168.92.2";
+          port = {
+            watchdog = 9095;
+            alertmanager = 9094;
+          };
           email = {
             from = "admin@krejci.io";
             to = "admin@krejci.io";
@@ -57,6 +61,11 @@
         tunnel = {
           enable = true;
           ip = "192.168.99.2";
+          port = {
+            wireguard = 51821;
+            https = 8443;
+            exporter = 9586;
+          };
           server = true;
           peers = ["thinkcenter"];
           proxy = {
@@ -91,31 +100,52 @@
         dex = {
           enable = true;
           ip = "192.168.91.7";
+          port = {
+            dex = 5556;
+            metrics = 5558;
+          };
         };
         grafana = {
           enable = true;
           ip = "192.168.91.2";
+          port = 3000;
         };
         immich = {
           enable = true;
           ip = "192.168.91.1";
+          port = 2283;
         };
         jellyfin = {
           enable = true;
           ip = "192.168.91.3";
+          port = 8096;
         };
-        loki.enable = true;
+        loki = {
+          enable = true;
+          port = {
+            loki = 3100;
+            promtail = 9080;
+          };
+        };
         memos = {
           enable = true;
           ip = "192.168.91.6";
+          port = 5230;
         };
         netbird-server = {
           enable = true;
           ip = "192.168.91.9";
+          port.management = 8011;
+          port.metrics = 9096;
+          port.relayMetrics = 9097;
         };
         ntfy = {
           enable = true;
           ip = "192.168.91.4";
+          port = {
+            ntfy = 2586;
+            metrics = 9091;
+          };
           watchdog = true;
         };
         printer = {
@@ -125,16 +155,26 @@
         immich-public-proxy = {
           enable = true;
           ip = "192.168.91.10";
+          port = 2284;
           tunnel = true;
         };
         prometheus = {
           enable = true;
           ip = "192.168.91.8";
+          port = {
+            prometheus = 9090;
+            alertmanager = 9093;
+          };
           watchdog = true;
         };
         tunnel = {
           enable = true;
           ip = "192.168.99.1";
+          port = {
+            wireguard = 51821;
+            https = 8443;
+            exporter = 9586;
+          };
           peers = ["vpsfree"];
         };
         backup = {
@@ -231,6 +271,7 @@
         octoprint = {
           enable = true;
           ip = "192.168.93.1";
+          port = 5000;
         };
         webcam.enable = true;
       };
@@ -297,7 +338,8 @@
     netbird = {
       interface = "nb0";
       port = {
-        nb = 51820;
+        wireguard = 51820;
+        stun = 3478;
         relay = 33080;
         signal = 8012;
       };

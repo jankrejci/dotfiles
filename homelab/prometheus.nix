@@ -48,10 +48,16 @@ in {
       description = "Subdomain for Prometheus UI";
     };
 
-    port = lib.mkOption {
-      type = lib.types.port;
-      default = 9090;
-      description = "Port for Prometheus server";
+    port = {
+      prometheus = lib.mkOption {
+        type = lib.types.port;
+        description = "Port for Prometheus server";
+      };
+
+      alertmanager = lib.mkOption {
+        type = lib.types.port;
+        description = "Port for Alertmanager";
+      };
     };
 
     watchdog = lib.mkEnableOption "watchdog monitoring for this prometheus instance";
@@ -60,14 +66,6 @@ in {
       type = lib.types.str;
       default = "360d";
       description = "How long to keep metrics data";
-    };
-  };
-
-  options.homelab.alertmanager = {
-    port = lib.mkOption {
-      type = lib.types.port;
-      default = 9093;
-      description = "Port for Alertmanager";
     };
   };
 
@@ -149,7 +147,7 @@ in {
       alertmanagers = [
         {
           static_configs = [
-            {targets = ["127.0.0.1:${toString config.homelab.alertmanager.port}"];}
+            {targets = ["127.0.0.1:${toString cfg.port.alertmanager}"];}
           ];
         }
       ];
@@ -159,7 +157,7 @@ in {
     services.prometheus.alertmanager = {
       enable = true;
       listenAddress = "127.0.0.1";
-      port = config.homelab.alertmanager.port;
+      port = cfg.port.alertmanager;
       configuration = {
         route = {
           receiver = "ntfy-default";
@@ -194,7 +192,7 @@ in {
             inherit name;
             webhook_configs = [
               {
-                url = "http://127.0.0.1:${toString config.homelab.ntfy.port}/grafana-alerts?template=${template}";
+                url = "http://127.0.0.1:${toString config.homelab.ntfy.port.ntfy}/grafana-alerts?template=${template}";
                 send_resolved = true;
                 http_config = {
                   authorization = {
@@ -218,14 +216,14 @@ in {
       forceSSL = true;
       useACMEHost = domain;
       locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString cfg.port}";
+        proxyPass = "http://127.0.0.1:${toString cfg.port.prometheus}";
         proxyWebsockets = true;
         recommendedProxySettings = true;
       };
     };
 
     # Prometheus metrics via unified metrics proxy
-    services.nginx.virtualHosts."metrics".locations."/metrics/prometheus".proxyPass = "http://127.0.0.1:${toString cfg.port}/metrics";
+    services.nginx.virtualHosts."metrics".locations."/metrics/prometheus".proxyPass = "http://127.0.0.1:${toString cfg.port.prometheus}/metrics";
 
     homelab.scrapeTargets = [
       {
@@ -276,6 +274,7 @@ in {
         groups = alertGroups;
       })
     ];
+
 
     # Health check
     homelab.healthChecks = [

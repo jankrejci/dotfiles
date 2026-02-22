@@ -27,10 +27,16 @@ in {
       description = "IP address for nginx to listen on";
     };
 
-    port = lib.mkOption {
-      type = lib.types.port;
-      default = 2586;
-      description = "Port for ntfy server";
+    port = {
+      ntfy = lib.mkOption {
+        type = lib.types.port;
+        description = "Port for ntfy server";
+      };
+
+      metrics = lib.mkOption {
+        type = lib.types.port;
+        description = "Port for Prometheus metrics endpoint";
+      };
     };
 
     subdomain = lib.mkOption {
@@ -58,7 +64,7 @@ in {
       package = pkgs.unstable.ntfy-sh;
       settings = {
         # Listen on 127.0.0.1 only, accessed via nginx proxy (defense in depth)
-        listen-http = "127.0.0.1:${toString cfg.port}";
+        listen-http = "127.0.0.1:${toString cfg.port.ntfy}";
         base-url = "https://${ntfyDomain}";
         # Authentication: read-only by default, publishing requires tokens
         auth-default-access = "read-only";
@@ -67,7 +73,7 @@ in {
         # Template directory for custom webhook formatting
         template-dir = "/var/lib/ntfy-sh/templates";
         # Expose Prometheus metrics on 127.0.0.1 only
-        metrics-listen-http = "127.0.0.1:9091";
+        metrics-listen-http = "127.0.0.1:${toString cfg.port.metrics}";
       };
     };
 
@@ -84,14 +90,14 @@ in {
       forceSSL = true;
       useACMEHost = domain;
       locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString cfg.port}";
+        proxyPass = "http://127.0.0.1:${toString cfg.port.ntfy}";
         proxyWebsockets = true;
         recommendedProxySettings = true;
       };
     };
 
     # Ntfy metrics via unified metrics proxy
-    services.nginx.virtualHosts."metrics".locations."/metrics/ntfy".proxyPass = "http://127.0.0.1:9091/metrics";
+    services.nginx.virtualHosts."metrics".locations."/metrics/ntfy".proxyPass = "http://127.0.0.1:${toString cfg.port.metrics}/metrics";
 
     homelab.scrapeTargets = [
       {
@@ -100,6 +106,9 @@ in {
       }
     ];
 
+    # Bootstrap limitation: NtfyDown alert routes through ntfy itself, so it
+    # cannot fire when ntfy is actually down. The watchdog email path on vpsfree
+    # covers this case independently.
     homelab.alerts.ntfy = [
       {
         alert = "NtfyDown";
@@ -120,6 +129,7 @@ in {
         host = config.homelab.host.hostName;
       }
     ];
+
 
     # Health check
     homelab.healthChecks = [

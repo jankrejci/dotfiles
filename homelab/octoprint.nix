@@ -34,7 +34,6 @@ in {
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 5000;
       description = "Port for OctoPrint server";
     };
 
@@ -137,6 +136,7 @@ in {
         annotations.summary = "OctoPrint is down";
       }
     ];
+
 
     homelab.healthChecks = [
       {
