@@ -93,6 +93,13 @@ in {
 
     # Alert and health check
     {
+      homelab.dashboardEntries = [
+        {
+          name = "Memos";
+          url = "https://${memosDomain}";
+          icon = ../assets/dashboard-icons/memos.svg;
+        }
+      ];
 
       homelab.alerts.memos = [
         {

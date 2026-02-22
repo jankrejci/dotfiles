@@ -226,6 +226,13 @@ in {
         }
       ];
 
+      homelab.dashboardEntries = [
+        {
+          name = "Immich";
+          url = "https://${immichDomain}";
+          icon = ../assets/dashboard-icons/immich.svg;
+        }
+      ];
 
       homelab.healthChecks = [
         {

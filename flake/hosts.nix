@@ -92,6 +92,10 @@
         redis.enable = true;
         # Services
         acme.enable = true;
+        dashboard = {
+          enable = true;
+          ip = "192.168.91.11";
+        };
         healthCheck = {
           enable = true;
           ntfyUrl = "https://ntfy.krejci.io";
