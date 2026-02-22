@@ -161,72 +161,50 @@ Future work: revisit when Netbird adds stable identifiers or setup key groups fe
 
 ## Development Workflow
 
-### Agents and Skills
-
-**Agents** run in isolated contexts for heavy lifting:
-
-| Agent | Role |
-|-------|------|
-| `analyze` | Research codebase, create implementation plan |
-| `develop` | Implement changes according to plan |
-| `verify` | Run checks, test, and review code quality |
-| `deploy` | Deploy to target machine |
-
-**Skills** are user-invoked workflows:
+### Skills
 
 | Skill | Purpose |
 |-------|---------|
 | `/commit` | Create atomic commits with chunk-based staging |
 | `/branch-cleanup` | Squash fixups before merge |
+| `/deploy` | Deploy NixOS config to a target host |
 | `/new-service` | Create homelab service module from template |
 | `/nix-dev` | Develop and debug Nix expressions |
 | `/review-branch` | Review all branch changes against origin/main |
 
-### Token Efficiency
-
-Main agent responsibilities:
-- Quick analysis to understand the task
-- Delegate heavy work to agents
-- Present results to user
-
-Main agent must NOT:
-- Read many files to understand codebase (delegate to analyze)
-- Make multi-file changes directly (delegate to develop)
-
 ### Iterative Workflow
 
 ```
-[1] Clarify → [2] Analyze → [3] Develop → [4] Commit → [5] User Review → [6] Deploy
-                  ↑                            ↓              |
-                  └────────────── fixup ───────┴──────────────┘
+[1] Clarify → [2] Plan → [3] Implement → [4] Commit → [5] Review → [6] Deploy
+                 ↑                           ↓            |
+                 └─────────── fixup ────────┴────────────┘
 ```
 
 **Stage 1: Clarify**
 - Ask questions if requirements are ambiguous
-- For trivial tasks, skip to develop
+- For trivial tasks, skip to implement
 
-**Stage 2: Analyze** (approval required)
-- Invoke `analyze` agent for non-trivial tasks
+**Stage 2: Plan** (approval required)
+- Use plan mode for non-trivial tasks
 - Present plan to user, wait for approval
 
-**Stage 3: Develop**
-- Invoke `develop` agent with approved plan
-- Agent implements ONE logical change
-- Agent runs `nix flake check`
+**Stage 3: Implement**
+- Make ONE logical change
+- Run `nix flake check`
 
 **Stage 4: Commit**
 - Use `/commit` skill or commit directly
 - Create ONE commit for the logical change
 - STOP for user review
 
-**Stage 5: User Review**
+**Stage 5: Review**
 - User reviews with tuicr or similar tool
 - If changes needed → create fixup commit → return to review
 - If approved → continue to next change or deploy
 
 **Stage 6: Deploy** (approval required)
 - Only if user requests
-- Invoke `deploy` agent
+- Use `/deploy <hostname>`
 
 ### Fixup Workflow
 
@@ -244,7 +222,6 @@ git commit --fixup=HEAD
 - Use fixup commits for iterations, not branch reset
 - NEVER batch many commits without user review between them
 - NEVER push to remote
-- Delegate heavy exploration to agents to save main context tokens
 
 ## Scripts
 See `scripts.nix` for available commands. Key ones:
