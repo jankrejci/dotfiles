@@ -20,16 +20,16 @@ in {
       description = "Enable Loki log aggregation";
     };
 
-    port = lib.mkOption {
-      type = lib.types.port;
-      default = 3100;
-      description = "Port for Loki server";
-    };
+    port = {
+      loki = lib.mkOption {
+        type = lib.types.port;
+        description = "Port for Loki server";
+      };
 
-    promtailPort = lib.mkOption {
-      type = lib.types.port;
-      default = 9080;
-      description = "Port for Promtail agent";
+      promtail = lib.mkOption {
+        type = lib.types.port;
+        description = "Port for Promtail agent";
+      };
     };
   };
 
@@ -43,7 +43,7 @@ in {
         auth_enabled = false;
 
         server = {
-          http_listen_port = cfg.port;
+          http_listen_port = cfg.port.loki;
           # 127.0.0.1 only - defense in depth, accessed via Grafana
           http_listen_address = "127.0.0.1";
         };
@@ -109,7 +109,7 @@ in {
       enable = true;
       configuration = {
         server = {
-          http_listen_port = cfg.promtailPort;
+          http_listen_port = cfg.port.promtail;
           http_listen_address = "127.0.0.1";
           # Disable gRPC (not needed, conflicts with loki's default 9095)
           grpc_listen_port = 0;
@@ -120,7 +120,7 @@ in {
 
         # Where to send logs
         clients = [
-          {url = "http://127.0.0.1:${toString cfg.port}/loki/api/v1/push";}
+          {url = "http://127.0.0.1:${toString cfg.port.loki}/loki/api/v1/push";}
         ];
 
         scrape_configs = [
@@ -162,7 +162,7 @@ in {
         name = "Loki";
         type = "loki";
         access = "proxy";
-        url = "http://127.0.0.1:${toString cfg.port}";
+        url = "http://127.0.0.1:${toString cfg.port.loki}";
         # Fixed UID for dashboard references (see CLAUDE.md)
         uid = "loki";
         jsonData = {

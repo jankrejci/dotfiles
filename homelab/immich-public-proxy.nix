@@ -28,7 +28,6 @@ in {
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 2284;
       description = "Port for immich-public-proxy server";
     };
 

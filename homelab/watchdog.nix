@@ -23,8 +23,8 @@
   peerDomain = global.peerDomain;
   watchdogDomain = "${cfg.subdomain}.${domain}";
   metricsPort = toString services.metrics.port;
-  promPort = toString cfg.port;
-  alertmanagerPort = toString cfg.alertmanagerPort;
+  promPort = toString cfg.port.watchdog;
+  alertmanagerPort = toString cfg.port.alertmanager;
 in {
   options.homelab.watchdog = {
     enable = lib.mkOption {
@@ -44,16 +44,16 @@ in {
       description = "Subdomain for watchdog prometheus UI";
     };
 
-    port = lib.mkOption {
-      type = lib.types.port;
-      default = 9095;
-      description = "Port for watchdog prometheus instance";
-    };
+    port = {
+      watchdog = lib.mkOption {
+        type = lib.types.port;
+        description = "Port for watchdog prometheus instance";
+      };
 
-    alertmanagerPort = lib.mkOption {
-      type = lib.types.port;
-      default = 9094;
-      description = "Port for watchdog alertmanager";
+      alertmanager = lib.mkOption {
+        type = lib.types.port;
+        description = "Port for watchdog alertmanager";
+      };
     };
 
     retention = lib.mkOption {
@@ -198,7 +198,7 @@ in {
 
     services.prometheus = {
       enable = true;
-      port = cfg.port;
+      port = cfg.port.watchdog;
       retentionTime = cfg.retention;
       listenAddress = "127.0.0.1";
       extraFlags = ["--web.enable-admin-api"];
@@ -227,7 +227,7 @@ in {
     services.prometheus.alertmanager = {
       enable = true;
       listenAddress = "127.0.0.1";
-      port = cfg.alertmanagerPort;
+      port = cfg.port.alertmanager;
       # Disable clustering since this is a single-node setup.
       # Default cluster port 9094 conflicts with the web listen port.
       extraFlags = ["--cluster.listen-address="];

@@ -36,6 +36,11 @@
 
   wgIp = config.homelab.tunnel.ip;
   certDir = config.security.acme.certs.${domain}.directory;
+
+  # STUN is a stateless protocol that tells a client its public IP:port mapping.
+  # No credentials or data flow through the STUN server. Google operates free
+  # public STUN servers that are the de-facto standard for WebRTC and VPN tools.
+  googleStunUri = "stun:stun.l.google.com:19302";
 in {
   options.homelab.netbird-server = {
     enable = lib.mkOption {
@@ -58,19 +63,16 @@ in {
     port = {
       management = lib.mkOption {
         type = lib.types.port;
-        default = 8011;
         description = "Management API listen port";
       };
 
       metrics = lib.mkOption {
         type = lib.types.port;
-        default = 9096;
         description = "Management metrics listen port";
       };
 
       relayMetrics = lib.mkOption {
         type = lib.types.port;
-        default = 9097;
         description = "Relay metrics listen port";
       };
     };
@@ -204,14 +206,14 @@ in {
         Stuns = [
           {
             Proto = "udp";
-            URI = "stun:stun.l.google.com:19302";
+            URI = googleStunUri;
           }
         ];
 
         # Signal server runs locally, clients reach it via vpsfree proxy
         Signal = {
           Proto = "https";
-          URI = "${apiDomain}:443";
+          URI = "${apiDomain}:${toString services.https.port}";
           Username = "";
           Password = null;
         };
@@ -232,6 +234,7 @@ in {
             AuthorizationEndpoint = "https://${dexDomain}/auth";
             TokenEndpoint = "https://${dexDomain}/token";
             Scope = "openid profile email";
+            # Port 53000 is hardcoded in the Netbird client PKCE callback listener
             RedirectURLs = ["http://localhost:53000"];
             UseIDToken = true;
           };
@@ -352,6 +355,7 @@ in {
         annotations.summary = "Netbird relay server is down";
       }
     ];
+
 
     homelab.healthChecks = [
       {

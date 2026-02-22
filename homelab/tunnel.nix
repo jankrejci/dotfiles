@@ -32,7 +32,7 @@
       PersistentKeepalive = 25;
     }
     // lib.optionalAttrs (peerCfg.server or false) {
-      Endpoint = "wg.${global.domain}:${toString cfg.port}";
+      Endpoint = "wg.${global.domain}:${toString cfg.port.wireguard}";
     };
 in {
   options.homelab.tunnel = {
@@ -47,10 +47,24 @@ in {
       description = "IP address on the tunnel";
     };
 
-    port = lib.mkOption {
-      type = lib.types.port;
-      default = 51821;
-      description = "Port for WireGuard transport";
+    port = {
+      wireguard = lib.mkOption {
+        type = lib.types.port;
+        description = "Port for WireGuard transport";
+      };
+
+      # Internal port where nginx http block listens when the stream SNI proxy
+      # occupies the public HTTPS port. Stream routes unknown domains here for
+      # L7 processing.
+      https = lib.mkOption {
+        type = lib.types.port;
+        description = "Internal port for nginx http block behind SNI proxy";
+      };
+
+      exporter = lib.mkOption {
+        type = lib.types.port;
+        description = "Port for Prometheus wireguard exporter";
+      };
     };
 
     server = lib.mkOption {
@@ -81,7 +95,7 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-    networking.firewall.allowedUDPPorts = [cfg.port];
+    networking.firewall.allowedUDPPorts = [cfg.port.wireguard];
 
     systemd.network.netdevs."50-wg0" = {
       netdevConfig = {
@@ -92,7 +106,7 @@ in {
       };
       wireguardConfig = {
         PrivateKeyFile = privateKeyFile;
-        ListenPort = cfg.port;
+        ListenPort = cfg.port.wireguard;
       };
       wireguardPeers = map mkPeer cfg.peers;
     };
@@ -106,7 +120,7 @@ in {
     # Prometheus exporter for WireGuard metrics
     services.prometheus.exporters.wireguard = {
       enable = true;
-      port = 9586;
+      port = cfg.port.exporter;
       listenAddress = "127.0.0.1";
       openFirewall = false;
     };
@@ -195,7 +209,7 @@ in {
     # loops back to the http block on an internal port for L7 processing.
     # This avoids overlapping 0.0.0.0:443 and service-IP:443 binds
     # which fail on LXC containers.
-    services.nginx.defaultSSLListenPort = lib.mkIf cfg.proxy.enable 8443;
+    services.nginx.defaultSSLListenPort = lib.mkIf cfg.proxy.enable cfg.port.https;
 
     services.nginx.streamConfig = lib.mkIf cfg.proxy.enable (let
       peerName = builtins.head cfg.peers;
@@ -212,15 +226,15 @@ in {
       }
 
       upstream backend_tunnel {
-          server ${backend}:443;
+          server ${backend}:${toString services.https.port};
       }
 
       upstream backend_local {
-          server 127.0.0.1:8443;
+          server 127.0.0.1:${toString cfg.port.https};
       }
 
       server {
-          listen 0.0.0.0:443;
+          listen 0.0.0.0:${toString services.https.port};
           ssl_preread on;
           proxy_pass $tunnel_backend;
           proxy_connect_timeout 5s;

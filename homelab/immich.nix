@@ -61,7 +61,6 @@ in {
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 2283;
       description = "Port for Immich server";
     };
 
@@ -226,6 +225,7 @@ in {
           annotations.summary = "Immich microservices are down";
         }
       ];
+
 
       homelab.healthChecks = [
         {

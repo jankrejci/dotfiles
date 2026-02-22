@@ -35,7 +35,6 @@ in {
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 3000;
       description = "Port for Grafana web interface";
     };
 
@@ -154,7 +153,7 @@ in {
           name = "Prometheus";
           type = "prometheus";
           access = "proxy";
-          url = "http://127.0.0.1:${toString config.homelab.prometheus.port}";
+          url = "http://127.0.0.1:${toString config.homelab.prometheus.port.prometheus}";
           isDefault = true;
           # Fixed UID for dashboard references
           uid = "prometheus";
@@ -188,6 +187,7 @@ in {
       provisionGrafana = true;
       settings.server.addr = "127.0.0.1:8083";
     };
+
 
     homelab.healthChecks = [
       {
