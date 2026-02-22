@@ -33,9 +33,6 @@
     };
   };
 
-  # Point to self-hosted Netbird instance for migration testing
-  homelab.netbird-homelab.managementUrl = "https://api.krejci.io";
-
   homelab.alerts.hosts = [
     {
       alert = "Rpi4Down";

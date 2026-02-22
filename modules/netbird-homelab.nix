@@ -8,21 +8,16 @@
   ...
 }: let
   services = config.homelab.services;
+  global = config.homelab.global;
   clientName = "homelab";
   setupKeyFile = "/var/lib/netbird-${clientName}/setup-key";
   daemonAddr = "unix:///var/run/netbird-${clientName}/sock";
-  managementUrl = config.homelab.netbird-homelab.managementUrl;
-  managementFlag = lib.optionalString (managementUrl != null) "--management-url ${managementUrl}";
+  managementUrl = "https://api.${global.domain}";
 in {
-  options.homelab.netbird-homelab.managementUrl = lib.mkOption {
-    type = lib.types.nullOr lib.types.str;
-    default = null;
-    description = "Self-hosted management URL. Null uses Netbird cloud.";
-  };
-
   config = {
+    services.netbird.package = pkgs.unstable.netbird;
     services.netbird.clients.${clientName} = {
-      port = services.netbird.port.nb;
+      port = services.netbird.port.wireguard;
       interface = services.netbird.interface;
     };
 
@@ -36,6 +31,7 @@ in {
 
     # Allow netbird service to configure DNS via systemd-resolved.
     # Required for peer name resolution via nb.krejci.io domain.
+    # See also: netbird-user.nix has a similar rule for desktop users.
     security.polkit.enable = true;
     security.polkit.extraConfig = ''
       polkit.addRule(function(action, subject) {
@@ -83,7 +79,7 @@ in {
           ${pkgs.unstable.netbird}/bin/netbird up \
             --daemon-addr ${daemonAddr} \
             --hostname ${config.networking.hostName} \
-            ${managementFlag} \
+            --management-url ${managementUrl} \
             --setup-key "$(cat ${setupKeyFile})"
 
           # Only reached after successful enrollment

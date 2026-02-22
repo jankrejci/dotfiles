@@ -89,6 +89,17 @@ pkgs.writeShellScript "script-lib" ''
     echo "$modules" | jq -e 'any(. | tostring; contains("netbird-homelab"))' >/dev/null
   }
 
+  # Get the Netbird management URL for a host from nix config.
+  function get_management_url() {
+    local -r hostname="$1"
+    local url
+    url=$(nix eval --raw ".#nixosConfigurations.$hostname.config.homelab.global.domain" 2>/dev/null) || {
+      error "Failed to evaluate domain for $hostname"
+      exit 1
+    }
+    echo "https://api.$url"
+  }
+
   # Require and validate hostname, echo it on success
   # Usage: local -r hostname=$(require_and_validate_hostname "$@")
   function require_and_validate_hostname() {
@@ -193,12 +204,13 @@ pkgs.writeShellScript "script-lib" ''
     echo -n "$token"
   }
 
-  # Ensure NETBIRD_API_TOKEN is set from agenix secret, environment, or interactive prompt
+  # Ensure NETBIRD_API_TOKEN is set from agenix secret, environment, or interactive prompt.
+  # Usage: require_netbird_token
   function require_netbird_token() {
     [ -n "''${NETBIRD_API_TOKEN:-}" ] && return
 
     local -r master_key="$HOME/.age/master.txt"
-    local -r secret_file="secrets/netbird-api-token.age"
+    local -r secret_file="secrets/netbird-selfhosted-api-token.age"
 
     # Try to decrypt from agenix secret
     if [ -f "$master_key" ] && [ -f "$secret_file" ]; then
@@ -210,12 +222,12 @@ pkgs.writeShellScript "script-lib" ''
       }
       NETBIRD_API_TOKEN="$age_output"
       export NETBIRD_API_TOKEN
-      info "Netbird API token loaded from agenix secret"
+      info "Netbird API token loaded from $secret_file"
       return
     fi
 
     # Fallback to interactive prompt if secret file doesn't exist
-    warn "NETBIRD_API_TOKEN not set and secret file not found"
+    warn "NETBIRD_API_TOKEN not set and $secret_file not found"
     NETBIRD_API_TOKEN=$(ask_for_token "Netbird API token")
     export NETBIRD_API_TOKEN
   }
@@ -295,6 +307,8 @@ pkgs.writeShellScript "script-lib" ''
       exit 1
     }
 
+    local -r api_base=$(get_management_url "$hostname")
+
     require_netbird_token
 
     [ -n "$NETBIRD_API_TOKEN" ] || {
@@ -312,7 +326,7 @@ pkgs.writeShellScript "script-lib" ''
       usage_limit=0
     fi
 
-    info "Generating Netbird setup key for $hostname (type=$key_type, allow_extra_dns=$allow_extra_dns)"
+    info "Generating Netbird setup key for $hostname (type=$key_type, api=$api_base)"
 
     local request_body
     request_body=$(jq -n \
@@ -333,7 +347,7 @@ pkgs.writeShellScript "script-lib" ''
       }')
 
     local api_response
-    if ! api_response=$(curl -s -X POST https://api.netbird.io/api/setup-keys \
+    if ! api_response=$(curl -s -X POST "$api_base/api/setup-keys" \
       -H "Authorization: Token $NETBIRD_API_TOKEN" \
       -H "Content-Type: application/json" \
       --data-raw "$request_body" 2>&1); then

@@ -185,7 +185,7 @@ in {
     enable = true;
     virtualHosts."metrics" = {
       extraConfig = ''
-        allow 100.76.0.0/16;
+        allow ${services.netbird.subnet};
         deny all;
       '';
       locations."/metrics/node" = {
