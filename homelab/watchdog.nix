@@ -2,7 +2,7 @@
 #
 # Runs a separate prometheus instance with email-only alerting to detect when the
 # primary monitoring pipeline (prometheus + ntfy on thinkcenter) goes down.
-# Services enroll via homelab.X.watchdog = true which registers watchdogTargets.
+# Services enroll by setting watchdog = true on their scrapeTarget entry.
 # This module auto-generates up/down alerts for each enrolled service and host.
 #
 # Architecture:
@@ -98,17 +98,19 @@ in {
       config.homelab.hosts
     );
 
-    # Collect watchdog targets from all nixos hosts
-    allWatchdogTargets = lib.flatten (
+    # Collect scrapeTargets with watchdog = true from all hosts
+    allTargets = lib.flatten (
       map (
         name:
-          allConfigs.${name}.config.homelab.watchdogTargets or []
+          map (target: target // {hostName = name;})
+          (lib.filter (t: t.watchdog)
+            (allConfigs.${name}.config.homelab.scrapeTargets or []))
       )
       nixosHostNames
     );
 
     # Unique hosts that have at least one watchdog target
-    watchedHosts = lib.unique (map (t: t.host) allWatchdogTargets);
+    watchedHosts = lib.unique (map (t: t.hostName) allTargets);
 
     # All targets scraped via VPN domain and metrics proxy port
     mkTarget = host: "${host}.${peerDomain}:${metricsPort}";
@@ -127,18 +129,18 @@ in {
           watchedHosts;
       };
 
-      # Group watchdog targets by job name
-      targetsByJob = lib.groupBy (t: t.job) allWatchdogTargets;
+      # Group targets by job name
+      targetsByJob = lib.groupBy (t: t.job) allTargets;
 
-      # Per-job scrape configs
+      # Per-job scrape configs using metricsPath from scrapeTarget
       jobScrapes =
         lib.mapAttrsToList (jobName: targets: {
           job_name = jobName;
-          metrics_path = "/metrics/${jobName}";
+          metrics_path = (builtins.head targets).metricsPath;
           static_configs =
             map (t: {
-              targets = [(mkTarget t.host)];
-              labels = {host = t.host;};
+              targets = [(mkTarget t.hostName)];
+              labels = {host = t.hostName;};
             })
             targets;
         })
@@ -166,17 +168,17 @@ in {
       # Per-service down alert
       serviceAlerts =
         map (t: {
-          alert = "${capitalize t.host}${capitalize t.job}Down";
-          expr = ''up{job="${t.job}",host="${t.host}"} == 0'';
+          alert = "${capitalize t.hostName}${capitalize t.job}Down";
+          expr = ''up{job="${t.job}",host="${t.hostName}"} == 0'';
           for = "5m";
           labels = {
             severity = "critical";
-            host = t.host;
+            host = t.hostName;
             type = "service";
           };
-          annotations.summary = "${t.host} ${t.job} is down";
+          annotations.summary = "${t.hostName} ${t.job} is down";
         })
-        allWatchdogTargets;
+        allTargets;
     in
       hostAlerts ++ serviceAlerts;
   in {
