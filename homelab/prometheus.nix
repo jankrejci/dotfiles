@@ -82,7 +82,7 @@ in {
     # Ntfy token for alertmanager webhook authentication
     age.secrets.ntfy-token = {
       rekeyFile = ../secrets/ntfy-token.age;
-      owner = "prometheus";
+      owner = "alertmanager";
     };
 
     # Register IP for services dummy interface
