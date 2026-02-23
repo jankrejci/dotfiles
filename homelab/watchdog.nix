@@ -7,7 +7,7 @@
 #
 # Architecture:
 # - Scrapes node exporter + watchdog-enrolled jobs from enrolled hosts
-# - Alerts via email through Protonmail Bridge (no ntfy dependency)
+# - Alerts via email through Protonmail SMTP (no ntfy dependency)
 # - Short retention since this is purely for alerting, not dashboards
 {
   config,
@@ -66,7 +66,7 @@ in {
       # Standard SMTP term for the relay that handles outbound mail
       smarthost = lib.mkOption {
         type = lib.types.str;
-        default = "127.0.0.1:1025";
+        default = "smtp.protonmail.ch:587";
         description = "SMTP smarthost in host:port format";
       };
 
@@ -182,10 +182,10 @@ in {
     in
       hostAlerts ++ serviceAlerts;
   in {
-    # SMTP password for Protonmail Bridge authentication
-    age.secrets.smtp-token = {
-      rekeyFile = ../secrets/smtp-token.age;
-      owner = "prometheus";
+    # SMTP password for Protonmail SMTP submission
+    age.secrets.watchdog-smtp-token = {
+      rekeyFile = ../secrets/watchdog-smtp-token.age;
+      owner = "alertmanager";
     };
 
     # Register IP for services dummy interface
@@ -238,9 +238,7 @@ in {
           smtp_smarthost = cfg.email.smarthost;
           smtp_from = cfg.email.from;
           smtp_auth_username = cfg.email.from;
-          smtp_auth_password_file = config.age.secrets.smtp-token.path;
-          # Protonmail Bridge on localhost handles TLS upstream
-          smtp_require_tls = false;
+          smtp_auth_password_file = config.age.secrets.watchdog-smtp-token.path;
         };
         route = {
           receiver = "email";
