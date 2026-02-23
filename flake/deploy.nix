@@ -13,7 +13,7 @@
   # Overlay that provides deploy-rs lib using cached nixpkgs binaries.
   # Without this, deploy-rs builds from source via QEMU for aarch64.
   deployRsOverlay = final: _prev: let
-    pkgs = import inputs.nixpkgs {inherit (final) system;};
+    pkgs = import inputs.nixpkgs {system = final.stdenv.hostPlatform.system;};
   in {
     deploy-rs = {
       inherit (pkgs) deploy-rs;
