@@ -390,6 +390,23 @@
       "targets": [{"expr": "node_systemd_unit_state{name=\"ipp-usb.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "IPP-USB", "type": "stat"
     },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "Down"}, "1": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 3, "w": 2, "x": 18, "y": 13}, "id": 300,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "up{job=\"watchdog\"}", "refId": "A"}],
+      "title": "Watchdog", "type": "stat"
+    },
 
     {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 16}, "id": 40, "panels": [], "title": "Backups", "type": "row"},
     {
