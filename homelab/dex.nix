@@ -146,6 +146,8 @@ in {
           http = "127.0.0.1:${toString cfg.port.dex}";
         };
 
+        frontend.theme = "dark";
+
         telemetry = {
           http = "127.0.0.1:${toString cfg.port.metrics}";
         };
