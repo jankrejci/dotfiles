@@ -169,6 +169,11 @@
             alertmanager = 9093;
           };
         };
+        vaultwarden = {
+          enable = true;
+          ip = "192.168.91.12";
+          port = 8222;
+        };
         tunnel = {
           enable = true;
           ip = "192.168.99.1";

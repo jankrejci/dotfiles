@@ -27,6 +27,7 @@
     ./printer.nix
     ./prometheus.nix
     ./tunnel.nix
+    ./vaultwarden.nix
     ./watchdog.nix
     ./webcam.nix
 
