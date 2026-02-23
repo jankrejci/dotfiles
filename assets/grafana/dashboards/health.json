@@ -108,7 +108,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 5, "x": 0, "y": 5}, "id": 11,
+      "gridPos": {"h": 3, "w": 4, "x": 0, "y": 5}, "id": 11,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "node_systemd_unit_state{name=\"jellyfin.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Jellyfin", "type": "stat"
@@ -125,7 +125,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 5, "x": 5, "y": 5}, "id": 12,
+      "gridPos": {"h": 3, "w": 4, "x": 4, "y": 5}, "id": 12,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "node_systemd_unit_state{name=\"immich-server.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Immich", "type": "stat"
@@ -142,7 +142,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 5, "x": 10, "y": 5}, "id": 13,
+      "gridPos": {"h": 3, "w": 4, "x": 8, "y": 5}, "id": 13,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "node_systemd_unit_state{name=\"memos.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Memos", "type": "stat"
@@ -159,10 +159,27 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 5, "x": 15, "y": 5}, "id": 14,
+      "gridPos": {"h": 3, "w": 4, "x": 12, "y": 5}, "id": 14,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "up{job=\"octoprint\"}", "refId": "A"}],
       "title": "Octoprint", "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "Down"}, "1": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 3, "w": 4, "x": 16, "y": 5}, "id": 15,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "node_systemd_unit_state{name=\"vaultwarden.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
+      "title": "Vaultwarden", "type": "stat"
     },
 
     {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 8}, "id": 20, "panels": [], "title": "Monitoring", "type": "row"},
@@ -473,8 +490,40 @@
       "targets": [{"expr": "(time() - borg_backup_last_success_timestamp{name=\"memos\",target=\"remote\"}) / 3600", "refId": "A"}],
       "title": "Memos Remote", "type": "stat"
     },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "description": "Hours since last successful backup completed.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [{"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-green", "value": null}, {"color": "yellow", "value": 25}, {"color": "dark-red", "value": 48}]},
+          "unit": "h"
+        }
+      },
+      "gridPos": {"h": 3, "w": 5, "x": 0, "y": 20}, "id": 45,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "(time() - borg_backup_last_success_timestamp{name=\"vaultwarden\",target=\"local\"}) / 3600", "refId": "A"}],
+      "title": "Vaultwarden Local", "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "description": "Hours since last successful backup completed.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [{"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-green", "value": null}, {"color": "yellow", "value": 25}, {"color": "dark-red", "value": 48}]},
+          "unit": "h"
+        }
+      },
+      "gridPos": {"h": 3, "w": 5, "x": 5, "y": 20}, "id": 46,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "(time() - borg_backup_last_success_timestamp{name=\"vaultwarden\",target=\"remote\"}) / 3600", "refId": "A"}],
+      "title": "Vaultwarden Remote", "type": "stat"
+    },
 
-    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 20}, "id": 50, "panels": [], "title": "Immich", "type": "row"},
+    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 23}, "id": 50, "panels": [], "title": "Immich", "type": "row"},
     {
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "fieldConfig": {
@@ -489,13 +538,13 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-grey", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 2, "w": 20, "x": 0, "y": 21}, "id": 51,
+      "gridPos": {"h": 2, "w": 20, "x": 0, "y": 24}, "id": 51,
       "options": {"showValue": "never", "alignValue": "center", "mergeValues": true, "rowHeight": 0.9, "legend": {"showLegend": false}},
       "targets": [{"expr": "up{job=\"immich\"}", "legendFormat": " ", "refId": "A"}],
       "title": "", "type": "state-timeline"
     },
 
-    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 23}, "id": 60, "panels": [], "title": "Jellyfin", "type": "row"},
+    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 26}, "id": 60, "panels": [], "title": "Jellyfin", "type": "row"},
     {
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "fieldConfig": {
@@ -510,7 +559,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-grey", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 2, "w": 20, "x": 0, "y": 24}, "id": 61,
+      "gridPos": {"h": 2, "w": 20, "x": 0, "y": 27}, "id": 61,
       "options": {"showValue": "never", "alignValue": "center", "mergeValues": true, "rowHeight": 0.9, "legend": {"showLegend": false}},
       "targets": [{"expr": "node_systemd_unit_state{name=\"jellyfin.service\",state=\"active\",host=\"thinkcenter\"}", "legendFormat": " ", "refId": "A"}],
       "title": "", "type": "state-timeline"
