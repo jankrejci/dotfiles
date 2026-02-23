@@ -159,6 +159,14 @@ in {
           uid = "prometheus";
         }
         {
+          name = "Watchdog";
+          type = "prometheus";
+          access = "proxy";
+          url = "https://watchdog.${domain}";
+          # Fixed UID for dashboard references
+          uid = "watchdog";
+        }
+        {
           name = "Binance";
           type = "yesoreyeram-infinity-datasource";
           access = "proxy";
