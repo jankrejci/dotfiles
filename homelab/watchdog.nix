@@ -291,6 +291,14 @@ in {
       }
     ];
 
+    homelab.dashboardEntries = [
+      {
+        name = "Watchdog";
+        url = "https://${watchdogDomain}";
+        icon = ../assets/dashboard-icons/watchdog.svg;
+      }
+    ];
+
     homelab.healthChecks = [
       {
         name = "Watchdog Prometheus";
