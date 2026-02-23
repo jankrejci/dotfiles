@@ -60,8 +60,6 @@ in {
       };
     };
 
-    watchdog = lib.mkEnableOption "watchdog monitoring for this prometheus instance";
-
     retention = lib.mkOption {
       type = lib.types.str;
       default = "360d";
@@ -229,14 +227,7 @@ in {
       {
         job = "prometheus";
         metricsPath = "/metrics/prometheus";
-      }
-    ];
-
-    # Register with external watchdog when enabled
-    homelab.watchdogTargets = lib.optionals cfg.watchdog [
-      {
-        job = "prometheus";
-        host = myHostName;
+        watchdog = true;
       }
     ];
 

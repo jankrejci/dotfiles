@@ -150,7 +150,6 @@
             ntfy = 2586;
             metrics = 9091;
           };
-          watchdog = true;
         };
         printer = {
           enable = true;
@@ -169,7 +168,6 @@
             prometheus = 9090;
             alertmanager = 9093;
           };
-          watchdog = true;
         };
         tunnel = {
           enable = true;

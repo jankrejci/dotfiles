@@ -44,8 +44,6 @@ in {
       default = "ntfy";
       description = "Subdomain for ntfy";
     };
-
-    watchdog = lib.mkEnableOption "watchdog monitoring for this ntfy instance";
   };
 
   config = lib.mkIf cfg.enable {
@@ -103,6 +101,7 @@ in {
       {
         job = "ntfy";
         metricsPath = "/metrics/ntfy";
+        watchdog = true;
       }
     ];
 
@@ -119,14 +118,6 @@ in {
           type = "service";
         };
         annotations.summary = "Ntfy notification service is down";
-      }
-    ];
-
-    # Register with external watchdog when enabled
-    homelab.watchdogTargets = lib.optionals cfg.watchdog [
-      {
-        job = "ntfy";
-        host = config.homelab.host.hostName;
       }
     ];
 
