@@ -46,6 +46,7 @@ in {
         masterOverlay
         immichOverlay
         (import ../pkgs/netbird-ui-white-icons.nix)
+        (import ../pkgs/memos-update.nix)
         inputs.agenix-rekey.overlays.default
       ];
     };

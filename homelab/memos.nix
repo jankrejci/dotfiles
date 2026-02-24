@@ -62,7 +62,7 @@ in {
       };
 
       # Memos service with PostgreSQL backend
-      # Use unstable memos to fix PostgreSQL reactions bug in 0.25.2
+      # Override to 0.26.1 for moe-memos Android client compatibility
       services.memos = {
         enable = true;
         package = pkgs.unstable.memos;
@@ -71,6 +71,8 @@ in {
           MEMOS_PORT = toString cfg.port;
           MEMOS_DRIVER = "postgres";
           MEMOS_DSN = "postgresql:///memos?host=/run/postgresql";
+          # 0.26.x requires explicit data dir, no longer has a built-in default
+          MEMOS_DATA = "/var/lib/memos";
         };
       };
 
