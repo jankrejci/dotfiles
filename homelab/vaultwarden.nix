@@ -70,11 +70,25 @@ in {
           ROCKET_PORT = cfg.port;
           DOMAIN = "https://${vaultDomain}";
           DATABASE_URL = "postgresql:///vaultwarden?host=/run/postgresql";
+
+          # Security: disable public signups and invitations
           SIGNUPS_ALLOWED = false;
           INVITATIONS_ALLOWED = false;
           SHOW_PASSWORD_HINT = false;
+
+          # Emergency access: allow trusted users to request vault access
+          EMERGENCY_ACCESS_ALLOWED = true;
+
+          # Rate limiting: prevent brute force attacks
+          LOGIN_RATELIMIT_SECONDS = 60;
+          LOGIN_RATELIMIT_MAX_BURST = 10;
+          ADMIN_RATELIMIT_SECONDS = 300;
+          ADMIN_RATELIMIT_MAX_BURST = 3;
+
+          # Reverse proxy: trust X-Real-IP header for rate limiting
+          IP_HEADER = "X-Real-IP";
         };
-        # Contains ADMIN_TOKEN for the /admin panel
+        # Contains: ADMIN_TOKEN, SSO_*, SMTP_*
         environmentFile = config.age.secrets.vaultwarden-env.path;
       };
 
