@@ -130,6 +130,17 @@ in {
       };
     };
 
+    # Prevent systemd-networkd from deleting Netbird's routing rules.
+    # systemd-networkd deletes "foreign" routing rules on restart, which happens
+    # after suspend/resume. This breaks Netbird's fwmark-based routing.
+    # See: https://github.com/netbirdio/netbird/issues/4578
+    environment.etc."systemd/networkd.conf.d/10-netbird.conf".text = ''
+      [Network]
+      ManageForeignRoutes=false
+      ManageForeignRoutingPolicyRules=false
+      ManageForeignNextHops=false
+    '';
+
     environment.systemPackages = [
       netbirdUser
       netbirdUserUI
