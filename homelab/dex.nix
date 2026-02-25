@@ -102,6 +102,10 @@ in {
       rekeyFile = ../secrets/dex-jellyfin-secret.age;
       owner = "dex";
     };
+    age.secrets.dex-vaultwarden-secret = {
+      rekeyFile = ../secrets/dex-vaultwarden-secret.age;
+      owner = "dex";
+    };
     # Netbird client is public (SPA), no secret needed
 
     # Register IP for services dummy interface
@@ -216,6 +220,12 @@ in {
             name = "Jellyfin";
             redirectURIs = ["https://jellyfin.${domain}/sso/OID/redirect/Dex"];
             secretFile = config.age.secrets.dex-jellyfin-secret.path;
+          }
+          {
+            id = "vaultwarden";
+            name = "Vaultwarden";
+            redirectURIs = ["https://vault.${domain}/identity/connect/oidc-signin"];
+            secretFile = config.age.secrets.dex-vaultwarden-secret.path;
           }
           {
             id = "netbird";
