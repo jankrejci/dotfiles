@@ -71,7 +71,8 @@ in {
           DOMAIN = "https://${vaultDomain}";
           DATABASE_URL = "postgresql:///vaultwarden?host=/run/postgresql";
 
-          # Security: disable public signups and invitations
+          # Security: SSO-only login, no public signups or invitations
+          SSO_ONLY = true;
           SIGNUPS_ALLOWED = false;
           INVITATIONS_ALLOWED = false;
           SHOW_PASSWORD_HINT = false;
