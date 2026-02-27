@@ -2,7 +2,8 @@
 #
 # - Bitwarden-compatible server with PostgreSQL backend
 # - VPN-only access, clients cache vault locally for offline use
-# - Admin panel protected by ADMIN_TOKEN in agenix secret
+# - Admin panel protected by ADMIN_TOKEN loaded via _FILE reference
+# - Secrets loaded from individual agenix files via Vaultwarden's _FILE suffix
 {
   config,
   lib,
@@ -71,8 +72,16 @@ in {
           DOMAIN = "https://${vaultDomain}";
           DATABASE_URL = "postgresql:///vaultwarden?host=/run/postgresql";
 
-          # Security: SSO-only login, no public signups or invitations
+          ADMIN_TOKEN_FILE = config.age.secrets.vaultwarden-admin-token.path;
+
+          # SSO via Dex, no email/password login
+          SSO_ENABLED = true;
           SSO_ONLY = true;
+          SSO_AUTHORITY = "https://dex.${domain}";
+          SSO_CLIENT_ID = "vaultwarden";
+          SSO_CLIENT_SECRET_FILE = config.age.secrets.vaultwarden-sso-secret.path;
+
+          # Security: no public signups or invitations
           SIGNUPS_ALLOWED = false;
           INVITATIONS_ALLOWED = false;
           SHOW_PASSWORD_HINT = false;
@@ -88,18 +97,33 @@ in {
 
           # Reverse proxy: trust X-Real-IP header for rate limiting
           IP_HEADER = "X-Real-IP";
+
+          # Email notifications and 2FA delivery
+          SMTP_HOST = "smtp.protonmail.ch";
+          SMTP_PORT = 587;
+          SMTP_SECURITY = "starttls";
+          SMTP_FROM = "admin@${domain}";
+          SMTP_FROM_NAME = "Vaultwarden";
+          SMTP_USERNAME = "admin@${domain}";
+          SMTP_PASSWORD_FILE = config.age.secrets.vaultwarden-smtp-password.path;
         };
-        # Contains: ADMIN_TOKEN, SSO_*, SMTP_*
-        environmentFile = config.age.secrets.vaultwarden-env.path;
       };
 
       # Ensure vaultwarden starts after PostgreSQL
       systemd.services.vaultwarden.after = ["postgresql.service"];
       systemd.services.vaultwarden.requires = ["postgresql.service"];
 
-      # Agenix secret for admin token
-      age.secrets.vaultwarden-env = {
-        rekeyFile = ../secrets/vaultwarden-env.age;
+      age.secrets.vaultwarden-admin-token = {
+        rekeyFile = ../secrets/vaultwarden-admin-token.age;
+        owner = "vaultwarden";
+      };
+      age.secrets.vaultwarden-sso-secret = {
+        rekeyFile = ../secrets/dex-vaultwarden-secret.age;
+        owner = "vaultwarden";
+      };
+      age.secrets.vaultwarden-smtp-password = {
+        rekeyFile = ../secrets/vaultwarden-smtp-password.age;
+        owner = "vaultwarden";
       };
 
       # Nginx reverse proxy with websocket support for live sync
