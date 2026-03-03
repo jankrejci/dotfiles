@@ -11,12 +11,58 @@
 # Why Dex over alternatives:
 # - Authentik: 700MB+ RAM, memory leaks, breaking upgrades, multiple CVEs
 # - Keycloak: 1GB+ RAM, overkill for homelab
-# - Zitadel: Good but NixOS module has PostgreSQL bugs
+# - Zitadel: see detailed evaluation below
+# - Kanidm: declarative OIDC clients but no upstream IdP federation, so no
+#   Google OAuth. Dealbreaker until upstream adds it.
+# - Authelia: certified OIDC provider with sessions, but no NixOS module.
+#   Pairing with LLDAP adds user management. Worth revisiting if a NixOS
+#   module appears.
 # - Dex: ~100MB RAM, stable NixOS module, simple YAML config
 #
+# Known limitations of Dex:
+# - No SSO sessions. Each service login triggers full re-authentication.
+#   Open issue since 2015, still unmerged.
+# - No user management UI. staticPasswords in YAML is the only local option.
+# - No session persistence or "remember me" cookie.
+#
 # Dex is a lightweight proxy, not a user database. User management happens in
-# upstream providers. If that becomes painful, migrate to Zitadel since OIDC
-# is standardized and services don't care which broker they use.
+# upstream providers.
+#
+# Adding LLDAP behind Dex as an LDAP connector would solve user management
+# with a web UI, but does nothing for session persistence. Session persistence
+# requires the OIDC provider itself to maintain sessions, which Dex refuses
+# to do by design.
+#
+# Zitadel evaluation (2026-03, branch jkr/zitadel):
+#
+# Zitadel provides true SSO sessions, admin console, user management, and
+# Google OAuth as upstream IdP. A full prototype was built: module with
+# service, nginx, postgres, OpenTofu-based OIDC app provisioning, and all
+# services switched over.
+#
+# Fundamental problem: Zitadel auto-generates client IDs and secrets when
+# OIDC apps are created via API. They cannot be predetermined or set to
+# custom values. The steps.yaml bootstrap config only supports creating
+# instances, orgs, and users, not OIDC applications. This means credentials
+# are only known after Zitadel is running and apps are created via the
+# Management API.
+#
+# Approaches explored and rejected:
+# - Two-phase deployment: deploy Zitadel, run setup script, get credentials,
+#   update config, redeploy. Unacceptable for nixos-install workflow.
+# - Systemd oneshot after boot: creates apps via API, writes credentials to
+#   files, services read at runtime. Works but every service needs runtime
+#   credential injection, the Netbird dashboard bakes client ID into a static
+#   derivation at build time, and the whole approach fights NixOS declarative
+#   model where config should be known at build time.
+# - OpenTofu as systemd service: same problems plus heavy runtime dependency.
+#
+# Dex works because client IDs are static strings in config and secrets are
+# pre-generated in agenix. Everything is fully declarative and known at build
+# time. This is the correct model for NixOS.
+#
+# Revisit Zitadel if upstream adds declarative client provisioning via
+# steps.yaml or allows setting custom client IDs and secrets via API.
 #
 # Local password database is enabled for fallback access when Google is down.
 {
