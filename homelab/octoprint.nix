@@ -13,7 +13,9 @@
   global = config.homelab.global;
   services = config.homelab.services;
   domain = global.domain;
+  allHosts = config.homelab.hosts;
   serverDomain = "${cfg.subdomain}.${domain}";
+  dexDomain = "${config.homelab.dex.subdomain}.${domain}";
 
   mkObicoPlugin = ps:
     ps.callPackage ../pkgs/octoprint-obico.nix {};
@@ -49,10 +51,47 @@ in {
     homelab.serviceIPs = [cfg.ip];
     networking.hosts.${cfg.ip} = [serverDomain];
 
+    # Resolve Dex domain to its VPN service IP so oauth2-proxy talks to
+    # thinkcenter directly over the mesh instead of routing through vpsfree.
+    networking.hosts.${allHosts.thinkcenter.homelab.dex.ip} = [dexDomain];
+
+    # oauth2-proxy environment file with client secret and cookie secret
+    age.secrets.oauth2-proxy-env = {
+      rekeyFile = ../secrets/oauth2-proxy-env.age;
+      owner = "oauth2-proxy";
+    };
+
     # Allow HTTPS on VPN interface
     networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [
       services.https.port
     ];
+
+    # OctoPrint has no native OIDC support, so oauth2-proxy acts as an
+    # authentication gateway. It intercepts all requests via nginx auth_request,
+    # authenticates users through Dex, and passes the verified email to
+    # OctoPrint as REMOTE_USER header for automatic session creation.
+    services.oauth2-proxy = {
+      enable = true;
+      provider = "oidc";
+      clientID = "octoprint";
+      keyFile = config.age.secrets.oauth2-proxy-env.path;
+      redirectURL = "https://${serverDomain}/oauth2/callback";
+      oidcIssuerUrl = "https://${dexDomain}";
+      reverseProxy = true;
+      setXauthrequest = true;
+      email.domains = ["*"];
+      scope = "openid email profile";
+      cookie.secure = true;
+      extraConfig = {
+        # Skip the "click to sign in" intermediate page
+        skip-provider-button = true;
+        code-challenge-method = "S256";
+      };
+      nginx = {
+        domain = serverDomain;
+        virtualHosts.${serverDomain} = {};
+      };
+    };
 
     services.octoprint = {
       enable = true;
@@ -64,6 +103,15 @@ in {
         (mkPrometheusPlugin ps)
       ];
       extraConfig = {
+        # Safe to trust REMOTE_USER because nginx auth_request blocks all
+        # unauthenticated requests before they reach OctoPrint. Without a
+        # valid Dex session, oauth2-proxy returns 401 and nginx redirects
+        # to login. First login auto-creates a non-admin user that must be
+        # promoted manually once.
+        accessControl = {
+          trustRemoteUser = true;
+          addRemoteUsers = true;
+        };
         webcam = {
           # Use nginx-proxied URLs so browser can access the stream
           stream = "/webcam/stream";
@@ -99,6 +147,11 @@ in {
           proxyPass = "http://127.0.0.1:${toString cfg.port}";
           proxyWebsockets = true;
           recommendedProxySettings = true;
+          extraConfig = ''
+            # Forward authenticated email to OctoPrint for SSO login.
+            # $email is set by the oauth2-proxy nginx module via auth_request_set.
+            proxy_set_header REMOTE_USER $email;
+          '';
         };
         # Webcam proxy config from webcam module
         locations."/webcam/" = config.homelab.webcam.nginxLocation;
