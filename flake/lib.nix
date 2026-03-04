@@ -36,6 +36,10 @@
         agePlugins = [];
       };
     })
+    # Track flake revision so deploy timestamp updates on every config change
+    ({...}: {
+      system.configurationRevision = inputs.self.rev or inputs.self.dirtyRev or "dirty";
+    })
     ../modules # Base system modules
     ../homelab # Service modules with enable pattern
     ../users/admin.nix
