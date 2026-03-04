@@ -32,7 +32,7 @@
   domain = global.domain;
   apiDomain = "api.${domain}";
   dashboardDomain = "${cfg.subdomain}.${domain}";
-  dexDomain = "dex.${domain}";
+  dexDomain = "${config.homelab.dex.subdomain}.${domain}";
 
   wgIp = config.homelab.tunnel.ip;
   certDir = config.security.acme.certs.${domain}.directory;

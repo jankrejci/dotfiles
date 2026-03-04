@@ -13,6 +13,7 @@
   global = config.homelab.global;
   services = config.homelab.services;
   domain = global.domain;
+  dexDomain = "${config.homelab.dex.subdomain}.${domain}";
   serverDomain = "${cfg.subdomain}.${domain}";
 
   # Build JMESPath expression for admin role assignment based on email
@@ -122,9 +123,9 @@ in {
           client_id = "grafana";
           client_secret = "$__file{${config.age.secrets.grafana-dex-secret.path}}";
           scopes = "openid email profile";
-          auth_url = "https://dex.${domain}/auth";
-          token_url = "https://dex.${domain}/token";
-          api_url = "https://dex.${domain}/userinfo";
+          auth_url = "https://${dexDomain}/auth";
+          token_url = "https://${dexDomain}/token";
+          api_url = "https://${dexDomain}/userinfo";
           allow_sign_up = true;
           # Use email as login identifier
           login_attribute_path = "email";

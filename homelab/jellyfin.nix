@@ -25,6 +25,7 @@
   services = config.homelab.services;
   domain = global.domain;
   jellyfinDomain = "${cfg.subdomain}.${domain}";
+  dexDomain = "${config.homelab.dex.subdomain}.${domain}";
 
   # SSO configuration paths
   ssoConfigPath = "/var/lib/jellyfin/plugins/configurations/SSO-Auth.xml";
@@ -33,7 +34,7 @@
   # SSO config template with placeholders for runtime substitution
   ssoConfigTemplate = pkgs.substitute {
     src = ../assets/jellyfin/sso-config-template.xml;
-    substitutions = ["--replace-fail" "@DEX_ENDPOINT@" "https://dex.${domain}"];
+    substitutions = ["--replace-fail" "@DEX_ENDPOINT@" "https://${dexDomain}"];
   };
 
   # Branding config hides native login, SSO button injected via nginx

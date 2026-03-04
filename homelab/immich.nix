@@ -15,6 +15,7 @@
   services = config.homelab.services;
   domain = global.domain;
   immichDomain = "${cfg.subdomain}.${domain}";
+  dexDomain = "${config.homelab.dex.subdomain}.${domain}";
   httpsPort = services.https.port;
 
   # Internal metrics ports for exporters
@@ -32,7 +33,7 @@
   immichOAuthConfigTemplate = pkgs.writeText "immich-oauth-template.json" (builtins.toJSON {
     oauth = {
       enabled = true;
-      issuerUrl = "https://dex.${domain}";
+      issuerUrl = "https://${dexDomain}";
       clientId = "immich";
       clientSecret = "@IMMICH_OAUTH_CLIENT_SECRET@";
       scope = "openid email profile";

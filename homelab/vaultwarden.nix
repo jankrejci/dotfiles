@@ -15,6 +15,7 @@
   services = config.homelab.services;
   domain = global.domain;
   vaultDomain = "${cfg.subdomain}.${domain}";
+  dexDomain = "${config.homelab.dex.subdomain}.${domain}";
 in {
   options.homelab.vaultwarden = {
     enable = lib.mkOption {
@@ -77,7 +78,7 @@ in {
           # SSO via Dex, no email/password login
           SSO_ENABLED = true;
           SSO_ONLY = true;
-          SSO_AUTHORITY = "https://dex.${domain}";
+          SSO_AUTHORITY = "https://${dexDomain}";
           SSO_CLIENT_ID = "vaultwarden";
           SSO_CLIENT_SECRET_FILE = config.age.secrets.vaultwarden-sso-secret.path;
 
