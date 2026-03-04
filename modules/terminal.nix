@@ -81,7 +81,8 @@
 
     shellAliases = {
       ll = "ls -l";
-      lt = "exa -T -L2";
+      le = "eza --git-ignore -l -sName --group-directories-first";
+      lt = "le -T";
       g = "git";
       cd = "z";
       sc = "systemctl";
