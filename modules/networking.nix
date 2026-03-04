@@ -110,8 +110,6 @@ in {
     # Connection timeout and retry settings
     settings = {
       main = {
-        # Don't modify resolv.conf directly
-        rc-manager = "resolvconf";
         # Faster connection establishment
         dhcp = "dhclient";
       };
