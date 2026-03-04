@@ -152,6 +152,10 @@ in {
       rekeyFile = ../secrets/dex-vaultwarden-secret.age;
       owner = "dex";
     };
+    age.secrets.dex-octoprint-secret = {
+      rekeyFile = ../secrets/dex-octoprint-secret.age;
+      owner = "dex";
+    };
     # Netbird client is public (SPA), no secret needed
 
     # Register IP for services dummy interface
@@ -272,6 +276,12 @@ in {
             name = "Vaultwarden";
             redirectURIs = ["https://vault.${domain}/identity/connect/oidc-signin"];
             secretFile = config.age.secrets.dex-vaultwarden-secret.path;
+          }
+          {
+            id = "octoprint";
+            name = "OctoPrint";
+            redirectURIs = ["https://octoprint.${domain}/oauth2/callback"];
+            secretFile = config.age.secrets.dex-octoprint-secret.path;
           }
           {
             id = "netbird";
