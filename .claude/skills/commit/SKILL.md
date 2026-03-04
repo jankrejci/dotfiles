@@ -72,6 +72,7 @@ Interactive patch mode (`git add -p`) commands:
 
 - One logical change per commit
 - Separate unrelated changes into different commits
+- AI/tooling config (`.claude/`, `CLAUDE.md`) gets its own commit, never bundled with code
 - NEVER push to remote
 - NEVER use --amend unless explicitly requested
 - NEVER skip nix flake check
