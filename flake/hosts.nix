@@ -70,7 +70,7 @@
           peers = ["thinkcenter"];
           proxy = {
             enable = true;
-            domains = ["share.krejci.io" "dex.krejci.io"];
+            domains = ["share.krejci.io" "auth.krejci.io"];
           };
         };
       };

@@ -103,7 +103,7 @@ in {
 
     subdomain = lib.mkOption {
       type = lib.types.str;
-      default = "dex";
+      default = "auth";
       description = "Subdomain for Dex";
     };
   };
