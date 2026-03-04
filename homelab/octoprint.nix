@@ -61,6 +61,12 @@ in {
       owner = "oauth2-proxy";
     };
 
+    # OctoPrint API key for prometheus metrics scraping
+    age.secrets.octoprint-metrics-api-key = {
+      rekeyFile = ../secrets/octoprint-metrics-api-key.age;
+      owner = "nginx";
+    };
+
     # Allow HTTPS on VPN interface
     networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [
       services.https.port
@@ -131,6 +137,14 @@ in {
     # Wait for services interface before binding
     systemd.services.nginx.after = ["sys-subsystem-net-devices-services.device"];
 
+    # Generate nginx snippet with OctoPrint metrics API key at runtime so the
+    # key stays out of the nix store and git history.
+    systemd.services.nginx.preStart = lib.mkBefore ''
+      mkdir -p /run/nginx
+      key=$(cat "${config.age.secrets.octoprint-metrics-api-key.path}")
+      echo "proxy_set_header X-Api-Key \"$key\";" > /run/nginx/octoprint-api-key.conf
+    '';
+
     services.nginx = {
       enable = true;
       virtualHosts.${serverDomain} = {
@@ -158,11 +172,11 @@ in {
       };
       # OctoPrint metrics via unified metrics proxy
       # Dedicated prometheus user with only PLUGIN_PROMETHEUS_EXPORTER_SCRAPE permission
-      # TODO: add setup-octoprint-metrics script to recreate this key if needed
+      # Metrics API key is managed via agenix secret octoprint-metrics-api-key
       virtualHosts."metrics".locations."/metrics/octoprint" = {
         proxyPass = "http://127.0.0.1:${toString cfg.port}/plugin/prometheus_exporter/metrics";
         extraConfig = ''
-          proxy_set_header X-Api-Key "d9_H5XHNOzEtEb50k1NQ4v3iwyfXiSu3QUy9kZ96FFY";
+          include /run/nginx/octoprint-api-key.conf;
         '';
       };
     };
