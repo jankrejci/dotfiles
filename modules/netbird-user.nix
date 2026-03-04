@@ -30,7 +30,14 @@
 
   # Minimal profile JSON with correct interface name. Netbird fills in defaults
   # for missing fields and enriches the JSON after connecting.
-  mkProfile = attrs: builtins.toJSON ({WgIface = services.netbird.interface;} // attrs);
+  mkProfile = attrs:
+    builtins.toJSON ({
+        WgIface = services.netbird.interface;
+        # Detect network changes after suspend/resume and trigger reconnection.
+        # Defaults to false on Linux, causing stale keepalive timeouts.
+        NetworkMonitor = true;
+      }
+      // attrs);
   mkManagementUrl = host: {
     Scheme = "https";
     Host = "${host}:443";
