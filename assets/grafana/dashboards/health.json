@@ -8,7 +8,7 @@
   "id": null,
   "links": [],
   "panels": [
-    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0}, "id": 1, "panels": [], "title": "Hosts", "type": "row"},
+    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0}, "id": 50, "panels": [], "title": "Immich", "type": "row"},
     {
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "fieldConfig": {
@@ -21,7 +21,197 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 5, "x": 0, "y": 1}, "id": 2,
+      "gridPos": {"h": 2, "w": 3, "x": 0, "y": 1}, "id": 12,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "node_systemd_unit_state{name=\"immich-server.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
+      "title": "Immich", "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "custom": {"fillOpacity": 100, "lineWidth": 0},
+          "mappings": [
+            {"type": "range", "options": {"from": 0, "to": 0, "result": {"text": "Down"}}},
+            {"type": "range", "options": {"from": 1, "to": 1, "result": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-grey", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 2, "w": 21, "x": 3, "y": 1}, "id": 51,
+      "options": {"showValue": "never", "alignValue": "center", "mergeValues": true, "rowHeight": 0.9, "legend": {"showLegend": false}},
+      "targets": [{"expr": "up{job=\"immich\"}", "legendFormat": " ", "refId": "A"}],
+      "title": "", "type": "state-timeline"
+    },
+
+    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 3}, "id": 60, "panels": [], "title": "Jellyfin", "type": "row"},
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "Down"}, "1": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 2, "w": 3, "x": 0, "y": 4}, "id": 11,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "node_systemd_unit_state{name=\"jellyfin.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
+      "title": "Jellyfin", "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "custom": {"fillOpacity": 100, "lineWidth": 0},
+          "mappings": [
+            {"type": "range", "options": {"from": 0, "to": 0, "result": {"text": "Down"}}},
+            {"type": "range", "options": {"from": 1, "to": 1, "result": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-grey", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 2, "w": 21, "x": 3, "y": 4}, "id": 61,
+      "options": {"showValue": "never", "alignValue": "center", "mergeValues": true, "rowHeight": 0.9, "legend": {"showLegend": false}},
+      "targets": [{"expr": "node_systemd_unit_state{name=\"jellyfin.service\",state=\"active\",host=\"thinkcenter\"}", "legendFormat": " ", "refId": "A"}],
+      "title": "", "type": "state-timeline"
+    },
+
+    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 6}, "id": 80, "panels": [], "title": "Memos", "type": "row"},
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "Down"}, "1": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 2, "w": 3, "x": 0, "y": 7}, "id": 13,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "node_systemd_unit_state{name=\"memos.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
+      "title": "Memos", "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "custom": {"fillOpacity": 100, "lineWidth": 0},
+          "mappings": [
+            {"type": "range", "options": {"from": 0, "to": 0, "result": {"text": "Down"}}},
+            {"type": "range", "options": {"from": 1, "to": 1, "result": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-grey", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 2, "w": 21, "x": 3, "y": 7}, "id": 81,
+      "options": {"showValue": "never", "alignValue": "center", "mergeValues": true, "rowHeight": 0.9, "legend": {"showLegend": false}},
+      "targets": [{"expr": "node_systemd_unit_state{name=\"memos.service\",state=\"active\",host=\"thinkcenter\"}", "legendFormat": " ", "refId": "A"}],
+      "title": "", "type": "state-timeline"
+    },
+
+    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 9}, "id": 90, "panels": [], "title": "Octoprint", "type": "row"},
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "Down"}, "1": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 2, "w": 3, "x": 0, "y": 10}, "id": 14,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "up{job=\"octoprint\"}", "refId": "A"}],
+      "title": "Octoprint", "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "custom": {"fillOpacity": 100, "lineWidth": 0},
+          "mappings": [
+            {"type": "range", "options": {"from": 0, "to": 0, "result": {"text": "Down"}}},
+            {"type": "range", "options": {"from": 1, "to": 1, "result": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-grey", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 2, "w": 21, "x": 3, "y": 10}, "id": 91,
+      "options": {"showValue": "never", "alignValue": "center", "mergeValues": true, "rowHeight": 0.9, "legend": {"showLegend": false}},
+      "targets": [{"expr": "up{job=\"octoprint\"}", "legendFormat": " ", "refId": "A"}],
+      "title": "", "type": "state-timeline"
+    },
+
+    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 12}, "id": 100, "panels": [], "title": "Vaultwarden", "type": "row"},
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "Down"}, "1": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 2, "w": 3, "x": 0, "y": 13}, "id": 15,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "node_systemd_unit_state{name=\"vaultwarden.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
+      "title": "Vaultwarden", "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "custom": {"fillOpacity": 100, "lineWidth": 0},
+          "mappings": [
+            {"type": "range", "options": {"from": 0, "to": 0, "result": {"text": "Down"}}},
+            {"type": "range", "options": {"from": 1, "to": 1, "result": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-grey", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 2, "w": 21, "x": 3, "y": 13}, "id": 101,
+      "options": {"showValue": "never", "alignValue": "center", "mergeValues": true, "rowHeight": 0.9, "legend": {"showLegend": false}},
+      "targets": [{"expr": "node_systemd_unit_state{name=\"vaultwarden.service\",state=\"active\",host=\"thinkcenter\"}", "legendFormat": " ", "refId": "A"}],
+      "title": "", "type": "state-timeline"
+    },
+
+    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 15}, "id": 1, "panels": [], "title": "Hosts", "type": "row"},
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "Down"}, "1": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 3, "w": 5, "x": 0, "y": 16}, "id": 2,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "up{job=\"node\", host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Thinkcenter", "type": "stat"
@@ -38,7 +228,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 5, "x": 5, "y": 1}, "id": 3,
+      "gridPos": {"h": 3, "w": 5, "x": 5, "y": 16}, "id": 3,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "up{job=\"node\", host=\"vpsfree\"}", "refId": "A"}],
       "title": "Vpsfree", "type": "stat"
@@ -55,7 +245,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 5, "x": 10, "y": 1}, "id": 4,
+      "gridPos": {"h": 3, "w": 5, "x": 10, "y": 16}, "id": 4,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "up{job=\"node\", host=\"prusa\"}", "refId": "A"}],
       "title": "Prusa", "type": "stat"
@@ -72,7 +262,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 5, "x": 15, "y": 1}, "id": 5,
+      "gridPos": {"h": 3, "w": 5, "x": 15, "y": 16}, "id": 5,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "up{job=\"node\", host=\"rpi4\"}", "refId": "A"}],
       "title": "Rpi4", "type": "stat"
@@ -89,13 +279,13 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 20, "y": 1}, "id": 6,
+      "gridPos": {"h": 3, "w": 4, "x": 20, "y": 16}, "id": 6,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "up{job=\"node\", host=\"rak2245\"}", "refId": "A"}],
       "title": "Rak2245", "type": "stat"
     },
 
-    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 4}, "id": 10, "panels": [], "title": "User Services", "type": "row"},
+    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 19}, "id": 20, "panels": [], "title": "Monitoring", "type": "row"},
     {
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "fieldConfig": {
@@ -108,94 +298,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 5, "x": 0, "y": 5}, "id": 11,
-      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"jellyfin.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
-      "title": "Jellyfin", "type": "stat"
-    },
-    {
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "fieldConfig": {
-        "defaults": {
-          "color": {"mode": "thresholds"},
-          "mappings": [
-            {"type": "value", "options": {"0": {"text": "Down"}, "1": {"text": "Up"}}},
-            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
-          ],
-          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
-        }
-      },
-      "gridPos": {"h": 3, "w": 5, "x": 5, "y": 5}, "id": 12,
-      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"immich-server.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
-      "title": "Immich", "type": "stat"
-    },
-    {
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "fieldConfig": {
-        "defaults": {
-          "color": {"mode": "thresholds"},
-          "mappings": [
-            {"type": "value", "options": {"0": {"text": "Down"}, "1": {"text": "Up"}}},
-            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
-          ],
-          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
-        }
-      },
-      "gridPos": {"h": 3, "w": 5, "x": 10, "y": 5}, "id": 13,
-      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"memos.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
-      "title": "Memos", "type": "stat"
-    },
-    {
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "fieldConfig": {
-        "defaults": {
-          "color": {"mode": "thresholds"},
-          "mappings": [
-            {"type": "value", "options": {"0": {"text": "Down"}, "1": {"text": "Up"}}},
-            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
-          ],
-          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
-        }
-      },
-      "gridPos": {"h": 3, "w": 5, "x": 15, "y": 5}, "id": 14,
-      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "up{job=\"octoprint\"}", "refId": "A"}],
-      "title": "Octoprint", "type": "stat"
-    },
-    {
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "fieldConfig": {
-        "defaults": {
-          "color": {"mode": "thresholds"},
-          "mappings": [
-            {"type": "value", "options": {"0": {"text": "Down"}, "1": {"text": "Up"}}},
-            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
-          ],
-          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
-        }
-      },
-      "gridPos": {"h": 3, "w": 4, "x": 20, "y": 5}, "id": 15,
-      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"vaultwarden.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
-      "title": "Vaultwarden", "type": "stat"
-    },
-
-    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 8}, "id": 20, "panels": [], "title": "Monitoring", "type": "row"},
-    {
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "fieldConfig": {
-        "defaults": {
-          "color": {"mode": "thresholds"},
-          "mappings": [
-            {"type": "value", "options": {"0": {"text": "Down"}, "1": {"text": "Up"}}},
-            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
-          ],
-          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
-        }
-      },
-      "gridPos": {"h": 3, "w": 5, "x": 0, "y": 9}, "id": 21,
+      "gridPos": {"h": 3, "w": 5, "x": 0, "y": 20}, "id": 21,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "node_systemd_unit_state{name=\"grafana.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Grafana", "type": "stat"
@@ -212,7 +315,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 5, "x": 5, "y": 9}, "id": 22,
+      "gridPos": {"h": 3, "w": 5, "x": 5, "y": 20}, "id": 22,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "node_systemd_unit_state{name=\"prometheus.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Prometheus", "type": "stat"
@@ -229,7 +332,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 5, "x": 10, "y": 9}, "id": 23,
+      "gridPos": {"h": 3, "w": 5, "x": 10, "y": 20}, "id": 23,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "node_systemd_unit_state{name=\"ntfy-sh.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Ntfy", "type": "stat"
@@ -246,7 +349,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 5, "x": 15, "y": 9}, "id": 24,
+      "gridPos": {"h": 3, "w": 5, "x": 15, "y": 20}, "id": 24,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "node_systemd_unit_state{name=\"loki.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Loki", "type": "stat"
@@ -263,13 +366,13 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 20, "y": 9}, "id": 300,
+      "gridPos": {"h": 3, "w": 4, "x": 20, "y": 20}, "id": 300,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "up{job=\"watchdog\"}", "refId": "A"}],
       "title": "Watchdog", "type": "stat"
     },
 
-    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 12}, "id": 70, "panels": [], "title": "Network", "type": "row"},
+    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 23}, "id": 70, "panels": [], "title": "Network", "type": "row"},
     {
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "fieldConfig": {
@@ -282,7 +385,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 0, "y": 13}, "id": 71,
+      "gridPos": {"h": 3, "w": 4, "x": 0, "y": 24}, "id": 71,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "node_network_carrier{device=\"wg0\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Wireguard", "type": "stat"
@@ -299,7 +402,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 4, "y": 13}, "id": 72,
+      "gridPos": {"h": 3, "w": 4, "x": 4, "y": 24}, "id": 72,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "node_systemd_unit_state{name=\"netbird-management.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "NB Management", "type": "stat"
@@ -316,7 +419,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 8, "y": 13}, "id": 73,
+      "gridPos": {"h": 3, "w": 4, "x": 8, "y": 24}, "id": 73,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "node_systemd_unit_state{name=\"netbird-relay.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "NB Relay", "type": "stat"
@@ -333,7 +436,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 12, "y": 13}, "id": 74,
+      "gridPos": {"h": 3, "w": 4, "x": 12, "y": 24}, "id": 74,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "node_systemd_unit_state{name=\"netbird-signal.service\",state=\"active\",host=\"vpsfree\"}", "refId": "A"}],
       "title": "NB Signal", "type": "stat"
@@ -350,7 +453,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 16, "y": 13}, "id": 36,
+      "gridPos": {"h": 3, "w": 4, "x": 16, "y": 24}, "id": 36,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "node_systemd_unit_state{name=\"chirpstack-concentratord.service\",state=\"active\",host=\"rak2245\"}", "refId": "A"}],
       "title": "Concentratord", "type": "stat"
@@ -367,13 +470,13 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 20, "y": 13}, "id": 37,
+      "gridPos": {"h": 3, "w": 4, "x": 20, "y": 24}, "id": 37,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "node_systemd_unit_state{name=\"chirpstack-udp-forwarder.service\",state=\"active\",host=\"rak2245\"}", "refId": "A"}],
       "title": "UDP Forwarder", "type": "stat"
     },
 
-    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 16}, "id": 30, "panels": [], "title": "Backend", "type": "row"},
+    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 27}, "id": 30, "panels": [], "title": "Backend", "type": "row"},
     {
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "fieldConfig": {
@@ -386,7 +489,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 0, "y": 17}, "id": 31,
+      "gridPos": {"h": 3, "w": 4, "x": 0, "y": 28}, "id": 31,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "node_systemd_unit_state{name=\"nginx.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Nginx", "type": "stat"
@@ -403,7 +506,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 4, "y": 17}, "id": 32,
+      "gridPos": {"h": 3, "w": 4, "x": 4, "y": 28}, "id": 32,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "node_systemd_unit_state{name=\"postgresql.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Postgres", "type": "stat"
@@ -420,7 +523,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 8, "y": 17}, "id": 33,
+      "gridPos": {"h": 3, "w": 4, "x": 8, "y": 28}, "id": 33,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "node_systemd_unit_state{name=\"redis.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "Redis", "type": "stat"
@@ -437,7 +540,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 12, "y": 17}, "id": 34,
+      "gridPos": {"h": 3, "w": 4, "x": 12, "y": 28}, "id": 34,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "min(node_systemd_unit_state{name=\"acme-krejci.io.service\",state=\"active\"})", "refId": "A"}],
       "title": "Acme", "type": "stat"
@@ -454,7 +557,7 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 16, "y": 17}, "id": 38,
+      "gridPos": {"h": 3, "w": 4, "x": 16, "y": 28}, "id": 38,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "1 - clamp_max(sum(node_systemd_unit_state{name=~\"borgbackup-job-.*\\\\.service\",state=\"failed\"} or vector(0)), 1)", "refId": "A"}],
       "title": "Borg", "type": "stat"
@@ -471,13 +574,13 @@
           "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 20, "y": 17}, "id": 39,
+      "gridPos": {"h": 3, "w": 4, "x": 20, "y": 28}, "id": 39,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "node_systemd_unit_state{name=\"ipp-usb.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
       "title": "IPP-USB", "type": "stat"
     },
 
-    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 20}, "id": 40, "panels": [], "title": "Backups", "type": "row"},
+    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 31}, "id": 40, "panels": [], "title": "Local Backups", "type": "row"},
     {
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "fieldConfig": {
@@ -489,10 +592,10 @@
           "unit": "h"
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 0, "y": 21}, "id": 41,
+      "gridPos": {"h": 2, "w": 6, "x": 0, "y": 32}, "id": 41,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "(time() - borg_backup_last_success_timestamp{name=\"immich\",target=\"local\"}) / 3600", "refId": "A"}],
-      "title": "Immich Local", "type": "stat"
+      "title": "Immich", "type": "stat"
     },
     {
       "datasource": {"type": "prometheus", "uid": "prometheus"},
@@ -505,26 +608,10 @@
           "unit": "h"
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 4, "y": 21}, "id": 42,
-      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "(time() - borg_backup_last_success_timestamp{name=\"immich\",target=\"remote\"}) / 3600", "refId": "A"}],
-      "title": "Immich Remote", "type": "stat"
-    },
-    {
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "fieldConfig": {
-        "defaults": {
-          "color": {"mode": "thresholds"},
-          "decimals": 0,
-          "mappings": [{"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}],
-          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-green", "value": null}, {"color": "yellow", "value": 25}, {"color": "dark-red", "value": 48}]},
-          "unit": "h"
-        }
-      },
-      "gridPos": {"h": 3, "w": 4, "x": 8, "y": 21}, "id": 43,
+      "gridPos": {"h": 2, "w": 6, "x": 6, "y": 32}, "id": 43,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "(time() - borg_backup_last_success_timestamp{name=\"memos\",target=\"local\"}) / 3600", "refId": "A"}],
-      "title": "Memos Local", "type": "stat"
+      "title": "Memos", "type": "stat"
     },
     {
       "datasource": {"type": "prometheus", "uid": "prometheus"},
@@ -537,10 +624,10 @@
           "unit": "h"
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 12, "y": 21}, "id": 44,
+      "gridPos": {"h": 2, "w": 6, "x": 12, "y": 32}, "id": 47,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "(time() - borg_backup_last_success_timestamp{name=\"memos\",target=\"remote\"}) / 3600", "refId": "A"}],
-      "title": "Memos Remote", "type": "stat"
+      "targets": [{"expr": "(time() - borg_backup_last_success_timestamp{name=\"netbird\",target=\"local\"}) / 3600", "refId": "A"}],
+      "title": "Netbird", "type": "stat"
     },
     {
       "datasource": {"type": "prometheus", "uid": "prometheus"},
@@ -553,10 +640,28 @@
           "unit": "h"
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 16, "y": 21}, "id": 45,
+      "gridPos": {"h": 2, "w": 6, "x": 18, "y": 32}, "id": 45,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "(time() - borg_backup_last_success_timestamp{name=\"vaultwarden\",target=\"local\"}) / 3600", "refId": "A"}],
-      "title": "Vaultwarden Local", "type": "stat"
+      "title": "Vaultwarden", "type": "stat"
+    },
+
+    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 34}, "id": 49, "panels": [], "title": "Remote Backups", "type": "row"},
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "decimals": 0,
+          "mappings": [{"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-green", "value": null}, {"color": "yellow", "value": 25}, {"color": "dark-red", "value": 48}]},
+          "unit": "h"
+        }
+      },
+      "gridPos": {"h": 2, "w": 6, "x": 0, "y": 35}, "id": 42,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "(time() - borg_backup_last_success_timestamp{name=\"immich\",target=\"remote\"}) / 3600", "refId": "A"}],
+      "title": "Immich", "type": "stat"
     },
     {
       "datasource": {"type": "prometheus", "uid": "prometheus"},
@@ -569,115 +674,42 @@
           "unit": "h"
         }
       },
-      "gridPos": {"h": 3, "w": 4, "x": 20, "y": 21}, "id": 46,
+      "gridPos": {"h": 2, "w": 6, "x": 6, "y": 35}, "id": 44,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "(time() - borg_backup_last_success_timestamp{name=\"memos\",target=\"remote\"}) / 3600", "refId": "A"}],
+      "title": "Memos", "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "decimals": 0,
+          "mappings": [{"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-green", "value": null}, {"color": "yellow", "value": 25}, {"color": "dark-red", "value": 48}]},
+          "unit": "h"
+        }
+      },
+      "gridPos": {"h": 2, "w": 6, "x": 12, "y": 35}, "id": 48,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "(time() - borg_backup_last_success_timestamp{name=\"netbird\",target=\"remote\"}) / 3600", "refId": "A"}],
+      "title": "Netbird", "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "decimals": 0,
+          "mappings": [{"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-green", "value": null}, {"color": "yellow", "value": 25}, {"color": "dark-red", "value": 48}]},
+          "unit": "h"
+        }
+      },
+      "gridPos": {"h": 2, "w": 6, "x": 18, "y": 35}, "id": 46,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
       "targets": [{"expr": "(time() - borg_backup_last_success_timestamp{name=\"vaultwarden\",target=\"remote\"}) / 3600", "refId": "A"}],
-      "title": "Vaultwarden Remote", "type": "stat"
-    },
-
-    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 24}, "id": 50, "panels": [], "title": "Immich", "type": "row"},
-    {
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "fieldConfig": {
-        "defaults": {
-          "color": {"mode": "thresholds"},
-          "custom": {"fillOpacity": 100, "lineWidth": 0},
-          "mappings": [
-            {"type": "range", "options": {"from": 0, "to": 0, "result": {"text": "Down"}}},
-            {"type": "range", "options": {"from": 1, "to": 1, "result": {"text": "Up"}}},
-            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
-          ],
-          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-grey", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
-        }
-      },
-      "gridPos": {"h": 2, "w": 24, "x": 0, "y": 25}, "id": 51,
-      "options": {"showValue": "never", "alignValue": "center", "mergeValues": true, "rowHeight": 0.9, "legend": {"showLegend": false}},
-      "targets": [{"expr": "up{job=\"immich\"}", "legendFormat": " ", "refId": "A"}],
-      "title": "", "type": "state-timeline"
-    },
-
-    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 27}, "id": 60, "panels": [], "title": "Jellyfin", "type": "row"},
-    {
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "fieldConfig": {
-        "defaults": {
-          "color": {"mode": "thresholds"},
-          "custom": {"fillOpacity": 100, "lineWidth": 0},
-          "mappings": [
-            {"type": "range", "options": {"from": 0, "to": 0, "result": {"text": "Down"}}},
-            {"type": "range", "options": {"from": 1, "to": 1, "result": {"text": "Up"}}},
-            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
-          ],
-          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-grey", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
-        }
-      },
-      "gridPos": {"h": 2, "w": 24, "x": 0, "y": 28}, "id": 61,
-      "options": {"showValue": "never", "alignValue": "center", "mergeValues": true, "rowHeight": 0.9, "legend": {"showLegend": false}},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"jellyfin.service\",state=\"active\",host=\"thinkcenter\"}", "legendFormat": " ", "refId": "A"}],
-      "title": "", "type": "state-timeline"
-    },
-
-    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 30}, "id": 80, "panels": [], "title": "Memos", "type": "row"},
-    {
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "fieldConfig": {
-        "defaults": {
-          "color": {"mode": "thresholds"},
-          "custom": {"fillOpacity": 100, "lineWidth": 0},
-          "mappings": [
-            {"type": "range", "options": {"from": 0, "to": 0, "result": {"text": "Down"}}},
-            {"type": "range", "options": {"from": 1, "to": 1, "result": {"text": "Up"}}},
-            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
-          ],
-          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-grey", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
-        }
-      },
-      "gridPos": {"h": 2, "w": 24, "x": 0, "y": 31}, "id": 81,
-      "options": {"showValue": "never", "alignValue": "center", "mergeValues": true, "rowHeight": 0.9, "legend": {"showLegend": false}},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"memos.service\",state=\"active\",host=\"thinkcenter\"}", "legendFormat": " ", "refId": "A"}],
-      "title": "", "type": "state-timeline"
-    },
-
-    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 33}, "id": 90, "panels": [], "title": "Octoprint", "type": "row"},
-    {
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "fieldConfig": {
-        "defaults": {
-          "color": {"mode": "thresholds"},
-          "custom": {"fillOpacity": 100, "lineWidth": 0},
-          "mappings": [
-            {"type": "range", "options": {"from": 0, "to": 0, "result": {"text": "Down"}}},
-            {"type": "range", "options": {"from": 1, "to": 1, "result": {"text": "Up"}}},
-            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
-          ],
-          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-grey", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
-        }
-      },
-      "gridPos": {"h": 2, "w": 24, "x": 0, "y": 34}, "id": 91,
-      "options": {"showValue": "never", "alignValue": "center", "mergeValues": true, "rowHeight": 0.9, "legend": {"showLegend": false}},
-      "targets": [{"expr": "up{job=\"octoprint\"}", "legendFormat": " ", "refId": "A"}],
-      "title": "", "type": "state-timeline"
-    },
-
-    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 36}, "id": 100, "panels": [], "title": "Vaultwarden", "type": "row"},
-    {
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "fieldConfig": {
-        "defaults": {
-          "color": {"mode": "thresholds"},
-          "custom": {"fillOpacity": 100, "lineWidth": 0},
-          "mappings": [
-            {"type": "range", "options": {"from": 0, "to": 0, "result": {"text": "Down"}}},
-            {"type": "range", "options": {"from": 1, "to": 1, "result": {"text": "Up"}}},
-            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
-          ],
-          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-grey", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
-        }
-      },
-      "gridPos": {"h": 2, "w": 24, "x": 0, "y": 37}, "id": 101,
-      "options": {"showValue": "never", "alignValue": "center", "mergeValues": true, "rowHeight": 0.9, "legend": {"showLegend": false}},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"vaultwarden.service\",state=\"active\",host=\"thinkcenter\"}", "legendFormat": " ", "refId": "A"}],
-      "title": "", "type": "state-timeline"
+      "title": "Vaultwarden", "type": "stat"
     }
   ],
   "refresh": "30s",
