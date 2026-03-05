@@ -121,6 +121,33 @@ in {
       '';
     };
 
+    homelab.alerts.netbird-signal = [
+      {
+        alert = "NetbirdSignalDown";
+        expr = ''node_systemd_unit_state{name="netbird-signal.service",state="active",host="${config.homelab.host.hostName}"} == 0'';
+        labels = {
+          severity = "critical";
+          host = config.homelab.host.hostName;
+          type = "service";
+        };
+        annotations.summary = "Netbird signal server is down";
+      }
+    ];
+
+    homelab.healthChecks = [
+      {
+        name = "Netbird Signal";
+        script = pkgs.writeShellApplication {
+          name = "health-check-netbird-signal";
+          runtimeInputs = [pkgs.systemd];
+          text = ''
+            systemctl is-active --quiet netbird-signal.service
+          '';
+        };
+        timeout = 10;
+      }
+    ];
+
     # HTTPS for API/signal, relay TCP passthrough, STUN UDP passthrough
     networking.firewall.interfaces.${cfg.interface} = {
       allowedTCPPorts = [services.https.port services.netbird.port.relay];
