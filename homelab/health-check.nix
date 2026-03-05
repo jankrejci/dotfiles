@@ -34,15 +34,10 @@
         set +a
         readonly NTFY_TOKEN
 
-        MESSAGE=""
-        FAILED=0
+        FAILURES=""
+        CHECKED=0
         hostname="${hostname}"
         HOSTNAME="''${hostname^}"
-
-        report_result() {
-          local name=$1 status=$2
-          MESSAGE+="$name $status\n"
-        }
 
         send_notification() {
           local title=$1 message=$2 priority=$3 tags=$4
@@ -55,21 +50,19 @@
             --data-binary @-
         }
 
-        # Run each check and report result
+        # Run each check and collect failures
         ${lib.concatStringsSep "\n" (map (check: ''
-            if timeout ${toString check.timeout} ${lib.getExe check.script}; then
-              report_result "${check.name}" "OK"
-            else
-              report_result "${check.name}" "FAILED"
-              FAILED=$((FAILED + 1))
+            CHECKED=$((CHECKED + 1))
+            if ! timeout ${toString check.timeout} ${lib.getExe check.script}; then
+              FAILURES+="${check.name} health check failed\n"
             fi
           '')
           healthChecks)}
 
-        if [ "$FAILED" -eq 0 ]; then
-          send_notification "$HOSTNAME OK" "$MESSAGE" "default" "white_check_mark"
+        if [ -z "$FAILURES" ]; then
+          send_notification "$HOSTNAME OK" "$CHECKED services checked" "default" "white_check_mark"
         else
-          send_notification "$HOSTNAME FAILED" "$MESSAGE" "high" "warning"
+          send_notification "$HOSTNAME FAIL" "$FAILURES" "high" "warning"
         fi
       '';
     };
