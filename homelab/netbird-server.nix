@@ -364,6 +364,16 @@ in {
       }
     ];
 
+    homelab.backup.jobs = [
+      {
+        name = "netbird";
+        paths = [];
+        database = "netbird-mgmt";
+        service = "netbird-management";
+        hour = 3;
+      }
+    ];
+
     homelab.healthChecks = [
       {
         name = "Netbird Management";
