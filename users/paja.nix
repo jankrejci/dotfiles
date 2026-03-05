@@ -84,7 +84,7 @@
             idle-dim = false;
           };
           "org/gnome/desktop/session" = {
-            idle-delay = 900;
+            idle-delay = mkUint32 900;
           };
           "org/gnome/desktop/interface" = {
             show-battery-percentage = true;
