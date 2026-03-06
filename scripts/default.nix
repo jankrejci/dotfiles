@@ -22,6 +22,7 @@ in {
   build-installer = callScript ./build-installer.nix;
   deploy-config = callScript ./deploy-config.nix;
   nixos-install = callScriptWith {inherit nixos-anywhere;} ./nixos-install.nix;
+  network-monitor = callScript ./network-monitor.nix;
   reenroll-netbird = callScript ./reenroll-netbird.nix;
   inject-borg-passphrase = callScript ./inject-borg-passphrase.nix;
 
