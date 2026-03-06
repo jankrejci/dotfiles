@@ -2,8 +2,12 @@
 #
 # - DHCP for ethernet and WiFi
 # - dummy interface for service IPs
-# - systemd-resolved for DNS
+# - unbound recursive DNS resolver with DNSSEC
+# - systemd-resolved as stub forwarding to unbound
 # - prometheus node exporter with metrics proxy
+#
+# Known limitation: captive portals break recursive resolution.
+# Workaround: systemctl stop unbound
 {
   config,
   lib,
@@ -35,22 +39,69 @@ in {
     nftables.enable = true;
   };
 
+  # Recursive DNS resolver, eliminates dependency on upstream forwarders.
+  # After cache warmup, most lookups resolve in a single hop to an authoritative server.
+  services.unbound = {
+    enable = true;
+    settings = {
+      server = {
+        interface = ["127.0.0.1"];
+        port = 5335;
+        access-control = ["127.0.0.0/8 allow"];
+        do-ip6 = false;
+
+        # DNSSEC validation, unbound's implementation is mature unlike resolved's
+        auto-trust-anchor-file = "/var/lib/unbound/root.key";
+        val-clean-additional = true;
+
+        # Privacy: minimise query names sent to authoritative servers per RFC 7816
+        qname-minimisation = true;
+
+        # Prefetch entries before TTL expiry to keep popular records warm
+        prefetch = true;
+
+        # Serve expired cache entries while fetching fresh data in background
+        serve-expired = true;
+        serve-expired-ttl = 86400;
+
+        # Harden against abuse
+        harden-glue = true;
+        harden-dnssec-stripped = true;
+        use-caps-for-id = true;
+
+        verbosity = 0;
+        log-queries = false;
+
+        num-threads = 2;
+        msg-cache-slabs = 2;
+        rrset-cache-slabs = 2;
+        infra-cache-slabs = 2;
+        key-cache-slabs = 2;
+      };
+    };
+  };
+
+  # Resolved as stub resolver forwarding to unbound.
+  # Netbird split DNS is unaffected since it uses D-Bus SetLinkDNS on the
+  # nb0 interface, which is orthogonal to the global DNS upstream.
   services.resolved = {
     enable = true;
-    extraConfig = lib.mkDefault ''
+    extraConfig = ''
       [Resolve]
-      # Backup if no interface provides DNS servers
-      FallbackDNS=1.1.1.1 8.8.8.8
-      # Keeps compatibility with apps expecting DNS on 127.0.0.53
+      DNS=127.0.0.1:5335
+      FallbackDNS=
+      DNSSEC=no
       DNSStubListener=yes
-      # Reduces noise on the network
       MulticastDNS=no
-      # Reduces noise on the network
       LLMNR=no
-      # DNS caching enabled for Netbird
       Cache=yes
-      DNSSEC=allow-downgrade
     '';
+  };
+
+  # Ensure unbound is running before resolved starts
+  systemd.services.systemd-resolved = {
+    after = ["unbound.service"];
+    wants = ["unbound.service"];
   };
 
   # Configure systemd-networkd
