@@ -17,7 +17,7 @@
   hasServices = serviceIPs != [];
   metricsDir = "/var/lib/prometheus-node-exporter";
 in {
-  # Avoid collision of the dhcp with the sysystemd.network
+  # Avoid collision of the dhcp with the systemd.network
   networking = {
     useDHCP = lib.mkForce false;
     useNetworkd = lib.mkForce true;
@@ -120,6 +120,15 @@ in {
   networking.wireless.iwd = {
     enable = true;
     settings = {
+      General = {
+        # Less aggressive roaming to avoid ping-pong between UniFi APs.
+        # Defaults are -70 and -76 which trigger roaming too early in
+        # dense AP environments, causing repeated disconnects.
+        RoamThreshold = -75;
+        RoamThreshold5G = -80;
+        # Wait longer before retrying a roam attempt, default is 60 seconds
+        RoamRetryInterval = 120;
+      };
       Network = {
         EnableIPv6 = true;
       };
