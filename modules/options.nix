@@ -293,6 +293,14 @@ in {
       description = "Service configuration";
     };
 
+    # Directory where textfile collector .prom files are written.
+    # Shared across modules that produce metrics for node_exporter.
+    metricsDir = mkOption {
+      type = types.str;
+      default = "/var/lib/prometheus-node-exporter";
+      description = "Path to the node_exporter textfile collector directory";
+    };
+
     # Service IPs for the services dummy interface.
     # Each service module registers its IPs here.
     # networking.nix collects all IPs and configures the interface.
