@@ -201,6 +201,11 @@
           remote.sshKey = "/root/.ssh/borg-backup-key";
           local.enable = true;
         };
+        sso-proxy = {
+          enable = true;
+          port = 4180;
+          callbackSubdomain = "zigbee";
+        };
         zigbee2mqtt = {
           enable = true;
           ip = "192.168.91.14";
