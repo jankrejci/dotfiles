@@ -189,6 +189,7 @@
         backup = {
           remote.enable = true;
           remote.server = "borg@vpsfree.nb.krejci.io";
+          remote.sshKey = "/root/.ssh/borg-backup-key";
           local.enable = true;
         };
       };
