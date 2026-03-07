@@ -47,7 +47,7 @@ module: Title in imperative style
 **Rules:**
 - Title: capital letter after colon, imperative verb
 - Body: bullet points only, lowercase start, NO prose paragraphs
-- NO Co-Authored-By, NO Claude signatures, NO emojis
+- NO Co-Authored-By, NO Claude signatures, NO emojis in commit messages
 
 Split unrelated changes into separate commits.
 
