@@ -139,7 +139,7 @@
             mode = "repokey-blake2";
             passCommand = "cat ${remotePassphrasePath}";
           };
-          environment.BORG_RSH = "ssh -i /root/.ssh/borg-backup-key";
+          environment.BORG_RSH = "ssh -i ${cfg.remote.sshKey}";
           postHook = mkPostHook "remote";
         }
         // lib.optionalAttrs (database != null) {

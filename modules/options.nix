@@ -368,6 +368,11 @@ in {
           description = "SSH connection string for remote borg server";
         };
 
+        sshKey = mkOption {
+          type = types.str;
+          description = "Path to SSH private key for remote borg server";
+        };
+
         repoBase = mkOption {
           type = types.str;
           default = "/var/lib/borg-repos";
