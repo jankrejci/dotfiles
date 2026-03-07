@@ -22,6 +22,7 @@
   global = config.homelab.global;
   domain = global.domain;
   dexDomain = "${config.homelab.dex.subdomain}.${domain}";
+  callbackDomain = "${cfg.callbackSubdomain}.${domain}";
 in {
   options.homelab.sso-proxy = {
     enable = lib.mkOption {
@@ -34,6 +35,11 @@ in {
       type = lib.types.port;
       description = "Port for oauth2-proxy listener";
     };
+
+    callbackSubdomain = lib.mkOption {
+      type = lib.types.str;
+      description = "Subdomain of the virtualHost that hosts /oauth2/ callback paths";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -41,6 +47,16 @@ in {
       {
         assertion = config.homelab.dex.enable;
         message = "homelab.sso-proxy requires homelab.dex.enable = true";
+      }
+    ];
+
+    # Register OIDC client with Dex for SSO
+    homelab.dex.clients = [
+      {
+        id = "sso-proxy";
+        name = "SSO Proxy";
+        redirectURIs = ["https://${callbackDomain}/oauth2/callback"];
+        secretRekeyFile = ../secrets/dex-sso-proxy-secret.age;
       }
     ];
 
@@ -56,6 +72,7 @@ in {
       provider = "oidc";
       clientID = "sso-proxy";
       keyFile = config.age.secrets.sso-proxy-env.path;
+      redirectURL = "https://${callbackDomain}/oauth2/callback";
       oidcIssuerUrl = "https://${dexDomain}";
       reverseProxy = true;
       setXauthrequest = true;
@@ -69,6 +86,7 @@ in {
         skip-provider-button = true;
         code-challenge-method = "S256";
       };
+      nginx.domain = callbackDomain;
     };
 
     # Health check
