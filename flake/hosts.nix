@@ -173,6 +173,7 @@
           enable = true;
           ip = "192.168.91.12";
           port = 8222;
+          smtp.host = "smtp.protonmail.ch";
         };
         tunnel = {
           enable = true;
