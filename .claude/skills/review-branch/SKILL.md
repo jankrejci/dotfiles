@@ -28,40 +28,78 @@ For Nix code, use `/nix-dev` skill to evaluate expressions and verify options wh
 
 If a check cannot run, note this explicitly rather than silently skipping it.
 
-### Phase 3: Review commit messages
+### Phase 3: Per-commit review
 
-For each commit, verify:
+For each commit individually (`git show <hash>`), verify:
+
+**Commit message:**
 - Follows format from `CLAUDE.md` (module prefix, imperative title, bullet body)
-- Every claim in the commit body matches the actual diff
+- No Co-Authored-By, no AI signatures, no emojis
+- Title accurately describes what the diff does
+
+**Commit scope:**
 - One logical change per commit
 - AI/tooling config not bundled with code changes
-- No Co-Authored-By, no AI signatures, no emojis
+- No unrelated changes smuggled in
 
-### Phase 4: Review code
+**Diff-vs-body verification:**
+- Every claim in the commit body matches the actual diff
+- No diff content missing from the body description
+- No body claims that are not evidenced by the diff
 
-Evaluate against `CLAUDE.md` principles.
+### Phase 4: Code correctness
 
-General:
-- Correctness: logic errors, off-by-one, race conditions, missing error handling
+Review the full diff (`git diff origin/main...HEAD`) for:
+
+**Logic and safety:**
+- Logic errors, off-by-one, race conditions
+- Missing error handling at system boundaries
 - Security: injection, secrets in code, services exposed beyond localhost
-- Consistency: follows existing patterns in the codebase
-- Dead code: unused imports, unreachable branches, commented-out code
-- Duplication: same content defined in multiple places (single source of truth)
-- No stale references after renames
+- Edge cases and failure modes
 
-Nix-specific:
+**Nix-specific:**
 - Module follows established patterns (homelab.X.enable, option types, mkIf)
 - Options use appropriate types
 - Services bind to 127.0.0.1 by default
 - Secrets use agenix, not plaintext
 - No hardcoded values that should be configurable
 
-### Phase 5: Cross-cutting concerns
+### Phase 5: Style and cross-cutting
 
-- Are new files/modules properly integrated (imports, default.nix)?
-- Do cross-host references use `config.homelab.hosts` pattern?
-- Are firewall rules, nginx configs, and systemd units consistent?
-- Do port/IP allocations avoid conflicts?
+**CLAUDE.md compliance:**
+- Guard clauses over nested if-else
+- Comments are proper sentences, no parenthetical asides, no size claims
+- `local -r` for immutable locals in shell scripts
+- Port options named `port` or `port.<name>` with `lib.types.port`
+
+**Codebase patterns:**
+- Follows existing patterns in the codebase
+- Dead code: unused imports, unreachable branches, commented-out code
+- Duplication: same content defined in multiple places
+- No stale references after renames
+
+**Integration:**
+- New files/modules properly integrated (imports, default.nix)
+- Cross-host references use `config.homelab.hosts` pattern
+- Firewall rules, nginx configs, and systemd units consistent
+- Port/IP allocations avoid conflicts
+
+### Phase 6: Verification checklist
+
+Before producing output, verify every category was checked. For each item below, confirm it was evaluated for every commit and every changed file. If any item was skipped or only partially checked, go back and complete the relevant phase before continuing.
+
+- [ ] All checks ran (Phase 2)
+- [ ] Every commit message verified against its diff (Phase 3)
+- [ ] Every commit is a single logical change (Phase 3)
+- [ ] No bundled unrelated changes (Phase 3)
+- [ ] Logic errors and edge cases checked (Phase 4)
+- [ ] Security reviewed (Phase 4)
+- [ ] Nix patterns verified (Phase 4)
+- [ ] CLAUDE.md style rules checked (Phase 5)
+- [ ] Cross-cutting integration verified (Phase 5)
+- [ ] No stale references from renames (Phase 5)
+
+Only produce the final output after all items are confirmed.
 
 ## Output Format
 
