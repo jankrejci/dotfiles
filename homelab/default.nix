@@ -5,6 +5,7 @@
   imports = [
     # Shared infrastructure
     ./backup.nix
+    ./mosquitto.nix
     ./nginx.nix
     ./postgresql.nix
     ./redis.nix
