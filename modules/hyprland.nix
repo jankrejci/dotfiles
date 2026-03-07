@@ -2,7 +2,7 @@
 #
 # - waybar top bar with workspaces, system monitors, tray
 # - hyprlock/hypridle for screen lock and idle management
-# - mako notifications, wpaperd wallpaper
+# - mako notifications, wpaperd wallpaper, polkit agent
 # - tiling with rofi launcher, workspace switching, media keys
 # - GNOME remains as alternative session in GDM
 {pkgs, ...}: let
@@ -23,6 +23,9 @@ in {
       "$fileManager" = "nautilus";
       "$menu" = "rofi -show drun -show-icons";
 
+      exec-once = [
+        "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"
+      ];
       env = [
         "XCURSOR_SIZE,24"
         "HYPRCURSOR_SIZE,24"
@@ -62,9 +65,19 @@ in {
         "$mod, E, exec, $fileManager"
         "$mod, V, togglefloating,"
         "$mod, R, exec, $menu"
-        "$mod, P, pseudo, # dwindle"
-        "$mod, J, togglesplit, # dwindle"
-        "$mod, S, exec, rofi -show drun -show-icons"
+        # Dwindle layout controls
+        "$mod, P, pseudo,"
+        "$mod, J, togglesplit,"
+        # Vim-style focus right. The hjk keys conflict with other bindings
+        # so arrow keys cover all directions.
+        "$mod, L, movefocus, r"
+        # Lock screen
+        "$mod, backspace, exec, loginctl lock-session"
+        # Screenshot region to clipboard
+        '', Print, exec, grim -g "$(slurp)" - | wl-copy''
+        ''$mod SHIFT, S, exec, grim -g "$(slurp)" - | wl-copy''
+        # Screenshot fullscreen to clipboard
+        "$mod, Print, exec, grim - | wl-copy"
         # Move focus with mainMod + arrow keys
         "$mod, left, movefocus, l"
         "$mod, right, movefocus, r"
