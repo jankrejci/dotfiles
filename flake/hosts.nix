@@ -202,6 +202,10 @@
       hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBuVvVmSeaoUPKqiPqxwJEWDgdClxQpp6KjttCy/kFIq";
       device = "/dev/sda";
       swapSize = "8G";
+      homelab.network-monitor = {
+        enable = true;
+        wifi.enable = true;
+      };
       extraModules = [
         inputs.nixos-hardware.nixosModules.lenovo-thinkpad-e470
         ../users/jkr.nix
@@ -230,6 +234,10 @@
       hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGmfq9F+krusOKm33U/uLgCfspYeno4sGYkGQQsb9VG1";
       device = "/dev/nvme0n1";
       swapSize = "8G";
+      homelab.network-monitor = {
+        enable = true;
+        wifi.enable = true;
+      };
       extraModules = [
         inputs.nixos-hardware.nixosModules.framework-13-7040-amd
         ../users/jkr.nix
@@ -246,6 +254,10 @@
       hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDnncYKui8LgDke6oO3gntbH1iFkp2K/yyLx3TCjVY1g";
       device = "/dev/nvme0n1";
       swapSize = "8G";
+      homelab.network-monitor = {
+        enable = true;
+        wifi.enable = true;
+      };
       extraModules = [
         inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t14-amd-gen1
         ../users/jkr.nix
