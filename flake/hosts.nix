@@ -338,6 +338,7 @@
   global = {
     domain = "krejci.io";
     peerDomain = "nb.krejci.io";
+    authorizedKeysUrl = "https://raw.githubusercontent.com/jankrejci/dotfiles/refs/heads/main/ssh-authorized-keys.conf";
     adminEmails = ["krejcijan@protonmail.com"];
   };
 

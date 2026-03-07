@@ -82,6 +82,10 @@ in {
             type = types.str;
             description = "VPN peer domain for internal access";
           };
+          authorizedKeysUrl = mkOption {
+            type = types.str;
+            description = "URL to fetch SSH authorized keys from";
+          };
           adminEmails = mkOption {
             type = types.listOf types.str;
             default = [];

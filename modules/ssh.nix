@@ -1,6 +1,6 @@
-# SSH server with GitHub-backed authorized keys
+# SSH server with URL-backed authorized keys
 #
-# - fetches keys from repo at login time
+# - fetches keys from authorizedKeysUrl at login time
 # - caches in /var/cache/ssh with 1-minute TTL
 # - restricts access to VPN interface only
 # - fail2ban for defense against internal threats
@@ -11,11 +11,8 @@
   ...
 }: let
   services = config.homelab.services;
-  gitRepo = "https://raw.githubusercontent.com/jankrejci/dotfiles";
-  gitBranch = "main";
-  keysFile = "ssh-authorized-keys.conf";
   keysFolder = "/var/cache/ssh";
-  keysPath = "${keysFolder}/${keysFile}";
+  keysPath = "${keysFolder}/authorized-keys.conf";
   keysUser = "nobody";
   keysGroup = "nogroup";
 in {
@@ -51,9 +48,9 @@ in {
         readonly USERNAME="$1"
         readonly HOSTNAME="${config.homelab.host.hostName}"
         readonly CACHE_FILE="${keysPath}"
-        readonly KEYS_URL="${gitRepo}/refs/heads/${gitBranch}/${keysFile}"
+        readonly KEYS_URL="${config.homelab.global.authorizedKeysUrl}"
 
-        # Fetch keys from GitHub if cache is missing or empty
+        # Fetch keys if cache is missing or empty
         fetch_keys_if_needed() {
           [ -s "$CACHE_FILE" ] && return 0
 
@@ -65,7 +62,7 @@ in {
           #   -f: fail on HTTP errors (404, 500, etc) with non-zero exit code
           #   -s: silent mode (no progress bar or extra output)
           #   -S: show errors even in silent mode (combined -sS)
-          #   -H: custom header to bypass GitHub's cache
+          #   -H: custom header to bypass upstream cache
           #   2>/dev/null: suppress any stderr (defense in depth for sshd)
           curl -f -sS -H "Cache-Control: no-cache" "$KEYS_URL" >"$temp_file" 2>/dev/null || {
             rm -f "$temp_file"
