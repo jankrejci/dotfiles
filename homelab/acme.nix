@@ -1,6 +1,6 @@
 # ACME wildcard certificates via Cloudflare DNS-01
 #
-# - wildcard cert for *.krejci.io
+# - wildcard cert for the configured domain
 # - Cloudflare API token managed by agenix
 # - cert readable by nginx group
 {
@@ -10,12 +10,20 @@
   ...
 }: let
   cfg = config.homelab.acme;
+  domain = config.homelab.global.domain;
+  acmeService = "acme-${domain}.service";
 in {
   options.homelab.acme = {
     enable = lib.mkOption {
       type = lib.types.bool;
       default = false;
       description = "Enable ACME wildcard certificates";
+    };
+
+    email = lib.mkOption {
+      type = lib.types.str;
+      default = "admin@${domain}";
+      description = "Email address for Let's Encrypt account registration";
     };
   };
 
@@ -32,7 +40,7 @@ in {
     security.acme = {
       acceptTerms = true;
       defaults = {
-        email = "admin@krejci.io";
+        email = cfg.email;
         # Use DNS-01 challenge for wildcard certs (services are VPN-only)
         dnsProvider = "cloudflare";
         # Cloudflare API token managed by agenix-rekey
@@ -42,10 +50,10 @@ in {
       };
     };
 
-    # Wildcard certificate for *.krejci.io
-    security.acme.certs."krejci.io" = {
-      domain = "*.krejci.io";
-      extraDomainNames = ["krejci.io"];
+    # Wildcard certificate for the configured domain
+    security.acme.certs.${domain} = {
+      domain = "*.${domain}";
+      extraDomainNames = [domain];
       # Certificate will be readable by nginx group
       group = "nginx";
     };
@@ -59,7 +67,7 @@ in {
     homelab.alerts.acme = [
       {
         alert = "AcmeFailed";
-        expr = ''node_systemd_unit_state{name="acme-krejci.io.service",state="failed",host="${config.homelab.host.hostName}"} > 0'';
+        expr = ''node_systemd_unit_state{name="${acmeService}",state="failed",host="${config.homelab.host.hostName}"} > 0'';
         labels = {
           severity = "critical";
           host = config.homelab.host.hostName;
@@ -77,7 +85,7 @@ in {
           name = "health-check-acme";
           runtimeInputs = [pkgs.systemd];
           text = ''
-            result=$(systemctl show acme-krejci.io.service -p Result --value)
+            result=$(systemctl show ${acmeService} -p Result --value)
             if [ "$result" = "failed" ]; then
               echo "ACME renewal failed"
               exit 1
