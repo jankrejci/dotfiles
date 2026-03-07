@@ -5,6 +5,7 @@
   imports = [
     # Shared infrastructure
     ./backup.nix
+    ./mosquitto.nix
     ./nginx.nix
     ./postgresql.nix
     ./redis.nix
@@ -16,6 +17,7 @@
     ./netbird-signal.nix
     ./netbird-server.nix
     ./grafana.nix
+    ./home-assistant.nix
     ./immich.nix
     ./immich-public-proxy.nix
     ./jellyfin.nix
@@ -31,6 +33,7 @@
     ./vaultwarden.nix
     ./watchdog.nix
     ./webcam.nix
+    ./zigbee2mqtt.nix
 
     # Health check aggregator
     ./health-check.nix
