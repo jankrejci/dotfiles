@@ -10,6 +10,11 @@
 # - This module collects targets from all nixos hosts
 # - Targets are grouped by job and scraped via {host}.nb.krejci.io:9999
 #
+# Extraction blocker: cross-host evaluation uses inputs.self.nixosConfigurations
+# to iterate all hosts. In a library flake, self refers to the library, not the
+# consumer. Need a mechanism for consumers to pass their own nixosConfigurations
+# into the module system. Same issue affects dashboard and watchdog modules.
+#
 # Alert aggregation:
 # - Each service module registers homelab.alerts
 # - This module collects alerts from all nixos hosts
