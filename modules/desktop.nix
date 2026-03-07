@@ -5,10 +5,14 @@
 # - CUPS printing with Brother IPP
 # - SANE scanning, pipewire audio, hyprland WM
 {
+  config,
   lib,
   pkgs,
   ...
-}: {
+}: let
+  domain = config.homelab.global.domain;
+  printerDomain = "${config.homelab.printer.subdomain}.${domain}";
+in {
   imports = [
     ./probe-rs.nix # udev rules for the probe-rs
   ];
@@ -145,8 +149,8 @@
 
       # Require VPN connectivity. The "-m everywhere" option fetches printer
       # capabilities via IPP.
-      getent hosts brother.krejci.io >/dev/null \
-        || { echo "brother.krejci.io not resolvable, will retry"; exit 1; }
+      getent hosts ${printerDomain} >/dev/null \
+        || { echo "${printerDomain} not resolvable, will retry"; exit 1; }
 
       # Remove stale cups-browsed printer if present. cups-browsed creates
       # printers with underscores and a generic "driverless" PPD that sends
@@ -155,7 +159,7 @@
 
       # Add printer with IPP Everywhere
       lpadmin -p Brother-DCP-T730DW \
-        -v ipps://brother.krejci.io:443/ipp/print \
+        -v ipps://${printerDomain}:443/ipp/print \
         -m everywhere \
         -D "Brother DCP-T730DW" \
         -L "Home" \
@@ -186,7 +190,7 @@
   # Brother scanner accessible via VPN, uses eSCL protocol
   environment.etc."sane.d/airscan.conf".text = ''
     [devices]
-    "Brother DCP-T730DW" = https://brother.krejci.io:443/eSCL
+    "Brother DCP-T730DW" = https://${printerDomain}:443/eSCL
   '';
 
   # Disable v4l backend so webcam doesn't appear as scanner
