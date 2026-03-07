@@ -217,11 +217,13 @@
     };
   };
 
-  # TODO make the hyprland usable
   programs.hyprland = {
     enable = true;
     xwayland.enable = true;
   };
+
+  # PAM service for hyprlock screen locker
+  security.pam.services.hyprlock = {};
 
   environment.systemPackages = with pkgs; [
     unstable.zellij
@@ -238,7 +240,9 @@
     vlc
     solaar
     rofi
-    eww
+    wl-clipboard
+    grim
+    slurp
     powertop
     tlp
     brightnessctl
