@@ -87,6 +87,10 @@
       swapSize = "8G";
       homelab = {
         # Shared infrastructure
+        mosquitto = {
+          enable = true;
+          port = 1883;
+        };
         nginx.enable = true;
         postgresql.enable = true;
         redis.enable = true;
@@ -113,6 +117,11 @@
           enable = true;
           ip = "192.168.91.2";
           port = 3000;
+        };
+        home-assistant = {
+          enable = true;
+          ip = "192.168.91.13";
+          port = 8123;
         };
         immich = {
           enable = true;
@@ -187,6 +196,11 @@
         backup = {
           remote.enable = true;
           local.enable = true;
+        };
+        zigbee2mqtt = {
+          enable = true;
+          ip = "192.168.91.14";
+          port = 8099;
         };
       };
       extraModules = [
