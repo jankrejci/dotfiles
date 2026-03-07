@@ -1,0 +1,347 @@
+{
+  "_comment": "Network monitoring dashboard. Metrics from network-monitor service, smokeping_prober, unbound_exporter, and node_exporter wifi collector.",
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "folderTitle": "Infra",
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0}, "id": 1, "panels": [], "title": "Connectivity Status", "type": "row"},
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "Down"}, "1": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 3, "w": 3, "x": 0, "y": 1}, "id": 2,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "network_monitor_up{layer=\"gateway\",host=~\"$host\"}", "legendFormat": "{{host}}", "refId": "A"}],
+      "title": "Gateway", "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "Down"}, "1": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 3, "w": 3, "x": 3, "y": 1}, "id": 3,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "network_monitor_up{layer=\"internet\",host=~\"$host\"}", "legendFormat": "{{host}}", "refId": "A"}],
+      "title": "Internet", "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "Down"}, "1": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 3, "w": 3, "x": 6, "y": 1}, "id": 4,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "network_monitor_up{layer=\"dns\",host=~\"$host\"}", "legendFormat": "{{host}}", "refId": "A"}],
+      "title": "DNS", "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "Down"}, "1": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 3, "w": 3, "x": 9, "y": 1}, "id": 5,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "network_monitor_up{layer=\"http\",host=~\"$host\"}", "legendFormat": "{{host}}", "refId": "A"}],
+      "title": "HTTP", "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "Down"}, "1": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 3, "w": 3, "x": 12, "y": 1}, "id": 6,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "network_monitor_vpn_up{host=~\"$host\"}", "legendFormat": "{{tunnel}}", "refId": "A"}],
+      "title": "VPN", "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "unit": "dBm",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-red", "value": null}, {"color": "orange", "value": -80}, {"color": "yellow", "value": -75}, {"color": "dark-green", "value": -65}]}
+        }
+      },
+      "gridPos": {"h": 3, "w": 3, "x": 15, "y": 1}, "id": 7,
+      "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
+      "targets": [{"expr": "network_monitor_wifi_signal_dbm{host=~\"$host\"}", "legendFormat": "{{host}}", "refId": "A"}],
+      "title": "WiFi Signal", "type": "stat"
+    },
+
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "custom": {"fillOpacity": 100, "lineWidth": 0},
+          "mappings": [
+            {"type": "range", "options": {"from": 0, "to": 0, "result": {"text": "Down"}}},
+            {"type": "range", "options": {"from": 1, "to": 1, "result": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-grey", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 4, "w": 24, "x": 0, "y": 4}, "id": 8,
+      "options": {"showValue": "never", "alignValue": "center", "mergeValues": true, "rowHeight": 0.9, "legend": {"showLegend": true, "displayMode": "list", "placement": "bottom"}},
+      "targets": [
+        {"expr": "network_monitor_up{layer=\"gateway\",host=~\"$host\"}", "legendFormat": "{{host}} gateway", "refId": "A"},
+        {"expr": "network_monitor_up{layer=\"internet\",host=~\"$host\"}", "legendFormat": "{{host}} internet", "refId": "B"},
+        {"expr": "network_monitor_up{layer=\"dns\",host=~\"$host\"}", "legendFormat": "{{host}} dns", "refId": "C"},
+        {"expr": "network_monitor_up{layer=\"http\",host=~\"$host\"}", "legendFormat": "{{host}} http", "refId": "D"}
+      ],
+      "title": "Connectivity Timeline", "type": "state-timeline"
+    },
+
+    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 8}, "id": 10, "panels": [], "title": "Latency", "type": "row"},
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "pointSize": 5, "showPoints": "never", "spanNulls": false},
+          "unit": "s"
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 9}, "id": 11,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [
+        {"expr": "network_monitor_latency_seconds{host=~\"$host\"}", "legendFormat": "{{host}} {{layer}}", "refId": "A"}
+      ],
+      "title": "Check Latency", "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "pointSize": 5, "showPoints": "never", "spanNulls": false},
+          "unit": "s"
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 9}, "id": 12,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [
+        {"expr": "rate(smokeping_response_duration_seconds_sum{job=\"network-smokeping\",host=~\"$host\"}[5m]) / rate(smokeping_response_duration_seconds_count{job=\"network-smokeping\",host=~\"$host\"}[5m])", "legendFormat": "{{host}} avg", "refId": "A"},
+        {"expr": "histogram_quantile(0.95, rate(smokeping_response_duration_seconds_bucket{job=\"network-smokeping\",host=~\"$host\"}[5m]))", "legendFormat": "{{host}} p95", "refId": "B"}
+      ],
+      "title": "Smokeping Latency", "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"drawStyle": "line", "fillOpacity": 20, "lineWidth": 1, "pointSize": 5, "showPoints": "never", "spanNulls": false},
+          "unit": "percentunit",
+          "max": 1,
+          "min": 0
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 17}, "id": 13,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [
+        {"expr": "1 - rate(smokeping_response_duration_seconds_count{job=\"network-smokeping\",host=~\"$host\"}[5m]) / rate(smokeping_requests_total{job=\"network-smokeping\",host=~\"$host\"}[5m])", "legendFormat": "{{host}}", "refId": "A"}
+      ],
+      "title": "Packet Loss", "type": "timeseries"
+    },
+
+    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 25}, "id": 20, "panels": [], "title": "WiFi", "type": "row"},
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "pointSize": 5, "showPoints": "never", "spanNulls": false},
+          "unit": "dBm"
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 26}, "id": 21,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [
+        {"expr": "network_monitor_wifi_signal_dbm{host=~\"$host\"}", "legendFormat": "{{host}} signal", "refId": "A"},
+        {"expr": "network_monitor_wifi_signal_avg_dbm{host=~\"$host\"}", "legendFormat": "{{host}} avg", "refId": "B"},
+        {"expr": "node_wifi_station_signal_dbm{host=~\"$host\"}", "legendFormat": "{{host}} node_exporter", "refId": "C"}
+      ],
+      "title": "WiFi Signal Strength", "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "pointSize": 5, "showPoints": "never", "spanNulls": false},
+          "unit": "short"
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 26}, "id": 22,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [
+        {"expr": "rate(network_monitor_wifi_tx_retries_total{host=~\"$host\"}[5m])", "legendFormat": "{{host}} retries/s", "refId": "A"},
+        {"expr": "rate(node_wifi_station_transmit_retries_total{host=~\"$host\"}[5m])", "legendFormat": "{{host}} node retries/s", "refId": "B"},
+        {"expr": "rate(node_wifi_station_beacon_loss_total{host=~\"$host\"}[5m])", "legendFormat": "{{host}} beacon loss/s", "refId": "C"}
+      ],
+      "title": "WiFi Errors", "type": "timeseries"
+    },
+
+    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 34}, "id": 30, "panels": [], "title": "DNS Resolver (Unbound)", "type": "row"},
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "pointSize": 5, "showPoints": "never", "spanNulls": false},
+          "unit": "short"
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 35}, "id": 31,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [
+        {"expr": "sum(rate(unbound_queries_total{job=\"network-unbound\",host=~\"$host\"}[5m]))", "legendFormat": "{{host}} queries/s", "refId": "A"},
+        {"expr": "sum(rate(unbound_cache_hits_total{job=\"network-unbound\",host=~\"$host\"}[5m]))", "legendFormat": "{{host}} cache hits/s", "refId": "B"},
+        {"expr": "sum(rate(unbound_cache_misses_total{job=\"network-unbound\",host=~\"$host\"}[5m]))", "legendFormat": "{{host}} cache misses/s", "refId": "C"}
+      ],
+      "title": "DNS Query Rate", "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "pointSize": 5, "showPoints": "never", "spanNulls": false},
+          "unit": "percentunit",
+          "max": 1,
+          "min": 0
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 35}, "id": 32,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [
+        {"expr": "sum(rate(unbound_cache_hits_total{job=\"network-unbound\",host=~\"$host\"}[5m])) / sum(rate(unbound_queries_total{job=\"network-unbound\",host=~\"$host\"}[5m]))", "legendFormat": "{{host}} hit ratio", "refId": "A"}
+      ],
+      "title": "DNS Cache Hit Ratio", "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "pointSize": 5, "showPoints": "never", "spanNulls": false},
+          "unit": "s"
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 43}, "id": 33,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [
+        {"expr": "unbound_recursion_time_seconds_avg{job=\"network-unbound\",host=~\"$host\"}", "legendFormat": "{{host}} avg", "refId": "A"},
+        {"expr": "unbound_recursion_time_seconds_median{job=\"network-unbound\",host=~\"$host\"}", "legendFormat": "{{host}} median", "refId": "B"}
+      ],
+      "title": "DNS Recursion Time", "type": "timeseries"
+    },
+
+    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 51}, "id": 40, "panels": [], "title": "VPN", "type": "row"},
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "custom": {"fillOpacity": 100, "lineWidth": 0},
+          "mappings": [
+            {"type": "range", "options": {"from": 0, "to": 0, "result": {"text": "Down"}}},
+            {"type": "range", "options": {"from": 1, "to": 1, "result": {"text": "Up"}}},
+            {"type": "special", "options": {"match": "null", "result": {"text": "N/A"}}}
+          ],
+          "thresholds": {"mode": "absolute", "steps": [{"color": "dark-grey", "value": null}, {"color": "dark-red", "value": 0}, {"color": "dark-green", "value": 1}]}
+        }
+      },
+      "gridPos": {"h": 4, "w": 12, "x": 0, "y": 52}, "id": 41,
+      "options": {"showValue": "never", "alignValue": "center", "mergeValues": true, "rowHeight": 0.9, "legend": {"showLegend": true, "displayMode": "list", "placement": "bottom"}},
+      "targets": [
+        {"expr": "network_monitor_vpn_up{host=~\"$host\"}", "legendFormat": "{{host}} {{tunnel}}", "refId": "A"}
+      ],
+      "title": "VPN Status Timeline", "type": "state-timeline"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"drawStyle": "line", "fillOpacity": 10, "lineWidth": 1, "pointSize": 5, "showPoints": "never", "spanNulls": false},
+          "unit": "s",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 120}, {"color": "red", "value": 180}]}
+        }
+      },
+      "gridPos": {"h": 4, "w": 12, "x": 12, "y": 52}, "id": 42,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [
+        {"expr": "network_monitor_vpn_handshake_age_seconds{host=~\"$host\"}", "legendFormat": "{{host}} {{tunnel}}", "refId": "A"}
+      ],
+      "title": "VPN Handshake Age", "type": "timeseries"
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["network", "monitoring"],
+  "templating": {
+    "list": [
+      {
+        "current": {"text": ["framework", "t14", "e470"], "value": ["framework", "t14", "e470"]},
+        "includeAll": true,
+        "multi": true,
+        "name": "host",
+        "options": [
+          {"selected": true, "text": "framework", "value": "framework"},
+          {"selected": true, "text": "t14", "value": "t14"},
+          {"selected": true, "text": "e470", "value": "e470"}
+        ],
+        "query": "framework, t14, e470",
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "",
+  "title": "Network Monitor",
+  "uid": "network-monitor"
+}
