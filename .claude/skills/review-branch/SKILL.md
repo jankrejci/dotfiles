@@ -1,20 +1,30 @@
 ---
 name: review-branch
-description: Deep review of all branch changes against origin/main — code, commits, and CI readiness
+description: Deep review of all branch changes — code, commits, and CI readiness
 context: fork
 disable-model-invocation: true
 allowed-tools: Bash, Read, Grep, Glob, Skill, Task, WebSearch, WebFetch
 ---
 
-Deep, exhaustive review of all commits on the current branch compared to origin/main. The goal is that after all findings are fixed, the branch is merge-ready and all pipeline checks will pass. Do not leave anything for a second pass — find everything in one review.
+Deep, exhaustive review of all commits on the current branch. The goal is that after all findings are fixed, the branch is merge-ready and all pipeline checks will pass. Do not leave anything for a second pass — find everything in one review.
 
 ## Process
 
 ### Phase 1: Gather context
 
-1. `git log --oneline origin/main..HEAD` — list all commits
-2. `git diff origin/main...HEAD --stat` — see which files changed
-3. `git diff origin/main...HEAD` — full diff of all changes
+**Detect base reference:**
+
+Use `origin/main` as `BASE_REF`. Report the commit count so the user can verify:
+
+```bash
+git rev-list --count origin/main..HEAD
+```
+
+**Gather changes using the detected base:**
+
+1. `git log --oneline $BASE_REF..HEAD` — list all commits on this branch
+2. `git diff $BASE_REF...HEAD --stat` — see which files changed
+3. `git diff $BASE_REF...HEAD` — full diff of all changes
 4. For non-trivial changes, read full files for context beyond the diff
 
 ### Phase 2: Run all checks
@@ -49,7 +59,7 @@ For each commit individually (`git show <hash>`), verify:
 
 ### Phase 4: Code correctness
 
-Review the full diff (`git diff origin/main...HEAD`) for:
+Review the full diff (`git diff $BASE_REF...HEAD`) for:
 
 **Logic and safety:**
 - Logic errors, off-by-one, race conditions
