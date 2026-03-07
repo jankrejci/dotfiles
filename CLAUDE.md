@@ -260,9 +260,10 @@ scripts.nix            # Deployment and utility scripts
 
 ## Port and IP Patterns
 
-**Port declaration:** Module options define port types without defaults. All port
-values live in `flake/hosts.nix` host definitions. This enforces a single source
-of truth and makes port conflicts visible at a glance.
+**Port declaration:** Every port must be a `lib.types.port` option named `port`
+or `port.<name>`. Defaults are allowed. Host-specific overrides go in
+`flake/hosts.nix`. This naming convention enables a build-time collision check
+that enumerates all `port` options across modules.
 
 **Shared service ports** like `services.https.port` and `services.netbird.port.*`
 are defined in the `services` attrset in `flake/hosts.nix` and referenced by
