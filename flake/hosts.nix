@@ -279,6 +279,7 @@
           enable = true;
           ip = "192.168.93.1";
           port = 5000;
+          dexHost = "thinkcenter";
         };
         webcam.enable = true;
       };

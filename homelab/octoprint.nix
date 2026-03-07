@@ -44,6 +44,11 @@ in {
       default = "octoprint";
       description = "Subdomain for OctoPrint";
     };
+
+    dexHost = lib.mkOption {
+      type = lib.types.str;
+      description = "Hostname running Dex, for /etc/hosts resolution of the Dex domain";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -52,8 +57,8 @@ in {
     networking.hosts.${cfg.ip} = [serverDomain];
 
     # Resolve Dex domain to its VPN service IP so oauth2-proxy talks to
-    # thinkcenter directly over the mesh instead of routing through vpsfree.
-    networking.hosts.${allHosts.thinkcenter.homelab.dex.ip} = [dexDomain];
+    # the Dex host directly over the mesh instead of routing through the public proxy.
+    networking.hosts.${allHosts.${cfg.dexHost}.homelab.dex.ip} = [dexDomain];
 
     # oauth2-proxy environment file with client secret and cookie secret
     age.secrets.oauth2-proxy-env = {
