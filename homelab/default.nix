@@ -27,6 +27,7 @@
     ./netbird-signal.nix
     ./netbird-server.nix
     ./grafana.nix
+    ./home-assistant.nix
     ./immich.nix
     ./immich-public-proxy.nix
     ./jellyfin.nix
