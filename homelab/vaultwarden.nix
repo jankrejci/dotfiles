@@ -39,6 +39,37 @@ in {
       default = "vault";
       description = "Subdomain for vaultwarden";
     };
+
+    smtp = {
+      host = lib.mkOption {
+        type = lib.types.str;
+        description = "SMTP server hostname";
+      };
+
+      port = lib.mkOption {
+        type = lib.types.port;
+        default = 587;
+        description = "SMTP server port";
+      };
+
+      security = lib.mkOption {
+        type = lib.types.enum ["starttls" "force_tls" "off"];
+        default = "starttls";
+        description = "SMTP security mode";
+      };
+
+      from = lib.mkOption {
+        type = lib.types.str;
+        default = "admin@${global.domain}";
+        description = "Sender email address for notifications";
+      };
+
+      username = lib.mkOption {
+        type = lib.types.str;
+        default = cfg.smtp.from;
+        description = "SMTP authentication username, defaults to from address";
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable (lib.mkMerge [
@@ -100,12 +131,12 @@ in {
           IP_HEADER = "X-Real-IP";
 
           # Email notifications and 2FA delivery
-          SMTP_HOST = "smtp.protonmail.ch";
-          SMTP_PORT = 587;
-          SMTP_SECURITY = "starttls";
-          SMTP_FROM = "admin@${domain}";
+          SMTP_HOST = cfg.smtp.host;
+          SMTP_PORT = cfg.smtp.port;
+          SMTP_SECURITY = cfg.smtp.security;
+          SMTP_FROM = cfg.smtp.from;
           SMTP_FROM_NAME = "Vaultwarden";
-          SMTP_USERNAME = "admin@${domain}";
+          SMTP_USERNAME = cfg.smtp.username;
           SMTP_PASSWORD_FILE = config.age.secrets.vaultwarden-smtp-password.path;
         };
       };
