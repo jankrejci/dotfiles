@@ -13,6 +13,10 @@ autosquash of fixup commits. All other operations require explicit user request.
 All rebase operations use `GIT_SEQUENCE_EDITOR` to avoid interactive editors.
 This is the only safe way for an AI agent to perform interactive rebase.
 
+**NEVER use the `reword` action.** It opens an interactive editor which hangs
+in non-interactive mode. Always use `edit` + `git commit --amend -m "..."` to
+change commit messages.
+
 ```bash
 # No-op editor for autosquash-only rebases
 GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash origin/main
@@ -60,11 +64,16 @@ are untouched.
 ### Step 3: Verify commit messages
 
 Fixups may have changed a commit's content so the message no longer matches.
+The `--fixup` flag discards the fixup commit message during autosquash, so any
+context from the fixup must be manually incorporated into the target message.
+
 For each commit on the branch:
 
 1. Read the commit: `git show <hash>`
 2. Check if the message still accurately describes the diff
-3. If mismatched, use the "Reword a Commit" operation below
+3. If the fixup added, removed, or changed behavior that the original bullets
+   do not cover, reword the commit using the "Reword a Commit" operation below
+   to add or update the relevant bullets
 
 ### Step 4: Final verification
 

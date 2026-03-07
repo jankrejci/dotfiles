@@ -100,6 +100,21 @@ git commit --amend --no-edit
 git rebase --continue
 ```
 
+**Reword a commit message** (fix inaccurate or incomplete message):
+```bash
+GIT_SEQUENCE_EDITOR="sed -i 's/^pick <HASH>/edit <HASH>/'" git rebase -i origin/main
+git commit --amend -m "$(cat <<'EOF'
+module: Updated commit message
+
+- corrected or added bullets
+EOF
+)"
+git rebase --continue
+```
+
+NEVER use the `reword` action. It opens an interactive editor which hangs in
+non-interactive mode. Always use `edit` + `git commit --amend -m "..."`.
+
 **Multiple operations**: mark all target commits for edit in a single sed
 command with `-e` flags. The rebase pauses at each in order.
 
