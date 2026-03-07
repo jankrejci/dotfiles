@@ -186,6 +186,7 @@
         };
         backup = {
           remote.enable = true;
+          remote.server = "borg@vpsfree.nb.krejci.io";
           local.enable = true;
         };
       };
