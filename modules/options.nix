@@ -352,7 +352,6 @@ in {
 
         server = mkOption {
           type = types.str;
-          default = "borg@vpsfree.nb.krejci.io";
           description = "SSH connection string for remote borg server";
         };
 
