@@ -39,6 +39,7 @@
     ./octoprint.nix
     ./printer.nix
     ./prometheus.nix
+    ./sso-proxy.nix
     ./tunnel.nix
     ./vaultwarden.nix
     ./watchdog.nix
