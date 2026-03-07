@@ -9,6 +9,7 @@
     settings = {
       "$mod" = "SUPER";
       "$terminal" = "alacritty";
+      "$fileManager" = "nautilus";
       "$menu" = "rofi -show drun -show-icons";
 
       env = [
