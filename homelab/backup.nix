@@ -45,7 +45,7 @@
   cfg = config.homelab.backup;
   hostName = config.homelab.host.hostName;
   jobs = cfg.jobs;
-  metricsDir = "/var/lib/prometheus-node-exporter";
+  metricsDir = config.homelab.metricsDir;
 
   # Generate configuration for a single backup job
   mkJobConfig = job: let

@@ -19,7 +19,7 @@
   # Service IPs registered by homelab modules via homelab.serviceIPs
   serviceIPs = config.homelab.serviceIPs;
   hasServices = serviceIPs != [];
-  metricsDir = "/var/lib/prometheus-node-exporter";
+  metricsDir = config.homelab.metricsDir;
   unboundPort = config.homelab.unbound.port;
 in {
   options.homelab.unbound.port = lib.mkOption {

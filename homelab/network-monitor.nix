@@ -16,7 +16,7 @@
   ...
 }: let
   cfg = config.homelab.network-monitor;
-  metricsDir = "/var/lib/prometheus-node-exporter";
+  metricsDir = config.homelab.metricsDir;
 
   monitorScript = pkgs.writeShellApplication {
     name = "network-monitor-service";
