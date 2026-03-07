@@ -59,6 +59,10 @@ in {
         assertion = config.homelab.mosquitto.enable;
         message = "homelab.home-assistant requires homelab.mosquitto.enable = true";
       }
+      {
+        assertion = config.homelab.sso-proxy.enable;
+        message = "homelab.home-assistant requires homelab.sso-proxy.enable = true";
+      }
     ];
 
     # Register IP for services dummy interface
@@ -126,10 +130,22 @@ in {
       wants = ["mosquitto.service" "zigbee2mqtt.service"];
     };
 
-    # Nginx reverse proxy
+    # Register as oauth2-proxy protected virtualHost
+    services.oauth2-proxy.nginx.virtualHosts.${haDomain} = {};
+
+    # Nginx reverse proxy.
+    # Uses explicit listen + onlySSL instead of forceSSL because the
+    # oauth2-proxy nginx module adds auth_request to the vhost-level
+    # extraConfig, which would break the HTTP redirect server block.
     services.nginx.virtualHosts.${haDomain} = {
-      listenAddresses = [cfg.ip];
-      forceSSL = true;
+      listen = [
+        {
+          addr = cfg.ip;
+          port = services.https.port;
+          ssl = true;
+        }
+      ];
+      onlySSL = true;
       useACMEHost = domain;
       locations."/" = {
         proxyPass = "http://127.0.0.1:${toString cfg.port}";
