@@ -1,9 +1,9 @@
 # Hyprland window manager for home-manager
 #
-# - basic tiling with rofi launcher
-# - workspace switching and media keys
-# - experimental, GNOME is primary DE
-{
+# - waybar top bar with workspaces, system monitors, tray
+# - tiling with rofi launcher, workspace switching, media keys
+# - GNOME remains as alternative session in GDM
+{...}: {
   wayland.windowManager.hyprland = {
     enable = true;
     settings = {
@@ -91,5 +91,113 @@
         ",XF86MonBrightnessDown, exec, brightnessctl s 10%-"
       ];
     };
+  };
+
+  # Top bar replicating GNOME dash-to-panel layout:
+  # [workspaces]          [clock]          [cpu mem net audio battery tray]
+  programs.waybar = {
+    enable = true;
+    systemd = {
+      enable = true;
+      target = "hyprland-session.target";
+    };
+    settings = [
+      {
+        layer = "top";
+        position = "top";
+        spacing = 8;
+        modules-left = ["hyprland/workspaces"];
+        modules-center = ["clock"];
+        modules-right = ["cpu" "memory" "network" "pulseaudio" "battery" "tray"];
+
+        "hyprland/workspaces" = {
+          format = "{id}";
+          on-click = "activate";
+        };
+        clock = {
+          format = "{:%a %b %d  %H:%M}";
+          tooltip-format = "{:%Y-%m-%d %H:%M:%S}";
+        };
+        cpu = {
+          format = " {usage}%";
+          interval = 5;
+        };
+        memory = {
+          format = " {percentage}%";
+          interval = 5;
+        };
+        network = {
+          format-wifi = " {signalStrength}%";
+          format-ethernet = " {ifname}";
+          format-disconnected = "󰤭 disconnected";
+          tooltip-format = "{ifname}: {ipaddr}/{cidr}";
+        };
+        pulseaudio = {
+          format = "{icon} {volume}%";
+          format-muted = " muted";
+          format-icons = {
+            default = ["" "" ""];
+          };
+          on-click = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
+        };
+        battery = {
+          format = "{icon} {capacity}%";
+          format-charging = " {capacity}%";
+          format-icons = ["" "" "" "" ""];
+          states = {
+            warning = 20;
+            critical = 10;
+          };
+        };
+        tray = {
+          spacing = 8;
+        };
+      }
+    ];
+    style = ''
+      * {
+        font-family: "DejaVuSansM Nerd Font", sans-serif;
+        font-size: 13px;
+        min-height: 0;
+      }
+
+      window#waybar {
+        background-color: rgba(30, 30, 46, 0.9);
+        color: #cdd6f4;
+      }
+
+      #workspaces button {
+        padding: 0 8px;
+        color: #6c7086;
+        border-bottom: 2px solid transparent;
+      }
+
+      #workspaces button.active {
+        color: #cdd6f4;
+        border-bottom: 2px solid #89b4fa;
+      }
+
+      #workspaces button:hover {
+        background: rgba(137, 180, 250, 0.2);
+      }
+
+      #clock,
+      #cpu,
+      #memory,
+      #network,
+      #pulseaudio,
+      #battery,
+      #tray {
+        padding: 0 10px;
+      }
+
+      #battery.warning {
+        color: #fab387;
+      }
+
+      #battery.critical {
+        color: #f38ba8;
+      }
+    '';
   };
 }
