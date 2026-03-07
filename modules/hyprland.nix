@@ -2,9 +2,19 @@
 #
 # - waybar top bar with workspaces, system monitors, tray
 # - hyprlock/hypridle for screen lock and idle management
+# - mako notifications, wpaperd wallpaper
 # - tiling with rofi launcher, workspace switching, media keys
 # - GNOME remains as alternative session in GDM
-{...}: {
+{pkgs, ...}: let
+  # Dark wallpaper generated from solid color to avoid committing a binary.
+  # Resolution is arbitrary since the image is a uniform color.
+  darkWallpaper =
+    pkgs.runCommand "dark-wallpaper.png" {
+      nativeBuildInputs = [pkgs.imagemagick];
+    } ''
+      magick -size 3840x2160 xc:'#1e1e2e' $out
+    '';
+in {
   wayland.windowManager.hyprland = {
     enable = true;
     settings = {
@@ -202,6 +212,20 @@
     '';
   };
 
+  # Desktop notifications
+  services.mako = {
+    enable = true;
+    settings = {
+      default-timeout = 5000;
+      border-radius = 5;
+      background-color = "#1e1e2edd";
+      text-color = "#cdd6f4";
+      border-color = "#89b4fa";
+      border-size = 2;
+      font = "DejaVuSansM Nerd Font 11";
+    };
+  };
+
   # Screen lock with blurred background
   programs.hyprlock = {
     enable = true;
@@ -266,6 +290,17 @@
           on-timeout = "systemctl suspend";
         }
       ];
+    };
+  };
+
+  # Wallpaper daemon
+  services.wpaperd = {
+    enable = true;
+    settings = {
+      default = {
+        path = darkWallpaper;
+        mode = "center";
+      };
     };
   };
 }
