@@ -22,6 +22,7 @@
     ./loki.nix
     ./lorawan-gateway.nix
     ./memos.nix
+    ./network-monitor.nix
     ./ntfy.nix
     ./octoprint.nix
     ./printer.nix
