@@ -32,6 +32,7 @@
     ./vaultwarden.nix
     ./watchdog.nix
     ./webcam.nix
+    ./zigbee2mqtt.nix
 
     # Health check aggregator
     ./health-check.nix
