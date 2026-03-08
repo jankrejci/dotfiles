@@ -35,7 +35,7 @@ in {
       useNetworkd = lib.mkForce true;
     };
 
-    # Do not wait to long for interfaces to become online,
+    # Do not wait too long for interfaces to become online,
     # this is especially handy for notebooks on wifi,
     # where the eth interface is disconnected
     boot.initrd.systemd.network.wait-online.enable = false;
