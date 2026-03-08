@@ -1,138 +1,246 @@
 ---
 name: branch-cleanup
-description: Consolidate branch with autosquash, targeted rebase operations, or full soft reset
+description: Rebase operations for cleaning up branch history before merge
 disable-model-invocation: true
-allowed-tools: Bash, Read
+allowed-tools: Bash, Read, Edit
 ---
 
-Consolidate branch commits before merge. Pick the right operation for the task.
+Rebase toolkit for branch history management. Default operation is conservative
+autosquash of fixup commits. All other operations require explicit user request.
 
-## When to Use
+## Core Technique: GIT_SEQUENCE_EDITOR
 
-- Before merging a feature branch to main
-- After iterative development with fixup commits
-- When a commit bundles unrelated changes and needs splitting
-- When commit order needs fixing
-- When specific files belong in a different commit
+All rebase operations use `GIT_SEQUENCE_EDITOR` to avoid interactive editors.
+This is the only safe way for an AI agent to perform interactive rebase.
 
-## Rules
+**NEVER use the `reword` action.** It opens an interactive editor which hangs
+in non-interactive mode. Always use `edit` + `git commit --amend -m "..."` to
+change commit messages.
 
-- NEVER force push without user confirmation
-- NEVER delete backup branch automatically
-- ALWAYS verify nix flake check passes after rebase
-- ALWAYS show before/after commit list to user
+```bash
+# No-op editor for autosquash-only rebases
+GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash origin/main
 
-## Step 0: Always Do First
+# sed for targeted operations on specific commits
+GIT_SEQUENCE_EDITOR="sed -i 's/^pick <HASH>/edit <HASH>/'" git rebase -i origin/main
+
+# Multiple commits in a single rebase
+GIT_SEQUENCE_EDITOR="sed -i -e 's/^pick <HASH1>/edit <HASH1>/' -e 's/^pick <HASH2>/edit <HASH2>/'" git rebase -i origin/main
+
+# Bash script for complex todo list rewrites like reordering
+GIT_SEQUENCE_EDITOR='bash -c "
+  LINE=$(grep \"^pick <HASH>\" \"\$1\")
+  sed -i \"/^pick <HASH>/d\" \"\$1\"
+  sed -i \"/^pick <TARGET_HASH>/a\\\\$LINE\" \"\$1\"
+"' git rebase -i origin/main
+```
+
+## Pre-flight (before every rebase)
 
 1. Verify clean working tree: `git status`
-2. Create backup branch: `git branch backup-$(git branch --show-current)-$(date +%s)`
+2. Create timestamped backup: `git branch backup-$(git branch --show-current)-$(date +%s)`
 3. Show current commits: `git log --oneline origin/main..HEAD`
-4. Identify which operation is needed and confirm with user
 
-## Operation: Autosquash Fixups
+## Default Operation: Autosquash Fixups
 
-Use when: branch has `fixup!` or `squash!` commits to fold in.
+### Step 1: Validate fixup targets
+
+```bash
+git log --oneline origin/main..HEAD | grep 'fixup!'
+```
+
+For each fixup, confirm the target commit message exists in the branch.
+Warn the user if a fixup has no valid target.
+
+### Step 2: Autosquash
 
 ```bash
 GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash origin/main
 ```
 
-## Operation: Split a Commit
+This ONLY folds fixup!/squash! commits into their targets. Normal commits
+are untouched.
 
-Use when: a commit bundles unrelated changes that should be separate commits.
+### Step 3: Verify commit messages
 
-1. Identify the commit to split: `git log --oneline origin/main..HEAD`
-2. Mark it for editing:
+Fixups may have changed a commit's content so the message no longer matches.
+The `--fixup` flag discards the fixup commit message during autosquash, so any
+context from the fixup must be manually incorporated into the target message.
+
+For each commit on the branch:
+
+1. Read the commit: `git show <hash>`
+2. Check if the message still accurately describes the diff
+3. If the fixup added, removed, or changed behavior that the original bullets
+   do not cover, reword the commit using the "Reword a Commit" operation below
+   to add or update the relevant bullets
+
+### Step 4: Final verification
+
+1. Diff against backup must be empty: `git diff backup-<branch>-<ts>..HEAD`
+2. `nix flake check`
+3. Show before/after commit list to user
+
+## Rebase Operations
+
+The following operations are only performed when the user explicitly asks
+or as part of review fixes. Never apply them unprompted.
+
+### Edit a Commit (modify content in place)
+
+Use when: a commit needs its content changed without splitting. This is the
+most common rebase operation for fixing review findings, removing lines,
+or adjusting code in a specific commit.
+
+1. Mark the commit for editing:
    ```bash
-   GIT_SEQUENCE_EDITOR="sed -i 's/^pick <SHORT_HASH>/edit <SHORT_HASH>/'" git rebase -i origin/main
+   GIT_SEQUENCE_EDITOR="sed -i 's/^pick <HASH>/edit <HASH>/'" git rebase -i origin/main
    ```
-3. At the paused commit, undo it but keep changes staged:
+2. The rebase pauses at the target commit. The working tree reflects the
+   state as of that commit. Make the changes to the file.
+3. Stage and amend:
    ```bash
-   git reset --soft HEAD^
+   git add <modified-files>
+   git commit --amend --no-edit
    ```
-4. Unstage everything:
-   ```bash
-   git reset HEAD -- .
-   ```
-5. Re-commit in logical groups:
-   ```bash
-   git add <files-for-group-1> && git commit -m "..."
-   git add <files-for-group-2> && git commit -m "..."
-   ```
-6. Continue rebase:
+   Use `--amend -m "new message"` if the message also needs updating.
+4. Continue:
    ```bash
    git rebase --continue
    ```
 
-## Operation: Reorder Commits
+To edit multiple commits in one rebase, mark them all with a single sed
+command using `-e` flags. The rebase will pause at each one in order.
+After amending each, run `git rebase --continue` to advance to the next.
 
-Use when: a commit needs to move to a different position in history.
+### Split a Commit
 
-1. Show current order: `git log --oneline origin/main..HEAD`
-2. Use a script as GIT_SEQUENCE_EDITOR to rewrite the todo list:
+Use when: a commit bundles unrelated changes that belong in separate commits.
+
+1. Mark for editing:
    ```bash
-   GIT_SEQUENCE_EDITOR='bash -c "
-     LINE=$(grep \"^pick <HASH_TO_MOVE>\" \"\$1\")
-     sed -i \"/^pick <HASH_TO_MOVE>/d\" \"\$1\"
-     sed -i \"/^pick <HASH_AFTER>/a\\\\$LINE\" \"\$1\"
-   "' git rebase -i origin/main
+   GIT_SEQUENCE_EDITOR="sed -i 's/^pick <HASH>/edit <HASH>/'" git rebase -i origin/main
    ```
-   Replace `<HASH_TO_MOVE>` with the commit to relocate and `<HASH_AFTER>` with the commit it should follow.
-3. Resolve any conflicts that arise from the new order.
-
-## Operation: Move Files Between Commits
-
-Use when: specific files in one commit belong in an adjacent commit.
-
-1. Mark the source commit (the one with the misplaced files) for editing:
+2. Undo the commit but keep changes in working tree:
    ```bash
-   GIT_SEQUENCE_EDITOR="sed -i 's/^pick <SHORT_HASH>/edit <SHORT_HASH>/'" git rebase -i origin/main
+   git reset HEAD~1
    ```
-2. At the paused commit, extract the files:
+3. Re-commit in logical groups:
+   ```bash
+   git add <files-for-group-1> && git commit -m "..."
+   git add <files-for-group-2> && git commit -m "..."
+   ```
+   For partial file splits, use `git add -p <file>` to stage individual hunks.
+4. Continue:
+   ```bash
+   git rebase --continue
+   ```
+
+### Reword a Commit
+
+Use when: a commit message is inaccurate or needs updating after fixup folding.
+
+1. Mark for editing:
+   ```bash
+   GIT_SEQUENCE_EDITOR="sed -i 's/^pick <HASH>/edit <HASH>/'" git rebase -i origin/main
+   ```
+2. Amend with new message:
+   ```bash
+   git commit --amend -m "$(cat <<'EOF'
+   module: New commit message
+
+   - updated bullet points
+   EOF
+   )"
+   ```
+3. Continue:
+   ```bash
+   git rebase --continue
+   ```
+
+### Move Files Between Commits
+
+Use when: specific files belong in a different commit.
+
+1. Mark the source commit for editing:
+   ```bash
+   GIT_SEQUENCE_EDITOR="sed -i 's/^pick <HASH>/edit <HASH>/'" git rebase -i origin/main
+   ```
+2. Extract files from the commit:
    ```bash
    git reset HEAD^ -- <file1> <file2>
    git commit --amend --no-edit
    ```
-   The files are now unstaged changes in the working tree.
 3. Continue rebase: `git rebase --continue`
-4. When rebase finishes, the extracted files are uncommitted changes. Amend them into the correct commit using a second rebase, or commit them as a new commit and reorder.
+4. The extracted files are now uncommitted changes. Either:
+   - Amend them into a later commit with a second edit rebase, or
+   - Create a new commit and reorder it into place
 
-Alternative for moving files to the *next* commit:
-1. Mark the source commit for editing (same as above).
-2. Extract files and amend (same as above).
-3. Continue rebase — the next commit replays on top. If the files were added by the source commit, the next commit may conflict. Resolve by accepting the working tree version.
+### Reorder Commits
 
-## Operation: Drop a Commit
+Use when: a commit needs to be at a different position in the branch.
 
-Use when: a commit is entirely superseded or unwanted.
+1. Show current order: `git log --oneline origin/main..HEAD`
+2. Move a commit after a different one:
+   ```bash
+   GIT_SEQUENCE_EDITOR='bash -c "
+     LINE=$(grep \"^pick <HASH_TO_MOVE>\" \"\$1\")
+     sed -i \"/^pick <HASH_TO_MOVE>/d\" \"\$1\"
+     sed -i \"/^pick <TARGET_HASH>/a\\\\$LINE\" \"\$1\"
+   "' git rebase -i origin/main
+   ```
+3. Handle any conflicts from the new order.
+
+### Drop a Commit
+
+Use when: a commit should be removed entirely.
 
 ```bash
-GIT_SEQUENCE_EDITOR="sed -i 's/^pick <SHORT_HASH>/drop <SHORT_HASH>/'" git rebase -i origin/main
+GIT_SEQUENCE_EDITOR="sed -i 's/^pick <HASH>/drop <HASH>/'" git rebase -i origin/main
 ```
 
-## Operation: Full Soft Reset (Last Resort)
+### Full Soft Reset (last resort)
 
-Use when: rebase cannot produce clean commits due to complex interleaved changes. ASK USER for approval before proceeding.
+Use when: commits are too interleaved to rebase cleanly. Requires user
+confirmation before proceeding.
 
 1. `git reset --soft origin/main`
 2. `git reset HEAD -- .`
 3. Stage and commit in logical groups using `/commit` skill
 4. Verify: `nix flake check`
 
-Soft reset rewrites history more aggressively than rebase. Only use when targeted operations cannot produce clean commits.
+## Conflict Handling
 
-## Final Step: Always Verify
+When a rebase encounters a conflict:
 
-1. Compare with backup: `git diff backup-<branch>-<timestamp>..HEAD` must be empty
-2. `nix flake check`
-3. Show final commits: `git log --oneline origin/main..HEAD`
-4. Run `nix run nixpkgs#gitlint -- --commits origin/main..HEAD` to validate all commit messages
-5. Show user the before/after comparison
+1. **Investigate first**: read the conflict markers and understand both sides.
+   Check what the target branch changed:
+   ```bash
+   git log -p -n 3 origin/main -- <conflicting-file>
+   ```
+2. **Simple conflicts** (few files, clear resolution): resolve the files,
+   `git add <resolved-files>`, then `git rebase --continue`.
+3. **Complex conflicts** (many files, unclear intent): abort immediately
+   with `git rebase --abort` and inform the user. Suggest alternatives
+   like soft reset or a different rebase strategy.
+4. **NEVER escalate** from a failed rebase to `git reset --hard`,
+   `git checkout -- .`, or other destructive commands. The only safe
+   escape from a stuck rebase is `git rebase --abort`.
+
+## Rules
+
+- NEVER push to remote
+- NEVER delete backup branch automatically
+- NEVER use destructive commands (`reset --hard`, `checkout -- .`, `clean -f`)
+- ALWAYS create backup branch before any rebase
+- ALWAYS run `nix flake check` after rebase completes
+- ALWAYS show before/after commit list to user
+- ALWAYS abort rebase on unexpected conflicts rather than guessing
 
 ## Principles
 
-- One logical change per final commit
-- Squash all fixups into their target commits
-- Drop commits that are immediately superseded
+- Preserve existing commits by default, only fold fixups
+- Normal commits represent reviewed, intentional history
+- Only restructure when the user explicitly asks
 - Separate CLAUDE.md changes from code commits
-- Preserve struggle documentation in code comments, not commit history
+- When in doubt, abort and ask the user
