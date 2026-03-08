@@ -7,13 +7,13 @@
 # nginx provides TLS termination and proxies requests to ipp-usb.
 #
 # Client configuration:
-#   Printer: ipps://brother.krejci.io/ipp/print
-#   Scanner: https://brother.krejci.io/eSCL
+#   Printer: ipps://<subdomain>.<domain>/ipp/print
+#   Scanner: https://<subdomain>.<domain>/eSCL
 #   Desktop needs: hardware.sane.extraBackends = [pkgs.sane-airscan];
 #
 # Debugging:
-#   curl -k https://brother.krejci.io/eSCL/ScannerCapabilities
-#   ipptool -tv ipps://brother.krejci.io/ipp/print get-printer-attributes.test
+#   curl -k https://<subdomain>.<domain>/eSCL/ScannerCapabilities
+#   ipptool -tv ipps://<subdomain>.<domain>/ipp/print get-printer-attributes.test
 #
 # ---
 # Design decisions and alternatives considered:
