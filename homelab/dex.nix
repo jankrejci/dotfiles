@@ -69,6 +69,7 @@
   config,
   lib,
   pkgs,
+  inputs,
   ...
 }: let
   cfg = config.homelab.dex;
@@ -106,13 +107,99 @@ in {
       default = "auth";
       description = "Subdomain for Dex";
     };
+
+    # Decentralized client registry. Each service module declares its dex
+    # client here. The dex module aggregates clients from all hosts and
+    # auto-generates age.secrets and staticClients configuration.
+    clients = lib.mkOption {
+      type = lib.types.listOf (lib.types.submodule {
+        options = {
+          id = lib.mkOption {
+            type = lib.types.str;
+            description = "OIDC client ID";
+          };
+          name = lib.mkOption {
+            type = lib.types.str;
+            description = "Display name shown on Dex consent screen";
+          };
+          redirectURIs = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            description = "OAuth2 callback URLs";
+          };
+          public = lib.mkOption {
+            type = lib.types.bool;
+            default = false;
+            description = "Public client for SPAs that cannot hold a secret";
+          };
+          secretRekeyFile = lib.mkOption {
+            type = lib.types.nullOr lib.types.path;
+            default = null;
+            description = "Path to agenix secret file for this client";
+          };
+        };
+      });
+      default = [];
+      description = "Dex OIDC client registrations from service modules";
+    };
   };
 
-  config = lib.mkIf cfg.enable {
+  config = lib.mkIf cfg.enable (let
+    # Collect dex client registrations from all nixos hosts
+    allConfigs = inputs.self.nixosConfigurations;
+    nixosHostNames = lib.attrNames (
+      lib.filterAttrs (
+        _: host:
+          (host.kind or "nixos") == "nixos"
+      )
+      config.homelab.hosts
+    );
+    allClients = lib.flatten (
+      map (
+        name: allConfigs.${name}.config.homelab.dex.clients
+      )
+      nixosHostNames
+    );
+
+    # Non-public clients need dex-side secret declarations
+    secretClients = builtins.filter (c: !c.public) allClients;
+
+    clientsWithMissingSecrets = builtins.filter (c: c.secretRekeyFile == null) secretClients;
+
+    # Auto-generate age.secrets for each non-public client
+    clientSecrets = lib.listToAttrs (
+      map (client: {
+        name = "dex-${client.id}-secret";
+        value = {
+          rekeyFile = client.secretRekeyFile;
+          owner = "dex";
+        };
+      })
+      secretClients
+    );
+
+    # Auto-generate staticClients from all collected clients
+    clientConfigs = map (client:
+      {
+        inherit (client) id name redirectURIs;
+      }
+      // lib.optionalAttrs client.public {
+        public = true;
+      }
+      // lib.optionalAttrs (!client.public) {
+        secretFile = config.age.secrets."dex-${client.id}-secret".path;
+      })
+    allClients;
+  in {
     assertions = [
       {
         assertion = config.homelab.tunnel.enable;
         message = "dex requires homelab.tunnel for vpsfree SSO proxy";
+      }
+      {
+        assertion = clientsWithMissingSecrets == [];
+        message = "dex: non-public clients must set secretRekeyFile: ${
+          lib.concatMapStringsSep ", " (c: c.id) clientsWithMissingSecrets
+        }";
       }
     ];
 
@@ -125,38 +212,16 @@ in {
     };
     users.groups.dex = {};
 
-    # Google OAuth credentials for upstream identity provider
-    age.secrets.google-oauth = {
-      rekeyFile = ../secrets/google-oauth.age;
-      owner = "dex";
-    };
-
-    # Client secrets for downstream OAuth clients
-    age.secrets.dex-grafana-secret = {
-      rekeyFile = ../secrets/dex-grafana-secret.age;
-      owner = "dex";
-    };
-    age.secrets.dex-immich-secret = {
-      rekeyFile = ../secrets/dex-immich-secret.age;
-      owner = "dex";
-    };
-    age.secrets.dex-memos-secret = {
-      rekeyFile = ../secrets/dex-memos-secret.age;
-      owner = "dex";
-    };
-    age.secrets.dex-jellyfin-secret = {
-      rekeyFile = ../secrets/dex-jellyfin-secret.age;
-      owner = "dex";
-    };
-    age.secrets.dex-vaultwarden-secret = {
-      rekeyFile = ../secrets/dex-vaultwarden-secret.age;
-      owner = "dex";
-    };
-    age.secrets.dex-octoprint-secret = {
-      rekeyFile = ../secrets/dex-octoprint-secret.age;
-      owner = "dex";
-    };
-    # Netbird client is public (SPA), no secret needed
+    # Google OAuth credentials for upstream identity provider.
+    # Client secrets auto-generated from cross-host dex.clients registry.
+    age.secrets =
+      {
+        google-oauth = {
+          rekeyFile = ../secrets/google-oauth.age;
+          owner = "dex";
+        };
+      }
+      // clientSecrets;
 
     # Register IP for services dummy interface
     homelab.serviceIPs = [cfg.ip];
@@ -241,60 +306,8 @@ in {
           }
         ];
 
-        # Downstream OAuth clients
-        staticClients = [
-          {
-            id = "grafana";
-            name = "Grafana";
-            redirectURIs = ["https://grafana.${domain}/login/generic_oauth"];
-            secretFile = config.age.secrets.dex-grafana-secret.path;
-          }
-          {
-            id = "immich";
-            name = "Immich";
-            redirectURIs = [
-              "https://immich.${domain}/auth/login"
-              "https://immich.${domain}/user-settings"
-              "https://immich.${domain}/api/oauth/mobile-redirect"
-            ];
-            secretFile = config.age.secrets.dex-immich-secret.path;
-          }
-          {
-            id = "memos";
-            name = "Memos";
-            redirectURIs = ["https://memos.${domain}/auth/callback"];
-            secretFile = config.age.secrets.dex-memos-secret.path;
-          }
-          {
-            id = "jellyfin";
-            name = "Jellyfin";
-            redirectURIs = ["https://jellyfin.${domain}/sso/OID/redirect/Dex"];
-            secretFile = config.age.secrets.dex-jellyfin-secret.path;
-          }
-          {
-            id = "vaultwarden";
-            name = "Vaultwarden";
-            redirectURIs = ["https://vault.${domain}/identity/connect/oidc-signin"];
-            secretFile = config.age.secrets.dex-vaultwarden-secret.path;
-          }
-          {
-            id = "octoprint";
-            name = "OctoPrint";
-            redirectURIs = ["https://octoprint.${domain}/oauth2/callback"];
-            secretFile = config.age.secrets.dex-octoprint-secret.path;
-          }
-          {
-            id = "netbird";
-            name = "Netbird";
-            # Public client: dashboard is a SPA that cannot hold a secret
-            public = true;
-            redirectURIs = [
-              "https://netbird.${domain}/#callback"
-              "https://netbird.${domain}/#silent-callback"
-              "http://localhost:53000"
-            ];
-          }
-        ];
+        # Downstream OAuth clients collected from cross-host dex.clients registry
+        staticClients = clientConfigs;
       };
     };
 
@@ -364,5 +377,5 @@ in {
         timeout = 10;
       }
     ];
-  };
+  });
 }
