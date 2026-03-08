@@ -274,12 +274,31 @@ in {
     # for PostgreSQL peer authentication to work.
     # v0.64+ requires NETBIRD_STORE_ENGINE_POSTGRES_DSN as env var instead of
     # reading StoreConfig.Connection from management.json.
+    # Dex is not ready to accept connections on its HTTP port immediately
+    # after systemd considers it started. The preStart poll ensures dex is
+    # actually ready before management tries to fetch OIDC discovery.
     systemd.services.netbird-management = {
       after = ["postgresql.service" "dex.service"];
       requires = ["postgresql.service" "dex.service"];
       environment.NETBIRD_STORE_ENGINE_POSTGRES_DSN = "postgresql:///netbird-mgmt?host=/run/postgresql";
-      serviceConfig.User = "netbird-mgmt";
-      serviceConfig.Group = "netbird-mgmt";
+      serviceConfig = {
+        User = "netbird-mgmt";
+        Group = "netbird-mgmt";
+        RestartSec = 3;
+      };
+      preStart = let
+        dexPort = config.homelab.dex.port.dex;
+      in ''
+        attempts=0
+        until ${pkgs.curl}/bin/curl -sf http://127.0.0.1:${toString dexPort}/.well-known/openid-configuration > /dev/null 2>&1; do
+          attempts=$((attempts + 1))
+          test "$attempts" -lt 30 || {
+            echo "dex OIDC discovery not available after 30s" >&2
+            exit 1
+          }
+          sleep 1
+        done
+      '';
     };
 
     # Dashboard: static admin web UI served by nginx behind VPN
