@@ -65,6 +65,16 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    # Register OIDC client with Dex for SSO
+    homelab.dex.clients = [
+      {
+        id = "jellyfin";
+        name = "Jellyfin";
+        redirectURIs = ["https://${jellyfinDomain}/sso/OID/redirect/Dex"];
+        secretRekeyFile = ../secrets/dex-jellyfin-secret.age;
+      }
+    ];
+
     # Dex client secret for SSO authentication
     age.secrets.jellyfin-dex-secret = {
       rekeyFile = ../secrets/dex-jellyfin-secret.age;
