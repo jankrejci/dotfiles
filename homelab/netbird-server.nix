@@ -308,7 +308,7 @@ in {
     };
 
     # Management API: accessible from vpsfree via WG backup tunnel.
-    # vpsfree's nginx proxies public api.krejci.io requests here.
+    # vpsfree's nginx proxies public api.<domain> requests here.
     services.nginx.virtualHosts.${apiDomain} = {
       listenAddresses = [wgIp];
       forceSSL = true;

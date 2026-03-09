@@ -8,7 +8,7 @@
 # Scrape target discovery:
 # - Each service module registers homelab.scrapeTargets
 # - This module collects targets from all nixos hosts
-# - Targets are grouped by job and scraped via {host}.nb.krejci.io:9999
+# - Targets are grouped by job and scraped via {host}.<peerDomain>:9999
 #
 # Extraction blocker: cross-host evaluation uses inputs.self.nixosConfigurations
 # to iterate all hosts. In a library flake, self refers to the library, not the

@@ -9,7 +9,7 @@
 # - nginx stream: relay TLS passthrough on port 33080, STUN UDP on port 3478
 # - signal: local gRPC service for peer connection handshakes
 #
-# Clients use api.krejci.io as their management URL. Signal and relay URLs
+# Clients use api.<domain> as their management URL. Signal and relay URLs
 # are distributed automatically by the management server.
 #
 # vpsfree is LXC-based with a shared kernel, so no sensitive state here.
