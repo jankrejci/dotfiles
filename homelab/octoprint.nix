@@ -13,7 +13,6 @@
   global = config.homelab.global;
   services = config.homelab.services;
   domain = global.domain;
-  allHosts = config.homelab.hosts;
   serverDomain = "${cfg.subdomain}.${domain}";
   dexDomain = "${config.homelab.dex.subdomain}.${domain}";
 
@@ -50,10 +49,6 @@ in {
     # Register IP for services dummy interface
     homelab.serviceIPs = [cfg.ip];
     networking.hosts.${cfg.ip} = [serverDomain];
-
-    # Resolve Dex domain to its VPN service IP so oauth2-proxy talks to
-    # thinkcenter directly over the mesh instead of routing through vpsfree.
-    networking.hosts.${allHosts.thinkcenter.homelab.dex.ip} = [dexDomain];
 
     # oauth2-proxy environment file with client secret and cookie secret
     age.secrets.oauth2-proxy-env = {
