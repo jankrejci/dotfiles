@@ -256,6 +256,7 @@ in {
     simple-scan
     avahi
     probe-rs-tools
+    uv # python package runner, used by Claude Code MCP servers
     # Tools also in headless.nix - desktops need them too
     nmap
     wireguard-tools
