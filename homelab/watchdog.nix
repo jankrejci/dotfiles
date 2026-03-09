@@ -66,20 +66,17 @@ in {
       # Standard SMTP term for the relay that handles outbound mail
       smarthost = lib.mkOption {
         type = lib.types.str;
-        default = "smtp.protonmail.ch:587";
         description = "SMTP smarthost in host:port format";
       };
 
       from = lib.mkOption {
         type = lib.types.str;
-        default = "";
-        description = "Sender email address";
+        description = "Sender email address, must match SMTP credentials";
       };
 
       to = lib.mkOption {
         type = lib.types.str;
-        default = "";
-        description = "Recipient email address";
+        description = "Recipient email address for alerts";
       };
     };
   };

@@ -48,8 +48,9 @@
             alertmanager = 9094;
           };
           email = {
-            from = "admin@krejci.io";
-            to = "admin@krejci.io";
+            smarthost = "smtp.protonmail.ch:587";
+            from = "krejcijan@protonmail.com";
+            to = "krejcijan@protonmail.com";
           };
         };
         netbird-signal = {
