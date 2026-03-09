@@ -86,6 +86,21 @@ in {
       }
     ];
 
+    # Register OIDC client with Dex for SSO.
+    # Public client: dashboard is a SPA that cannot hold a secret.
+    homelab.dex.clients = [
+      {
+        id = "netbird";
+        name = "Netbird";
+        public = true;
+        redirectURIs = [
+          "https://${dashboardDomain}/#callback"
+          "https://${dashboardDomain}/#silent-callback"
+          "http://localhost:53000"
+        ];
+      }
+    ];
+
     # Encryption key for sensitive data stored in management database
     age.secrets.netbird-datastore-key = {
       rekeyFile = ../secrets/netbird-datastore-key.age;
