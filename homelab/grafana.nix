@@ -54,6 +54,16 @@ in {
       }
     ];
 
+    # Register OIDC client with Dex for SSO
+    homelab.dex.clients = [
+      {
+        id = "grafana";
+        name = "Grafana";
+        redirectURIs = ["https://${serverDomain}/login/generic_oauth"];
+        secretRekeyFile = ../secrets/dex-grafana-secret.age;
+      }
+    ];
+
     # Dex client secret for SSO authentication
     age.secrets.grafana-dex-secret = {
       rekeyFile = ../secrets/dex-grafana-secret.age;
