@@ -46,6 +46,18 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    # Register OIDC client with Dex for SSO.
+    # OctoPrint runs on prusa, not thinkcenter where dex runs. Cross-host
+    # aggregation collects this entry and generates the dex-side secret.
+    homelab.dex.clients = [
+      {
+        id = "octoprint";
+        name = "OctoPrint";
+        redirectURIs = ["https://${serverDomain}/oauth2/callback"];
+        secretRekeyFile = ../secrets/dex-octoprint-secret.age;
+      }
+    ];
+
     # Register IP for services dummy interface
     homelab.serviceIPs = [cfg.ip];
     networking.hosts.${cfg.ip} = [serverDomain];
