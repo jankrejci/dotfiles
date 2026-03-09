@@ -327,13 +327,13 @@ in {
     systemd.services.dex.serviceConfig.NotifyAccess = "all";
     systemd.services.dex.serviceConfig.ExecStart = let
       dexBin = "${config.services.dex.package}/bin/dex";
-      dexPort = toString cfg.port.dex;
+      metricsPort = toString cfg.port.metrics;
     in
       lib.mkForce "${pkgs.writeShellScript "dex-notify-start" ''
         ${dexBin} serve /run/dex/config.yaml &
 
         attempts=0
-        while ! ${pkgs.curl}/bin/curl -sf http://127.0.0.1:${dexPort}/healthz/ready > /dev/null 2>&1; do
+        while ! ${pkgs.curl}/bin/curl -sf http://127.0.0.1:${metricsPort}/healthz/ready > /dev/null 2>&1; do
           attempts=$((attempts + 1))
           test "$attempts" -lt 100 || {
             echo "dex HTTP not ready after 10s" >&2
