@@ -88,7 +88,10 @@ GIT_SEQUENCE_EDITOR='script.sh' git rebase -i origin/main
 - Use `|| { }` pattern for guard clauses instead of nested if-else
 - Avoid else branches whenever possible
 - If disabling shellcheck, always add comment explaining why
-- Use `local -r` for immutable local variables
+- Use `local -r` for immutable local variables assigned from literals or `$1`
+- For command substitution, use three lines to avoid masking failures:
+  `local var` then `var=$(cmd)` then `readonly var`
+  Never use `local -r var=$(cmd)` because `local` always returns 0, hiding failures.
 - Helper functions should `exit 1` on fatal errors
 
 ## Communication Style
