@@ -74,6 +74,20 @@ in {
 
   config = lib.mkIf cfg.enable (lib.mkMerge [
     {
+      # Register OIDC client with Dex for SSO
+      homelab.dex.clients = [
+        {
+          id = "immich";
+          name = "Immich";
+          redirectURIs = [
+            "https://${immichDomain}/auth/login"
+            "https://${immichDomain}/user-settings"
+            "https://${immichDomain}/api/oauth/mobile-redirect"
+          ];
+          secretRekeyFile = ../secrets/dex-immich-secret.age;
+        }
+      ];
+
       # Dex client secret for SSO authentication
       age.secrets.immich-dex-secret = {
         rekeyFile = ../secrets/dex-immich-secret.age;
