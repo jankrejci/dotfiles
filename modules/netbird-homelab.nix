@@ -30,7 +30,7 @@ in {
     ];
 
     # Allow netbird service to configure DNS via systemd-resolved.
-    # Required for peer name resolution via nb.krejci.io domain.
+    # Required for peer name resolution via peerDomain.
     # See also: netbird-user.nix has a similar rule for desktop users.
     security.polkit.enable = true;
     security.polkit.extraConfig = ''
