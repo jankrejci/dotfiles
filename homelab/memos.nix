@@ -41,6 +41,16 @@ in {
 
   config = lib.mkIf cfg.enable (lib.mkMerge [
     {
+      # Register OIDC client with Dex for SSO
+      homelab.dex.clients = [
+        {
+          id = "memos";
+          name = "Memos";
+          redirectURIs = ["https://${memosDomain}/auth/callback"];
+          secretRekeyFile = ../secrets/dex-memos-secret.age;
+        }
+      ];
+
       # Register IP for services dummy interface
       homelab.serviceIPs = [cfg.ip];
       networking.hosts.${cfg.ip} = [memosDomain];
