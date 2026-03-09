@@ -317,6 +317,34 @@ in {
     systemd.services.dex.requires = ["postgresql.service"];
     systemd.services.dex.wants = ["network-online.target"];
     systemd.services.dex.serviceConfig.EnvironmentFile = config.age.secrets.google-oauth.path;
+    # Dex is Kubernetes-first and exposes /healthz/ready for k8s probes but
+    # does not implement sd_notify. The NixOS module uses Type=simple, so
+    # systemd considers it started the instant the process forks, before the
+    # HTTP port is bound. Override to Type=notify with a wrapper that polls
+    # the HTTP port and sends READY=1, bridging k8s-style health checks to
+    # systemd readiness. This ensures After=dex.service actually waits.
+    systemd.services.dex.serviceConfig.Type = lib.mkForce "notify";
+    systemd.services.dex.serviceConfig.NotifyAccess = "all";
+    systemd.services.dex.serviceConfig.ExecStart = let
+      dexBin = "${config.services.dex.package}/bin/dex";
+      dexPort = toString cfg.port.dex;
+    in
+      lib.mkForce "${pkgs.writeShellScript "dex-notify-start" ''
+        ${dexBin} serve /run/dex/config.yaml &
+
+        attempts=0
+        while ! ${pkgs.curl}/bin/curl -sf http://127.0.0.1:${dexPort}/healthz/ready > /dev/null 2>&1; do
+          attempts=$((attempts + 1))
+          test "$attempts" -lt 100 || {
+            echo "dex HTTP not ready after 10s" >&2
+            exit 1
+          }
+          ${pkgs.coreutils}/bin/sleep 0.1
+        done
+
+        ${pkgs.systemd}/bin/systemd-notify --ready
+        wait
+      ''}";
 
     # Nginx reverse proxy with CORS for dashboard and CLI OIDC flows.
     # Listens on both VPN service IP and WG tunnel IP so vpsfree can proxy
