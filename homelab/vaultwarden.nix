@@ -74,6 +74,16 @@ in {
 
   config = lib.mkIf cfg.enable (lib.mkMerge [
     {
+      # Register OIDC client with Dex for SSO
+      homelab.dex.clients = [
+        {
+          id = "vaultwarden";
+          name = "Vaultwarden";
+          redirectURIs = ["https://${vaultDomain}/identity/connect/oidc-signin"];
+          secretRekeyFile = ../secrets/dex-vaultwarden-secret.age;
+        }
+      ];
+
       # Register IP for services dummy interface
       homelab.serviceIPs = [cfg.ip];
       networking.hosts.${cfg.ip} = [vaultDomain];
