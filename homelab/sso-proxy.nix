@@ -85,6 +85,8 @@ in {
       extraConfig = {
         skip-provider-button = true;
         code-challenge-method = "S256";
+        # Allow post-auth redirects to any subdomain, not just the callback host
+        whitelist-domain = ".${domain}";
       };
       nginx.domain = callbackDomain;
     };
