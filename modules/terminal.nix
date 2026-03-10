@@ -1,6 +1,6 @@
 # Terminal environment for home-manager
 #
-# - alacritty, nushell, zellij
+# - nushell, zellij
 # - git with delta diff viewer
 # - starship prompt with nerd fonts
 # - zoxide, broot, carapace completions
@@ -10,41 +10,6 @@
     git-absorb # absorb git hunks within existing commits
     tig # terminal-ui for git
   ];
-
-  programs.alacritty = {
-    enable = true;
-    package = pkgs.alacritty;
-    settings = {
-      font = {
-        normal = {
-          family = "DejaVuSansM Nerd Font Mono";
-          style = "Regular";
-        };
-        bold = {
-          family = "DejaVuSansM Nerd Font Mono";
-          style = "Bold";
-        };
-        italic = {
-          family = "DejaVuSansM Nerd Font Mono";
-          style = "Oblique";
-        };
-      };
-      window = {
-        decorations = "None";
-        startup_mode = "Maximized";
-      };
-    };
-  };
-
-  xdg.desktopEntries."Alacritty" = {
-    name = "Alacritty";
-    comment = "Terminal emulator";
-    icon = "Alacritty";
-    exec = "alacritty";
-    categories = ["TerminalEmulator"];
-    terminal = false;
-    mimeType = ["text/plain"];
-  };
 
   programs.nushell = {
     enable = true;
@@ -163,35 +128,35 @@
     enableBashIntegration = true;
     settings = {
       c = {
-        symbol = " ";
+        symbol = " ";
       };
       directory = {
         truncation_length = 1;
-        read_only = " ";
+        read_only = " ";
       };
       git_branch = {
-        symbol = " ";
+        symbol = " ";
       };
       os.symbols = {
         NixOS = "󱄅";
-        Arch = " ";
-        Debian = " ";
-        Linux = " ";
-        Macos = " ";
-        Raspbian = " ";
-        Ubuntu = " ";
-        Unknown = " ";
-        Windows = " ";
+        Arch = " ";
+        Debian = " ";
+        Linux = " ";
+        Macos = " ";
+        Raspbian = " ";
+        Ubuntu = " ";
+        Unknown = " ";
+        Windows = " ";
       };
       package = {
-        symbol = " ";
+        symbol = " ";
         disabled = true;
       };
       python = {
-        symbol = " ";
+        symbol = " ";
       };
       rust = {
-        symbol = " ";
+        symbol = " ";
         format = "[ $version](red bold)";
       };
     };

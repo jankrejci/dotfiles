@@ -57,6 +57,7 @@
         home.homeDirectory = "/home/jkr";
 
         imports = [
+          ../modules/alacritty.nix # terminal emulator
           ../modules/terminal.nix # terminal environment setup
           ../modules/helix.nix # modal editor
           ../modules/hyprland.nix # tiling window manager
