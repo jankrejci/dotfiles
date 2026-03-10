@@ -67,7 +67,4 @@ nix eval .#nixosConfigurations.host.options.services.nginx.enable.type.name
 
 ## Rules
 
-- Use `--show-trace` when debugging errors
-- Use `--json` for machine-readable output
-- Prefer `nix eval` over `nix repl` for scriptable operations
-- Run `nix flake check` to validate after changes
+Follow Nix debugging rules from CLAUDE.md. Run `nix flake check` to validate after changes.

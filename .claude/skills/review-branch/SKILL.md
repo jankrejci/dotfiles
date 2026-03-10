@@ -30,9 +30,10 @@ If a check cannot run, note this explicitly rather than silently skipping it.
 
 ### Phase 3: Review commit messages
 
-For each commit, verify:
-- Follows format from `CLAUDE.md` (module prefix, imperative title, bullet body)
-- Every claim in the commit body matches the actual diff
+For each commit, verify against CLAUDE.md commit format rules:
+- Title: module prefix, imperative verb, high-level summary
+- Body explains WHY the change was needed, not WHAT changed in the code
+- Body does NOT enumerate code changes the reviewer can see in the diff
 - One logical change per commit
 - AI/tooling config not bundled with code changes
 - No Co-Authored-By, no AI signatures, no emojis

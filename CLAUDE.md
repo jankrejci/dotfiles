@@ -32,22 +32,45 @@ Senior software engineer with 10+ years NixOS/functional programming experience.
 - `nix build*`, `nix eval*`, `nix flake check`, `nix flake show`
 - `nix-store --query*`, `nix path-info*`, `nix why-depends*`
 - `git status`, `git diff`, `git log`, `git show`
+
+**Nix debugging:**
+- Always use `--show-trace` when debugging evaluation errors
+- Use `--json` for machine-readable output when parsing results
+- Prefer `nix eval` over `nix repl` for scriptable, non-interactive operations
+
 - **Avoid nesting**: Use guard clauses and early returns
 - **Comments**: Write proper sentences, NEVER use parentheses for asides!!!
 - **No size claims**: NEVER write MB/GB savings in comments
 
 ## Git Commit Format
 ```
-module: Title in imperative style
+module: High-level what in imperative style
 
-- lowercase bullet describing implementation detail
-- another bullet if needed
+- why this change was needed
+- why this approach if non-obvious
 ```
 
-**Rules:**
-- Title: capital letter after colon, imperative verb
-- Body: bullet points only, lowercase start, NO prose paragraphs
-- NO Co-Authored-By, NO Claude signatures, NO emojis
+**Philosophy:** The diff shows exactly what changed in the code. The commit
+message must explain what the diff cannot show: intent, motivation, and
+reasoning. NEVER enumerate code changes the reviewer can already see.
+
+**Title:** Concise summary of the overall change, NOT a list of modified items.
+- Module prefix, imperative verb, capital letter: `module: Add ...`
+- Max 72 characters
+
+**Body:** Explain the WHY, not the WHAT.
+- Bullet points only, lowercase start, max 120 chars per line
+- Answer: Why was this change needed? What problem does it solve?
+- If approach is non-obvious: why this approach over alternatives?
+- NO prose paragraphs, NO Co-Authored-By, NO Claude signatures, NO emojis
+
+**Examples of bad vs good:**
+```
+BAD: "- add homelab.metricsDir option with default in modules/options.nix"
+BAD: "- replace hardcoded path in networking.nix, backup.nix"
+GOOD: "- three modules hardcoded the same metrics path, creating drift risk"
+GOOD: "- single option ensures all modules write to the same directory"
+```
 
 Split unrelated changes into separate commits.
 
@@ -254,9 +277,21 @@ scripts.nix            # Deployment and utility scripts
 - Host config in `hosts.nix` injects `homelab.*` options into NixOS modules
 
 **Adding a new service:**
-1. Create `homelab/myservice.nix` with `homelab.myservice.enable` option
-2. Add to `homelab/default.nix` imports
-3. Enable in host definition in `flake/hosts.nix`
+1. Read existing modules for patterns: `redis.nix` (simple), `jellyfin.nix` (nginx), `grafana.nix` (database)
+2. Create `homelab/myservice.nix` following the `homelab.X.enable` pattern
+3. Add to `homelab/default.nix` imports in alphabetical order
+4. Enable in host definition in `flake/hosts.nix`
+
+Service rules:
+- Bind to `127.0.0.1` by default, never `0.0.0.0`
+- Use `lib.mkIf cfg.enable` for all config
+
+Common integration patterns used across modules:
+- `homelab.healthChecks` -- `systemctl is-active` or HTTP check with timeout
+- `homelab.scrapeTargets` -- prometheus job name and metricsPath
+- `homelab.backup.jobs` -- restic paths and pre/post hooks
+- nginx reverse proxy -- `forceSSL`, `useACMEHost`, `proxyPass` to `127.0.0.1:PORT`
+- See `vaultwarden.nix` for a module using all four patterns
 
 ## Port and IP Patterns
 
