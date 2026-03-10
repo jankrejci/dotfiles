@@ -55,6 +55,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-flatpak.url = "github:gmodena/nix-flatpak/?ref=latest";
+    # Base16 color schemes for consistent theming across applications
+    nix-colors.url = "github:misterio77/nix-colors";
     # Secrets management with age encryption and automatic rekeying
     agenix.url = "github:ryantm/agenix";
     agenix-rekey = {
