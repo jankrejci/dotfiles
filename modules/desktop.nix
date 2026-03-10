@@ -80,9 +80,10 @@ in {
   services.xserver = {
     # Enable the X11 windowing system.
     enable = true;
-    # Configure keymap in X11
+    # Keyboard layout matching Hyprland config for consistency in X11/GDM.
     xkb = {
-      layout = "us";
+      layout = "us,cz";
+      variant = ",qwerty";
     };
   };
 
@@ -221,11 +222,21 @@ in {
     };
   };
 
-  # TODO make the hyprland usable
   programs.hyprland = {
     enable = true;
     xwayland.enable = true;
   };
+
+  # The Hyprland portal only provides Screenshot, ScreenCast, and
+  # GlobalShortcuts. The GTK portal fills in the rest, most importantly
+  # the Settings interface that exposes color-scheme to applications.
+  xdg.portal.extraPortals = [pkgs.xdg-desktop-portal-gtk];
+  xdg.portal.config.hyprland = {
+    default = ["hyprland" "gtk"];
+  };
+
+  # PAM service for hyprlock screen locker
+  security.pam.services.hyprlock = {};
 
   environment.systemPackages = with pkgs; [
     unstable.zellij
@@ -241,8 +252,10 @@ in {
     cups
     vlc
     solaar
-    rofi
-    eww
+    wl-clipboard # wayland clipboard utilities
+    grim # screenshot tool for wayland compositors
+    slurp # region selector for wayland screenshots
+    satty # screenshot annotation tool
     powertop
     tlp
     brightnessctl
@@ -257,6 +270,13 @@ in {
     avahi
     probe-rs-tools
     uv # python package runner, used by Claude Code MCP servers
+    # Hyprland settings GUIs for display and GTK appearance
+    nwg-displays
+    nwg-look
+    # GUI tools opened from waybar rofi menus via Settings option
+    blueman
+    pavucontrol
+    networkmanagerapplet
     # Tools also in headless.nix - desktops need them too
     nmap
     wireguard-tools
