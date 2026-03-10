@@ -4,7 +4,11 @@
 # - git with delta diff viewer
 # - starship prompt with nerd fonts
 # - zoxide, broot, carapace completions
-{pkgs, ...}: {
+{
+  pkgs,
+  config,
+  ...
+}: {
   home.packages = with pkgs; [
     nerd-fonts.dejavu-sans-mono
     git-absorb # absorb git hunks within existing commits
@@ -119,13 +123,44 @@
     };
   };
 
+  # Delta dark/light is managed via a mutable include file so the theme
+  # toggle can switch it at runtime without touching the HM-managed config.
   programs.delta = {
     enable = true;
     enableGitIntegration = true;
     options = {
-      dark = true;
+      line-numbers = true;
     };
   };
+
+  programs.git.includes = [{path = "~/.config/git/delta-theme.gitconfig";}];
+
+  home.file.".config/git/${config.colorScheme.themeName}-dark.gitconfig".text = ''
+    [delta]
+      dark = true
+  '';
+  home.file.".config/git/${config.colorScheme.themeName}-light.gitconfig".text = ''
+    [delta]
+      light = true
+  '';
+
+  theme.toggle = [
+    {
+      name = "delta";
+      switch = pkgs.writeShellApplication {
+        name = "theme-switch-delta";
+        text = ''
+          cat "${config.xdg.configHome}/git/${config.colorScheme.themeName}-$1.gitconfig" > "${config.xdg.configHome}/git/delta-theme.gitconfig"
+        '';
+      };
+      seed = [
+        {
+          source = "${config.xdg.configHome}/git/${config.colorScheme.themeName}-\${mode}.gitconfig";
+          target = "${config.xdg.configHome}/git/delta-theme.gitconfig";
+        }
+      ];
+    }
+  ];
 
   programs.starship = {
     enable = true;
@@ -133,35 +168,35 @@
     enableBashIntegration = true;
     settings = {
       c = {
-        symbol = " ";
+        symbol = " ";
       };
       directory = {
         truncation_length = 1;
-        read_only = " ";
+        read_only = " ";
       };
       git_branch = {
-        symbol = " ";
+        symbol = " ";
       };
       os.symbols = {
         NixOS = "󱄅";
-        Arch = " ";
-        Debian = " ";
-        Linux = " ";
-        Macos = " ";
-        Raspbian = " ";
-        Ubuntu = " ";
-        Unknown = " ";
-        Windows = " ";
+        Arch = " ";
+        Debian = " ";
+        Linux = " ";
+        Macos = " ";
+        Raspbian = " ";
+        Ubuntu = " ";
+        Unknown = " ";
+        Windows = " ";
       };
       package = {
-        symbol = " ";
+        symbol = " ";
         disabled = true;
       };
       python = {
-        symbol = " ";
+        symbol = " ";
       };
       rust = {
-        symbol = " ";
+        symbol = " ";
         format = "[ $version](red bold)";
       };
     };
