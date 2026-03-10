@@ -58,6 +58,7 @@
     readOnly = true;
     description = "Tokyo Night base16 palette for dark mode.";
     default = {
+      accent = "7AA2F7"; # semantic accent -- blue for dark variants
       panelBg = "16161E"; # chrome -- sidebar, statusbar, tab bar
       base00 = "1A1B26"; # bg -- night editor background
       base01 = "1F2335"; # lighter bg -- line highlight, status bar
@@ -83,6 +84,7 @@
     readOnly = true;
     description = "Tokyo Night Day base16 palette for light mode toggle.";
     default = {
+      accent = "A8652A"; # semantic accent -- warm orange-brown for light variant
       panelBg = "D0D5E3"; # chrome -- upstream bg_dark for visible bar separation
       base00 = "E1E2E7"; # bg -- day editor background
       base01 = "D5D6DB"; # slightly darker bg -- line highlight, status bar
