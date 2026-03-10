@@ -26,7 +26,7 @@
   # Enable powertop autotuning (complements power-profiles-daemon)
   powerManagement.powertop.enable = true;
 
-  # GNOME has built-in bluetooth support, blueman not needed
+  # Bluetooth enabled for GNOME built-in support and Hyprland via blueman
   hardware.bluetooth.enable = true;
 
   # Enable fingerprint reader (if available on your model)
