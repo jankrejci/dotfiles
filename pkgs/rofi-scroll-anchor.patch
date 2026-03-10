@@ -1,0 +1,85 @@
+--- a/source/widgets/listview.c	2026-03-09 19:05:50.639734877 +0100
++++ b/source/widgets/listview.c	2026-03-09 19:07:36.371680931 +0100
+@@ -300,48 +300,53 @@
+   return offset;
+ }
+ 
+-// For vertical packing flow
++// For vertical packing flow.
++// Margin-based scrolling: the cursor moves freely through the visible area
++// and the list only scrolls when the selection enters a one-element margin
++// at the top or bottom edge. This avoids the jarring center-anchored jump
++// of the original midpoint algorithm.
+ static unsigned int scroll_continious_elements(listview *lv) {
+-  unsigned int vmid = (lv->max_rows - 1) / 2;
+-  unsigned int hmid = (lv->menu_columns - 1) / 2;
+-  unsigned int middle = (lv->max_rows * hmid) + vmid;
+-  unsigned int offset = 0;
+-  if (lv->selected > middle) {
+-    if (lv->selected < (lv->req_elements - (lv->max_elements - middle))) {
+-      offset = lv->selected - middle;
+-    }
+-    // Don't go below zero.
+-    else if (lv->req_elements > lv->max_elements) {
+-      offset = lv->req_elements - lv->max_elements;
+-    }
++  unsigned int margin = 1;
++  unsigned int offset = lv->cur_page;
++
++  if (lv->req_elements <= lv->max_elements) {
++    offset = 0;
++  } else if (lv->selected < offset + margin) {
++    offset = (lv->selected > margin) ? lv->selected - margin : 0;
++  } else if (lv->selected >= offset + lv->max_elements - margin) {
++    offset = lv->selected - lv->max_elements + margin + 1;
++    unsigned int max_offset = lv->req_elements - lv->max_elements;
++    offset = (offset > max_offset) ? max_offset : offset;
+   }
++
+   if (offset != lv->cur_page) {
+-    // scrollbar_set_handle ( lv->scrollbar, offset );
+     lv->cur_page = offset;
+     lv->rchanged = TRUE;
+   }
+   return offset;
+ }
+ 
+-// For horizontal packing flow
++// For horizontal packing flow. Same margin-based approach as above but
++// operating in row space instead of element space.
+ static unsigned int scroll_continious_rows(listview *lv) {
+-  unsigned int middle, selected, req_rows, offset;
+-  middle = (lv->max_rows - 1) / 2;
+-  selected = lv->selected / lv->menu_columns;
+-  req_rows = (lv->req_elements + lv->menu_columns - 1) / lv->menu_columns;
+-  offset = 0;
+-  if (selected > middle) {
+-    if (selected < (req_rows - (lv->max_rows - middle))) {
+-      offset = selected - middle;
+-    }
+-    // Don't go below zero.
+-    else if (req_rows > lv->max_rows) {
+-      offset = req_rows - lv->max_rows;
+-    }
++  unsigned int margin = 1;
++  unsigned int selected = lv->selected / lv->menu_columns;
++  unsigned int req_rows =
++      (lv->req_elements + lv->menu_columns - 1) / lv->menu_columns;
++  unsigned int offset = lv->cur_page / lv->menu_columns;
++
++  if (req_rows <= lv->max_rows) {
++    offset = 0;
++  } else if (selected < offset + margin) {
++    offset = (selected > margin) ? selected - margin : 0;
++  } else if (selected >= offset + lv->max_rows - margin) {
++    offset = selected - lv->max_rows + margin + 1;
++    unsigned int max_offset = req_rows - lv->max_rows;
++    offset = (offset > max_offset) ? max_offset : offset;
+   }
++
+   offset *= lv->menu_columns;
+   if (offset != lv->cur_page) {
+-    // scrollbar_set_handle ( lv->scrollbar, offset );
+     lv->cur_page = offset;
+     lv->rchanged = TRUE;
+   }
