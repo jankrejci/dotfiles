@@ -3,7 +3,11 @@
 # - terminal, helix, hyprland configs imported
 # - development tools: rustup, espflash, probe-rs
 # - GNOME extensions and dconf settings
-{config, ...}: {
+{
+  config,
+  inputs,
+  ...
+}: {
   # Password hash for jkr user
   age.secrets.jkr-password-hash = {
     rekeyFile = ../secrets/jkr-password-hash.age;
@@ -38,6 +42,8 @@
     useGlobalPkgs = true;
     useUserPackages = true;
     backupFileExtension = "backup";
+    # Pass flake inputs to home-manager modules for nix-colors access
+    extraSpecialArgs = {inherit inputs;};
     users = {
       jkr = {
         pkgs,
@@ -54,6 +60,7 @@
           ../modules/terminal.nix # terminal environment setup
           ../modules/helix.nix # modal editor
           ../modules/hyprland.nix # tiling window manager
+          ../modules/colors.nix # Tokyo Night color scheme via nix-colors
         ];
 
         home.packages = with pkgs; [
