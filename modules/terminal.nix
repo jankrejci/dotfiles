@@ -56,6 +56,45 @@
     };
   };
 
+  # Tig colors use ANSI names that map to Alacritty's base16 palette,
+  # so a single config adapts to all theme variants automatically.
+  home.file.".config/tig/config".text = ''
+    # General UI
+    color default       white   default
+    color cursor        black   blue    bold
+    color title-focus   black   blue    bold
+    color title-blur    white   default
+    color search-result black   yellow
+    color delimiter     cyan    default
+    color header        yellow  default bold
+    color line-number   yellow  default
+    color id            blue    default
+    color date          cyan    default
+    color author        green   default
+    color mode          cyan    default
+    color status        green   default
+
+    # Main view
+    color main-commit   default default
+    color main-head     green   default bold
+    color main-remote   red     default
+    color main-tag      yellow  default bold
+    color main-ref      cyan    default
+    color graph-commit  blue    default
+
+    # Diff
+    color diff-header   yellow  default bold
+    color diff-chunk    magenta default
+    color diff-add      green   default
+    color diff-del      red     default
+    color diff-stat     blue    default
+
+    # Status
+    color stat-staged   green   default
+    color stat-unstaged yellow  default
+    color stat-untracked red    default
+  '';
+
   programs.git = {
     enable = true;
     settings = {
