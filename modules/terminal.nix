@@ -1,6 +1,6 @@
 # Terminal environment for home-manager
 #
-# - nushell, zellij
+# - nushell shell with vi mode
 # - git with delta diff viewer
 # - starship prompt with nerd fonts
 # - zoxide, broot, carapace completions
@@ -54,40 +54,6 @@
       ssc = "sudo systemctl";
       jc = "journalctl";
     };
-  };
-
-  programs.zellij = {
-    enable = true;
-    package = pkgs.unstable.zellij;
-  };
-
-  home.file.".config/zellij/config.kdl".text = ''
-    keybinds {
-        pane {
-          bind "_" { NewPane "Down"; SwitchToMode "Normal"; }
-          bind "|" { NewPane "Right"; SwitchToMode "Normal"; }
-          bind "r" { SwitchToMode "RenamePane"; PaneNameInput 0;}
-        }
-        tab {
-          bind "Ctrl t" { SwitchToMode "Normal"; }
-        }
-    }
-    default_shell "nu"
-    theme "nord"
-    default_layout "compact"
-    scrollback_editor "hx"
-  '';
-
-  # Copy zellij logo to icons directory for desktop entry
-  home.file.".local/share/icons/hicolor/128x128/apps/zellij.png".source = ../assets/zellij/logo.png;
-
-  xdg.desktopEntries."Zellij" = {
-    name = "Zellij";
-    comment = "Terminal multiplexer";
-    exec = "alacritty -e zellij -l welcome";
-    icon = "zellij";
-    categories = ["System" "TerminalEmulator"];
-    terminal = false;
   };
 
   programs.git = {
