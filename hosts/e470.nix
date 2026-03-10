@@ -3,7 +3,7 @@
 # - trackpoint with custom sensitivity
 # - Intel HD 620 graphics with VAAPI
 # - keyboard backlight via acpilight
-# - deep sleep on lid close
+# - deep sleep via mem_sleep_default=deep kernel param
 {
   config,
   pkgs,
@@ -39,10 +39,4 @@
   boot.kernelParams = [
     "mem_sleep_default=deep"
   ];
-
-  # Configure power button behavior
-  services.logind.settings.Login = {
-    HandleLidSwitch = "suspend";
-    HandlePowerKey = "suspend";
-  };
 }

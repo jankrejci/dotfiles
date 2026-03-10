@@ -278,5 +278,9 @@ in {
     nerd-fonts.dejavu-sans-mono
   ];
 
+  # Suspend on power button press; systemd defaults to poweroff.
+  # Host configs can override with lib.mkForce if needed.
+  services.logind.settings.Login.HandlePowerKey = "suspend";
+
   services.xserver.videoDrivers = ["modesetting"];
 }
