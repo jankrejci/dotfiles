@@ -7,21 +7,7 @@ allowed-tools: Bash, Read, Grep, Glob
 
 Create atomic commits for staged/unstaged changes using chunk-based staging.
 
-## Commit Format
-
-Title: `module: Verb in imperative style`
-- Must match regex: `^[a-z][a-z0-9-]*: [A-Z]`
-- Max 72 characters
-- NO WIP/TMP
-- Imperative verb: Add, Fix, Update, Remove, Refactor
-
-Body: Bullet points only
-- Lines must be blank, start with `- `, or be indented continuation
-- Max 120 characters per line
-- NO prose paragraphs
-- NO Co-Authored-By
-- NO Claude signatures
-- NO emojis
+Follow the commit format from CLAUDE.md. Title must match `^[a-z][a-z0-9-]*: [A-Z]`, max 72 chars. Body must explain WHY, not WHAT.
 
 ## Process
 
@@ -38,8 +24,8 @@ Body: Bullet points only
      git commit -m "$(cat <<'EOF'
      module: Title here
 
-     - bullet point describing what changed
-     - another bullet if needed
+     - why this change was needed
+     - why this approach if non-obvious
      EOF
      )"
      ```
