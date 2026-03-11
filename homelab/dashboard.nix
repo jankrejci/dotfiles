@@ -50,11 +50,27 @@
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <title>${domain}</title>
       <style>
+        :root {
+          --bg: #1A1B26;
+          --fg: #A9B1D6;
+          --heading: #565F89;
+          --tile-bg: #1F2335;
+          --tile-hover: #292E42;
+        }
+        @media (prefers-color-scheme: light) {
+          :root {
+            --bg: #E1E2E7;
+            --fg: #343B59;
+            --heading: #9699A3;
+            --tile-bg: #D5D6DB;
+            --tile-hover: #C4C8DA;
+          }
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-          background: #1a1a2e;
-          color: #e0e0e0;
+          background: var(--bg);
+          color: var(--fg);
           min-height: 100vh;
           display: flex;
           flex-direction: column;
@@ -66,7 +82,7 @@
           font-size: 2rem;
           font-weight: 600;
           margin-bottom: 3rem;
-          color: #8888aa;
+          color: var(--heading);
         }
         .grid {
           display: grid;
@@ -85,14 +101,14 @@
           align-items: center;
           gap: 0.5rem;
           padding: 1rem 0.75rem;
-          background: #16213e;
-          border-radius: 12px;
+          background: var(--tile-bg);
+          border-radius: 8px;
           text-decoration: none;
-          color: #e0e0e0;
+          color: var(--fg);
           transition: background 0.2s, transform 0.2s;
         }
         .tile:hover {
-          background: #1a2744;
+          background: var(--tile-hover);
           transform: translateY(-2px);
         }
         .tile img {
