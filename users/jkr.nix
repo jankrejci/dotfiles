@@ -63,6 +63,7 @@
           ../modules/helix.nix # modal editor
           ../modules/hyprland # tiling window manager and UI components
           ../modules/zen.nix # browser theme toggle
+          ../modules/kicad.nix # KiCad color theme
           ../modules/colors.nix # Tokyo Night color scheme via nix-colors
         ];
 
