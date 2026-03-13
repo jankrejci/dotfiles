@@ -8,7 +8,9 @@
   pkgs,
   config,
   ...
-}: {
+}: let
+  colorsDark = config.colorScheme.palette;
+in {
   home.packages = with pkgs; [
     nerd-fonts.dejavu-sans-mono
     git-absorb # absorb git hunks within existing commits
@@ -167,6 +169,19 @@
     enableNushellIntegration = true;
     enableBashIntegration = true;
     settings = {
+      # Use base16 palette so prompt colors match the terminal theme.
+      palette = "tokyo-night";
+      palettes.tokyo-night = {
+        red = "#${colorsDark.base08}";
+        orange = "#${colorsDark.base09}";
+        yellow = "#${colorsDark.base0A}";
+        green = "#${colorsDark.base0B}";
+        cyan = "#${colorsDark.base0C}";
+        blue = "#${colorsDark.base0D}";
+        purple = "#${colorsDark.base0E}";
+        foreground = "#${colorsDark.base05}";
+        background = "#${colorsDark.base00}";
+      };
       c = {
         symbol = " ";
       };
