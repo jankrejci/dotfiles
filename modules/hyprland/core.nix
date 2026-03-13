@@ -182,13 +182,11 @@ in {
         pseudotile = true;
         preserve_split = true;
       };
-      # Create workspaces 1-5 at startup so Alt+Tab cycling always works.
+      # Create workspaces 1-3 at startup so Alt+Tab cycling always works.
       workspace = [
         "1, persistent:true"
         "2, persistent:true"
         "3, persistent:true"
-        "4, persistent:true"
-        "5, persistent:true"
       ];
       layerrule = [
         "noanim, waybar"
@@ -240,7 +238,7 @@ in {
         "$mod, right, movefocus, r"
         "$mod, up, movefocus, u"
         "$mod, down, movefocus, d"
-        # Switch workspaces with mainMod + [0-9]
+        # Switch workspaces with mainMod + [1-9]
         "$mod, 1, workspace, 1"
         "$mod, 2, workspace, 2"
         "$mod, 3, workspace, 3"
@@ -250,8 +248,7 @@ in {
         "$mod, 7, workspace, 7"
         "$mod, 8, workspace, 8"
         "$mod, 9, workspace, 9"
-        "$mod, 0, workspace, 10"
-        # Move active window to a workspace with mainMod + SHIFT + [0-9]
+        # Move active window to workspace with mainMod + SHIFT + [1-9]
         "$mod SHIFT, 1, movetoworkspace, 1"
         "$mod SHIFT, 2, movetoworkspace, 2"
         "$mod SHIFT, 3, movetoworkspace, 3"
