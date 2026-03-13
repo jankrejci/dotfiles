@@ -259,10 +259,18 @@ Future work: revisit when Netbird adds stable identifiers or setup key groups fe
 
 ### Fixup Workflow
 
-After review feedback:
+**Prefer git-absorb** for automatic fixup creation. See
+`.claude/skills/branch-cleanup/SKILL.md` for detailed usage.
+
 ```bash
-# Make fixes, then:
-git commit --fixup=HEAD
+git absorb --base origin/main            # auto-create fixups
+git absorb --base origin/main --dry-run  # preview first
+git absorb --base origin/main --and-rebase  # create and squash
+```
+
+**Manual fixups when absorb cannot determine the target commit:**
+```bash
+git commit --fixup=<target-sha>
 
 # Before merge, user runs /branch-cleanup to squash
 ```
