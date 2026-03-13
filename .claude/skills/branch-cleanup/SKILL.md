@@ -1,12 +1,14 @@
 ---
 name: branch-cleanup
-description: Rebase operations for cleaning up branch history before merge
+description: Prepare branch for merge with full history cleanup
 disable-model-invocation: true
 allowed-tools: Bash, Read, Edit
 ---
 
-Rebase toolkit for branch history management. Default operation is conservative
-autosquash of fixup commits. All other operations require explicit user request.
+Rebase toolkit for preparing a branch for merge. Default operation analyzes the
+full branch for fixups, redundant commits, and commit message quality, then
+presents a cleanup plan for user approval. Rebase operations below are the
+tools used to execute the plan.
 
 ## Core Technique: GIT_SEQUENCE_EDITOR
 
@@ -41,50 +43,174 @@ GIT_SEQUENCE_EDITOR='bash -c "
 2. Create timestamped backup: `git branch backup-$(git branch --show-current)-$(date +%s)`
 3. Show current commits: `git log --oneline origin/main..HEAD`
 
-## Default Operation: Autosquash Fixups
+## Absorb: Automatic Fixup Creation
 
-### Step 1: Validate fixup targets
+`git absorb` automates fixup commit creation. Given staged changes, it
+determines which prior commit each hunk belongs to and creates `fixup!`
+commits automatically. This replaces the manual process of identifying
+target commits with `git log` and running `git commit --fixup=<hash>`.
+
+The algorithm uses patch commutation to guarantee fixups will never conflict
+during autosquash. Hunks that cannot be unambiguously attributed are left
+staged with a warning.
+
+### Usage
 
 ```bash
-git log --oneline origin/main..HEAD | grep 'fixup!'
+# Stage fixes, then absorb into fixup commits
+git add <fixed-files>
+git absorb --base origin/main
+
+# Preview first without creating commits
+git absorb --base origin/main --dry-run
+
+# Create fixups and immediately autosquash them
+git absorb --base origin/main --and-rebase
 ```
 
-For each fixup, confirm the target commit message exists in the branch.
-Warn the user if a fixup has no valid target.
+**Always pass `--base origin/main`** to search the full branch. The default
+search depth is only 10 commits.
 
-### Step 2: Autosquash
+### When to use absorb vs manual fixup
+
+| Scenario | Tool |
+|----------|------|
+| Multiple fixes across files, each attributable to one commit | `git absorb` |
+| Fix touches lines not modified by any branch commit | manual `git commit --fixup` or standalone commit |
+| New files that have no prior commit to absorb into | manual commit |
+| Need to verify target attribution before committing | `git absorb --dry-run`, then manual if unclear |
+
+### Recovery
+
+git-absorb saves `PRE_ABSORB_HEAD` before modifying anything:
+```bash
+git reset --soft PRE_ABSORB_HEAD
+```
+
+## Default Operation: Merge Readiness Cleanup
+
+When invoked without arguments, perform a full analysis of the branch and
+present a cleanup plan to the user. Do NOT execute changes until the user
+approves the plan.
+
+### Phase 1: Autosquash Fixups
+
+If any `fixup!` or `squash!` commits exist:
 
 ```bash
-GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash origin/main
+git log --oneline origin/main..HEAD | grep -E 'fixup!|squash!'
 ```
 
-This ONLY folds fixup!/squash! commits into their targets. Normal commits
-are untouched.
+1. Validate each fixup has a matching target commit on the branch
+2. Warn if any fixup is orphaned
+3. Run autosquash:
+   ```bash
+   GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash origin/main
+   ```
 
-### Step 3: Verify commit messages
+If no fixups exist, skip to Phase 2.
 
-Fixups may have changed a commit's content so the message no longer matches.
-The `--fixup` flag discards the fixup commit message during autosquash, so any
-context from the fixup must be manually incorporated into the target message.
+### Phase 2: Detect Redundant Commits
 
-For each commit on the branch:
+Find commits that touch the same files and may be squashable.
 
-1. Read the commit: `git show <hash>`
-2. Check if the message still accurately describes the diff
-3. If the fixup added, removed, or changed behavior that the original bullets
-   do not cover, reword the commit using the "Reword a Commit" operation below
-   to add or update the relevant bullets
+1. List files changed per commit:
+   ```bash
+   for hash in $(git rev-list origin/main..HEAD); do
+     echo "=== $(git log -1 --oneline $hash) ==="
+     git diff-tree --no-commit-id --name-only -r $hash
+   done
+   ```
+2. For files touched by multiple commits, inspect the diffs to determine if:
+   - A later commit supersedes an earlier one on the same lines. This is the
+     strongest signal for squashing. Example: commit A adds a function, commit
+     B rewrites the same function. Commit A has no standalone value.
+   - A later commit is a small follow-up fix to an earlier one. Example:
+     commit A adds a module, commit B fixes a typo in that module. The fix
+     should fold into the original.
+   - Two commits modify the same file for genuinely different reasons. These
+     should stay separate. Example: commit A adds a feature to module X,
+     commit B fixes an unrelated bug in module X.
 
-### Step 4: Final verification
+3. For each pair of potentially redundant commits, record:
+   - The two commit hashes and subjects
+   - Which files overlap
+   - Whether it is a supersede, follow-up fix, or independent change
+   - Recommended action: squash, keep separate, or move hunks
+
+### Phase 3: Audit Commit Messages
+
+For every commit on the branch, read the full commit with `git show <hash>`
+and check:
+
+1. **Title format**: `module: Imperative verb, capital letter` with max 72 chars
+2. **Body explains WHY**: The bullets must explain intent and motivation, not
+   enumerate code changes the reviewer can see in the diff
+3. **No WHAT bullets**: Flag any bullet that just describes a code change
+   without explaining why. Examples of bad bullets:
+   - "add X option to module Y" — just restates the diff
+   - "update config to use new value" — no motivation given
+   - "remove unused import" — fine for a title-only commit, bad as a bullet
+     in a multi-line message when it doesn't explain why it was there
+4. **Accuracy**: The message must match the actual diff. After fixup folding,
+   the diff may have grown beyond what the original message described.
+
+For each commit with issues, record:
+- The hash and current message
+- What is wrong: missing WHY, inaccurate description, bad format
+- Suggested reworded message
+
+### Phase 4: Present Cleanup Plan
+
+Present ALL findings to the user in a structured format:
+
+```
+## Fixups
+(list of fixups folded, or "none")
+
+## Redundant Commits
+(for each pair: hashes, overlap reason, recommended action)
+
+## Commit Message Issues
+(for each: hash, problem, suggested fix)
+
+## Proposed Actions
+1. Squash X into Y (reason)
+2. Reword Z (fix message)
+3. ...
+
+## No Changes Needed
+(list commits that are already clean)
+```
+
+Wait for user approval before proceeding. The user may approve all, reject
+some, or modify the plan.
+
+### Phase 5: Execute Approved Changes
+
+Execute the approved plan using the rebase operations documented below.
+Order of operations matters:
+
+1. **Squash/drop** first — reduces the number of commits, making subsequent
+   operations simpler and less likely to conflict
+2. **Move files between commits** — restructure content
+3. **Reword** last — messages should reflect final content
+
+Combine as many edits as possible into a single rebase pass by marking
+multiple commits with `-e` flags in one `GIT_SEQUENCE_EDITOR` sed command.
+
+### Phase 6: Final Verification
 
 1. Diff against backup must be empty: `git diff backup-<branch>-<ts>..HEAD`
 2. `nix flake check`
 3. Show before/after commit list to user
+4. If the diff is not empty, something went wrong. Inform the user and
+   do NOT delete the backup.
 
 ## Rebase Operations
 
-The following operations are only performed when the user explicitly asks
-or as part of review fixes. Never apply them unprompted.
+Reference for all rebase operations used during cleanup execution (Phase 5)
+or when the user requests a specific operation.
 
 ### Edit a Commit (modify content in place)
 
@@ -239,8 +365,11 @@ When a rebase encounters a conflict:
 
 ## Principles
 
-- Preserve existing commits by default, only fold fixups
-- Normal commits represent reviewed, intentional history
-- Only restructure when the user explicitly asks
+- Preserve commits by default
+- More granular commits are easier to review than large ones
+- Analysis is free, action requires approval
+- Present the full picture before touching history
+- Squash only when a commit has no standalone review value
+- Independent changes to the same file are not redundant
 - Separate CLAUDE.md changes from code commits
 - When in doubt, abort and ask the user
