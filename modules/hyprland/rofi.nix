@@ -14,7 +14,7 @@
   xdgConfig = config.xdg.configHome;
 
   # Generate rofi color variable definitions as a rasi fragment.
-  mkRofiColors = p: ''
+  mkRofiTheme = p: ''
     * {
       bg:        #${p.base00};
       fg:        #${p.base05};
@@ -110,8 +110,8 @@ in {
   };
 
   # Nix-managed rofi color variant files for the theme toggle.
-  xdg.configFile."rofi/colors-dark.rasi".text = mkRofiColors colorsDark;
-  xdg.configFile."rofi/colors-light.rasi".text = mkRofiColors colorsLight;
+  xdg.configFile."rofi/${config.colorScheme.themeName}-dark.rasi".text = mkRofiTheme colorsDark;
+  xdg.configFile."rofi/${config.colorScheme.themeName}-light.rasi".text = mkRofiTheme colorsLight;
   xdg.configFile."rofi/theme.rasi".text = rofiLayoutRasi;
 
   theme.toggle = [
@@ -120,12 +120,12 @@ in {
       switch = pkgs.writeShellApplication {
         name = "theme-switch-rofi";
         text = ''
-          cat "${xdgConfig}/rofi/colors-$1.rasi" > "${xdgConfig}/rofi/colors.rasi"
+          cat "${xdgConfig}/rofi/${config.colorScheme.themeName}-$1.rasi" > "${xdgConfig}/rofi/colors.rasi"
         '';
       };
       seed = [
         {
-          source = "${xdgConfig}/rofi/colors-\${mode}.rasi";
+          source = "${xdgConfig}/rofi/${config.colorScheme.themeName}-\${mode}.rasi";
           target = "${xdgConfig}/rofi/colors.rasi";
         }
       ];

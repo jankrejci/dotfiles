@@ -167,18 +167,20 @@
     enableNushellIntegration = true;
     enableBashIntegration = true;
     settings = {
-      # Use base16 palette so prompt colors match the terminal theme.
-      palette = "tokyo-night";
-      palettes.tokyo-night = {
-        red = "#${colorsDark.base08}";
-        orange = "#${colorsDark.base09}";
-        yellow = "#${colorsDark.base0A}";
-        green = "#${colorsDark.base0B}";
-        cyan = "#${colorsDark.base0C}";
-        blue = "#${colorsDark.base0D}";
-        purple = "#${colorsDark.base0E}";
-        foreground = "#${colorsDark.base05}";
-        background = "#${colorsDark.base00}";
+      # Starship uses ANSI color names that map to the terminal's palette.
+      # Since alacritty swaps its color scheme at runtime, starship colors
+      # adapt automatically without needing its own theme toggle.
+      palette = "ansi";
+      palettes.ansi = {
+        red = "red";
+        orange = "bright-red";
+        yellow = "yellow";
+        green = "green";
+        cyan = "cyan";
+        blue = "blue";
+        purple = "purple";
+        foreground = "white";
+        background = "black";
       };
       c = {
         symbol = " ";
