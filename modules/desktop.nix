@@ -251,23 +251,23 @@ in {
     rclone
     cups
     vlc
-    solaar
+    solaar # Logitech device manager
     wl-clipboard # wayland clipboard utilities
     grim # screenshot tool for wayland compositors
     slurp # region selector for wayland screenshots
     satty # screenshot annotation tool
-    powertop
-    tlp
-    brightnessctl
-    age
+    powertop # power consumption analyzer
+    tlp # laptop power management
+    brightnessctl # backlight control for idle dimming
+    age # file encryption tool for agenix secrets
     agenix-rekey
-    ssh-to-age
+    ssh-to-age # convert SSH keys to age keys
     neofetch
     git
-    sane-backends
+    sane-backends # scanner drivers
     sane-frontends
-    simple-scan
-    avahi
+    simple-scan # GUI scanning application
+    avahi # mDNS, kept for scanner discovery
     probe-rs-tools
     uv # python package runner, used by Claude Code MCP servers
     # Hyprland settings GUIs for display and GTK appearance
