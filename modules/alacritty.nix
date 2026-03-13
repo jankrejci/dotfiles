@@ -8,7 +8,7 @@
   config,
   ...
 }: let
-  colorsDark = config.colorScheme.palette;
+  colorsDark = config.colorScheme.darkPalette;
   colorsLight = config.colorScheme.lightPalette;
 
   # Generate Alacritty theme TOML from a base16 palette.

@@ -8,9 +8,7 @@
   pkgs,
   config,
   ...
-}: let
-  colorsDark = config.colorScheme.palette;
-in {
+}: {
   home.packages = with pkgs; [
     nerd-fonts.dejavu-sans-mono
     git-absorb # absorb git hunks within existing commits

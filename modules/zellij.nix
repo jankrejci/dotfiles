@@ -13,7 +13,7 @@
   config,
   ...
 }: let
-  colorsDark = config.colorScheme.palette;
+  colorsDark = config.colorScheme.darkPalette;
   colorsLight = config.colorScheme.lightPalette;
   themeName = config.colorScheme.themeName;
 

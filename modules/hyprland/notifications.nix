@@ -8,7 +8,7 @@
   config,
   ...
 }: let
-  colorsDark = config.colorScheme.palette;
+  colorsDark = config.colorScheme.darkPalette;
   colorsLight = config.colorScheme.lightPalette;
   xdgConfig = config.xdg.configHome;
 

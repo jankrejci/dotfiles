@@ -11,7 +11,7 @@
   config,
   ...
 }: let
-  colorsDark = config.colorScheme.palette;
+  colorsDark = config.colorScheme.darkPalette;
 
   # Curated help menu with common keybindings and an option to view all raw
   # bindings from hyprctl. Static content for reliability and readability.
