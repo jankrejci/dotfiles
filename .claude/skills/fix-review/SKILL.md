@@ -10,8 +10,10 @@ Apply fixes from `/review-branch` findings passed in `$ARGUMENTS`.
 ## Process
 
 1. Parse findings from arguments (BLOCKING and NIT items with file:line references)
-2. Classify each finding as a code fix or a structural fix
-3. Address all BLOCKING issues first, then NIT items only after user confirms
+2. Classify each finding: code fix, structural fix, or skip (with rationale)
+3. Present the full list to user with proposed action for each item
+4. Wait for user approval
+5. Apply all approved fixes (BLOCKING and NIT together)
 
 ### Fix classification
 
@@ -61,6 +63,12 @@ Before creating a fixup, verify the fix will not conflict during autosquash:
 
 #### Step 5: Create fixup commit
 
+**Multiple code fixes**: if several fixes are ready and each touches lines
+clearly owned by a single prior commit, apply all fixes, stage them, and use
+`git absorb --base origin/main` to create all fixup commits at once. Use
+`--dry-run` first to verify attribution. This replaces steps 1-4 per fix.
+
+**Single fix or ambiguous attribution**: create the fixup manually:
 ```bash
 git commit --fixup=<target-hash>
 ```
@@ -124,24 +132,22 @@ command with `-e` flags. The rebase pauses at each in order.
 2. If a backup exists from before the structural fix, verify
    `git diff backup-<branch>-<ts>..HEAD` shows only the intended changes
 
-### After all BLOCKING issues are fixed
+### After all fixes are applied
 
-Show a summary of all fixes applied:
+Show a summary of what was done:
 ```
 ## Fixes Applied
 
 fixup! <target-msg> -- fixed <description>
 rebase-edit <target-msg> -- <description>
 standalone: <msg> -- <description> (conflict avoidance)
+skipped: <description> -- <rationale>
 ```
-
-Then ask user if NIT items should be addressed.
 
 ## Rules
 
 - One logical fix per fixup commit
 - Never batch unrelated fixes into a single commit
-- Never auto-fix NITs without user confirmation
 - Never introduce changes beyond what the finding requires
 - Follow commit rules from `CLAUDE.md`
 - NEVER push to remote
