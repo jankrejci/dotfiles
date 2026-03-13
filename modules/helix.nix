@@ -9,7 +9,7 @@
   config,
   ...
 }: let
-  colorsDark = config.colorScheme.palette;
+  colorsDark = config.colorScheme.darkPalette;
   colorsLight = config.colorScheme.lightPalette;
 
   tomlFormat = pkgs.formats.toml {};
