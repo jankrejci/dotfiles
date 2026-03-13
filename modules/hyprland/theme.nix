@@ -64,27 +64,6 @@
     '';
   };
 in {
-  # Nix-managed GTK color variant files for the theme toggle. Both GTK4 and
-  # GTK3 with adw-gtk3 pick up @define-color overrides from user CSS.
-  config.xdg.configFile."gtk-4.0/colors-dark.css".text = mkGtkTheme colorsDark;
-  config.xdg.configFile."gtk-4.0/colors-light.css".text = mkGtkTheme colorsLight;
-
-  # The gtk module generates gtk.css with an @import for adw-gtk3, but the
-  # theme toggle seed script overwrites it with color definitions at runtime.
-  # Without force, HM tries to back up the mutable file and fails when the
-  # backup already exists from a previous activation.
-  config.xdg.configFile."gtk-4.0/gtk.css".force = true;
-  config.xdg.configFile."gtk-3.0/colors-dark.css".text = mkGtkTheme colorsDark;
-  config.xdg.configFile."gtk-3.0/colors-light.css".text = mkGtkTheme colorsLight;
-
-  config.gtk = {
-    enable = true;
-    theme = {
-      name = "adw-gtk3-dark";
-      package = pkgs.adw-gtk3;
-    };
-  };
-
   # Export toggleTheme so waybar.nix can reference it in the darkmode button
   # and desktop entry without circular imports.
   options.hyprland.toggleTheme = lib.mkOption {
@@ -92,89 +71,139 @@ in {
     internal = true;
     description = "Theme toggle script package, consumed by waybar.";
   };
-  config.hyprland.toggleTheme = toggleTheme;
 
-  # Seed mutable theme files on login so nix config changes propagate.
-  # Reads the current mode and copies the matching variant. Removes targets
-  # first since they might be read-only nix store copies or symlinks.
-  config.systemd.user.services.seed-theme-files = {
-    Unit.Description = "Seed mutable theme files from nix-managed variants";
-    Service = {
-      Type = "oneshot";
-      ExecStart = toString (pkgs.writeShellScript "seed-theme-files" ''
-        mode=$(cat "$HOME/.config/theme-mode" 2>/dev/null || echo "dark")
+  config = {
+    # Nix-managed GTK color variant files for the theme toggle. Both GTK4 and
+    # GTK3 with adw-gtk3 pick up @define-color overrides from user CSS.
+    xdg.configFile."gtk-4.0/${config.colorScheme.themeName}-dark.css".text = mkGtkTheme colorsDark;
+    xdg.configFile."gtk-4.0/${config.colorScheme.themeName}-light.css".text = mkGtkTheme colorsLight;
 
-        ${lib.concatMapStringsSep "\n" (
-            t:
-              lib.concatMapStringsSep "\n" (s: let
-                # Replace literal ${mode} in the source template with the shell variable
-                src = builtins.replaceStrings ["\${mode}"] [''"''${mode}"''] s.source;
-              in ''
-                rm -f "${s.target}"
-                mkdir -p "$(dirname "${s.target}")"
-                cat "${src}" > "${s.target}"
-              '')
-              t.seed
-          )
-          config.theme.toggle}
-      '');
-      RemainAfterExit = true;
+    # The gtk module generates gtk.css with an @import for adw-gtk3, but the
+    # theme toggle seed script overwrites it with color definitions at runtime.
+    # Without force, HM tries to back up the mutable file and fails when the
+    # backup already exists from a previous activation.
+    xdg.configFile."gtk-4.0/gtk.css".force = true;
+    xdg.configFile."gtk-3.0/${config.colorScheme.themeName}-dark.css".text = mkGtkTheme colorsDark;
+    xdg.configFile."gtk-3.0/${config.colorScheme.themeName}-light.css".text = mkGtkTheme colorsLight;
+
+    gtk = {
+      enable = true;
+      theme = {
+        name = "adw-gtk3-dark";
+        package = pkgs.adw-gtk3;
+      };
     };
-    Install.WantedBy = ["default.target"];
-  };
 
-  config.theme.toggle = [
-    {
-      name = "claude-code";
-      switch = pkgs.writeShellApplication {
-        name = "theme-switch-claude-code";
-        runtimeInputs = [pkgs.jq];
-        # Only affects new sessions. Running instances cache the config.
-        text = ''
-          cfg="$HOME/.claude.json"
-          [ -f "$cfg" ] || echo '{}' > "$cfg"
-          jq --arg t "$1" '.theme = $t' "$cfg" > "$cfg.tmp" && mv "$cfg.tmp" "$cfg"
-        '';
+    hyprland.toggleTheme = toggleTheme;
+
+    # Re-seed theme files on every rebuild. The systemd service handles login,
+    # but its derivation is stable across rebuilds because seed sources use
+    # home directory paths. This activation hook ensures CSS changes propagate.
+    home.activation.seedThemeFiles = lib.hm.dag.entryAfter ["writeBoundary" "reloadSystemd"] ''
+      run ${lib.getExe' pkgs.systemd "systemctl"} --user restart seed-theme-files.service || true
+    '';
+
+    # Seed mutable theme files and sync gsettings on login so nix config
+    # changes propagate. Cannot run toggle switch scripts here because some
+    # restart services, which deadlocks with sd-switch during HM activation.
+    systemd.user.services.seed-theme-files = {
+      Unit = {
+        Description = "Seed mutable theme files from nix-managed variants";
+        # Waybar and wpaperd read theme files at startup. Seed them first so
+        # they never see empty placeholders from a previous failed run.
+        Before = ["waybar.service" "wpaperd.service"];
       };
-    }
-    {
-      name = "gsettings";
-      switch = pkgs.writeShellApplication {
-        name = "theme-switch-gsettings";
-        runtimeInputs = [pkgs.glib];
-        text = ''
-          case "$1" in
-            light)
-              gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
-              gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'
-              ;;
-            *)
-              gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-              gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
-              ;;
-          esac
-        '';
+      Service = {
+        Type = "oneshot";
+        ExecStart = lib.getExe (pkgs.writeShellApplication {
+          name = "seed-theme-files";
+          runtimeInputs = [pkgs.coreutils pkgs.glib];
+          text = ''
+            mode=$(cat "$HOME/.config/theme-mode" 2>/dev/null || echo "dark")
+
+            ${lib.concatMapStringsSep "\n" (
+                t:
+                  lib.concatMapStringsSep "\n" (s: ''
+                    rm -f "${s.target}"
+                    mkdir -p "$(dirname "${s.target}")"
+                    cat "${s.source}" > "${s.target}"
+                  '')
+                  t.seed
+              )
+              config.theme.toggle}
+
+            # Sync gsettings with current mode. HM always writes adw-gtk3-dark
+            # to dconf during activation, so correct it here for light mode.
+            case "$mode" in
+              light)
+                gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
+                gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'
+                ;;
+              *)
+                gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+                gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
+                ;;
+            esac
+          '';
+        });
+        RemainAfterExit = true;
       };
-    }
-    {
-      name = "gtk-css";
-      switch = pkgs.writeShellApplication {
-        name = "theme-switch-gtk-css";
-        text = ''
-          cat "${xdgConfig}/gtk-4.0/colors-$1.css" > "${xdgConfig}/gtk-4.0/gtk.css"
-          cat "${xdgConfig}/gtk-3.0/colors-$1.css" > "${xdgConfig}/gtk-3.0/gtk.css"
-        '';
-      };
-      seed = [
-        {
-          source = "${xdgConfig}/gtk-4.0/colors-\${mode}.css";
-          target = "${xdgConfig}/gtk-4.0/gtk.css";
-        }
-        {
-          source = "${xdgConfig}/gtk-3.0/colors-\${mode}.css";
-          target = "${xdgConfig}/gtk-3.0/gtk.css";
-        }
-      ];
-    }
-  ];
+      Install.WantedBy = ["default.target"];
+    };
+
+    theme.toggle = [
+      {
+        name = "claude-code";
+        switch = pkgs.writeShellApplication {
+          name = "theme-switch-claude-code";
+          runtimeInputs = [pkgs.jq];
+          # Only affects new sessions. Running instances cache the config.
+          text = ''
+            cfg="$HOME/.claude.json"
+            [ -f "$cfg" ] || echo '{}' > "$cfg"
+            jq --arg t "$1" '.theme = $t' "$cfg" > "$cfg.tmp" && mv "$cfg.tmp" "$cfg"
+          '';
+        };
+      }
+      {
+        name = "gsettings";
+        switch = pkgs.writeShellApplication {
+          name = "theme-switch-gsettings";
+          runtimeInputs = [pkgs.glib];
+          text = ''
+            case "$1" in
+              light)
+                gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
+                gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'
+                ;;
+              *)
+                gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+                gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
+                ;;
+            esac
+          '';
+        };
+      }
+      {
+        name = "gtk-css";
+        switch = pkgs.writeShellApplication {
+          name = "theme-switch-gtk-css";
+          text = ''
+            cat "${xdgConfig}/gtk-4.0/${config.colorScheme.themeName}-$1.css" > "${xdgConfig}/gtk-4.0/gtk.css"
+            cat "${xdgConfig}/gtk-3.0/${config.colorScheme.themeName}-$1.css" > "${xdgConfig}/gtk-3.0/gtk.css"
+          '';
+        };
+        seed = [
+          {
+            source = "${xdgConfig}/gtk-4.0/${config.colorScheme.themeName}-\${mode}.css";
+            target = "${xdgConfig}/gtk-4.0/gtk.css";
+          }
+          {
+            source = "${xdgConfig}/gtk-3.0/${config.colorScheme.themeName}-\${mode}.css";
+            target = "${xdgConfig}/gtk-3.0/gtk.css";
+          }
+        ];
+      }
+    ];
+  };
 }
