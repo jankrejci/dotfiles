@@ -61,7 +61,7 @@
           ../modules/zellij.nix # terminal multiplexer
           ../modules/terminal.nix # terminal environment setup
           ../modules/helix.nix # modal editor
-          ../modules/hyprland.nix # tiling window manager
+          ../modules/hyprland # tiling window manager and UI components
           ../modules/zen.nix # browser theme toggle
           ../modules/colors.nix # Tokyo Night color scheme via nix-colors
         ];
