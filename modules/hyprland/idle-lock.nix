@@ -2,43 +2,70 @@
 #
 # - hyprlock for screen lock with blurred screenshot
 # - hypridle for idle timeout chain: dim → lock → dpms off → suspend
-{config, ...}: let
+{
+  pkgs,
+  config,
+  ...
+}: let
   colorsDark = config.colorScheme.darkPalette;
+  colorsLight = config.colorScheme.lightPalette;
+  xdgConfig = config.xdg.configHome;
+
+  # Generate hyprlock config from a base16 palette. Hyprlock reads config
+  # fresh on each invocation, so no runtime reload is needed.
+  mkHyprlockConfig = p: ''
+    general {
+        hide_cursor = true
+        grace = 5
+    }
+
+    background {
+        monitor =
+        path = screenshot
+        blur_passes = 3
+        blur_size = 8
+    }
+
+    input-field {
+        monitor =
+        size = 300, 50
+        outline_thickness = 2
+        outer_color = rgb(${p.base0D})
+        inner_color = rgb(${p.base00})
+        font_color = rgb(${p.base05})
+        fade_on_empty = true
+        placeholder_text =
+        dots_center = true
+        position = 0, -20
+        halign = center
+        valign = center
+    }
+  '';
 in {
-  # Screen lock with blurred background
-  programs.hyprlock = {
-    enable = true;
-    settings = {
-      general = {
-        hide_cursor = true;
-        grace = 5;
+  # Only use programs.hyprlock to install the package, not to generate the config.
+  programs.hyprlock.enable = true;
+
+  # Nix-managed hyprlock config variant files for the theme toggle.
+  xdg.configFile."hypr/${config.colorScheme.themeName}-dark.conf".text = mkHyprlockConfig colorsDark;
+  xdg.configFile."hypr/${config.colorScheme.themeName}-light.conf".text = mkHyprlockConfig colorsLight;
+
+  theme.toggle = [
+    {
+      name = "hyprlock";
+      switch = pkgs.writeShellApplication {
+        name = "theme-switch-hyprlock";
+        text = ''
+          cat "${xdgConfig}/hypr/${config.colorScheme.themeName}-$1.conf" > "${xdgConfig}/hypr/hyprlock.conf"
+        '';
       };
-      background = [
+      seed = [
         {
-          monitor = "";
-          path = "screenshot";
-          blur_passes = 3;
-          blur_size = 8;
+          source = "${xdgConfig}/hypr/${config.colorScheme.themeName}-\${mode}.conf";
+          target = "${xdgConfig}/hypr/hyprlock.conf";
         }
       ];
-      input-field = [
-        {
-          monitor = "";
-          size = "300, 50";
-          outline_thickness = 2;
-          outer_color = "rgb(${colorsDark.base0D})";
-          inner_color = "rgb(${colorsDark.base00})";
-          font_color = "rgb(${colorsDark.base05})";
-          fade_on_empty = true;
-          placeholder_text = "";
-          dots_center = true;
-          position = "0, -20";
-          halign = "center";
-          valign = "center";
-        }
-      ];
-    };
-  };
+    }
+  ];
 
   # Idle timeout chain: dim after 5min, lock after 15min, dpms off after 20min, suspend after 30min on battery only.
   services.hypridle = {
