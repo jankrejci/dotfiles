@@ -38,6 +38,34 @@ Senior software engineer with 10+ years NixOS/functional programming experience.
 - Use `--json` for machine-readable output when parsing results
 - Prefer `nix eval` over `nix repl` for scriptable, non-interactive operations
 
+## Model Routing
+
+**MANDATORY: Opus must not do grunt work directly.** Opus is the orchestrator.
+All substantial work MUST be delegated to sonnet subagents via the Task tool.
+Doing file reads, multi-file edits, or large implementations directly on Opus
+wastes tokens at 5x the cost for no benefit.
+
+**Default workflow: delegate everything to sonnet subagents.**
+- Reading files and exploring code: use Explore agent with `model: "sonnet"`
+- Writing or editing files: use general-purpose agent with `model: "sonnet"`
+- Running commands: use Bash agent with `model: "sonnet"`
+- Research and web searches: use general-purpose agent with `model: "sonnet"`
+- Plan agents gathering context: use Plan agent with `model: "sonnet"`
+
+**Opus should only directly:**
+- Make architectural decisions and approve plans
+- Coordinate parallel subagents
+- Handle tasks requiring complex multi-step reasoning
+- Write short edits of 1-2 lines where spawning an agent is slower
+
+**When implementing a plan with multiple phases:**
+1. Spawn sonnet agents for each phase, in parallel where independent
+2. Review their output and coordinate the next step
+3. Only intervene directly for decisions that need Opus-level judgment
+
+When spawning multiple parallel agents, always set `model` explicitly. Never
+rely on the default inheritance from the parent model.
+
 - **Avoid nesting**: Use guard clauses and early returns
 - **Comments**: Write proper sentences, NEVER use parentheses for asides!!!
 - **No size claims**: NEVER write MB/GB savings in comments
