@@ -663,10 +663,8 @@ in {
             "class<firefox>" = "󰈹";
             "class<zen|app.zen_browser.zen>" = "󰈹";
             "class<org.gnome.Nautilus>" = "󰝰";
-            "class<Spotify>" = "󰓇";
-            "class<discord>" = "󰙯";
-            "class<vlc>" = "󰕼";
-            "class<com.github.ADBeveridge.Raider>" = "󰩹";
+            "class<kicad>" = "󰻫";
+            "class<FreeCAD>" = "󰻫";
           };
           on-click = "activate";
           on-scroll-up = "hyprctl dispatch workspace e-1";
