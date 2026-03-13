@@ -42,8 +42,8 @@
   '';
 in {
   # Nix-managed swayosd style variant files for the theme toggle.
-  xdg.configFile."swayosd/style-dark.css".text = mkSwayosdTheme colorsDark;
-  xdg.configFile."swayosd/style-light.css".text = mkSwayosdTheme colorsLight;
+  xdg.configFile."swayosd/${config.colorScheme.themeName}-dark.css".text = mkSwayosdTheme colorsDark;
+  xdg.configFile."swayosd/${config.colorScheme.themeName}-light.css".text = mkSwayosdTheme colorsLight;
 
   services.swayosd = {
     enable = true;
@@ -64,13 +64,13 @@ in {
         name = "theme-switch-swayosd";
         runtimeInputs = [pkgs.systemd];
         text = ''
-          cat "${xdgConfig}/swayosd/style-$1.css" > "${xdgConfig}/swayosd/style.css"
+          cat "${xdgConfig}/swayosd/${config.colorScheme.themeName}-$1.css" > "${xdgConfig}/swayosd/style.css"
           systemctl --user restart swayosd.service || true
         '';
       };
       seed = [
         {
-          source = "${xdgConfig}/swayosd/style-\${mode}.css";
+          source = "${xdgConfig}/swayosd/${config.colorScheme.themeName}-\${mode}.css";
           target = "${xdgConfig}/swayosd/style.css";
         }
       ];
