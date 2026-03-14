@@ -299,6 +299,7 @@ in {
     gnomeExtensions.dash-to-panel
     unstable.gnomeExtensions.unite
     gnomeExtensions.notification-banner-reloaded
+    gnomeExtensions.user-themes
   ];
 
   # Required for AppIndicator tray icons
