@@ -40,7 +40,7 @@ in {
     };
   };
 
-  # Idle management: dim, lock, dpms off, suspend
+  # Idle timeout chain: dim after 5min, lock after 15min, dpms off after 20min, suspend after 30min on battery only.
   services.hypridle = {
     enable = true;
     settings = {
@@ -56,17 +56,18 @@ in {
           on-resume = "brightnessctl -r";
         }
         {
-          timeout = 600;
+          timeout = 900;
           on-timeout = "loginctl lock-session";
         }
         {
-          timeout = 900;
+          timeout = 1200;
           on-timeout = "hyprctl dispatch dpms off";
           on-resume = "hyprctl dispatch dpms on";
         }
         {
+          # Only suspend on battery. Desktop and docked laptop stay awake.
           timeout = 1800;
-          on-timeout = "systemctl suspend";
+          on-timeout = "cat /sys/class/power_supply/BAT*/status 2>/dev/null | grep -qi discharging && systemctl suspend";
         }
       ];
     };
