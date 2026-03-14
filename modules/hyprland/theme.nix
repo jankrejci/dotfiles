@@ -13,9 +13,14 @@
   colorsLight = config.colorScheme.lightPalette;
   xdgConfig = config.xdg.configHome;
 
-  # Generate GTK @define-color overrides for libadwaita named colors. Both
-  # GTK4 and GTK3 with adw-gtk3 support these via user CSS.
-  mkGtkTheme = p: ''
+  gtkThemePkg =
+    pkgs.tokyonight-gtk-theme.overrideAttrs
+    (import ../../pkgs/tokyonight-gtk-theme.nix {inherit lib;} {
+      inherit (config.colorScheme) darkPalette lightPalette;
+    });
+
+  # GTK3 @define-color overrides, swapped between variants by the toggle.
+  mkGtkTheme3 = p: ''
     @define-color accent_bg_color #${p.base0D};
     @define-color accent_fg_color #${p.base00};
     @define-color accent_color #${p.base0D};
@@ -33,6 +38,103 @@
     @define-color popover_fg_color #${p.base05};
     @define-color dialog_bg_color #${p.base01};
     @define-color dialog_fg_color #${p.base05};
+  '';
+
+  # GTK4/libadwaita CSS custom properties. Unlike @define-color which creates
+  # static values, CSS variables inside @media (prefers-color-scheme) blocks
+  # respond to gsettings color-scheme changes at runtime. This is the
+  # mechanism GNOME itself uses for dark/light switching.
+  mkGtkTheme4Vars = p: ''
+    :root {
+      --accent-bg-color: #${p.base0D};
+      --accent-fg-color: #${p.base00};
+      --accent-color: #${p.base0D};
+      --window-bg-color: #${p.base00};
+      --window-fg-color: #${p.base05};
+      --view-bg-color: #${p.base00};
+      --view-fg-color: #${p.base05};
+      --headerbar-bg-color: #${p.panelBg};
+      --headerbar-fg-color: #${p.base05};
+      --headerbar-backdrop-color: #${p.panelBg};
+      --card-bg-color: #${p.base01};
+      --card-fg-color: #${p.base05};
+      --sidebar-bg-color: #${p.panelBg};
+      --sidebar-fg-color: #${p.base05};
+      --popover-bg-color: #${p.base01};
+      --popover-fg-color: #${p.base05};
+      --dialog-bg-color: #${p.base01};
+      --dialog-fg-color: #${p.base05};
+    }
+  '';
+
+  # Generate a GtkSourceView 5 style scheme XML from a base16 palette.
+  # Installed to gtksourceview-5/styles/ so GNOME Text Editor picks it up.
+  mkGtkSourceViewTheme = name: p: ''
+    <?xml version="1.0" encoding="UTF-8"?>
+    <style-scheme id="${name}" name="${name}" version="1.0">
+      <author>Generated from Tokyo Night palette</author>
+      <description>Tokyo Night color scheme for GtkSourceView 5 applications.</description>
+
+      <color name="bg" value="#${p.base00}"/>
+      <color name="bg-alt" value="#${p.base01}"/>
+      <color name="selection" value="#${p.base02}"/>
+      <color name="comment" value="#${p.base03}"/>
+      <color name="line-num" value="#${p.base04}"/>
+      <color name="fg" value="#${p.base05}"/>
+      <color name="fg-bright" value="#${p.base06}"/>
+      <color name="red" value="#${p.base08}"/>
+      <color name="orange" value="#${p.base09}"/>
+      <color name="yellow" value="#${p.base0A}"/>
+      <color name="green" value="#${p.base0B}"/>
+      <color name="cyan" value="#${p.base0C}"/>
+      <color name="blue" value="#${p.base0D}"/>
+      <color name="purple" value="#${p.base0E}"/>
+      <color name="dark-red" value="#${p.base0F}"/>
+
+      <style name="text" foreground="fg" background="bg"/>
+      <style name="selection" background="selection"/>
+      <style name="cursor" foreground="fg-bright"/>
+      <style name="current-line" background="bg-alt"/>
+      <style name="current-line-number" foreground="fg"/>
+      <style name="line-numbers" foreground="line-num" background="bg"/>
+      <style name="bracket-match" foreground="orange" underline="true"/>
+      <style name="bracket-mismatch" foreground="red" underline="true"/>
+      <style name="search-match" foreground="bg" background="yellow"/>
+      <style name="right-margin" foreground="line-num"/>
+
+      <style name="def:comment" foreground="comment" italic="true"/>
+      <style name="def:constant" foreground="orange"/>
+      <style name="def:number" foreground="orange"/>
+      <style name="def:boolean" foreground="orange"/>
+      <style name="def:string" foreground="green"/>
+      <style name="def:special-char" foreground="purple"/>
+      <style name="def:keyword" foreground="purple"/>
+      <style name="def:statement" foreground="purple"/>
+      <style name="def:function" foreground="blue"/>
+      <style name="def:builtin" foreground="cyan"/>
+      <style name="def:type" foreground="cyan"/>
+      <style name="def:identifier" foreground="fg"/>
+      <style name="def:preprocessor" foreground="cyan"/>
+      <style name="def:operator" foreground="fg"/>
+      <style name="def:error" foreground="red"/>
+      <style name="def:note" foreground="yellow" bold="true"/>
+      <style name="def:net-address" foreground="blue" underline="single"/>
+
+      <style name="def:emphasis" italic="true"/>
+      <style name="def:strong-emphasis" foreground="fg-bright" bold="true"/>
+      <style name="def:inline-code" foreground="cyan"/>
+      <style name="def:heading" foreground="blue" bold="true"/>
+      <style name="def:link-text" foreground="orange"/>
+      <style name="def:link-destination" foreground="blue" italic="true" underline="single"/>
+      <style name="def:preformatted-section" foreground="cyan"/>
+      <style name="def:list-marker" foreground="purple" bold="true"/>
+      <style name="def:insertion" foreground="green" underline="single"/>
+      <style name="def:deletion" foreground="red" strikethrough="true"/>
+
+      <style name="diff:added-line" foreground="green"/>
+      <style name="diff:removed-line" foreground="red"/>
+      <style name="diff:changed-line" foreground="yellow"/>
+    </style-scheme>
   '';
 
   # Toggle between dark and light mode at runtime. Each registered
@@ -73,25 +175,28 @@ in {
   };
 
   config = {
-    # Nix-managed GTK color variant files for the theme toggle. Both GTK4 and
-    # GTK3 with adw-gtk3 pick up @define-color overrides from user CSS.
-    xdg.configFile."gtk-4.0/${config.colorScheme.themeName}-dark.css".text = mkGtkTheme colorsDark;
-    xdg.configFile."gtk-4.0/${config.colorScheme.themeName}-light.css".text = mkGtkTheme colorsLight;
+    # GTK3 variant files swapped by the toggle. GTK3 lacks media query
+    # support so it still needs file swapping for runtime dark/light.
+    xdg.configFile."gtk-3.0/${config.colorScheme.themeName}-dark.css".text = mkGtkTheme3 colorsDark;
+    xdg.configFile."gtk-3.0/${config.colorScheme.themeName}-light.css".text = mkGtkTheme3 colorsLight;
 
-    # The gtk module generates gtk.css with an @import for adw-gtk3, but the
-    # theme toggle seed script overwrites it with color definitions at runtime.
-    # Without force, HM tries to back up the mutable file and fails when the
-    # backup already exists from a previous activation.
-    xdg.configFile."gtk-4.0/gtk.css".force = true;
-    xdg.configFile."gtk-3.0/${config.colorScheme.themeName}-dark.css".text = mkGtkTheme colorsDark;
-    xdg.configFile."gtk-3.0/${config.colorScheme.themeName}-light.css".text = mkGtkTheme colorsLight;
+    xdg.dataFile."gtksourceview-5/styles/${config.colorScheme.themeName}-dark.xml".text = mkGtkSourceViewTheme "${config.colorScheme.themeName}-dark" colorsDark;
+    xdg.dataFile."gtksourceview-5/styles/${config.colorScheme.themeName}-light.xml".text = mkGtkSourceViewTheme "${config.colorScheme.themeName}-light" colorsLight;
 
     gtk = {
       enable = true;
       theme = {
-        name = "adw-gtk3-dark";
-        package = pkgs.adw-gtk3;
+        name = "Tokyonight-Dark";
+        package = gtkThemePkg;
       };
+      gtk4.extraCss = ''
+        @media (prefers-color-scheme: dark) {
+        ${mkGtkTheme4Vars colorsDark}
+        }
+        @media (prefers-color-scheme: light) {
+        ${mkGtkTheme4Vars colorsLight}
+        }
+      '';
     };
 
     hyprland.toggleTheme = toggleTheme;
@@ -117,7 +222,7 @@ in {
         Type = "oneshot";
         ExecStart = lib.getExe (pkgs.writeShellApplication {
           name = "seed-theme-files";
-          runtimeInputs = [pkgs.coreutils pkgs.glib];
+          runtimeInputs = [pkgs.coreutils pkgs.glib pkgs.dconf];
           text = ''
             mode=$(cat "$HOME/.config/theme-mode" 2>/dev/null || echo "dark")
 
@@ -132,16 +237,22 @@ in {
               )
               config.theme.toggle}
 
-            # Sync gsettings with current mode. HM always writes adw-gtk3-dark
+            # Sync gsettings with current mode. HM always writes Tokyonight-Dark
             # to dconf during activation, so correct it here for light mode.
+            # The user-theme extension schema is not in gsettings' search path
+            # inside systemd services, so use dconf write for that key.
             case "$mode" in
               light)
                 gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
-                gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'
+                gsettings set org.gnome.desktop.interface gtk-theme 'Tokyonight-Light'
+                dconf write /org/gnome/shell/extensions/user-theme/name "'Tokyonight-Light'"
+                dconf write /org/gnome/TextEditor/style-scheme "'${config.colorScheme.themeName}-light'"
                 ;;
               *)
                 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-                gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
+                gsettings set org.gnome.desktop.interface gtk-theme 'Tokyonight-Dark'
+                dconf write /org/gnome/shell/extensions/user-theme/name "'Tokyonight-Dark'"
+                dconf write /org/gnome/TextEditor/style-scheme "'${config.colorScheme.themeName}-dark'"
                 ;;
             esac
           '';
@@ -166,43 +277,44 @@ in {
         };
       }
       {
-        name = "gsettings";
+        # GTK4 uses CSS variables with @media (prefers-color-scheme) so it
+        # toggles automatically via gsettings. Only GTK3 needs file swapping.
+        name = "gtk3-css";
         switch = pkgs.writeShellApplication {
-          name = "theme-switch-gsettings";
-          runtimeInputs = [pkgs.glib];
+          name = "theme-switch-gtk3-css";
           text = ''
-            case "$1" in
-              light)
-                gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
-                gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'
-                ;;
-              *)
-                gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-                gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
-                ;;
-            esac
-          '';
-        };
-      }
-      {
-        name = "gtk-css";
-        switch = pkgs.writeShellApplication {
-          name = "theme-switch-gtk-css";
-          text = ''
-            cat "${xdgConfig}/gtk-4.0/${config.colorScheme.themeName}-$1.css" > "${xdgConfig}/gtk-4.0/gtk.css"
             cat "${xdgConfig}/gtk-3.0/${config.colorScheme.themeName}-$1.css" > "${xdgConfig}/gtk-3.0/gtk.css"
           '';
         };
         seed = [
           {
-            source = "${xdgConfig}/gtk-4.0/${config.colorScheme.themeName}-\${mode}.css";
-            target = "${xdgConfig}/gtk-4.0/gtk.css";
-          }
-          {
             source = "${xdgConfig}/gtk-3.0/${config.colorScheme.themeName}-\${mode}.css";
             target = "${xdgConfig}/gtk-3.0/gtk.css";
           }
         ];
+      }
+      {
+        name = "gsettings";
+        switch = pkgs.writeShellApplication {
+          name = "theme-switch-gsettings";
+          runtimeInputs = [pkgs.glib pkgs.dconf];
+          text = ''
+            case "$1" in
+              light)
+                gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
+                gsettings set org.gnome.desktop.interface gtk-theme 'Tokyonight-Light'
+                dconf write /org/gnome/shell/extensions/user-theme/name "'Tokyonight-Light'"
+                dconf write /org/gnome/TextEditor/style-scheme "'${config.colorScheme.themeName}-light'"
+                ;;
+              *)
+                gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+                gsettings set org.gnome.desktop.interface gtk-theme 'Tokyonight-Dark'
+                dconf write /org/gnome/shell/extensions/user-theme/name "'Tokyonight-Dark'"
+                dconf write /org/gnome/TextEditor/style-scheme "'${config.colorScheme.themeName}-dark'"
+                ;;
+            esac
+          '';
+        };
       }
     ];
   };
