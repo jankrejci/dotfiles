@@ -48,7 +48,7 @@
 
     window#waybar {
       background: transparent;
-      color: @base04;
+      color: @base03;
     }
 
     /* Floating island bar with darker chrome background. Matches upstream
@@ -178,6 +178,7 @@
     }
 
     #tray {
+      color: @base03;
       padding: 4px 8px;
       margin: 4px 2px;
     }

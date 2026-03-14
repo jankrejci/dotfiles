@@ -41,8 +41,8 @@
     themes {
       ${name} {
         text_unselected {
-          base "#${p.base06}"
-          background "#${p.base01}"
+          base "#${p.base03}"
+          background "#${p.panelBg}"
           emphasis_0 "#${p.base09}"
           emphasis_1 "#${p.base0C}"
           emphasis_2 "#${p.base0B}"
@@ -57,8 +57,8 @@
           emphasis_3 "#${p.base0E}"
         }
         ribbon_unselected {
-          base "#${p.base01}"
-          background "#${p.base04}"
+          base "#${p.base03}"
+          background "#${p.base00}"
           emphasis_0 "#${p.base0D}"
           emphasis_1 "#${p.base08}"
           emphasis_2 "#${p.base0C}"
