@@ -90,75 +90,13 @@
     }
   ];
 
-  # Experiment API implementation running in the privileged parent process.
-  # Has full XPCOM access: IOUtils for file reading, Services.prefs for
-  # pref manipulation. This is the same context Marionette used.
-  extensionApi = ''
-    "use strict";
-
-    const { ExtensionCommon } = ChromeUtils.importESModule(
-      "resource://gre/modules/ExtensionCommon.sys.mjs"
-    );
-
-    this.themeToggle = class extends ExtensionCommon.ExtensionAPI {
-      getAPI(context) {
-        return {
-          themeToggle: {
-            async readMode(path) {
-              try {
-                const data = await IOUtils.readUTF8(path);
-                return data.trim();
-              } catch (e) {
-                return "dark";
-              }
-            },
-            async setColorScheme(mode) {
-              const value = mode === "light" ? 1 : 0;
-              Services.prefs.setIntPref(
-                "layout.css.prefers-color-scheme.content-override",
-                value
-              );
-              // Zen reads this pref for internal chrome styling like urlbar
-              // text color. Without it, Zen's defaults override our CSS.
-              Services.prefs.setIntPref(
-                "zen.view.window.scheme",
-                value
-              );
-            },
-          },
-        };
-      }
-    };
-  '';
-
-  # Background script polls the theme-mode file every 2 seconds via the
-  # privileged Experiment API and sets the content-override pref on change.
-  extensionBackground = ''
-    let lastMode = null;
-
-    async function checkMode() {
-      try {
-        const mode = await browser.themeToggle.readMode("${themeModeFile}");
-        if (mode && mode !== lastMode) {
-          await browser.themeToggle.setColorScheme(mode);
-          lastMode = mode;
-          console.log("[zen-theme-toggle] applied mode:", mode);
-        }
-      } catch (e) {
-        console.error("[zen-theme-toggle] error:", e);
-      }
-    }
-
-    console.log("[zen-theme-toggle] starting, watching:", "${themeModeFile}");
-    checkMode();
-    setInterval(checkMode, 2000);
-  '';
-
   zenThemeExtension = let
     manifestFile = pkgs.writeText "manifest.json" extensionManifest;
     schemaFile = pkgs.writeText "schema.json" extensionSchema;
-    apiFile = pkgs.writeText "api.js" extensionApi;
-    backgroundFile = pkgs.writeText "background.js" extensionBackground;
+    apiFile = ../pkgs/zen-theme-toggle/api.js;
+    backgroundFile = pkgs.replaceVars ../pkgs/zen-theme-toggle/background.js.template {
+      themeModeFile = themeModeFile;
+    };
   in
     pkgs.runCommand "zen-theme-toggle.xpi" {
       nativeBuildInputs = [pkgs.zip];
