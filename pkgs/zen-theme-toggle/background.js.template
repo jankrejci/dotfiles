@@ -1,0 +1,18 @@
+let lastMode = null;
+
+async function checkMode() {
+  try {
+    const mode = await browser.themeToggle.readMode("@themeModeFile@");
+    if (mode && mode !== lastMode) {
+      await browser.themeToggle.setColorScheme(mode);
+      lastMode = mode;
+      console.log("[zen-theme-toggle] applied mode:", mode);
+    }
+  } catch (e) {
+    console.error("[zen-theme-toggle] error:", e);
+  }
+}
+
+console.log("[zen-theme-toggle] starting, watching:", "@themeModeFile@");
+checkMode();
+setInterval(checkMode, 2000);
