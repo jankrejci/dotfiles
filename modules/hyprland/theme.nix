@@ -89,8 +89,8 @@ in {
     gtk = {
       enable = true;
       theme = {
-        name = "adw-gtk3-dark";
-        package = pkgs.adw-gtk3;
+        name = "Tokyonight-Dark";
+        package = pkgs.tokyonight-gtk-theme;
       };
     };
 
@@ -132,16 +132,18 @@ in {
               )
               config.theme.toggle}
 
-            # Sync gsettings with current mode. HM always writes adw-gtk3-dark
+            # Sync gsettings with current mode. HM always writes Tokyonight-Dark
             # to dconf during activation, so correct it here for light mode.
             case "$mode" in
               light)
                 gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
-                gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'
+                gsettings set org.gnome.desktop.interface gtk-theme 'Tokyonight-Light'
+                gsettings set org.gnome.shell.extensions.user-theme name 'Tokyonight-Light' || true
                 ;;
               *)
                 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-                gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
+                gsettings set org.gnome.desktop.interface gtk-theme 'Tokyonight-Dark'
+                gsettings set org.gnome.shell.extensions.user-theme name 'Tokyonight-Dark' || true
                 ;;
             esac
           '';
@@ -174,11 +176,13 @@ in {
             case "$1" in
               light)
                 gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
-                gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'
+                gsettings set org.gnome.desktop.interface gtk-theme 'Tokyonight-Light'
+                gsettings set org.gnome.shell.extensions.user-theme name 'Tokyonight-Light' || true
                 ;;
               *)
                 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-                gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
+                gsettings set org.gnome.desktop.interface gtk-theme 'Tokyonight-Dark'
+                gsettings set org.gnome.shell.extensions.user-theme name 'Tokyonight-Dark' || true
                 ;;
             esac
           '';
