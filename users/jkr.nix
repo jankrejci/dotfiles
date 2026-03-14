@@ -116,6 +116,7 @@
               "unite-shell@hardpixel.github.com"
               "notification-banner-reloaded@marcinjakubowski.github.com"
               "appindicatorsupport@rgcjonas.gmail.com"
+              "user-theme@gnome-shell-extensions.gcampax.github.com"
             ];
           };
           # Notification position configuration
