@@ -240,38 +240,50 @@ in {
   ];
 
   # Seed userChrome.css, user.js, theme-mode, and extension into each Zen
-  # profile on activation. Remove targets first since they may be read-only
-  # nix store copies or symlinks.
-  home.activation.seedZenTheme = lib.hm.dag.entryAfter ["writeBoundary"] ''
-    zen_base="${zenProfileDir}"
-    [ -d "$zen_base" ] || exit 0
+  # profile on login. Remove targets first since they may be read-only nix
+  # store copies or symlinks.
+  systemd.user.services.seed-zen-theme = {
+    Unit.Description = "Seed Zen browser profile theme files";
+    Service = {
+      Type = "oneshot";
+      ExecStart = lib.getExe (pkgs.writeShellApplication {
+        name = "seed-zen-theme";
+        runtimeInputs = [pkgs.coreutils];
+        text = ''
+          zen_base="${zenProfileDir}"
+          [ -d "$zen_base" ] || exit 0
 
-    profiles_ini="$zen_base/profiles.ini"
-    [ -f "$profiles_ini" ] || exit 0
+          profiles_ini="$zen_base/profiles.ini"
+          [ -f "$profiles_ini" ] || exit 0
 
-    # Seed theme-mode from the global mode file if not already present.
-    if [ ! -f "$zen_base/theme-mode" ]; then
-      mode=$(cat "$HOME/.config/theme-mode" 2>/dev/null || echo "dark")
-      echo "$mode" > "$zen_base/theme-mode"
-    fi
+          # Seed theme-mode from the global mode file if not already present.
+          if [ ! -f "$zen_base/theme-mode" ]; then
+            mode=$(cat "$HOME/.config/theme-mode" 2>/dev/null || echo "dark")
+            echo "$mode" > "$zen_base/theme-mode"
+          fi
 
-    while IFS='=' read -r key value; do
-      [ "$key" = "Path" ] || continue
-      profile_dir="$zen_base/$value"
-      [ -d "$profile_dir" ] || continue
+          while IFS='=' read -r key value; do
+            [ "$key" = "Path" ] || continue
+            profile_dir="$zen_base/$value"
+            [ -d "$profile_dir" ] || continue
 
-      chrome_dir="$profile_dir/chrome"
-      mkdir -p "$chrome_dir"
-      rm -f "$chrome_dir/userChrome.css"
-      cp "${xdgConfig}/zen/userChrome.css" "$chrome_dir/userChrome.css"
-      rm -f "$profile_dir/user.js"
-      cp "${xdgConfig}/zen/user.js" "$profile_dir/user.js"
+            chrome_dir="$profile_dir/chrome"
+            mkdir -p "$chrome_dir"
+            rm -f "$chrome_dir/userChrome.css"
+            cp "${xdgConfig}/zen/userChrome.css" "$chrome_dir/userChrome.css"
+            rm -f "$profile_dir/user.js"
+            cp "${xdgConfig}/zen/user.js" "$profile_dir/user.js"
 
-      # Install the theme toggle extension into the profile.
-      ext_dir="$profile_dir/extensions"
-      mkdir -p "$ext_dir"
-      rm -f "$ext_dir/${extensionId}.xpi"
-      cp "${zenThemeExtension}" "$ext_dir/${extensionId}.xpi"
-    done < "$profiles_ini"
-  '';
+            # Install the theme toggle extension into the profile.
+            ext_dir="$profile_dir/extensions"
+            mkdir -p "$ext_dir"
+            rm -f "$ext_dir/${extensionId}.xpi"
+            cp "${zenThemeExtension}" "$ext_dir/${extensionId}.xpi"
+          done < "$profiles_ini"
+        '';
+      });
+      RemainAfterExit = true;
+    };
+    Install.WantedBy = ["default.target"];
+  };
 }
