@@ -45,7 +45,8 @@
         Super+Backspace      Lock Screen
         Super+F1             This Help
         ── Window Management ──
-        Super+Arrow          Move Focus
+        Super+Left/Right/H/L Cycle Workspaces
+        Super+Up/Down        Move Focus
         Super+Shift+1-9      Move Window to Workspace
         Super+1-9            Switch Workspace
         Alt+Tab / Shift+Tab  Cycle Workspaces
@@ -233,9 +234,12 @@ in {
         # Cycle through workspaces on current monitor, wrapping around.
         "ALT, Tab, workspace, m+1"
         "ALT SHIFT, Tab, workspace, m-1"
-        # Move focus with mainMod + arrow keys
-        "$mod, left, movefocus, l"
-        "$mod, right, movefocus, r"
+        # Cycle workspaces on current monitor with mainMod + arrow/vim keys.
+        "$mod, left, workspace, m-1"
+        "$mod, right, workspace, m+1"
+        "$mod, h, workspace, m-1"
+        "$mod, l, workspace, m+1"
+        # Move focus between tiled windows
         "$mod, up, movefocus, u"
         "$mod, down, movefocus, d"
         # Switch workspaces with mainMod + [1-9]
