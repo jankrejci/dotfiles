@@ -97,6 +97,16 @@ in {
     wayland = true;
   };
 
+  # Enforce dark color scheme on the GDM login screen via dconf profile.
+  # Avoids recompiling gnome-shell just for login screen theming.
+  programs.dconf.profiles.gdm.databases = [
+    {
+      settings."org/gnome/desktop/interface" = {
+        color-scheme = "prefer-dark";
+      };
+    }
+  ];
+
   programs.appimage = {
     enable = true;
     binfmt = true;
@@ -289,6 +299,7 @@ in {
     gnomeExtensions.dash-to-panel
     unstable.gnomeExtensions.unite
     gnomeExtensions.notification-banner-reloaded
+    gnomeExtensions.user-themes
   ];
 
   # Required for AppIndicator tray icons

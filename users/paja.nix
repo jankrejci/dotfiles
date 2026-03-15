@@ -62,6 +62,7 @@
               "Vitals@CoreCoding.com"
               "dash-to-panel@jderose9.github.com"
               "appindicatorsupport@rgcjonas.gmail.com"
+              "user-theme@gnome-shell-extensions.gcampax.github.com"
             ];
           };
           # Generated via dconf2nix: https://github.com/nix-commmunity/dconf2nix

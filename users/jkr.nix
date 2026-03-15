@@ -63,6 +63,8 @@
           ../modules/helix.nix # modal editor
           ../modules/hyprland # tiling window manager and UI components
           ../modules/zen.nix # browser theme toggle
+          ../modules/kicad.nix # KiCad color theme
+          ../modules/freecad.nix # FreeCAD QSS stylesheet
           ../modules/colors.nix # Tokyo Night color scheme via nix-colors
         ];
 
@@ -114,6 +116,7 @@
               "unite-shell@hardpixel.github.com"
               "notification-banner-reloaded@marcinjakubowski.github.com"
               "appindicatorsupport@rgcjonas.gmail.com"
+              "user-theme@gnome-shell-extensions.gcampax.github.com"
             ];
           };
           # Notification position configuration
