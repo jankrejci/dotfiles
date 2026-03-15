@@ -13,9 +13,8 @@
   colorsLight = config.colorScheme.lightPalette;
   xdgConfig = config.xdg.configHome;
 
-  # Generate GTK @define-color overrides for libadwaita named colors. Both
-  # GTK4 and GTK3 with adw-gtk3 support these via user CSS.
-  mkGtkTheme = p: ''
+  # GTK3 @define-color overrides, swapped between variants by the toggle.
+  mkGtkTheme3 = p: ''
     @define-color accent_bg_color #${p.base0D};
     @define-color accent_fg_color #${p.base00};
     @define-color accent_color #${p.base0D};
@@ -33,6 +32,33 @@
     @define-color popover_fg_color #${p.base05};
     @define-color dialog_bg_color #${p.base01};
     @define-color dialog_fg_color #${p.base05};
+  '';
+
+  # GTK4/libadwaita CSS custom properties. Unlike @define-color which creates
+  # static values, CSS variables inside @media (prefers-color-scheme) blocks
+  # respond to gsettings color-scheme changes at runtime. This is the
+  # mechanism GNOME itself uses for dark/light switching.
+  mkGtkTheme4Vars = p: ''
+    :root {
+      --accent-bg-color: #${p.base0D};
+      --accent-fg-color: #${p.base00};
+      --accent-color: #${p.base0D};
+      --window-bg-color: #${p.base00};
+      --window-fg-color: #${p.base05};
+      --view-bg-color: #${p.base00};
+      --view-fg-color: #${p.base05};
+      --headerbar-bg-color: #${p.panelBg};
+      --headerbar-fg-color: #${p.base05};
+      --headerbar-backdrop-color: #${p.panelBg};
+      --card-bg-color: #${p.base01};
+      --card-fg-color: #${p.base05};
+      --sidebar-bg-color: #${p.panelBg};
+      --sidebar-fg-color: #${p.base05};
+      --popover-bg-color: #${p.base01};
+      --popover-fg-color: #${p.base05};
+      --dialog-bg-color: #${p.base01};
+      --dialog-fg-color: #${p.base05};
+    }
   '';
 
   # Generate a GtkSourceView 5 style scheme XML from a base16 palette.
@@ -143,18 +169,10 @@ in {
   };
 
   config = {
-    # Nix-managed GTK color variant files for the theme toggle. Both GTK4 and
-    # GTK3 with adw-gtk3 pick up @define-color overrides from user CSS.
-    xdg.configFile."gtk-4.0/${config.colorScheme.themeName}-dark.css".text = mkGtkTheme colorsDark;
-    xdg.configFile."gtk-4.0/${config.colorScheme.themeName}-light.css".text = mkGtkTheme colorsLight;
-
-    # The gtk module generates gtk.css with an @import for adw-gtk3, but the
-    # theme toggle seed script overwrites it with color definitions at runtime.
-    # Without force, HM tries to back up the mutable file and fails when the
-    # backup already exists from a previous activation.
-    xdg.configFile."gtk-4.0/gtk.css".force = true;
-    xdg.configFile."gtk-3.0/${config.colorScheme.themeName}-dark.css".text = mkGtkTheme colorsDark;
-    xdg.configFile."gtk-3.0/${config.colorScheme.themeName}-light.css".text = mkGtkTheme colorsLight;
+    # GTK3 variant files swapped by the toggle. GTK3 lacks media query
+    # support so it still needs file swapping for runtime dark/light.
+    xdg.configFile."gtk-3.0/${config.colorScheme.themeName}-dark.css".text = mkGtkTheme3 colorsDark;
+    xdg.configFile."gtk-3.0/${config.colorScheme.themeName}-light.css".text = mkGtkTheme3 colorsLight;
 
     xdg.dataFile."gtksourceview-5/styles/${config.colorScheme.themeName}-dark.xml".text = mkGtkSourceViewTheme "${config.colorScheme.themeName}-dark" colorsDark;
     xdg.dataFile."gtksourceview-5/styles/${config.colorScheme.themeName}-light.xml".text = mkGtkSourceViewTheme "${config.colorScheme.themeName}-light" colorsLight;
@@ -165,6 +183,14 @@ in {
         name = "Tokyonight-Dark";
         package = pkgs.tokyonight-gtk-theme;
       };
+      gtk4.extraCss = ''
+        @media (prefers-color-scheme: dark) {
+        ${mkGtkTheme4Vars colorsDark}
+        }
+        @media (prefers-color-scheme: light) {
+        ${mkGtkTheme4Vars colorsLight}
+        }
+      '';
     };
 
     hyprland.toggleTheme = toggleTheme;
@@ -243,6 +269,23 @@ in {
         };
       }
       {
+        # GTK4 uses CSS variables with @media (prefers-color-scheme) so it
+        # toggles automatically via gsettings. Only GTK3 needs file swapping.
+        name = "gtk3-css";
+        switch = pkgs.writeShellApplication {
+          name = "theme-switch-gtk3-css";
+          text = ''
+            cat "${xdgConfig}/gtk-3.0/${config.colorScheme.themeName}-$1.css" > "${xdgConfig}/gtk-3.0/gtk.css"
+          '';
+        };
+        seed = [
+          {
+            source = "${xdgConfig}/gtk-3.0/${config.colorScheme.themeName}-\${mode}.css";
+            target = "${xdgConfig}/gtk-3.0/gtk.css";
+          }
+        ];
+      }
+      {
         name = "gsettings";
         switch = pkgs.writeShellApplication {
           name = "theme-switch-gsettings";
@@ -264,26 +307,6 @@ in {
             esac
           '';
         };
-      }
-      {
-        name = "gtk-css";
-        switch = pkgs.writeShellApplication {
-          name = "theme-switch-gtk-css";
-          text = ''
-            cat "${xdgConfig}/gtk-4.0/${config.colorScheme.themeName}-$1.css" > "${xdgConfig}/gtk-4.0/gtk.css"
-            cat "${xdgConfig}/gtk-3.0/${config.colorScheme.themeName}-$1.css" > "${xdgConfig}/gtk-3.0/gtk.css"
-          '';
-        };
-        seed = [
-          {
-            source = "${xdgConfig}/gtk-4.0/${config.colorScheme.themeName}-\${mode}.css";
-            target = "${xdgConfig}/gtk-4.0/gtk.css";
-          }
-          {
-            source = "${xdgConfig}/gtk-3.0/${config.colorScheme.themeName}-\${mode}.css";
-            target = "${xdgConfig}/gtk-3.0/gtk.css";
-          }
-        ];
       }
     ];
   };
