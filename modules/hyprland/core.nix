@@ -174,6 +174,9 @@ in {
           "workspaces, 1, 2, default, slide"
         ];
       };
+      cursor = {
+        inactive_timeout = 60;
+      };
       misc = {
         force_default_wallpaper = 0;
         animate_mouse_windowdragging = false;
