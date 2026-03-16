@@ -117,6 +117,7 @@
               "notification-banner-reloaded@marcinjakubowski.github.com"
               "appindicatorsupport@rgcjonas.gmail.com"
               "user-theme@gnome-shell-extensions.gcampax.github.com"
+              "hide-cursor@elcste.com"
             ];
           };
           # Notification position configuration
@@ -154,6 +155,9 @@
           };
           "org/gnome/shell" = {
             favorite-apps = ["Alacritty.desktop" "app.zen_browser.zen.desktop" "org.gnome.Nautilus.desktop"];
+          };
+          "org/gnome/shell/extensions/hide-cursor-elcste-com" = {
+            timeout = mkInt32 60;
           };
           "org/gnome/shell/extensions/dash-to-panel" = {
             panel-positions = ''
