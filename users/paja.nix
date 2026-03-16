@@ -63,6 +63,7 @@
               "dash-to-panel@jderose9.github.com"
               "appindicatorsupport@rgcjonas.gmail.com"
               "user-theme@gnome-shell-extensions.gcampax.github.com"
+              "hide-cursor@elcste.com"
             ];
           };
           # Generated via dconf2nix: https://github.com/nix-commmunity/dconf2nix
@@ -92,6 +93,9 @@
           };
           "org/gnome/shell" = {
             favorite-apps = ["org.mozilla.firefox.desktop" "org.gnome.Nautilus.desktop"];
+          };
+          "org/gnome/shell/extensions/hide-cursor-elcste-com" = {
+            timeout = mkInt32 60;
           };
           "org/gnome/shell/extensions/dash-to-panel" = {
             panel-positions = ''

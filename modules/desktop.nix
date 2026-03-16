@@ -300,6 +300,7 @@ in {
     unstable.gnomeExtensions.unite
     gnomeExtensions.notification-banner-reloaded
     gnomeExtensions.user-themes
+    gnomeExtensions.hide-cursor
   ];
 
   # Required for AppIndicator tray icons
