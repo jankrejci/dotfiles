@@ -88,6 +88,13 @@ in {
       owner = "alertmanager";
     };
 
+    # Static user for alertmanager since agenix needs to chown secrets before service starts
+    users.users.alertmanager = {
+      isSystemUser = true;
+      group = "alertmanager";
+    };
+    users.groups.alertmanager = {};
+
     # Register IP for services dummy interface
     homelab.serviceIPs = [cfg.ip];
     networking.hosts.${cfg.ip} = [promDomain];
@@ -155,6 +162,9 @@ in {
         }
       ];
     };
+
+    # Disable DynamicUser since we need a static user for agenix secrets
+    systemd.services.alertmanager.serviceConfig.DynamicUser = lib.mkForce false;
 
     # Alertmanager routes alerts via ntfy webhooks with template-based routing
     services.prometheus.alertmanager = {
