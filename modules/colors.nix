@@ -4,6 +4,7 @@
   config,
   inputs,
   lib,
+  pkgs,
   ...
 }: let
   palettes = import ./palettes.nix;
@@ -64,6 +65,17 @@ in {
     readOnly = true;
     description = "Tokyo Night Day base16 palette for light mode toggle.";
     default = palettes.lightPalette;
+  };
+
+  options.colorScheme.gtkThemePkg = lib.mkOption {
+    type = lib.types.package;
+    readOnly = true;
+    description = "Tokyo Night GTK theme package built from centralized palettes.";
+    default =
+      pkgs.tokyonight-gtk-theme.overrideAttrs
+      (import ../pkgs/tokyonight-gtk-theme.nix {inherit lib;} {
+        inherit (config.colorScheme) darkPalette lightPalette;
+      });
   };
 
   # Default colorScheme uses dark palette so modules using the nix-colors

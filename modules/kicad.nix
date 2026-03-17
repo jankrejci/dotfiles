@@ -13,12 +13,7 @@
   kicadConfigBase = "${homeDir}/.var/app/org.kicad.KiCad/config/kicad";
   kicadGtk3Dir = "${homeDir}/.var/app/org.kicad.KiCad/config/gtk-3.0";
   xdgConfig = config.xdg.configHome;
-  themeName = config.colorScheme.themeName;
-  gtkThemePkg =
-    pkgs.tokyonight-gtk-theme.overrideAttrs
-    (import ../pkgs/tokyonight-gtk-theme.nix {inherit lib;} {
-      inherit (config.colorScheme) darkPalette lightPalette;
-    });
+  gtkThemePkg = config.colorScheme.gtkThemePkg;
   colors = config.colorScheme.darkPalette;
 
   # Convert 6-char hex to KiCad rgb/rgba color strings.
