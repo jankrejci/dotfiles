@@ -110,33 +110,45 @@ git log --oneline origin/main..HEAD | grep -E 'fixup!|squash!'
 
 If no fixups exist, skip to Phase 2.
 
-### Phase 2: Detect Redundant Commits
+### Phase 2: Identify Logical Changes
 
-Find commits that touch the same files and may be squashable.
+Analyze the branch by reading every commit's full diff (`git show <hash>`)
+and understanding the intent behind each change. The goal is to ensure each
+commit represents exactly one logical change that a reviewer can understand
+in isolation.
 
-1. List files changed per commit:
-   ```bash
-   for hash in $(git rev-list origin/main..HEAD); do
-     echo "=== $(git log -1 --oneline $hash) ==="
-     git diff-tree --no-commit-id --name-only -r $hash
-   done
-   ```
-2. For files touched by multiple commits, inspect the diffs to determine if:
-   - A later commit supersedes an earlier one on the same lines. This is the
-     strongest signal for squashing. Example: commit A adds a function, commit
-     B rewrites the same function. Commit A has no standalone value.
-   - A later commit is a small follow-up fix to an earlier one. Example:
-     commit A adds a module, commit B fixes a typo in that module. The fix
-     should fold into the original.
-   - Two commits modify the same file for genuinely different reasons. These
-     should stay separate. Example: commit A adds a feature to module X,
-     commit B fixes an unrelated bug in module X.
+**What is a logical change?** A single reviewable idea: adding a feature,
+fixing a bug, refactoring an API, updating documentation for a specific
+reason. A logical change may span many files or touch a single line — file
+count is irrelevant.
 
-3. For each pair of potentially redundant commits, record:
-   - The two commit hashes and subjects
-   - Which files overlap
-   - Whether it is a supersede, follow-up fix, or independent change
-   - Recommended action: squash, keep separate, or move hunks
+1. Read every commit with `git show <hash>` and summarize its intent in
+   one sentence. Group commits by the logical change they contribute to.
+
+2. Identify commits that should be **squashed** (multiple commits that are
+   part of the same logical change):
+   - A commit and a later follow-up fix for it (typo, missed case, cleanup).
+   - A commit that adds something and a later commit that immediately
+     rewrites or supersedes part of it before anyone reviewed it.
+   - Incremental refinements to the same idea that have no standalone
+     review value. Example: commit A adds a parser, commit B renames a
+     variable in that parser. B should fold into A.
+
+3. Identify commits that should be **split** (one commit bundling multiple
+   unrelated logical changes):
+   - A commit that adds a feature AND refactors an unrelated module.
+   - A commit that fixes two independent bugs.
+   - A commit where the diff has clearly separable hunks serving different
+     purposes.
+
+4. Identify commits that should be **reordered** (logical dependencies
+   are out of sequence or related commits are separated by unrelated ones).
+
+5. For each finding, record:
+   - The commit hash(es) and subjects
+   - The logical change they belong to
+   - Recommended action: squash, split, reorder, or keep as-is
+   - Why: what makes this one logical change (or not)
 
 ### Phase 3: Audit Commit Messages
 
@@ -168,16 +180,21 @@ Present ALL findings to the user in a structured format:
 ## Fixups
 (list of fixups folded, or "none")
 
-## Redundant Commits
-(for each pair: hashes, overlap reason, recommended action)
+## Logical Changes
+For each logical change identified on the branch, list:
+- Description of the logical change (one sentence)
+- Commit(s) that belong to it
+- Status: clean, needs squash, needs split, needs reorder
 
 ## Commit Message Issues
 (for each: hash, problem, suggested fix)
 
 ## Proposed Actions
-1. Squash X into Y (reason)
-2. Reword Z (fix message)
-3. ...
+1. Squash X into Y (they are the same logical change: ...)
+2. Split Z into two commits (bundles unrelated changes: ...)
+3. Reorder A before B (logical dependency)
+4. Reword W (fix message)
+5. ...
 
 ## No Changes Needed
 (list commits that are already clean)
@@ -193,8 +210,9 @@ Order of operations matters:
 
 1. **Squash/drop** first — reduces the number of commits, making subsequent
    operations simpler and less likely to conflict
-2. **Move files between commits** — restructure content
-3. **Reword** last — messages should reflect final content
+2. **Split** next — break bundled commits into separate logical changes
+3. **Reorder** — group related commits and fix dependency order
+4. **Reword** last — messages should reflect final content
 
 Combine as many edits as possible into a single rebase pass by marking
 multiple commits with `-e` flags in one `GIT_SEQUENCE_EDITOR` sed command.
@@ -284,21 +302,28 @@ Use when: a commit message is inaccurate or needs updating after fixup folding.
    git rebase --continue
    ```
 
-### Move Files Between Commits
+### Move Changes Between Commits
 
-Use when: specific files belong in a different commit.
+Use when: specific hunks or files belong in a different commit for logical
+coherence. A commit may bundle unrelated changes, or a change may have
+landed in the wrong commit during development.
 
 1. Mark the source commit for editing:
    ```bash
    GIT_SEQUENCE_EDITOR="sed -i 's/^pick <HASH>/edit <HASH>/'" git rebase -i origin/main
    ```
-2. Extract files from the commit:
+2. Extract changes from the commit. For whole files:
    ```bash
    git reset HEAD^ -- <file1> <file2>
    git commit --amend --no-edit
    ```
+   For individual hunks within a file:
+   ```bash
+   git reset HEAD^ -p -- <file>
+   git commit --amend --no-edit
+   ```
 3. Continue rebase: `git rebase --continue`
-4. The extracted files are now uncommitted changes. Either:
+4. The extracted changes are now uncommitted. Either:
    - Amend them into a later commit with a second edit rebase, or
    - Create a new commit and reorder it into place
 
@@ -365,11 +390,13 @@ When a rebase encounters a conflict:
 
 ## Principles
 
-- Preserve commits by default
+- One logical change per commit — the unit of review is an idea, not a file
+- Touching the same file is not redundancy; serving the same purpose is
+- Touching different files is not independence; different intent is
+- Preserve commits by default; squash only when a commit has no standalone
+  review value
 - More granular commits are easier to review than large ones
 - Analysis is free, action requires approval
 - Present the full picture before touching history
-- Squash only when a commit has no standalone review value
-- Independent changes to the same file are not redundant
 - Separate CLAUDE.md changes from code commits
 - When in doubt, abort and ask the user
