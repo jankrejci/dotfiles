@@ -13,11 +13,7 @@
   colorsLight = config.colorScheme.lightPalette;
   xdgConfig = config.xdg.configHome;
 
-  gtkThemePkg =
-    pkgs.tokyonight-gtk-theme.overrideAttrs
-    (import ../../pkgs/tokyonight-gtk-theme.nix {inherit lib;} {
-      inherit (config.colorScheme) darkPalette lightPalette;
-    });
+  gtkThemePkg = config.colorScheme.gtkThemePkg;
 
   # GTK3 @define-color overrides, swapped between variants by the toggle.
   mkGtkTheme3 = p: ''
