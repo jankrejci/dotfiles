@@ -139,6 +139,10 @@
     // Black
     $black: #${lo dark.base00};
 
+    // Panel background — matches waybar panelBg for visual consistency
+    $panel-bg-dark: #${lo dark.panelBg};
+    $panel-bg-light: #${lo light.panelBg};
+
     // Theme
     $default-light: $accent-light;
     $default-dark: $accent-dark;
@@ -191,6 +195,13 @@ in
       (previousAttrs.postPatch or "")
       + ''
         cp ${paletteFile} themes/src/sass/_color-palette-default.scss
+
+        # Make GNOME Shell panel solid panelBg instead of translucent black,
+        # matching waybar's solid background for visual consistency.
+        sed -i 's/rgba(\$black, 0\.85)/$panel-bg-dark/g' \
+          themes/src/sass/gnome-shell/common/_panel.scss
+        sed -i 's/rgba(\$white, 0\.45)/$panel-bg-light/g' \
+          themes/src/sass/gnome-shell/common/_panel.scss
       ''
       + lib.optionalString (svgSubstitutions != "") ''
         pushd themes
