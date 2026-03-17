@@ -15,6 +15,10 @@
   domain = global.domain;
   dashDomain = "${cfg.subdomain}.${domain}";
 
+  palettes = import ../modules/palettes.nix;
+  dark = palettes.darkPalette;
+  light = palettes.lightPalette;
+
   # Collect dashboard entries from all nixos hosts
   allConfigs = inputs.self.nixosConfigurations;
   nixosHostNames = lib.attrNames (
@@ -51,19 +55,19 @@
       <title>${domain}</title>
       <style>
         :root {
-          --bg: #1A1B26;
-          --fg: #A9B1D6;
-          --heading: #565F89;
-          --tile-bg: #1F2335;
-          --tile-hover: #292E42;
+          --bg: #${dark.base00};
+          --fg: #${dark.base05};
+          --heading: #${dark.base03};
+          --tile-bg: #${dark.base01};
+          --tile-hover: #${dark.base02};
         }
         @media (prefers-color-scheme: light) {
           :root {
-            --bg: #E1E2E7;
-            --fg: #343B59;
-            --heading: #9699A3;
-            --tile-bg: #D5D6DB;
-            --tile-hover: #C4C8DA;
+            --bg: #${light.base00};
+            --fg: #${light.base05};
+            --heading: #${light.base03};
+            --tile-bg: #${light.base01};
+            --tile-hover: #${light.base02};
           }
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
