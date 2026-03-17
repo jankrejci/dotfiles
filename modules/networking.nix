@@ -107,12 +107,6 @@ in {
       '';
     };
 
-    # Ensure unbound is running before resolved starts
-    systemd.services.systemd-resolved = {
-      after = ["unbound.service"];
-      wants = ["unbound.service"];
-    };
-
     # Configure systemd-networkd
     systemd.network = {
       enable = true;
