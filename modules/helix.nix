@@ -153,7 +153,7 @@
         fg = "orange";
         modifiers = ["bold"];
       };
-      "ui.cursorline.primary" = {bg = "bg-menu";};
+      "ui.cursorline.primary" = {bg = "bg-cursorline";};
       "ui.help" = {
         bg = "bg-menu";
         fg = "fg";
@@ -236,6 +236,7 @@
         fg-gutter = "#${p.base03}";
         fg-linenr = "#${p.base04}";
         bg = "#${p.base00}";
+        bg-cursorline = "#${p.base01}";
         bg-menu = "#${p.panelBg}";
         bg-selection = "#${p.base02}";
         bg-focus = "#${p.base02}";
