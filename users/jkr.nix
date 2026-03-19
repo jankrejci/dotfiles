@@ -159,6 +159,26 @@
           "org/gnome/shell/extensions/hide-cursor-elcste-com" = {
             timeout = mkInt32 60;
           };
+          # Match waybar's system monitoring: temperature, CPU%, memory%, network.
+          "org/gnome/shell/extensions/vitals" = {
+            hot-sensors = [
+              "__temperature_max__"
+              "_processor_usage_"
+              "_memory_usage_"
+              "__network-rx_max__"
+              "__network-tx_max__"
+            ];
+            update-time = mkInt32 10;
+            fixed-widths = true;
+            alphabetize = false;
+            icon-style = mkInt32 1;
+            position-in-panel = mkInt32 2;
+            show-battery = false;
+            show-voltage = false;
+            show-fan = false;
+            show-gpu = false;
+            include-public-ip = false;
+          };
           "org/gnome/shell/extensions/dash-to-panel" = {
             panel-positions = ''
               {"0":"TOP","1":"TOP","2":"TOP","3":"TOP","IVM-12501511B1706":"TOP","BOE-0x00000000":"TOP","IVM-12381JQC00201":"TOP","AUO-0x00000000":"TOP"}
