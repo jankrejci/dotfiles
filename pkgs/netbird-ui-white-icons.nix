@@ -1,23 +1,21 @@
-# Netbird UI overlay for white tray icons
+# Netbird UI overlay: recolor tray icons to match panel text.
 #
-# - converts orange icons to white silhouettes
-# - matches GNOME symbolic icon style
-# - uses imagemagick colorize filter
-final: prev: {
+# Netbird bundles orange PNG tray icons that clash with the GNOME Shell
+# and waybar panel styling. This overlay converts them at build time
+# using the panel foreground color from our palette.
+{color}: final: prev: {
   unstable =
     prev.unstable
     // {
       netbird-ui = prev.unstable.netbird-ui.overrideAttrs (old: {
         nativeBuildInputs = old.nativeBuildInputs ++ [final.imagemagick];
 
-        # Convert all tray icons to white silhouettes
+        # Colorize opaque pixels to the panel text color, preserve transparency.
         postPatch =
           (old.postPatch or "")
           + ''
             for icon in client/ui/assets/netbird-systemtray-*.png; do
-              echo "Converting $icon to white"
-              # Colorize opaque pixels to white, preserve transparency
-              magick "$icon" -fill white -colorize 100 "$icon"
+              magick "$icon" -fill '#${color}' -colorize 100 "$icon"
             done
           '';
       });
