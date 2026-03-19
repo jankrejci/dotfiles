@@ -211,7 +211,7 @@ definition for automatic encryption.
 | soft-uart-tx | Software UART TX for GPS on broken RPi GPIO14 |
 | octoprint-obico | Remote 3D printer monitoring plugin |
 | octoprint-prometheus-exporter | Metrics exporter plugin |
-| netbird-ui-white-icons | White tray icon overlay |
+| netbird-ui-icons | Tray icon overlay tinted with the palette foreground color |
 
 ## Usage
 

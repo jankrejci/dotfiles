@@ -45,7 +45,12 @@ in {
         unstableOverlay
         masterOverlay
         immichOverlay
-        (import ../pkgs/netbird-ui-white-icons.nix)
+        # Tray icon color is baked in at build time, so it cannot follow the
+        # runtime light/dark theme toggle. darkPalette's base04 dark-foreground
+        # shade is used because it stays readable against both panel variants.
+        (import ../pkgs/netbird-ui-icons.nix {
+          color = (import ../modules/palettes.nix).darkPalette.base04;
+        })
         (import ../pkgs/rofi-scroll-anchor.nix)
         (import ../pkgs/memos-update.nix)
         inputs.agenix-rekey.overlays.default
