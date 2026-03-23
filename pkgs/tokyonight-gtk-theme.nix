@@ -34,7 +34,7 @@
   lerp = c1: c2: num: den: {
     r = c1.r + (c2.r - c1.r) * num / den;
     g = c1.g + (c2.g - c1.g) * num / den;
-    b = c1.b + (c2.b - c2.b) * num / den;
+    b = c1.b + (c2.b - c1.b) * num / den;
   };
 
   # Generate 19 grey SCSS variables by interpolating between palette anchors.
@@ -226,6 +226,44 @@
     }
   ];
 
+  # Quick-settings patches: muted accent toggles with normal text.
+  quickSettingsPatches = [
+    {
+      old = "background-color: rgba($primary, 0.95)";
+      new = "background-color: mix($background, $primary, 70%)";
+    }
+    {
+      old = "background-color: rgba($primary, 0.75)";
+      new = "background-color: mix($background, $primary, 75%)";
+    }
+    {
+      old = "color: if($variant == 'light', $white, $black)";
+      new = "color: $text";
+    }
+    {
+      old = "background-color: mix($text, $primary, 40%)";
+      new = "background-color: mix($background, $primary, 60%)";
+    }
+    {
+      old = "background-color: mix($text, $primary, 20%)";
+      new = "background-color: mix($background, $primary, 50%)";
+    }
+    # Accent-colored text on slider icons, menu hover, system icons, power button.
+    {
+      old = "color: $primary !important";
+      new = "color: $text !important";
+    }
+    # Header active icon: muted accent background instead of full accent.
+    {
+      old = "background-color: $primary !important";
+      new = "background-color: mix($background, $primary, 70%) !important";
+    }
+    {
+      old = "color: on($primary)";
+      new = "color: $text";
+    }
+  ];
+
   mkReplaceArgs = flag: patches:
     lib.concatMapStringsSep " "
     (p: "${flag} ${lib.escapeShellArg p.old} ${lib.escapeShellArg p.new}")
@@ -239,6 +277,12 @@ in
 
         substituteInPlace themes/src/sass/gnome-shell/common/_panel.scss \
           ${mkReplaceArgs "--replace-fail" panelPatches}
+
+        # All widget versions patched so the fix applies regardless of GNOME Shell version.
+        for f in themes/src/sass/gnome-shell/widgets-*/_quick-settings.scss; do
+          substituteInPlace "$f" \
+            ${mkReplaceArgs "--replace-quiet" quickSettingsPatches}
+        done
       ''
       + lib.optionalString (svgSubstitutions != "") ''
         pushd themes
