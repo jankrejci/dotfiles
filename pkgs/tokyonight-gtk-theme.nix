@@ -34,7 +34,7 @@
   lerp = c1: c2: num: den: {
     r = c1.r + (c2.r - c1.r) * num / den;
     g = c1.g + (c2.g - c1.g) * num / den;
-    b = c1.b + (c2.b - c1.b) * num / den;
+    b = c1.b + (c2.b - c2.b) * num / den;
   };
 
   # Generate 19 grey SCSS variables by interpolating between palette anchors.
@@ -142,6 +142,9 @@
     // Panel background — matches waybar panelBg for visual consistency
     $panel-bg-dark: #${lo dark.panelBg};
     $panel-bg-light: #${lo light.panelBg};
+    $panel-fg-dark: #${lo dark.base04};
+    $panel-fg-light: #${lo light.base04};
+    $panel-text-color: if($variant == 'light', $panel-fg-light, $panel-fg-dark);
 
     // Theme
     $default-light: $accent-light;
@@ -189,6 +192,44 @@
     lib.concatMapStringsSep "\n"
     (s: "find . -name '*.svg' -exec sed -i 's/${s.from}/${s.to}/gi' {} +")
     activeSubs;
+
+  # Panel SCSS patches: solid background, custom text color, no accent on hover.
+  panelPatches = [
+    {
+      old = "rgba($black, 0.85)";
+      new = "$panel-bg-dark";
+    }
+    {
+      old = "rgba($white, 0.45)";
+      new = "$panel-bg-light";
+    }
+    {
+      old = "color: $panel-text-secondary";
+      new = "color: $panel-text-color";
+    }
+    {
+      old = "color: $text-secondary";
+      new = "color: $panel-text-color";
+    }
+    {
+      old = "color: $primary";
+      new = "color: $panel-text-color";
+    }
+    {
+      old = "font-weight: bold";
+      new = "font-weight: normal";
+    }
+    # Subtle accent border matching waybar's alpha(@accent, 0.2).
+    {
+      old = "border: none";
+      new = "border: 1px solid rgba($primary, 0.2)";
+    }
+  ];
+
+  mkReplaceArgs = flag: patches:
+    lib.concatMapStringsSep " "
+    (p: "${flag} ${lib.escapeShellArg p.old} ${lib.escapeShellArg p.new}")
+    patches;
 in
   finalAttrs: previousAttrs: {
     postPatch =
@@ -196,12 +237,8 @@ in
       + ''
         cp ${paletteFile} themes/src/sass/_color-palette-default.scss
 
-        # Make GNOME Shell panel solid panelBg instead of translucent black,
-        # matching waybar's solid background for visual consistency.
-        sed -i 's/rgba(\$black, 0\.85)/$panel-bg-dark/g' \
-          themes/src/sass/gnome-shell/common/_panel.scss
-        sed -i 's/rgba(\$white, 0\.45)/$panel-bg-light/g' \
-          themes/src/sass/gnome-shell/common/_panel.scss
+        substituteInPlace themes/src/sass/gnome-shell/common/_panel.scss \
+          ${mkReplaceArgs "--replace-fail" panelPatches}
       ''
       + lib.optionalString (svgSubstitutions != "") ''
         pushd themes
