@@ -264,6 +264,14 @@
     }
   ];
 
+  # Notification patches: remove accent color on hover.
+  notificationPatches = [
+    {
+      old = "color: $primary";
+      new = "color: $text";
+    }
+  ];
+
   mkReplaceArgs = flag: patches:
     lib.concatMapStringsSep " "
     (p: "${flag} ${lib.escapeShellArg p.old} ${lib.escapeShellArg p.new}")
@@ -282,6 +290,11 @@ in
         for f in themes/src/sass/gnome-shell/widgets-*/_quick-settings.scss; do
           substituteInPlace "$f" \
             ${mkReplaceArgs "--replace-quiet" quickSettingsPatches}
+        done
+
+        for f in themes/src/sass/gnome-shell/widgets-*/_notifications.scss; do
+          substituteInPlace "$f" \
+            ${mkReplaceArgs "--replace-quiet" notificationPatches}
         done
       ''
       + lib.optionalString (svgSubstitutions != "") ''
