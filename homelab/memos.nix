@@ -41,7 +41,19 @@ in {
 
   config = lib.mkIf cfg.enable (lib.mkMerge [
     {
-      # Register OIDC client with Dex for SSO
+      # Register OIDC client with Dex for SSO.
+      #
+      # The IdP field mapping lives in the memos database, not here, because
+      # memos stores IdP config in the idp table rather than reading it from
+      # env or a file. Default mapping uses preferred_username as identifier,
+      # but Dex returns that claim empty for local staticPasswords users even
+      # when username is set. Memos 0.27 rejects empty identifiers, so login
+      # fails. Workaround: patch identifier to name in the DB:
+      #
+      #   UPDATE idp SET config = jsonb_set(config, '{fieldMapping,identifier}',
+      #     '"name"') WHERE name = 'Dex';
+      #
+      # Revisit once the Dex preferred_username issue is fixed upstream.
       homelab.dex.clients = [
         {
           id = "memos";
@@ -72,7 +84,6 @@ in {
       };
 
       # Memos service with PostgreSQL backend
-      # Override to 0.26.1 for moe-memos Android client compatibility
       services.memos = {
         enable = true;
         package = pkgs.unstable.memos;
@@ -81,7 +92,7 @@ in {
           MEMOS_PORT = toString cfg.port;
           MEMOS_DRIVER = "postgres";
           MEMOS_DSN = "postgresql:///memos?host=/run/postgresql";
-          # 0.26.x requires explicit data dir, no longer has a built-in default
+          # memos requires an explicit data dir, it has no built-in default
           MEMOS_DATA = "/var/lib/memos";
         };
       };
