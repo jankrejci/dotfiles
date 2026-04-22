@@ -16,14 +16,14 @@
 }:
 buildPythonPackage rec {
   pname = "octoprint-plugin-obico";
-  version = "2.5.6";
+  version = "2.6.2";
   format = "setuptools";
 
   src = fetchFromGitHub {
     owner = "TheSpaghettiDetective";
     repo = "OctoPrint-Obico";
     rev = version;
-    hash = "sha256-Q593zv5CWX7Tmun/ddq2cF/jg0hIIitSxS1VnyCFcac=";
+    hash = "sha256-t3vDdIedNxHZ/b23Z5rAvze19T7h05tFIft9dfgoKD4=";
   };
 
   propagatedBuildInputs = [
