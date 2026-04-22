@@ -163,8 +163,13 @@ in {
       ];
     };
 
-    # Disable DynamicUser since we need a static user for agenix secrets
-    systemd.services.alertmanager.serviceConfig.DynamicUser = lib.mkForce false;
+    # Static user is required for agenix to chown the ntfy secret before start.
+    # ReadOnlyPaths /run/agenix was added when notifications silently failed;
+    # the exact sandbox interaction that broke secret reads was not pinpointed.
+    systemd.services.alertmanager.serviceConfig = {
+      DynamicUser = lib.mkForce false;
+      ReadOnlyPaths = ["/run/agenix"];
+    };
 
     # Alertmanager routes alerts via ntfy webhooks with template-based routing
     services.prometheus.alertmanager = {
