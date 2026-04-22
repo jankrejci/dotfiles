@@ -115,6 +115,14 @@ in {
       group = "nginx";
     };
 
+    # Relay reads TLS certs at startup and has no reload mechanism.
+    # Without this, relay serves expired certs after renewal until manually
+    # restarted. Merged here so it only lands on hosts running the relay.
+    # netbird-relay has no ExecReload, so despite the option name this is a
+    # full restart on every renewal, briefly dropping in-flight relay
+    # connections.
+    security.acme.certs.${domain}.reloadServices = ["netbird-relay.service"];
+
     # Relay server for fallback traffic when direct peer-to-peer fails.
     # Uses WebSocket-based DERP protocol over TLS with ACME certificates.
     # Relay runs on its own port with own TLS because DERP cannot be
