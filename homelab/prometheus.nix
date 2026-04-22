@@ -140,6 +140,43 @@ in {
 
         # All targets scraped via VPN domain and metrics proxy port
         mkTarget = t: "${t.hostName}.${peerDomain}:${metricsPort}";
+
+        # Blackbox TLS probe targets from the host running blackbox-exporter.
+        # Uses multi-target pattern: prometheus sends target as a parameter,
+        # blackbox probes it and returns metrics.
+        #
+        # This intentionally reads the LOCAL host's blackbox-exporter config,
+        # unlike allTargets/remoteAlerts above which iterate every host in
+        # inputs.self.nixosConfigurations. It requires blackbox-exporter and
+        # prometheus to be enabled on the same host. If they were ever split
+        # across hosts, blackbox targets would silently not be scraped.
+        blackboxTlsConfig = let
+          bbCfg = config.homelab.blackbox-exporter;
+        in
+          lib.optional bbCfg.enable {
+            job_name = "blackbox-tls";
+            metrics_path = "/probe";
+            params = {module = ["tls_connect"];};
+            static_configs = [
+              {
+                targets = bbCfg.targets;
+              }
+            ];
+            relabel_configs = [
+              {
+                source_labels = ["__address__"];
+                target_label = "__param_target";
+              }
+              {
+                source_labels = ["__param_target"];
+                target_label = "instance";
+              }
+              {
+                target_label = "__address__";
+                replacement = "127.0.0.1:${toString bbCfg.port}";
+              }
+            ];
+          };
       in
         lib.mapAttrsToList (jobName: targets: {
           job_name = jobName;
@@ -151,7 +188,8 @@ in {
             })
             targets;
         })
-        targetsByJob;
+        targetsByJob
+        ++ blackboxTlsConfig;
 
       # Point Prometheus to Alertmanager
       alertmanagers = [
