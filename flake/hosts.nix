@@ -97,6 +97,10 @@
         redis.enable = true;
         # Services
         acme.enable = true;
+        blackbox-exporter = {
+          enable = true;
+          port = 9115;
+        };
         dashboard = {
           enable = true;
           ip = "192.168.91.11";

@@ -15,6 +15,7 @@
   imports = [
     # Shared infrastructure
     ./backup.nix
+    ./blackbox-exporter.nix
     ./mosquitto.nix
     ./nginx.nix
     ./postgresql.nix
