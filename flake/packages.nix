@@ -52,7 +52,6 @@ in {
           color = (import ../modules/palettes.nix).darkPalette.base04;
         })
         (import ../pkgs/rofi-scroll-anchor.nix)
-        (import ../pkgs/memos-update.nix)
         inputs.agenix-rekey.overlays.default
       ];
     };
