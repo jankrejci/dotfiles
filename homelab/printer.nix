@@ -66,6 +66,10 @@
   global = config.homelab.global;
   services = config.homelab.services;
   printerDomain = "${cfg.subdomain}.${global.domain}";
+  # Not a proper lib.types.port option since this is an ipp-usb-internal
+  # loopback port, not something other modules need to reference. This
+  # binding just prevents the value drifting between the three call sites.
+  ippUsbPort = 60000;
 in {
   options.homelab.printer = {
     enable = lib.mkOption {
@@ -102,8 +106,8 @@ in {
       [network]
       interface = loopback
       ipv6 = disable
-      http-min-port = 60000
-      http-max-port = 60010
+      http-min-port = ${toString ippUsbPort}
+      http-max-port = ${toString (ippUsbPort + 10)}
       dns-sd = disable
     '';
 
@@ -119,9 +123,15 @@ in {
         forceSSL = true;
         useACMEHost = global.domain;
         locations."/" = {
-          proxyPass = "http://localhost:60000";
+          # ipp-usb has ipv6 disabled, so proxy to 127.0.0.1 rather than
+          # localhost which would resolve to ::1 first. recommendedProxySettings
+          # is disabled because its proxy_set_header Host $host is appended after
+          # our directives and would clobber the loopback Host that ipp-usb
+          # requires on every request.
+          proxyPass = "http://127.0.0.1:${toString ippUsbPort}";
+          recommendedProxySettings = false;
           extraConfig = ''
-            proxy_set_header Host localhost:60000;
+            proxy_set_header Host localhost:${toString ippUsbPort};
             proxy_set_header X-Real-IP $remote_addr;
             proxy_http_version 1.1;
             proxy_buffering off;
