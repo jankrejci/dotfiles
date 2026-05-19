@@ -210,9 +210,12 @@ in {
   # Disable escl backend, we use airscan instead
   environment.etc."sane.d/escl.conf".text = "";
 
-  # Avahi disabled - causes random auto-appearing printers via CUPS dnssd backend
-  # VPN printer is preconfigured, no need for mDNS discovery
-  services.avahi.enable = false;
+  # Enables *.local resolution system-wide.
+  # Note: can cause random auto-appearing printers via CUPS dnssd backend.
+  services.avahi = {
+    enable = true;
+    nssmdns4 = true;
+  };
 
   networking.networkmanager = {
     enable = true;
@@ -277,7 +280,6 @@ in {
     sane-backends # scanner drivers
     sane-frontends
     simple-scan # GUI scanning application
-    avahi # mDNS, kept for scanner discovery
     probe-rs-tools
     uv # python package runner, used by Claude Code MCP servers
     # Hyprland settings GUIs for display and GTK appearance
