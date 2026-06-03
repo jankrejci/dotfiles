@@ -106,6 +106,26 @@ in {
       };
     };
 
+    # oauth2-proxy on prusa depends on Dex running on thinkcenter for OIDC
+    # discovery at startup. If thinkcenter is briefly unreachable at boot,
+    # the default Restart=always policy hits the systemd start rate limit
+    # of 5 attempts in 10s and gives up. Override to retry indefinitely with
+    # a longer delay so the service recovers once Dex is reachable.
+    #
+    # Order after unbound so the DNS resolver is ready before we try to
+    # resolve auth.krejci.io. netbird-homelab.service is Type=simple with no
+    # NotifyAccess, so ordering after it only guarantees the process started,
+    # not that the mesh tunnel is actually up. The retry-forever policy above
+    # is the real safety net for a tunnel not yet ready on first start. NixOS
+    # 26.05's stc-ng considers a service that fails once during activation a
+    # fatal error even when the auto-restart later succeeds, so racing DNS on
+    # the first start is no longer tolerated.
+    systemd.services.oauth2-proxy = {
+      after = ["unbound.service" "netbird-homelab.service"];
+      serviceConfig.RestartSec = "30s";
+      unitConfig.StartLimitIntervalSec = 0;
+    };
+
     services.octoprint = {
       enable = true;
       # Listen on localhost only, accessed via nginx proxy
