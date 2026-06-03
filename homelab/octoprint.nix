@@ -128,6 +128,13 @@ in {
 
     services.octoprint = {
       enable = true;
+      # Stable and unstable both ship OctoPrint 1.11.7, but unstable pulls
+      # setuptools 82 which removed pkg_resources. The bundled
+      # file/firmware/pi-support plugins still import pkg_resources in their
+      # setup.py, so they fail to build there. Stable's setuptools 80 still
+      # provides it. Track stable until OctoPrint drops the pkg_resources
+      # setup helper.
+      package = pkgs.octoprint;
       # Listen on localhost only, accessed via nginx proxy
       host = "127.0.0.1";
       port = cfg.port;
