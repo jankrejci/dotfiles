@@ -85,6 +85,14 @@
   time.timeZone = "Europe/Prague";
   console.keyMap = "us";
 
+  # NixOS 26.05 changed the default system-bus implementation to dbus-broker.
+  # Migrating live via switch-to-configuration reloads the user-level
+  # dbus-broker.service in the deploy SSH session, but the newly-introduced
+  # unit has no ExecReload and fails, which stc-ng treats as fatal.
+  # Pin classic dbus for a clean upgrade path; desktop.nix overrides this
+  # for interactive hosts that were already on dbus-broker under 25.11.
+  services.dbus.implementation = lib.mkDefault "dbus";
+
   i18n = {
     defaultLocale = "en_US.UTF-8";
     extraLocaleSettings = {
