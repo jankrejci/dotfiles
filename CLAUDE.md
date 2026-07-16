@@ -115,6 +115,10 @@ compacted before merge anyway, but reviewability during development matters.
 ## Git Branch Cleanup
 Before merging, consolidate the branch into clean logical commits:
 
+The base defaults to `origin/main`. A branch stacked on other in-flight work
+sets its own base once with `git config branch.<name>.reviewBase <base-ref>`;
+the cleanup and review skills read that config.
+
 **Cleanup Process:**
 1. Create backup: `git branch backup-branch`
 2. Soft reset: `git reset --soft origin/main`
@@ -129,6 +133,10 @@ Before merging, consolidate the branch into clean logical commits:
 - Preserve struggle documentation in code comments, not commit history
 - When commits are interleaved across files, soft reset is cleaner than rebase
 - Always separate CLAUDE.md changes from code commits
+
+Interactive rebase is allowed in this repo, overriding the harness default
+prohibition on `-i`. Always drive it non-interactively via `GIT_SEQUENCE_EDITOR`;
+never set `GIT_EDITOR`.
 
 **For scripted rebase** when commits are not interleaved:
 ```bash
@@ -222,6 +230,7 @@ Future work: revisit when Netbird adds stable identifiers or setup key groups fe
 | `/new-service` | Create homelab service module from template |
 | `/nix-dev` | Develop and debug Nix expressions |
 | `/review-branch` | Review all branch changes against origin/main |
+| `/fix-review` | Apply review findings as fixup commits |
 
 ### Iterative Workflow
 
