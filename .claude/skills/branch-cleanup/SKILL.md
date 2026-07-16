@@ -1,6 +1,6 @@
 ---
 name: branch-cleanup
-description: Prepare branch for merge with full history cleanup
+description: Prepares a branch for merge by collapsing it into small, logical, atomic commits — each change touched once, linear history, no development archaeology. Use before merging to squash fixups and consolidate redundant commits.
 disable-model-invocation: true
 allowed-tools: Bash, Read, Edit
 ---
@@ -9,6 +9,53 @@ Rebase toolkit for preparing a branch for merge. Default operation analyzes the
 full branch for fixups, redundant commits, and commit message quality, then
 presents a cleanup plan for user approval. Rebase operations below are the
 tools used to execute the plan.
+
+## Target End-State
+
+The cleaned branch must read as if the work were authored correctly the
+first time. Every decision in this skill serves that goal. The five
+invariants:
+
+1. **Atomic and logical** — each commit is one self-contained change that
+   builds on its own and is reviewable in isolation.
+2. **Each change touched once** — no hunk or behavior introduced by one
+   branch commit is later modified by another branch commit. Any such pair
+   is squashed so the final form appears exactly once. This eliminates
+   every "add X" → "fix X" → "tweak X" chain.
+3. **Linear** — a straight line rebased on the base ref: no merge commits,
+   no branch-in-branch.
+4. **No development archaeology** — no `wip`/`fixup!`/`squash!`, no
+   "address review", no typo-fix commits, no revert-of-own-work, no
+   commit-then-rewrite. History shows authored intent, not the development
+   timeline.
+5. **Dependency-ordered** — prerequisite changes precede the commits that
+   depend on them.
+
+The governing test for any two commits: *would both exist if the branch
+were authored cleanly from scratch?* If not, fold them. Granularity is
+still a virtue — many small atomic commits beat one large commit — but
+only along logical-change boundaries, never along development-time
+boundaries.
+
+## Resolve the base
+
+Before analyzing, resolve the base this branch is cleaned against. It
+defaults to `origin/main` — the shared upstream, matching the review
+base and CI — not the local `main`, which is often stale. A branch
+stacked on other in-flight work sets its own base once with
+`git config branch.<name>.reviewBase <base-ref>`:
+
+```bash
+BASE=$(git config "branch.$(git branch --show-current).reviewBase" || echo origin/main)
+```
+
+Report the resolved base. `$BASE` is both the range delimiter and the
+rebase target, so cleanup also restacks the branch onto the current
+upstream; fetch first if `origin/main` may be stale. Everywhere below,
+`main` in a command stands for `$BASE` — substitute it. On a long-lived
+or stacked branch this keeps the cleanup scoped to this branch's own
+commits instead of sweeping in unrelated authored history that must not be
+rewritten.
 
 ## Core Technique: GIT_SEQUENCE_EDITOR
 
@@ -39,9 +86,10 @@ GIT_SEQUENCE_EDITOR='bash -c "
 
 ## Pre-flight (before every rebase)
 
+0. Resolve the base (see above): `BASE=$(git config "branch.$(git branch --show-current).reviewBase" || echo origin/main)`
 1. Verify clean working tree: `git status`
 2. Create timestamped backup: `git branch backup-$(git branch --show-current)-$(date +%s)`
-3. Show current commits: `git log --oneline origin/main..HEAD`
+3. Show current commits: `git log --oneline "$BASE"..HEAD`
 
 ## Absorb: Automatic Fixup Creation
 
@@ -221,8 +269,17 @@ multiple commits with `-e` flags in one `GIT_SEQUENCE_EDITOR` sed command.
 
 1. Diff against backup must be empty: `git diff backup-<branch>-<ts>..HEAD`
 2. `nix flake check`
-3. Show before/after commit list to user
-4. If the diff is not empty, something went wrong. Inform the user and
+3. Verify the **Target End-State** invariants hold:
+   - Linear: `git log --graph --oneline origin/main..HEAD` shows no merge
+     commits and a single line of descent
+   - No archaeology: `git log --oneline origin/main..HEAD` shows no `fixup!`,
+     `squash!`, `wip`, or `tmp` subjects surviving
+   - Touched once: no file is modified across multiple commits without a
+     distinct logical reason for each (spot-check with
+     `git log --oneline origin/main..HEAD -- <file>` on files that appear in
+     more than one commit)
+4. Show before/after commit list to user
+5. If the diff is not empty, something went wrong. Inform the user and
    do NOT delete the backup.
 
 ## Rebase Operations

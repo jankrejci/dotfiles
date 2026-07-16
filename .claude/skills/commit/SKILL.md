@@ -1,6 +1,6 @@
 ---
 name: commit
-description: Create atomic git commits following project conventions with chunk-based staging
+description: Creates atomic git commits with chunk-based staging and the gitlint-gated message format. Use when committing staged or unstaged changes, or when the user asks to commit or to split work into commits.
 disable-model-invocation: true
 allowed-tools: Bash, Read, Grep, Glob
 ---
@@ -58,7 +58,17 @@ Interactive patch mode (`git add -p`) commands:
 
 - One logical change per commit
 - Separate unrelated changes into different commits
-- AI/tooling config (`.claude/`, `CLAUDE.md`) gets its own commit, never bundled with code
 - NEVER push to remote
 - NEVER use --amend unless explicitly requested
 - NEVER skip nix flake check
+
+**Commit separation — do not bundle these with source code:**
+- `flake.lock` gets its own commit, never bundled with source changes
+- `.claude/` config and `CLAUDE.md` get their own commit, never bundled
+  with code or with each other
+- Exception: bundle when separation would leave either commit unable to
+  pass `nix flake check` — e.g. introducing a new module and its wiring
+  together
+- Exception: bundle when it is a single atomic move of content between
+  `CLAUDE.md` and a `.claude/` file plus its pointer — splitting only
+  duplicates or dangles the moved text across an intermediate commit
