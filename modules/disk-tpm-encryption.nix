@@ -385,7 +385,14 @@ in {
     # through enroll-tpm-key breaks during deploy. enroll-tpm-key has
     # RemainAfterExit=true and no restartTriggers, so systemd considers it
     # already satisfied and starts verify before sign-bootloader finishes.
+    #
+    # after= alone doesn't enforce ordering when both units restart in the same
+    # transaction and sign-bootloader isn't yet queued when verify is queued.
+    # requires= forces sign-bootloader into the transaction and refuses to
+    # start verify unless the signing completed successfully, so freshly
+    # installed kernels are guaranteed to be signed before sbctl checks them.
     after = ["sign-bootloader.service" "enroll-tpm-key.service"];
+    requires = ["sign-bootloader.service"];
 
     path = with pkgs; [
       sbctl
