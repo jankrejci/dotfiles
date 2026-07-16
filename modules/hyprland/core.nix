@@ -118,6 +118,9 @@
 in {
   wayland.windowManager.hyprland = {
     enable = true;
+    # Our config is expressed as hyprlang settings, so keep the pre-26.05
+    # default now that home-manager switched the default to lua.
+    configType = "hyprlang";
     settings = {
       "$mod" = "SUPER";
       "$terminal" = "alacritty";

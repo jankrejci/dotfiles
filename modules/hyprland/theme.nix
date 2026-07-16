@@ -185,6 +185,9 @@ in {
         name = "Tokyonight-Dark";
         package = gtkThemePkg;
       };
+      # Keep applying the GTK theme to GTK4 apps now that home-manager's
+      # default for this changed to null in 26.05.
+      gtk4.theme = config.gtk.theme;
       gtk4.extraCss = ''
         @media (prefers-color-scheme: dark) {
         ${mkGtkTheme4Vars colorsDark}
