@@ -11,6 +11,60 @@
 }: let
   luksDevice = "/dev/disk/by-partlabel/disk-main-luks";
   diskPasswordFile = "/var/lib/disk-password";
+
+  # Sign the systemd-boot binaries and every kernel image on the ESP.
+  # Shared by the bootloader install step and the boot-time safety-net service
+  # so both paths sign identically. No-ops while still in Setup Mode.
+  signBootloader = pkgs.writeShellScript "sign-bootloader" ''
+    set -euo pipefail
+    export PATH="${pkgs.lib.makeBinPath [pkgs.sbctl]}:$PATH"
+
+    # Skip if secure boot keys not enrolled yet. Capture the output instead of
+    # piping into grep -q, which exits on first match and SIGPIPEs sbctl under
+    # pipefail, flipping the check exactly when the pattern matches.
+    status_output=$(sbctl status)
+    if grep -qE "Setup Mode:.*Enabled" <<< "$status_output"; then
+      echo "Setup Mode enabled, skipping bootloader signing"
+      exit 0
+    fi
+
+    # Prune stale entries from sbctl signing database.
+    # Bootloader generation cleanup removes old kernels from /boot but
+    # sbctl still tracks them, causing verify to fail with "does not exist".
+    verify_output=$(sbctl verify 2>&1 || true)
+    echo "$verify_output" | while IFS= read -r line; do
+      case "$line" in
+        *"does not exist")
+          file=''${line#*‼ }
+          file=''${file% does not exist}
+          echo "Removing stale entry: $file"
+          sbctl remove-file "$file" || true
+          ;;
+      esac
+    done
+
+    echo "Signing bootloader files..."
+    sbctl sign -s /boot/EFI/systemd/systemd-bootx64.efi
+    sbctl sign -s /boot/EFI/BOOT/BOOTX64.EFI
+
+    # Sign all kernel images
+    for kernel in /boot/EFI/nixos/*bzImage.efi; do
+      if [ -f "$kernel" ]; then
+        sbctl sign -s "$kernel"
+      fi
+    done
+
+    # Verify signatures. Capture the output instead of piping into grep -q,
+    # which under pipefail can SIGPIPE sbctl and skip the error branch.
+    echo "Verifying signatures..."
+    verify_output=$(sbctl verify 2>&1 || true)
+    if grep -q "✗" <<< "$verify_output"; then
+      echo "ERROR: Unsigned bootloader images found"
+      echo "$verify_output"
+      exit 1
+    fi
+    echo "All bootloader files signed successfully"
+  '';
 in {
   # Boot partition and encrypted root partition
   disko.devices = {
@@ -216,6 +270,15 @@ in {
   boot.loader.systemd-boot.extraInstallCommands = ''
     set -euo pipefail
 
+    # Sign the freshly installed kernel and bootloader here, synchronously in
+    # the bootloader install step. The systemd-boot builder copies the new
+    # kernel and initrd to the ESP and updates the default boot entry to
+    # completion before extraInstallCommands runs, so if signing itself fails,
+    # that just-written default entry is already on the ESP unsigned and the
+    # switch aborts here. Once signing succeeds, a later activation stage
+    # failing can no longer leave a bootable but unsigned entry behind.
+    ${signBootloader}
+
     # Exit early if password file doesn't exist, TPM key is probably enrolled already
     if [ ! -f "${diskPasswordFile}" ]; then
       echo "Password file not found, skipping provisional TPM enrollment"
@@ -237,8 +300,10 @@ in {
       --unlock-key-file="${diskPasswordFile}"
   '';
 
-  # Sign bootloader files after secure boot keys are enrolled.
-  # Restarts on each deploy to sign any new kernel/bootloader files.
+  # Boot-time safety net that signs the ESP after key enrollment. On a normal
+  # switch the bootloader install step already signs synchronously via the same
+  # script; this covers the first boot right after enrollment, where no install
+  # step runs. Restarts on each generation to catch any newly copied files.
   systemd.services."sign-bootloader" = {
     description = "Sign bootloader files for secure boot";
     wantedBy = ["multi-user.target"];
@@ -246,59 +311,11 @@ in {
     before = ["enroll-tpm-key.service"];
     restartTriggers = [config.system.nixos.label];
 
-    path = with pkgs; [
-      sbctl
-    ];
-
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
+      ExecStart = signBootloader;
     };
-
-    script = ''
-      set -euo pipefail
-
-      # Skip if secure boot keys not enrolled yet
-      if sbctl status | grep -qE "Setup Mode:.*Enabled"; then
-        echo "Setup Mode enabled, skipping bootloader signing"
-        exit 0
-      fi
-
-      # Prune stale entries from sbctl signing database.
-      # Bootloader generation cleanup removes old kernels from /boot but
-      # sbctl still tracks them, causing verify to fail with "does not exist".
-      verify_output=$(sbctl verify 2>&1 || true)
-      echo "$verify_output" | while IFS= read -r line; do
-        case "$line" in
-          *"does not exist")
-            file=''${line#*‼ }
-            file=''${file% does not exist}
-            echo "Removing stale entry: $file"
-            sbctl remove-file "$file" || true
-            ;;
-        esac
-      done
-
-      echo "Signing bootloader files..."
-      sbctl sign -s /boot/EFI/systemd/systemd-bootx64.efi
-      sbctl sign -s /boot/EFI/BOOT/BOOTX64.EFI
-
-      # Sign all kernel images
-      for kernel in /boot/EFI/nixos/*bzImage.efi; do
-        if [ -f "$kernel" ]; then
-          sbctl sign -s "$kernel"
-        fi
-      done
-
-      # Verify signatures
-      echo "Verifying signatures..."
-      if sbctl verify 2>&1 | grep -q "✗"; then
-        echo "ERROR: Unsigned bootloader images found"
-        sbctl verify
-        exit 1
-      fi
-      echo "All bootloader files signed successfully"
-    '';
   };
 
   # Final TPM key enrollment
