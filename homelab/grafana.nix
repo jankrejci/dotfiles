@@ -76,6 +76,11 @@ in {
       owner = "grafana";
     };
 
+    # Shared token for the grafana to grafana-image-renderer IPC. Delivered as
+    # an EnvironmentFile that systemd reads as root before the service starts,
+    # so no owner is set and the renderer can read it despite DynamicUser.
+    age.secrets.grafana-renderer-token.rekeyFile = ../secrets/grafana-renderer-token.age;
+
     # Register IP for services dummy interface
     homelab.serviceIPs = [cfg.ip];
     networking.hosts.${cfg.ip} = [serverDomain];
@@ -99,6 +104,8 @@ in {
     systemd.services.grafana = {
       after = ["postgresql.service"];
       requires = ["postgresql.service"];
+      # Supplies GF_RENDERING_RENDERER_TOKEN so the token stays out of the store
+      serviceConfig.EnvironmentFile = config.age.secrets.grafana-renderer-token.path;
       restartTriggers = [
         (builtins.toJSON config.services.grafana.settings)
         (builtins.toJSON config.services.grafana.provision.datasources.settings)
@@ -120,6 +127,9 @@ in {
         # would require the erooke/grafana-secretkey-rotation-tool. Value lives
         # in agenix, not here, since it decrypts existing OAuth tokens in the DB.
         security.secret_key = "$__file{${config.age.secrets.grafana-secret-key.path}}";
+        # renderer_token is injected via GF_RENDERING_RENDERER_TOKEN from the
+        # grafana-renderer-token EnvironmentFile, so it is not pinned here.
+        # Grafana 13 refuses to start if this token is empty or left at default.
         database = {
           type = "postgres";
           host = "/run/postgresql";
@@ -216,7 +226,14 @@ in {
       enable = true;
       provisionGrafana = true;
       settings.server.addr = "127.0.0.1:8083";
+      # auth-token comes from AUTH_TOKEN in the EnvironmentFile below. It must
+      # not be set here: an explicit CLI flag would win over the env var and
+      # pin the token back into the store.
     };
+
+    # Same shared token as grafana, read by systemd as root so DynamicUser is fine
+    systemd.services.grafana-image-renderer.serviceConfig.EnvironmentFile =
+      config.age.secrets.grafana-renderer-token.path;
 
     homelab.dashboardEntries = [
       {
