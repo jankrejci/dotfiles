@@ -321,22 +321,10 @@ scripts.nix            # Deployment and utility scripts
 - `flake.*` options in `options.nix` for cross-module data sharing
 - Host config in `hosts.nix` injects `homelab.*` options into NixOS modules
 
-**Adding a new service:**
-1. Read existing modules for patterns: `redis.nix` (simple), `jellyfin.nix` (nginx), `grafana.nix` (database)
-2. Create `homelab/myservice.nix` following the `homelab.X.enable` pattern
-3. Add to `homelab/default.nix` imports in alphabetical order
-4. Enable in host definition in `flake/hosts.nix`
-
-Service rules:
-- Bind to `127.0.0.1` by default, never `0.0.0.0`
-- Use `lib.mkIf cfg.enable` for all config
-
-Common integration patterns used across modules:
-- `homelab.healthChecks` -- `systemctl is-active` or HTTP check with timeout
-- `homelab.scrapeTargets` -- prometheus job name and metricsPath
-- `homelab.backup.jobs` -- restic paths and pre/post hooks
-- nginx reverse proxy -- `forceSSL`, `useACMEHost`, `proxyPass` to `127.0.0.1:PORT`
-- See `vaultwarden.nix` for a module using all four patterns
+Service module authoring conventions (adding a service, bind/mkIf rules,
+`homelab.healthChecks`/`scrapeTargets`/`backup.jobs` and nginx patterns) load
+automatically from `.claude/rules/homelab-modules.md` when working under
+`homelab/`.
 
 ## Port and IP Patterns
 
