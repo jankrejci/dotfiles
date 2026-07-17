@@ -246,7 +246,7 @@
 in {
   home.packages = with pkgs; [
     ltex-ls # spell check language server
-    nodePackages.bash-language-server # bash language server
+    bash-language-server # bash language server
     python313Packages.python-lsp-server # python LSP server
     python313Packages.pylsp-mypy
     ruff

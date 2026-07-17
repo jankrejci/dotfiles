@@ -70,6 +70,12 @@ in {
       owner = "grafana";
     };
 
+    # Grafana secret_key encrypts OAuth tokens stored in the database
+    age.secrets.grafana-secret-key = {
+      rekeyFile = ../secrets/grafana-secret-key.age;
+      owner = "grafana";
+    };
+
     # Register IP for services dummy interface
     homelab.serviceIPs = [cfg.ip];
     networking.hosts.${cfg.ip} = [serverDomain];
@@ -109,6 +115,11 @@ in {
         yesoreyeram-infinity-datasource
       ];
       settings = {
+        # NixOS 26.05 dropped the built-in default; we pin the previous default
+        # value so existing OAuth secrets in the DB remain decryptable. Rotation
+        # would require the erooke/grafana-secretkey-rotation-tool. Value lives
+        # in agenix, not here, since it decrypts existing OAuth tokens in the DB.
+        security.secret_key = "$__file{${config.age.secrets.grafana-secret-key.path}}";
         database = {
           type = "postgres";
           host = "/run/postgresql";

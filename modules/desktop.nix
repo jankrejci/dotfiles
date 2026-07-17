@@ -91,11 +91,8 @@ in {
   services.desktopManager.gnome.enable = true;
 
   # Display manager
-  services.displayManager.gdm = {
-    enable = true;
-    # Keep Plymouth running until GDM is ready (smoother handoff)
-    wayland = true;
-  };
+  # Wayland is the only supported mode from GNOME 50 onward
+  services.displayManager.gdm.enable = true;
 
   # Enforce dark color scheme on the GDM login screen via dconf profile.
   # Avoids recompiling gnome-shell just for login screen theming.
@@ -275,7 +272,7 @@ in {
     age # file encryption tool for agenix secrets
     agenix-rekey
     ssh-to-age # convert SSH keys to age keys
-    neofetch
+    fastfetch
     git
     sane-backends # scanner drivers
     sane-frontends

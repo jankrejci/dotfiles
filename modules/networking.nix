@@ -94,17 +94,16 @@ in {
     # nb0 interface, which is orthogonal to the global DNS upstream.
     services.resolved = {
       enable = true;
-      extraConfig = ''
-        [Resolve]
-        DNS=127.0.0.1:${toString unboundPort}
+      settings.Resolve = {
+        DNS = "127.0.0.1:${toString unboundPort}";
         # No fallback: all DNS must go through unbound for DNSSEC validation
-        FallbackDNS=
-        DNSSEC=no
-        DNSStubListener=yes
-        MulticastDNS=no
-        LLMNR=no
-        Cache=yes
-      '';
+        FallbackDNS = "";
+        DNSSEC = "no";
+        DNSStubListener = "yes";
+        MulticastDNS = "no";
+        LLMNR = "no";
+        Cache = "yes";
+      };
     };
 
     # Configure systemd-networkd
@@ -137,16 +136,17 @@ in {
         "98-all-ethernet" = lib.mkDefault {
           matchConfig.Type = "ether";
           DHCP = "yes";
-          # Prefer ethernet over WiFi for default route
+          # Prefer ethernet over WiFi for default route.
+          # IPv6 route metric comes from Router Advertisements, not DHCPv6.
           dhcpV4Config.RouteMetric = 100;
-          dhcpV6Config.RouteMetric = 100;
+          ipv6AcceptRAConfig.RouteMetric = 100;
         };
         "99-all-wifi" = {
           matchConfig.Type = "wlan";
           DHCP = "yes";
           # Lower priority than ethernet
           dhcpV4Config.RouteMetric = 600;
-          dhcpV6Config.RouteMetric = 600;
+          ipv6AcceptRAConfig.RouteMetric = 600;
         };
       };
     };
