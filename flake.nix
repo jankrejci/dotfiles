@@ -30,7 +30,7 @@
     # Flake-parts for modular flake organization
     flake-parts.url = "github:hercules-ci/flake-parts";
     # Most packages are fetched from the stable channel
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
     # Some bleeding edge packages are fetched from unstable
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     # Immich is a critical service, pinned to decouple its updates from
@@ -42,7 +42,7 @@
     nixos-hardware.url = "github:NixOS/nixos-hardware";
     # Manage a user environment
     home-manager = {
-      url = "github:nix-community/home-manager/release-25.11";
+      url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # For accessing deploy-rs utility Nix functions
