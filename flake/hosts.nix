@@ -142,7 +142,6 @@
           enable = true;
           port = {
             loki = 3100;
-            promtail = 9080;
           };
         };
         memos = {
