@@ -1,6 +1,6 @@
-# Loki log aggregation with Promtail
+# Loki log aggregation with Fluent Bit shipper
 #
-# - receives logs from systemd journal via Promtail
+# - receives logs from systemd journal via Fluent Bit
 # - 30-day retention with auto-delete
 # - Grafana datasource auto-provisioned
 # - single-tenant mode for simplicity
@@ -25,17 +25,12 @@ in {
         type = lib.types.port;
         description = "Port for Loki server";
       };
-
-      promtail = lib.mkOption {
-        type = lib.types.port;
-        description = "Port for Promtail agent";
-      };
     };
   };
 
   config = lib.mkIf cfg.enable {
     # Loki: log aggregation system (like Prometheus but for logs)
-    # Receives logs from Promtail and stores them for querying via Grafana
+    # Receives logs from Fluent Bit and stores them for querying via Grafana
     services.loki = {
       enable = true;
       configuration = {
@@ -97,64 +92,70 @@ in {
       };
     };
 
-    # Ensure state directories exist (required for systemd namespace setup)
+    # Ensure state directory exists, required for systemd namespace setup
     systemd.tmpfiles.rules = [
       "d /var/lib/loki 0700 loki loki -"
-      "d /var/lib/promtail 0700 promtail promtail -"
     ];
 
-    # Promtail: agent that ships logs to Loki
-    # Reads from systemd journal and forwards to Loki
-    services.promtail = {
+    # Fluent Bit: agent that ships journal logs to Loki.
+    # Replaces Promtail, which was removed upstream in NixOS 26.05.
+    services.fluent-bit = {
       enable = true;
-      configuration = {
-        server = {
-          http_listen_port = cfg.port.promtail;
-          http_listen_address = "127.0.0.1";
-          # Disable gRPC (not needed, conflicts with loki's default 9095)
-          grpc_listen_port = 0;
+      settings = {
+        service = {
+          flush = 1;
+          log_level = "info";
         };
-
-        # Track which journal entries have been sent (survives restarts)
-        positions.filename = "/var/lib/promtail/positions.yaml";
-
-        # Where to send logs
-        clients = [
-          {url = "http://127.0.0.1:${toString cfg.port.loki}/loki/api/v1/push";}
-        ];
-
-        scrape_configs = [
-          {
-            job_name = "journal";
-            journal = {
-              # Ship logs from last 48h on startup (covers weekend gaps)
-              max_age = "48h";
-              labels = {
-                job = "systemd-journal";
-                host = config.networking.hostName;
-              };
-            };
-            # Extract useful labels from journal metadata
-            relabel_configs = [
-              {
-                # systemd unit name (e.g., nginx.service, immich-server.service)
-                source_labels = ["__journal__systemd_unit"];
-                target_label = "unit";
-              }
-              {
-                # Log level (emerg, alert, crit, err, warning, notice, info, debug)
-                source_labels = ["__journal_priority_keyword"];
-                target_label = "level";
-              }
-              {
-                source_labels = ["__journal__hostname"];
-                target_label = "hostname";
-              }
-            ];
-          }
-        ];
+        pipeline = {
+          inputs = [
+            {
+              name = "systemd";
+              tag = "journal";
+              # Resume from last read on restart; DB path is under StateDirectory.
+              # On first deploy or after a state-dir wipe there is no cursor yet,
+              # so this ships only new journal entries. Promtail's former
+              # max_age = "48h" backfilled recent history on startup; Fluent
+              # Bit's systemd input has no clean equivalent, so a first deploy
+              # or state wipe ships no historical journal.
+              read_from_tail = "on";
+              db = "/var/lib/fluent-bit/systemd.db";
+            }
+          ];
+          filters = [
+            {
+              name = "modify";
+              match = "journal";
+              # Rename raw journal fields to match previous Promtail labels so
+              # existing Grafana queries keep working. Note: level now carries
+              # the raw journal PRIORITY, a digit 0-7 as a string, instead of
+              # the keyword form "error", "warning", etc. that Promtail synthesised from
+              # __journal_priority_keyword. In-repo dashboards and alerts do
+              # not filter on the keyword form, but external LogQL queries of
+              # the shape {level="error"} will return no results.
+              rename = [
+                "_SYSTEMD_UNIT unit"
+                "PRIORITY level"
+                "_HOSTNAME hostname"
+              ];
+            }
+          ];
+          outputs = [
+            {
+              name = "loki";
+              match = "*";
+              host = "127.0.0.1";
+              port = cfg.port.loki;
+              labels = "job=systemd-journal,host=${config.networking.hostName}";
+              label_keys = "$unit,$level,$hostname";
+            }
+          ];
+        };
       };
     };
+
+    # Persistent DB for the journal read position. DynamicUser requires
+    # StateDirectory to get a writable directory.
+    systemd.services.fluent-bit.serviceConfig.StateDirectory = "fluent-bit";
 
     # Add Loki datasource to Grafana for log exploration
     services.grafana.provision.datasources.settings.datasources = [
@@ -171,7 +172,7 @@ in {
       }
     ];
 
-    # Alert rules for loki and promtail
+    # Alert rules for loki and fluent-bit
     homelab.alerts.loki = [
       {
         alert = "LokiDown";
@@ -184,14 +185,14 @@ in {
         annotations.summary = "Loki service is not active";
       }
       {
-        alert = "PromtailDown";
-        expr = ''node_systemd_unit_state{name="promtail.service",state="active",host="${config.homelab.host.hostName}"} == 0'';
+        alert = "FluentBitDown";
+        expr = ''node_systemd_unit_state{name="fluent-bit.service",state="active",host="${config.homelab.host.hostName}"} == 0'';
         labels = {
           severity = "warning";
           host = config.homelab.host.hostName;
           type = "service";
         };
-        annotations.summary = "Promtail service is not active";
+        annotations.summary = "Fluent Bit log shipper is not active";
       }
     ];
 
@@ -209,12 +210,12 @@ in {
         timeout = 10;
       }
       {
-        name = "Promtail";
+        name = "Fluent Bit";
         script = pkgs.writeShellApplication {
-          name = "health-check-promtail";
+          name = "health-check-fluent-bit";
           runtimeInputs = [pkgs.systemd];
           text = ''
-            systemctl is-active --quiet promtail.service
+            systemctl is-active --quiet fluent-bit.service
           '';
         };
         timeout = 10;
