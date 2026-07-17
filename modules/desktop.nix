@@ -15,6 +15,7 @@
 in {
   imports = [
     ./probe-rs.nix # udev rules for the probe-rs
+    ./saleae.nix # udev rules for Saleae Logic analyzers
   ];
 
   # Enable cross compilation support. It is needed to build aarch64 images.
