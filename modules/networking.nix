@@ -238,6 +238,23 @@ in {
       }
     ];
 
+    # Catch-all alert for failed units. Per-service alerts only cover known
+    # services, so oneshot helpers like verify-security-setup can fail
+    # unnoticed for months. The delay skips transient failures during deploys.
+    homelab.alerts.systemd-units = [
+      {
+        alert = "SystemdUnitFailed";
+        expr = ''node_systemd_unit_state{state="failed",host="${host.hostName}"} > 0'';
+        for = "15m";
+        labels = {
+          severity = "warning";
+          host = host.hostName;
+          type = "host";
+        };
+        annotations.summary = "Unit {{ $labels.name }} failed on {{ $labels.host }}";
+      }
+    ];
+
     # Metrics nginx proxy for all exporters.
     # Path-based routing allows single firewall port for all metrics.
     networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [services.metrics.port];
