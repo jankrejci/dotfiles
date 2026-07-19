@@ -212,8 +212,11 @@ in {
     script = ''
       set -euo pipefail
 
-      # Skip if already enrolled
-      if sbctl status | grep -qE "Setup Mode:.*Disabled"; then
+      # Skip if already enrolled. Capture the output instead of piping into
+      # grep -q, which exits on first match and SIGPIPEs sbctl under pipefail,
+      # flipping the check exactly when the pattern matches.
+      status_output=$(sbctl status)
+      if grep -qE "Setup Mode:.*Disabled" <<< "$status_output"; then
         echo "Setup Mode disabled, secure boot keys already enrolled"
         exit 0
       fi
@@ -250,7 +253,8 @@ in {
       set_efi_vars --immutable
 
       echo "Verifying enrollment..."
-      if ! sbctl status | grep -qE "Setup Mode:.*Disabled"; then
+      status_output=$(sbctl status)
+      if ! grep -qE "Setup Mode:.*Disabled" <<< "$status_output"; then
         echo "ERROR: Key enrollment verification failed"
         sbctl status
         exit 1
@@ -285,8 +289,10 @@ in {
       exit 0
     fi
 
-    # Check if TPM slot already exists
-    if ${pkgs.systemd}/bin/systemd-cryptenroll "${luksDevice}" | grep -q tpm2; then
+    # Check if TPM slot already exists. Capture the output to avoid the
+    # grep -q SIGPIPE hazard under pipefail.
+    enroll_output=$(${pkgs.systemd}/bin/systemd-cryptenroll "${luksDevice}")
+    if grep -q tpm2 <<< "$enroll_output"; then
       echo "TPM slot already exists, skipping provisional enrollment"
       exit 0
     fi
@@ -348,24 +354,30 @@ in {
       fi
 
       echo "Starting TPM key enrollment"
-      sbctl status
+
+      # Capture the output instead of piping into grep -q, which exits on
+      # first match and SIGPIPEs sbctl under pipefail, flipping the check
+      # exactly when the pattern matches.
+      status_output=$(sbctl status)
+      echo "$status_output"
 
       # It is expected that secure boot keys are enrolled already.
-      if ! sbctl status | grep -qE "Setup Mode:.*Disabled"; then
+      if ! grep -qE "Setup Mode:.*Disabled" <<< "$status_output"; then
         echo "ERROR: Secure boot is still in Setup Mode"
         exit 1
       fi
       echo "Secure boot in User Mode"
 
       # Secure boot is required for PCR7 protection.
-      if ! sbctl status | grep -qE "Secure Boot:.*Enabled"; then
+      if ! grep -qE "Secure Boot:.*Enabled" <<< "$status_output"; then
         echo "ERROR: Secure boot is not enabled"
         exit 1
       fi
       echo "Secure boot is enabled"
 
       # Check if the TPM password slot is enrolled
-      if ! systemd-cryptenroll "${luksDevice}" | grep -q "password"; then
+      enroll_output=$(systemd-cryptenroll "${luksDevice}")
+      if ! grep -q "password" <<< "$enroll_output"; then
         echo "ERROR: No password slots found in LUKS device"
         exit 1
       fi
@@ -430,9 +442,14 @@ in {
       echo "=== Security Setup Verification ==="
       ERRORS=0
 
+      # Capture the outputs checked below instead of piping into grep -q,
+      # which exits on first match and SIGPIPEs the producer under pipefail,
+      # flipping the check exactly when the pattern matches.
+      status_output=$(sbctl status)
+
       # Check secure boot keys are enrolled
       echo -n "Checking secure boot keys enrollment... "
-      if sbctl status | grep -qE "Setup Mode:.*Disabled"; then
+      if grep -qE "Setup Mode:.*Disabled" <<< "$status_output"; then
         echo "OK"
       else
         echo "FAILED: Secure boot is still in Setup Mode"
@@ -441,7 +458,7 @@ in {
 
       # Check secure boot is enabled
       echo -n "Checking secure boot is enabled... "
-      if sbctl status | grep -qE "Secure Boot:.*Enabled"; then
+      if grep -qE "Secure Boot:.*Enabled" <<< "$status_output"; then
         echo "OK"
       else
         echo "FAILED: Secure boot is not enabled"
@@ -469,7 +486,8 @@ in {
 
       # Check TPM slot is enrolled
       echo -n "Checking TPM slot is enrolled... "
-      if cryptsetup luksDump "${luksDevice}" | grep -qE "systemd-tpm2"; then
+      luks_dump=$(cryptsetup luksDump "${luksDevice}")
+      if grep -qE "systemd-tpm2" <<< "$luks_dump"; then
         echo "OK"
       else
         echo "FAILED: No TPM slot found"
@@ -478,7 +496,7 @@ in {
 
       # Check TPM is using PCR7 (secure boot)
       echo -n "Checking TPM uses PCR7 (secure boot)... "
-      TOKEN_ID=$(cryptsetup luksDump "${luksDevice}" | grep -B1 "systemd-tpm2" | grep -oP '^\s*\K[0-9]+' | head -n1)
+      TOKEN_ID=$(grep -B1 "systemd-tpm2" <<< "$luks_dump" | grep -oP '^\s*\K[0-9]+' | head -n1)
       TOKEN_DATA=$(cryptsetup token export "${luksDevice}" --token-id "$TOKEN_ID")
       if echo "$TOKEN_DATA" | jq -e '.["tpm2-pcrs"] | contains([7])' > /dev/null 2>&1; then
         echo "OK"
@@ -489,7 +507,8 @@ in {
 
       # Check password slot exists for recovery
       echo -n "Checking password recovery slot exists... "
-      if systemd-cryptenroll "${luksDevice}" | grep -q "password"; then
+      enroll_output=$(systemd-cryptenroll "${luksDevice}")
+      if grep -q "password" <<< "$enroll_output"; then
         echo "OK"
       else
         echo "FAILED: No password slots found"
