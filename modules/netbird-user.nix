@@ -169,9 +169,12 @@ in {
     # Open firewall for WireGuard port
     networking.firewall.allowedUDPPorts = [services.netbird.port.wireguard];
 
-    # Exclude user interface from NetworkManager and DHCP
-    networking.networkmanager.unmanaged = lib.mkAfter [services.netbird.interface];
-    networking.dhcpcd.denyInterfaces = [services.netbird.interface];
+    # Exclude netbird interfaces from NetworkManager and DHCP.
+    # services.netbird.interface, which is nb0, belongs to the self-hosted
+    # profile; wt0 is netbird's built-in default used by the braiins cloud
+    # profile.
+    networking.networkmanager.unmanaged = lib.mkAfter [services.netbird.interface "wt0"];
+    networking.dhcpcd.denyInterfaces = [services.netbird.interface "wt0"];
 
     # Allow users to configure DNS via systemd-resolved for VPN.
     # Netbird needs to set DNS servers and routing domains for peer resolution.
