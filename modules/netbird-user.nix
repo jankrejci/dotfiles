@@ -153,18 +153,28 @@ in {
       netbirdUserUI
     ];
 
-    # Autostart tray UI when graphical session starts
-    environment.etc."xdg/autostart/netbird-user-ui.desktop".text = ''
-      [Desktop Entry]
-      Type=Application
-      Name=Netbird User VPN
-      Comment=User-level Netbird VPN with SSO authentication
-      Exec=${netbirdUserUI}/bin/netbird-user-ui
-      Icon=netbird
-      Terminal=false
-      Categories=Network;
-      X-GNOME-Autostart-enabled=true
-    '';
+    # Tray UI as a user service instead of XDG autostart. Autostart runs
+    # only at login, so a mid-session exit left the tray dead until the
+    # next login. The UI exits silently without reporting failure, so
+    # restart unconditionally to self-heal.
+    systemd.user.services.netbird-user-ui = {
+      description = "Netbird user VPN tray UI";
+      partOf = ["graphical-session.target"];
+      after = ["graphical-session.target" "netbird-user.service"];
+      wantedBy = ["graphical-session.target"];
+
+      # SSO login opens the browser via xdg-open, which on GNOME delegates
+      # to gio and flatpak to launch the default browser. NixOS overrides
+      # PATH for units with the listed packages only, so the system profile
+      # must be included explicitly to reach those handlers.
+      path = [pkgs.xdg-utils "/run/current-system/sw"];
+
+      serviceConfig = {
+        ExecStart = "${netbirdUserUI}/bin/netbird-user-ui";
+        Restart = "always";
+        RestartSec = 5;
+      };
+    };
 
     # Open firewall for WireGuard port
     networking.firewall.allowedUDPPorts = [services.netbird.port.wireguard];
