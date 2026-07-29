@@ -15,7 +15,6 @@
   services = config.homelab.services;
   domain = global.domain;
   vaultDomain = "${cfg.subdomain}.${domain}";
-  dexDomain = "${config.homelab.dex.subdomain}.${domain}";
 in {
   options.homelab.vaultwarden = {
     enable = lib.mkOption {
@@ -74,16 +73,6 @@ in {
 
   config = lib.mkIf cfg.enable (lib.mkMerge [
     {
-      # Register OIDC client with Dex for SSO
-      homelab.dex.clients = [
-        {
-          id = "vaultwarden";
-          name = "Vaultwarden";
-          redirectURIs = ["https://${vaultDomain}/identity/connect/oidc-signin"];
-          secretRekeyFile = ../secrets/dex-vaultwarden-secret.age;
-        }
-      ];
-
       # Register IP for services dummy interface
       homelab.serviceIPs = [cfg.ip];
       networking.hosts.${cfg.ip} = [vaultDomain];
@@ -115,13 +104,6 @@ in {
           DATABASE_URL = "postgresql:///vaultwarden?host=/run/postgresql";
 
           ADMIN_TOKEN_FILE = config.age.secrets.vaultwarden-admin-token.path;
-
-          # SSO via Dex, no email/password login
-          SSO_ENABLED = true;
-          SSO_ONLY = true;
-          SSO_AUTHORITY = "https://${dexDomain}";
-          SSO_CLIENT_ID = "vaultwarden";
-          SSO_CLIENT_SECRET_FILE = config.age.secrets.vaultwarden-sso-secret.path;
 
           # Security: no public signups or invitations
           SIGNUPS_ALLOWED = false;
@@ -157,10 +139,6 @@ in {
 
       age.secrets.vaultwarden-admin-token = {
         rekeyFile = ../secrets/vaultwarden-admin-token.age;
-        owner = "vaultwarden";
-      };
-      age.secrets.vaultwarden-sso-secret = {
-        rekeyFile = ../secrets/dex-vaultwarden-secret.age;
         owner = "vaultwarden";
       };
       age.secrets.vaultwarden-smtp-password = {
