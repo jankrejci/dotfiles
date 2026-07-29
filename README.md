@@ -207,7 +207,6 @@ definition for automatic encryption.
 | Package | Purpose |
 |---------|---------|
 | import-keep | Import Google Keep notes to Memos |
-| camera-streamer | Camera streaming for Octoprint |
 | soft-uart-tx | Software UART TX for GPS on broken RPi GPIO14 |
 | octoprint-obico | Remote 3D printer monitoring plugin |
 | octoprint-prometheus-exporter | Metrics exporter plugin |
