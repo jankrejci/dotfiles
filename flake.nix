@@ -63,11 +63,10 @@
       url = "github:oddlama/agenix-rekey";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # Pinned to PR#131 (remove-options-compat) which switches to upstream nixpkgs,
-    # eliminating the nvmd/nixpkgs fork that caused ~88 cache misses per RPi build.
-    # TODO: switch back to main branch once PR#131 is released.
-    # See: https://github.com/nvmd/nixos-raspberrypi/pull/131
-    nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi/remove-options-compat";
+    # The nixos-26.05 branch tracks the same nixpkgs release as our main input.
+    # The previously pinned PR#131 branch was deleted after merge, which broke
+    # nix flake update entirely.
+    nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi/nixos-26.05";
   };
 
   outputs = inputs:
