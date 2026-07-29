@@ -91,6 +91,9 @@ in {
       redirectURL = "https://${serverDomain}/oauth2/callback";
       oidcIssuerUrl = "https://${dexDomain}";
       reverseProxy = true;
+      # Only local nginx may supply X-Forwarded-* headers. Without this the
+      # proxy trusts all source IPs and clients could spoof forwarded headers.
+      trustedProxyIP = ["127.0.0.1"];
       setXauthrequest = true;
       email.domains = ["*"];
       scope = "openid email profile";
