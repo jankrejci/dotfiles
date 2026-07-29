@@ -27,6 +27,16 @@ in {
   # Disable systemd-hostnamed - fails in container trying to access /sys/firmware/acpi
   systemd.services.systemd-hostnamed.enable = lib.mkForce false;
 
+  # Deploys arrive over the VPN, but this host also serves the netbird control
+  # plane to itself: management and signal via local nginx, DNS via local
+  # unbound, thinkcenter via the local WG tunnel. Restarting netbird together
+  # with those dependencies leaves the client in exponential backoff for over
+  # two minutes, deploy-rs never gets its confirmation and magic rollback
+  # reverts a healthy activation. Keep netbird running across activations and
+  # restart it manually after a deploy that changed its package:
+  #   systemd-run --on-active=5s systemctl restart netbird-homelab
+  systemd.services.netbird-homelab.restartIfChanged = false;
+
   # There is no DHCP, so fixed dns is needed
   networking.nameservers = ["1.1.1.1" "8.8.8.8"];
 
