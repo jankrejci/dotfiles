@@ -416,11 +416,13 @@
       });
 
   # Create nixosConfiguration for RPi hosts.
-  # Uses lib.nixosSystem with our nixpkgs so standard package hashes match
-  # cache.nixos.org. The inject-overlays module adds RPi kernel, firmware,
-  # and vendor packages on top.
+  # Uses the nixpkgs rev locked by nixos-raspberrypi, not our own, so the
+  # kernel, firmware, and vendor packages injected by inject-overlays match
+  # what their CI pushed to nixos-raspberrypi.cachix.org. Both track
+  # nixos-26.05; building against our newer rev rebuilds all of it locally
+  # under emulation. Standard packages still resolve via cache.nixos.org.
   mkRpiSystem = hostName: host:
-    lib.nixosSystem {
+    inputs.nixos-raspberrypi.inputs.nixpkgs.lib.nixosSystem {
       specialArgs = {
         inherit inputs;
         inherit (inputs) nixos-raspberrypi;
