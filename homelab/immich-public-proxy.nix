@@ -59,6 +59,9 @@ in {
     # Immich Public Proxy - allows public sharing without exposing Immich
     services.immich-public-proxy = {
       enable = true;
+      # Stable still ships the 1.x proxy which predates the immich v3 API
+      # break. Track unstable so the proxy major follows the server major.
+      package = pkgs.unstable.immich-public-proxy;
       # Connect to Immich on localhost, no TLS overhead
       immichUrl = "http://127.0.0.1:${toString config.homelab.immich.port}";
       port = cfg.port;
