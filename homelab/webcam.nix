@@ -10,7 +10,13 @@
   ...
 }: let
   cfg = config.homelab.webcam;
-  camera-streamer = pkgs.callPackage ../pkgs/camera-streamer.nix {};
+  # Take the package from unstable since stable does not carry it yet, but
+  # build it against this host's libcamera and ffmpeg. On RPi hosts the
+  # nixos-raspberrypi overlay replaces libcamera with the raspberrypi fork,
+  # which the camera stack requires.
+  camera-streamer = pkgs.unstable.camera-streamer.override {
+    inherit (pkgs) libcamera ffmpeg;
+  };
   port = 8080;
 in {
   options.homelab.webcam = {
