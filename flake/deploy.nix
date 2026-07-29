@@ -34,11 +34,14 @@
   mkNode = hostName: host: {
     hostname = "${hostName}.${global.peerDomain}";
     sshUser = "admin";
-    # VPN-based deploys need extra time for nftables reload and SSH reconnection
+    # VPN-based deploys need extra time for nftables reload and SSH reconnection.
+    # When the activation restarts netbird itself, the client must re-login and
+    # re-establish the peer connection before the confirmation can arrive; 60s
+    # proved too short for that on remote hosts and triggered magic rollback.
     profiles.system = {
       user = "root";
       path = (deployLib host.system).activate.nixos self.nixosConfigurations.${hostName};
-      confirmTimeout = 60;
+      confirmTimeout = 180;
     };
   };
 in {
