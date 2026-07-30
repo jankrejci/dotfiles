@@ -37,6 +37,13 @@ in {
   #   systemd-run --on-active=5s systemctl restart netbird-homelab
   systemd.services.netbird-homelab.restartIfChanged = false;
 
+  # Since netbird no longer restarts on activation, it cannot re-install its
+  # routing policy rules when networkd restarts and deletes foreign rules it
+  # does not own. That silently sent all routed-network traffic out the public
+  # interface while peer-to-peer traffic kept working. Tell networkd to leave
+  # foreign routing policy rules alone.
+  systemd.network.config.networkConfig.ManageForeignRoutingPolicyRules = false;
+
   # There is no DHCP, so fixed dns is needed
   networking.nameservers = ["1.1.1.1" "8.8.8.8"];
 
