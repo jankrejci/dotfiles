@@ -4,6 +4,7 @@
 # - flatpak apps and aarch64 cross-compilation
 # - CUPS printing with Brother IPP
 # - SANE scanning, pipewire audio, hyprland WM
+# - nix builds at idle CPU scheduling priority
 {
   config,
   lib,
@@ -20,6 +21,14 @@ in {
 
   # Enable cross compilation support. It is needed to build aarch64 images.
   boot.binfmt.emulatedSystems = ["aarch64-linux"];
+
+  # Run builds at the lowest scheduling priority so they yield to interactive
+  # work. Bluetooth is the first thing to break without this, because a
+  # concurrent build delays the stack past the BLE connection interval and the
+  # peripheral times out. Parallelism is deliberately left uncapped so builds
+  # still take every core when nothing else wants one. Servers keep the default
+  # policy so that deployments are not starved during load.
+  nix.daemonCPUSchedPolicy = "idle";
 
   # Plymouth boot splash configuration
   # Requirements:
