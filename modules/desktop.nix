@@ -15,6 +15,7 @@
   printerDomain = "${config.homelab.printer.subdomain}.${domain}";
 in {
   imports = [
+    ./k210-esp-prog.nix # udev rules for the K210 bench esp-prog
     ./probe-rs.nix # udev rules for the probe-rs
     ./saleae.nix # udev rules for Saleae Logic analyzers
   ];
