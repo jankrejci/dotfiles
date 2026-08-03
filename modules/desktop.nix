@@ -305,6 +305,10 @@ in {
     lshw
     # GNOME extensions installed system-wide, enabled per-user via dconf
     gnomeExtensions.appindicator
+    # The appindicator bus scanner spawns a bare gjs from PATH. Without it the
+    # extension throws while enabling and never holds StatusNotifierWatcher,
+    # so every tray icon disappears on each session update.
+    gjs
     gnomeExtensions.vitals
     gnomeExtensions.dash-to-panel
     unstable.gnomeExtensions.unite
