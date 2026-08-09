@@ -18,6 +18,12 @@
   # Allow applications to update firmware
   services.fwupd.enable = true;
 
+  # Secure boot here runs on locally enrolled sbctl keys with no shim on the
+  # ESP, so fwupd finds no chainloadable helper and refuses every capsule
+  # update. Accept the plain binary instead, which sign-bootloader signs with
+  # the same key as the kernels.
+  services.fwupd.uefiCapsuleSettings.DisableShimForSecureBoot = true;
+
   # Enable hardware accelerated graphic drivers
   hardware.graphics.enable = true;
 
