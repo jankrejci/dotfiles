@@ -9,6 +9,8 @@
   pkgs,
   ...
 }: let
+  host = config.homelab.host;
+  metricsDir = config.homelab.metricsDir;
   luksDevice = "/dev/disk/by-partlabel/disk-main-luks";
   diskPasswordFile = "/var/lib/disk-password";
 
@@ -71,7 +73,7 @@ in {
     disk = {
       main = {
         type = "disk";
-        device = config.homelab.host.device;
+        device = host.device;
         content = {
           type = "gpt";
           partitions = {
@@ -118,7 +120,7 @@ in {
             };
           };
           swap = {
-            size = config.homelab.host.swapSize;
+            size = host.swapSize;
             content = {
               type = "swap";
               discardPolicy = "both";
@@ -157,12 +159,11 @@ in {
     clevis
   ];
 
-  # To use TPM stored key for disk encryption, wipe the luks tmp slot first
-  # `systemd-cryptenroll --wipe-slot=tpm2 ${luksDevice}`
-  # and then enroll new key
-  # `systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0,7 /dev/sda`
-  # It is good practice to still have a manual password to recover partition
-  # if TMP approach fails
+  # The sealed policy below is bound to the PCR values present at enrollment
+  # time, so a dbx, secure boot key, or firmware update invalidates it and the
+  # host silently drops back to passphrase boot. Re-seal with
+  # `nix run .#reenroll-tpm <hostname>`, which needs the passphrase slot kept
+  # here as the recovery path.
   boot.initrd.luks.devices."crypted" = {
     device = luksDevice;
     preLVM = true;
@@ -515,6 +516,30 @@ in {
         ERRORS=$((ERRORS + 1))
       fi
 
+      # Unsealing happens in the initrd, hours before this unit runs, so the
+      # journal is the only record of whether the sealed policy still matched.
+      # Everything above still reports OK once the policy goes stale: the slot
+      # exists and lists PCR7, it just cannot satisfy the policy any more.
+      echo -n "Checking TPM unlocked the disk this boot... "
+      POLICY_STALE=0
+      # This is systemd-cryptsetup's wording when the sealed PCR policy no
+      # longer satisfies the TPM. The exact string is not part of any stable
+      # interface, so a systemd change silently makes this read 0. Confirm it
+      # against a real stale boot's journal after systemd bumps.
+      if journalctl -b --quiet --grep "TPM policy does not match" > /dev/null 2>&1; then
+        POLICY_STALE=1
+        echo "STALE: boot fell back to the passphrase"
+        echo "  re-seal with: nix run .#reenroll-tpm ${host.hostName}"
+      else
+        echo "OK"
+      fi
+
+      # Reported as a metric instead of an error. Every dbx update trips this,
+      # and a failing unit here aborts activation, which would make deploys to
+      # this host impossible until someone is physically present to re-seal.
+      echo "tpm_unlock_policy_stale $POLICY_STALE" > ${metricsDir}/tpm-unlock.prom.tmp
+      mv ${metricsDir}/tpm-unlock.prom.tmp ${metricsDir}/tpm-unlock.prom
+
       echo "==================================="
       if [ $ERRORS -gt 0 ]; then
         echo "FAILED: $ERRORS security checks failed"
@@ -524,4 +549,20 @@ in {
       fi
     '';
   };
+
+  # The catch-all SystemdUnitFailed alert cannot cover a stale policy, because
+  # keeping deploys working means verify-security-setup stays green for it.
+  homelab.alerts.disk-encryption = [
+    {
+      alert = "TpmUnlockPolicyStale";
+      expr = ''tpm_unlock_policy_stale{host="${host.hostName}"} > 0'';
+      for = "15m";
+      labels = {
+        severity = "warning";
+        host = host.hostName;
+        type = "host";
+      };
+      annotations.summary = "TPM unlock policy stale on {{ $labels.host }}, boot needs the passphrase";
+    }
+  ];
 }
