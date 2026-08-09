@@ -29,13 +29,43 @@ pkgs.writeShellApplication {
     # Must match the PCR set sealed by modules/disk-tpm-encryption.nix
     readonly PCRS="0,7"
 
+    # Set once in main. A host cannot ssh to itself here, the loopback
+    # connection trips host key verification, and laptops are re-sealed from
+    # their own console anyway.
+    IS_LOCAL=false
+
+    function on_target() {
+      local -r target="$1"
+      shift
+
+      [ "$IS_LOCAL" = true ] && {
+        sudo "$@"
+        return
+      }
+      # shellcheck disable=SC2029 # the command is ours, it expands client side by design
+      ssh "$target" sudo "$@"
+    }
+
+    # Same as on_target but with a terminal, systemd-cryptenroll prompts for the
+    # passphrase of the recovery slot before it can add the new TPM slot.
+    function on_target_tty() {
+      local -r target="$1"
+      shift
+
+      [ "$IS_LOCAL" = true ] && {
+        sudo "$@"
+        return
+      }
+      # shellcheck disable=SC2029 # the command is ours, it expands client side by design
+      ssh -t "$target" sudo "$@"
+    }
+
     # Resolve the backing partition from the running mapping rather than
     # repeating the by-partlabel path from the module, which would silently
     # drift the day a host is installed on a different layout.
     function luks_device() {
       local -r target="$1"
-      # shellcheck disable=SC2029 # mapper name intentionally expands client side
-      ssh "$target" "sudo cryptsetup status $MAPPER_NAME" 2>/dev/null |
+      on_target "$target" cryptsetup status "$MAPPER_NAME" 2>/dev/null |
         gawk '/device:/{print $2}'
     }
 
@@ -44,12 +74,13 @@ pkgs.writeShellApplication {
       local -r device="$2"
 
       info "Re-sealing TPM key for $device against PCR$PCRS"
-      warn "The LUKS passphrase of the target host is required to authorize this"
+      warn "The LUKS passphrase is required to authorize this"
 
-      # A TTY is required, systemd-cryptenroll prompts for the passphrase of the
-      # recovery slot to unlock the volume before it can add the new TPM slot.
-      # shellcheck disable=SC2029 # device and PCR set intentionally expand client side
-      ssh -t "$target" "sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=$PCRS $device" || {
+      on_target_tty "$target" systemd-cryptenroll \
+        --wipe-slot=tpm2 \
+        --tpm2-device=auto \
+        "--tpm2-pcrs=$PCRS" \
+        "$device" || {
         error "TPM enrollment failed, the passphrase slot is untouched"
         exit 1
       }
@@ -60,8 +91,7 @@ pkgs.writeShellApplication {
       local -r device="$2"
 
       local slots
-      # shellcheck disable=SC2029 # device intentionally expands client side
-      slots=$(ssh "$target" "sudo systemd-cryptenroll $device") || {
+      slots=$(on_target "$target" systemd-cryptenroll "$device") || {
         error "Failed to list key slots on $device"
         exit 1
       }
@@ -83,7 +113,12 @@ pkgs.writeShellApplication {
       local -r hostname=$(require_and_validate_hostname "$@")
       local -r target="admin@$hostname.$DOMAIN"
 
-      require_ssh_reachable "$target"
+      [ "$hostname" = "$(uname -n)" ] && {
+        IS_LOCAL=true
+        info "Target is this machine, running without ssh"
+      }
+
+      [ "$IS_LOCAL" = true ] || require_ssh_reachable "$target"
 
       local -r device=$(luks_device "$target")
       [ -n "$device" ] || {
