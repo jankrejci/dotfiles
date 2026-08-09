@@ -252,6 +252,7 @@ Builds locally and deploys to the running host via VPN.
 |--------|---------|
 | `add-ssh-key` | Add SSH keys to `ssh-authorized-keys.conf` |
 | `reenroll-netbird` | Re-enroll Netbird client with new setup key |
+| `reenroll-tpm` | Re-seal the LUKS TPM key against the current PCR values |
 | `inject-borg-passphrase` | Deploy borg passphrase and initialize backup repo |
 
 ### Setup Borg Backup
