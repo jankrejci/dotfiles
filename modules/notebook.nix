@@ -4,7 +4,14 @@
 # - thermald and powertop autotuning
 # - bluetooth and fingerprint reader
 # - disables USB autosuspend for HID devices
-{pkgs, ...}: {
+{
+  config,
+  pkgs,
+  ...
+}: let
+  fwupdEfi = config.services.fwupd.package.fwupd-efi;
+  inherit (fwupdEfi) signedApp;
+in {
   # Device driver packages
   hardware.firmware = with pkgs; [
     linux-firmware
@@ -17,6 +24,45 @@
 
   # Allow applications to update firmware
   services.fwupd.enable = true;
+
+  # Secure boot here runs on locally enrolled sbctl keys, so there is no shim
+  # to chainload the capsule helper with. fwupd still sources that helper from
+  # the .signed path, which pkgs/fwupd-efi-signed.nix redirects into /var/lib
+  # for the service below to fill in.
+  services.fwupd.uefiCapsuleSettings.DisableShimForSecureBoot = true;
+
+  systemd.tmpfiles.rules = ["d ${builtins.dirOf signedApp} 0755 root root -"];
+
+  # The signature cannot live in the store, the sbctl key is machine local and
+  # must stay that way. Signing on every activation covers a new fwupd-efi
+  # before the daemon ever follows the symlink.
+  systemd.services.sign-fwupd-efi = {
+    description = "Sign the fwupd EFI capsule helper for secure boot";
+    wantedBy = ["multi-user.target"];
+    before = ["fwupd.service"];
+    after = ["enroll-secure-boot-keys.service"];
+    path = with pkgs; [sbctl];
+    restartTriggers = [fwupdEfi];
+
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+
+    script = ''
+      set -euo pipefail
+
+      # Nothing to sign with until the first boot enrolls the keys.
+      status_output=$(sbctl status)
+      if grep -qE "Setup Mode:.*Enabled" <<< "$status_output"; then
+        echo "Setup Mode enabled, skipping capsule helper signing"
+        exit 0
+      fi
+
+      sbctl sign -o ${signedApp} ${fwupdEfi}/libexec/fwupd/efi/fwupdx64.efi
+      echo "Signed capsule helper to ${signedApp}"
+    '';
+  };
 
   # Enable hardware accelerated graphic drivers
   hardware.graphics.enable = true;

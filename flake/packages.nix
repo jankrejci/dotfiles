@@ -52,6 +52,7 @@ in {
           color = (import ../modules/palettes.nix).darkPalette.base04;
         })
         (import ../pkgs/rofi-scroll-anchor.nix)
+        (import ../pkgs/fwupd-efi-signed.nix)
         inputs.agenix-rekey.overlays.default
       ];
     };
