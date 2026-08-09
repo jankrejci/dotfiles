@@ -453,7 +453,7 @@ in {
         echo "OK"
       else
         echo "FAILED: Secure boot is still in Setup Mode"
-        ((ERRORS++))
+        ERRORS=$((ERRORS + 1))
       fi
 
       # Check secure boot is enabled
@@ -462,7 +462,7 @@ in {
         echo "OK"
       else
         echo "FAILED: Secure boot is not enabled"
-        ((ERRORS++))
+        ERRORS=$((ERRORS + 1))
       fi
 
       # Check all bootloader images are signed
@@ -472,7 +472,7 @@ in {
         echo "OK"
       else
         echo "FAILED: Unsigned images found:"
-        ((ERRORS++))
+        ERRORS=$((ERRORS + 1))
       fi
 
       # Check disk encryption is active
@@ -481,7 +481,7 @@ in {
         echo "OK"
       else
         echo "FAILED: Encrypted device 'crypted' not found"
-        ((ERRORS++))
+        ERRORS=$((ERRORS + 1))
       fi
 
       # Check TPM slot is enrolled
@@ -491,7 +491,7 @@ in {
         echo "OK"
       else
         echo "FAILED: No TPM slot found"
-        ((ERRORS++))
+        ERRORS=$((ERRORS + 1))
       fi
 
       # Check TPM is using PCR7 (secure boot)
@@ -502,7 +502,7 @@ in {
         echo "OK"
       else
         echo "FAILED: TPM not sealed with PCR7"
-        ((ERRORS++))
+        ERRORS=$((ERRORS + 1))
       fi
 
       # Check password slot exists for recovery
@@ -512,7 +512,7 @@ in {
         echo "OK"
       else
         echo "FAILED: No password slots found"
-        ((ERRORS++))
+        ERRORS=$((ERRORS + 1))
       fi
 
       echo "==================================="
