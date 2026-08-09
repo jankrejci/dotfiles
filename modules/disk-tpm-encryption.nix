@@ -56,6 +56,17 @@
       fi
     done
 
+    # fwupd stages its capsule helper on the ESP and expects the firmware to
+    # launch it on the next boot. notebook.nix signs the source helper before
+    # fwupd copies it, but a helper staged by an earlier generation is already
+    # sitting there unsigned, and verify below walks the whole ESP, so it would
+    # abort the next switch.
+    for capsule_app in /boot/EFI/*/fw/*.efi; do
+      if [ -f "$capsule_app" ]; then
+        sbctl sign -s "$capsule_app"
+      fi
+    done
+
     # Verify signatures. Capture the output instead of piping into grep -q,
     # which under pipefail can SIGPIPE sbctl and skip the error branch.
     echo "Verifying signatures..."
