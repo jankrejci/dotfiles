@@ -177,15 +177,20 @@ in {
     tpm2.enable = true;
   };
 
-  # Workaround to add delay to avoid TPM unlock timing issues
+  # The TPM is not always responsive by the time the initrd reaches the unseal,
+  # so hold the unlock back for a moment.
+  #
+  # Default dependencies order this after basic.target, which is itself ordered
+  # after the unlock this unit is supposed to precede. systemd resolves that
+  # cycle by dropping one job of its choosing, and when it picks this one the
+  # unseal races the TPM and dies with "Failed to create TPM2 context", leaving
+  # the boot at the passphrase prompt.
   boot.initrd.systemd.services."tpm-delay" = {
     description = "Delay before TPM decryption";
     wantedBy = ["cryptsetup.target"];
     before = ["systemd-cryptsetup@crypted.service"];
-    # Prevent boot order cycle
     after = ["systemd-modules-load.service"];
-    # wantedBy = [ "systemd-cryptsetup@crypted.service" ];
-    # before = [ "systemd-cryptsetup@crypted.service" ];
+    unitConfig.DefaultDependencies = false;
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${pkgs.coreutils}/bin/sleep 5";
