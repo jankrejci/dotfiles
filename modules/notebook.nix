@@ -115,6 +115,13 @@ in {
     ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="046d", ATTR{idProduct}=="c52b", ATTR{power/autosuspend}="-1"
     # Disable autosuspend for USB Receiver devices (generic wireless receivers)
     ACTION=="add", SUBSYSTEM=="usb", ATTR{product}=="*[Rr]eceiver*", ATTR{power/autosuspend}="-1"
+    # Bluetooth radios sit on USB even when the wifi half of the same chip is on
+    # PCIe. Suspending the radio and then failing to wake it takes the shared
+    # die down with it: the wifi firmware reloads, the adapter re-enumerates
+    # under a new hci index, and every connected device silently drops.
+    # Class e0 is the wireless controller class, so this covers the radio
+    # whatever the vendor calls its product string.
+    ACTION=="add", SUBSYSTEM=="usb", ATTR{bDeviceClass}=="e0", ATTR{power/autosuspend}="-1"
     # powertop autotuning above enables WiFi power save, which makes the MT7922
     # mt7921e card miss beacons and deauth by local choice at full signal.
     # Re-assert power save off on interface add and every state change.
