@@ -19,7 +19,11 @@
   # so both paths sign identically. No-ops while still in Setup Mode.
   signBootloader = pkgs.writeShellScript "sign-bootloader" ''
     set -euo pipefail
-    export PATH="${pkgs.lib.makeBinPath [pkgs.sbctl]}:$PATH"
+    # The bootloader install step runs with a PATH the systemd-boot builder
+    # controls, which carries no grep. Every check below sits in an if
+    # condition, so a missing grep reads as false and the verify gate passes
+    # whatever it is handed.
+    export PATH="${pkgs.lib.makeBinPath [pkgs.sbctl pkgs.gnugrep]}:$PATH"
 
     # Skip if secure boot keys not enrolled yet. Capture the output instead of
     # piping into grep -q, which exits on first match and SIGPIPEs sbctl under
