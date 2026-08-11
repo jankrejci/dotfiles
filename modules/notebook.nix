@@ -83,10 +83,15 @@ in {
   # power save, and the mac80211 default is on regardless. Force it off once
   # after powertop so the boot state is deterministic. The udev rule below
   # re-asserts it on later interface events such as resume and reconnect.
+  #
+  # Pulled in by powertop.service rather than multi-user.target: powertop is
+  # itself ordered after multi-user.target, and a target implicitly waits for
+  # what it wants, so hanging this unit off the target closes an ordering
+  # cycle that systemd breaks by dropping this job from the boot transaction.
   systemd.services.disable-wifi-powersave = {
-    description = "Disable WiFi power save on MT7922";
+    description = "Disable WiFi power save";
     after = ["powertop.service"];
-    wantedBy = ["multi-user.target"];
+    wantedBy = ["powertop.service"];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
