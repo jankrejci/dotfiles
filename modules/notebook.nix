@@ -107,6 +107,20 @@ in {
   # Bluetooth enabled for GNOME built-in support and Hyprland via blueman
   hardware.bluetooth.enable = true;
 
+  # LE mice negotiate a long connection latency to save battery, so an idle
+  # one only speaks every few hundred milliseconds and a supervision timeout
+  # of roughly two seconds means a handful of lost anchor points kills the
+  # link. Docked 2.4 GHz noise reaches that threshold, and the link then dies
+  # with an HCI connection timeout and the device re-enumerates. Ask for no
+  # latency and a six second timeout so a burst of interference costs a
+  # stutter instead of a disconnect. Units are intervals for the latency and
+  # ten milliseconds for the timeout. Both are bluez main.conf [LE] keys, so
+  # they land in the [LE] section bluez reads at startup.
+  hardware.bluetooth.settings.LE = {
+    ConnectionLatency = 0;
+    ConnectionSupervisionTimeout = 600;
+  };
+
   # Enable fingerprint reader (if available on your model)
   services.fprintd.enable = true;
 
