@@ -16,6 +16,7 @@
   domain = global.domain;
   immichDomain = "${cfg.subdomain}.${domain}";
   dexDomain = "${config.homelab.dex.subdomain}.${domain}";
+  shareDomain = "${config.homelab.immich-public-proxy.subdomain}.${domain}";
   httpsPort = services.https.port;
 
   # Internal metrics ports for exporters
@@ -31,6 +32,9 @@
   # variables. We generate a template here and substitute the secret at runtime
   # to avoid storing secrets in the Nix store.
   immichOAuthConfigTemplate = pkgs.writeText "immich-oauth-template.json" (builtins.toJSON {
+    # Public share links are handed to people outside the VPN, so they must
+    # resolve to the tunneled proxy rather than the VPN-only immich vhost.
+    server.externalDomain = "https://${shareDomain}";
     oauth = {
       enabled = true;
       issuerUrl = "https://${dexDomain}";
@@ -145,7 +149,6 @@ in {
         port = cfg.port;
         # Media stored on dedicated NVMe disk at /var/lib/immich (default)
         environment = {
-          PUBLIC_IMMICH_SERVER_URL = "https://share.${domain}";
           IMMICH_CONFIG_FILE = immichOAuthConfigPath;
           # Enable Prometheus metrics on 127.0.0.1
           IMMICH_TELEMETRY_INCLUDE = "all";
