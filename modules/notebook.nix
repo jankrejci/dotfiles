@@ -1,8 +1,10 @@
 # Laptop hardware configuration
 #
-# - firmware updates via fwupd
+# - firmware updates via fwupd, including capsule updates under secure boot
+# - signs the fwupd capsule helper on every activation
 # - thermald and powertop autotuning
 # - bluetooth and fingerprint reader
+# - widened bluetooth LE supervision window for pointer devices
 # - disables USB autosuspend for HID devices
 {
   config,
@@ -30,6 +32,12 @@ in {
   # the .signed path, which pkgs/fwupd-efi-signed.nix redirects into /var/lib
   # for the service below to fill in.
   services.fwupd.uefiCapsuleSettings.DisableShimForSecureBoot = true;
+
+  # This board runs without a battery, so fwupd's power check finds no charge
+  # level to compare against its threshold and refuses every capsule. Framework
+  # supports battery-less updates from 3.20 onward as long as a charger stays
+  # attached for the whole flash.
+  services.fwupd.daemonSettings.IgnorePower = true;
 
   systemd.tmpfiles.rules = ["d ${builtins.dirOf signedApp} 0755 root root -"];
 
