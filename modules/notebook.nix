@@ -1,8 +1,10 @@
 # Laptop hardware configuration
 #
-# - firmware updates via fwupd
+# - firmware updates via fwupd, including capsule updates under secure boot
+# - signs the fwupd capsule helper on every activation
 # - thermald and powertop autotuning
 # - bluetooth and fingerprint reader
+# - widened bluetooth LE supervision window for pointer devices
 # - disables USB autosuspend for HID devices
 {
   config,
