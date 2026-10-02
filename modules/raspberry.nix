@@ -145,8 +145,16 @@ in {
     avahi.enable = false;
     nfs.server.enable = false;
     samba.enable = false;
-    journald.extraConfig = "Storage=volatile";
   };
+
+  # Keep the journal across reboots so a cold-boot failure or a service that
+  # only misbehaves on startup still leaves a trail once someone looks. A
+  # volatile journal is kinder to the SD card but discards exactly the boot
+  # that needs explaining, and the cap bounds write volume instead.
+  services.journald.extraConfig = ''
+    Storage=persistent
+    SystemMaxUse=256M
+  '';
 
   # Disable Bluetooth to free ttyAMA0 for serial devices like GPS, 3D printers.
   # On RPi4 this restores PL011 UART to GPIO 14/15 and creates /dev/ttyAMA0.
