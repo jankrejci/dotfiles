@@ -94,6 +94,21 @@ in {
       nginx.domain = callbackDomain;
     };
 
+    # oauth2-proxy resolves the OIDC issuer at startup and exits when the
+    # discovery document does not answer. On a cold boot nginx is already
+    # serving while Dex behind it is not, so discovery takes a 502 and the
+    # process dies. Upstream retries every 100ms and gives up after five
+    # attempts, which spends the whole budget in half a second and leaves the
+    # unit dead for the rest of the boot, taking every SSO-protected service
+    # with it. Ordering after dex would not help, the issuer has to be
+    # answering through nginx rather than merely started, so the retry window
+    # has to outlast Dex coming up instead.
+    systemd.services.oauth2-proxy = {
+      startLimitIntervalSec = 300;
+      startLimitBurst = 30;
+      serviceConfig.RestartSec = 5;
+    };
+
     # Health check
     homelab.healthChecks = [
       {
