@@ -6,7 +6,7 @@
 #
 # Key inputs:
 # - nixpkgs stable: most packages
-# - nixpkgs-unstable/master: bleeding edge when needed
+# - nixpkgs-unstable: bleeding edge when needed
 # - nixos-raspberrypi: RPi kernel and config.txt generation
 # - agenix/agenix-rekey: secrets management with automatic rekeying
 # - deploy-rs: remote deployment
@@ -36,8 +36,6 @@
     # Immich is a critical service, pinned to decouple its updates from
     # routine flake lock bumps. Update manually after testing.
     nixpkgs-immich.url = "github:nixos/nixpkgs/624af665418d3c65d544145b4d34ad696439570e";
-    # Master branch for packages not yet in unstable
-    nixpkgs-master.url = "github:nixos/nixpkgs/master";
     # A collection of NixOS modules covering hardware quirks
     nixos-hardware.url = "github:NixOS/nixos-hardware";
     # Manage a user environment

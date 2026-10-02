@@ -72,7 +72,7 @@
           rustup
           unstable.espflash # flasher utility for Espressif SoCs
           unstable.trezor-suite
-          master.claude-code
+          unstable.claude-code
           codex
           rshell # remote shell for MicroPython
           tokei # code statistics tool
