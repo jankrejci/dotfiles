@@ -3,18 +3,11 @@
 # - formatter: alejandra for nix files
 # - packages: deployment scripts
 # - checks: validation tests
-# - overlays: unstable and master nixpkgs
+# - overlays: unstable and pinned immich nixpkgs
 {inputs, ...}: let
   # Nixpkgs overlays using final.system so they work for any architecture
   unstableOverlay = final: _prev: {
     unstable = import inputs.nixpkgs-unstable {
-      system = final.stdenv.hostPlatform.system;
-      config.allowUnfree = true;
-    };
-  };
-
-  masterOverlay = final: _prev: {
-    master = import inputs.nixpkgs-master {
       system = final.stdenv.hostPlatform.system;
       config.allowUnfree = true;
     };
@@ -28,7 +21,7 @@
   };
 in {
   flake.overlays = {
-    inherit unstableOverlay masterOverlay immichOverlay;
+    inherit unstableOverlay immichOverlay;
   };
 
   perSystem = {
@@ -43,7 +36,6 @@ in {
       config.allowUnfree = true;
       overlays = [
         unstableOverlay
-        masterOverlay
         immichOverlay
         # Tray icon color is baked in at build time, so it cannot follow the
         # runtime light/dark theme toggle. darkPalette's base04 dark-foreground
