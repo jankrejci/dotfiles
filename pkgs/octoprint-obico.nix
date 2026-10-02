@@ -8,6 +8,7 @@
   lib,
   fetchFromGitHub,
   buildPythonPackage,
+  setuptools,
   octoprint,
   backoff,
   sentry-sdk,
@@ -16,17 +17,19 @@
 }:
 buildPythonPackage rec {
   pname = "octoprint-plugin-obico";
-  version = "2.6.2";
-  format = "setuptools";
+  version = "2.7.0";
+  pyproject = true;
 
   src = fetchFromGitHub {
     owner = "TheSpaghettiDetective";
     repo = "OctoPrint-Obico";
     rev = version;
-    hash = "sha256-t3vDdIedNxHZ/b23Z5rAvze19T7h05tFIft9dfgoKD4=";
+    hash = "sha256-dkBnrnyw153+z3cj0/h5E/onZropi1K1vtI5lgp88rQ=";
   };
 
-  propagatedBuildInputs = [
+  build-system = [setuptools];
+
+  dependencies = [
     octoprint
     backoff
     sentry-sdk
