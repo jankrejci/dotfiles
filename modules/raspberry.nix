@@ -145,8 +145,25 @@ in {
     avahi.enable = false;
     nfs.server.enable = false;
     samba.enable = false;
-    journald.extraConfig = "Storage=volatile";
   };
+
+  # Keep the journal across reboots so a cold-boot failure or a service that
+  # only misbehaves on startup still leaves a trail once someone looks. A
+  # volatile journal is kinder to the SD card but discards exactly the boot
+  # that needs explaining. Storage is set through its option because
+  # restating it in extraConfig wrote the key twice into journald.conf.
+  services.journald.storage = "persistent";
+
+  # Persistence alone still loses the interesting part. journald flushes on
+  # its own five minute timer, so a board that locks up or browns out takes
+  # that whole window with it, which is how prusa died twice leaving nothing
+  # but coredumps. These boards fail that way often enough that the log tail
+  # is worth more than the spared SD card writes, and the size cap keeps the
+  # journal from growing without bound.
+  services.journald.extraConfig = ''
+    SystemMaxUse=256M
+    SyncIntervalSec=30s
+  '';
 
   # Disable Bluetooth to free ttyAMA0 for serial devices like GPS, 3D printers.
   # On RPi4 this restores PL011 UART to GPIO 14/15 and creates /dev/ttyAMA0.
