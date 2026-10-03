@@ -13,8 +13,21 @@
     nerd-fonts.dejavu-sans-mono
     git-absorb # absorb git hunks within existing commits
     tig # terminal-ui for git
+    unstable.fzf # 0.74+ for the nushell integration generated below
   ];
 
+  # fzf grew a nushell integration in 0.74, giving nushell the same ** trigger
+  # and ctrl-t, ctrl-r and alt-c bindings the bash and zsh scripts always had.
+  # Stable nixpkgs is still on 0.72, which has no --nushell, so the generator
+  # and the binary on PATH both come from unstable to keep them in step.
+  #
+  # It goes in the autoload directory rather than extraConfig because the
+  # completer wraps whichever external completer is already registered, and
+  # carapace registers itself from config.nu. Autoload runs after config.nu,
+  # so fzf handles the trigger and defers to carapace for everything else.
+  home.file.".config/nushell/autoload/fzf.nu".source = pkgs.runCommand "fzf.nu" {} ''
+    ${pkgs.unstable.fzf}/bin/fzf --nushell > $out
+  '';
   programs.nushell = {
     enable = true;
     package = pkgs.unstable.nushell;
