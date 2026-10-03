@@ -133,6 +133,20 @@
     tcpdump
   ];
 
+  # fzf shell integration, system wide rather than per user, because the admin
+  # account every host carries has no home-manager profile and is the login
+  # used for deployment and remote work. Gives bash the ** trigger for
+  # completion and the ctrl-t, ctrl-r and alt-c pickers.
+  programs.fzf = {
+    fuzzyCompletion = true;
+    keybindings = true;
+  };
+
+  # The full preset draws the border, info line and separator. Set here rather
+  # than in a shell profile so the completion helpers and the pickers that run
+  # outside an interactive shell pick it up too.
+  environment.variables.FZF_DEFAULT_OPTS = "--style=full";
+
   # Common directory for storing root secrets
   systemd.tmpfiles.rules = [
     "d /root/secrets 0700 root root -"
