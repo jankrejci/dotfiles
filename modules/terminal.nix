@@ -13,7 +13,25 @@
     nerd-fonts.dejavu-sans-mono
     git-absorb # absorb git hunks within existing commits
     tig # terminal-ui for git
+    unstable.fzf # 0.74+ for the nushell integration generated below
   ];
+
+  # fzf grew a nushell integration in 0.74, giving nushell the same ** trigger
+  # and ctrl-t, ctrl-r and alt-c bindings the bash and zsh scripts always had.
+  # Stable nixpkgs is still on 0.72, which has no --nushell, so the generator
+  # and the binary on PATH both come from unstable to keep them in step. That
+  # lockstep is a nushell concern only, because the generated config names the
+  # binary that emitted it. The system programs.fzf in common.nix stays on
+  # stable, and its bash integration scripts drive whichever fzf comes first on
+  # PATH, so the newer binary there is fine.
+  #
+  # It goes in the autoload directory rather than extraConfig because the
+  # completer wraps whichever external completer is already registered, and
+  # carapace registers itself from config.nu. Autoload runs after config.nu,
+  # so fzf handles the trigger and defers to carapace for everything else.
+  home.file.".config/nushell/autoload/fzf.nu".source = pkgs.runCommand "fzf.nu" {} ''
+    ${pkgs.unstable.fzf}/bin/fzf --nushell > $out
+  '';
 
   programs.nushell = {
     enable = true;
