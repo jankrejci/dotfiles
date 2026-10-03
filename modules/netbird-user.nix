@@ -36,6 +36,8 @@
         # Detect network changes after suspend/resume and trigger reconnection.
         # Defaults to false on Linux, causing stale keepalive timeouts.
         NetworkMonitor = true;
+        # Desktops are leaf peers and must never route traffic for others.
+        DisableServerRoutes = true;
       }
       // attrs);
   mkManagementUrl = host: {
