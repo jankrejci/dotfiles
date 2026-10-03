@@ -170,6 +170,11 @@
       # Since alacritty swaps its color scheme at runtime, starship colors
       # adapt automatically without needing its own theme toggle.
       palette = "ansi";
+
+      # $all puts $custom after every language module, far from $directory, so
+      # the prefix is spelled out to slot the parent path in front of it. $all
+      # still covers everything not named here and does not duplicate these.
+      format = "$username$hostname$localip$shlvl$singularity$kubernetes$nats\${custom.path_parent}$directory$all";
       palettes.ansi = {
         red = "red";
         orange = "bright-red";
@@ -180,13 +185,36 @@
         purple = "purple";
         foreground = "white";
         background = "black";
+        grey = "bright-black";
       };
       c = {
         symbol = " ";
       };
+      # Starship styles $path as one unit, so the leaf cannot be coloured apart
+      # from its parents by the directory module alone. The parent path is
+      # emitted by a custom module in grey and directory then renders only the
+      # final component in cyan, which is why truncation is pinned to one
+      # segment and repo truncation is off.
       directory = {
         truncation_length = 1;
-        read_only = " ";
+        truncate_to_repo = false;
+        read_only = " ";
+      };
+
+      custom.path_parent = {
+        description = "Parent directories of the working directory, dimmed";
+        when = true;
+        style = "grey";
+        format = "[$output]($style)";
+        shell = ["${pkgs.bash}/bin/bash" "--noprofile" "--norc"];
+        command = ''
+          p=''${PWD/#$HOME/\~}
+          [ "$p" = / ] && exit 0
+          d=''${p%/*}
+          [ "$d" = "$p" ] && exit 0
+          [ -z "$d" ] && exit 0
+          printf '%s/' "$d"
+        '';
       };
       git_branch = {
         symbol = " ";
