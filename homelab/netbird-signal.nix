@@ -93,6 +93,11 @@ in {
             grpc_pass grpcs://${managementWgIp};
             grpc_read_timeout 1d;
             grpc_send_timeout 1d;
+            # The Job RPC is a bidirectional stream where the client stays
+            # silent while waiting for work. nginx counts that silence against
+            # client_body_timeout, which defaults to 60s and tore the stream
+            # down on the minute. All three timeouts must be raised together.
+            client_body_timeout 1d;
             grpc_socket_keepalive on;
           '';
         };
@@ -103,6 +108,9 @@ in {
             grpc_pass grpc://localhost:${toString services.netbird.port.signal};
             grpc_read_timeout 1d;
             grpc_send_timeout 1d;
+            # Signal is also a long lived bidirectional stream, so it needs the
+            # same client_body_timeout treatment as the management Job RPC.
+            client_body_timeout 1d;
             grpc_socket_keepalive on;
           '';
         };
