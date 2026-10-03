@@ -61,10 +61,12 @@
       url = "github:oddlama/agenix-rekey";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # The nixos-26.05 branch tracks the same nixpkgs release as our main input.
-    # The previously pinned PR#131 branch was deleted after merge, which broke
-    # nix flake update entirely.
-    nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi/nixos-26.05";
+    # Upstream CI publishes the RPi kernel and the rest of the closure to its
+    # cachix on every push to the default branch, so following a release branch
+    # instead left every Pi host compiling the kernel from source. Pinning a
+    # topic branch is worse still, an earlier pin to PR#131 broke nix flake
+    # update outright once that branch was deleted after merge.
+    nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi";
   };
 
   outputs = inputs:
