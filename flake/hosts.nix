@@ -302,7 +302,6 @@
       system = "aarch64-linux";
       isRpi = true;
       extraModules = [
-        ../modules/raspberry.nix
         ../modules/netbird-homelab.nix
       ];
     };
@@ -321,7 +320,6 @@
         webcam.enable = true;
       };
       extraModules = [
-        ../modules/raspberry.nix
         ../modules/netbird-homelab.nix
       ];
     };
@@ -338,7 +336,6 @@
         };
       };
       extraModules = [
-        ../modules/raspberry.nix
         ../modules/netbird-homelab.nix
       ];
     };
@@ -431,6 +428,11 @@
         shared.baseModules
         ++ shared.mkModulesList {inherit hostName host;}
         ++ [
+          # Shared RPi base config belongs to the builder, not to each host's
+          # extraModules. Listing it per host made isRpi and the config that
+          # goes with it two facts to keep in step, and a new Pi host could
+          # take the builder while quietly missing the kernel and u-boot setup.
+          ../modules/raspberry.nix
           inputs.nixos-raspberrypi.lib.inject-overlays
           inputs.nixos-raspberrypi.nixosModules.nixpkgs-rpi
           ({...}: {
