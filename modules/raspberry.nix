@@ -61,6 +61,12 @@ in {
     trusted-public-keys = ["nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="];
   };
 
+  # Hydra only ever builds the all-locales variant, and the default here is the
+  # handful of locales the host config implies, which is a derivation nobody
+  # upstream has built. On aarch64 that meant compiling locale data on every
+  # nixpkgs bump, so take the cached variant and the locales that come with it.
+  i18n.supportedLocales = ["all"];
+
   # Use stock board-specific u-boot from nixpkgs binary cache.
   # Autoboot prompt is disabled via uboot.env, not u-boot recompilation.
   boot.loader.raspberry-pi.ubootPackage = ubootPkg;
