@@ -355,6 +355,11 @@ in {
           grpc_pass grpc://127.0.0.1:${toString cfg.port.management};
           grpc_read_timeout 1d;
           grpc_send_timeout 1d;
+          # The Job RPC is a bidirectional stream where the client stays silent
+          # while waiting for work. nginx counts that silence against
+          # client_body_timeout, which defaults to 60s and tore the stream down
+          # on the minute. All three timeouts have to be raised together.
+          client_body_timeout 1d;
           grpc_socket_keepalive on;
         '';
       };
