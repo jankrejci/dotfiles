@@ -104,7 +104,11 @@ in {
       capabilities = "cap_net_admin,cap_net_raw,cap_net_bind_service,cap_bpf+ep";
     };
 
-    # Systemd user service for the netbird daemon
+    # Systemd user service for the netbird daemon.
+    # Lazy connection, which establishes peer connections on demand instead of
+    # a full mesh, is driven by the Enable Lazy Connections toggle in the
+    # dashboard. A client env override is only needed to deviate from that
+    # account-wide policy, so none is set here.
     systemd.user.services.netbird-user = {
       description = "Netbird user-level VPN client";
       after = ["network.target"];
@@ -114,9 +118,6 @@ in {
         NB_INTERFACE_NAME = services.netbird.interface;
         NB_WIREGUARD_PORT = toString services.netbird.port.wireguard;
         NB_LOG_LEVEL = "info";
-        # Establish peer connections on demand instead of full mesh.
-        # Requires server-side lazy_connection_enabled in dashboard too.
-        NB_ENABLE_EXPERIMENTAL_LAZY_CONN = "true";
         # Store state and logs in user directory instead of /var/lib/netbird
         NB_STATE_DIR = "%h/${netbirdDir}";
         NB_LOG_FILE = "%h/${netbirdDir}/client.log";
