@@ -74,6 +74,28 @@ in {
     # Management and relay are forwarded to thinkcenter over WG tunnel.
     # Signal is served locally.
     services.nginx = {
+      # grpc_pass opens a fresh TCP connection for every RPC unless it targets
+      # a server group, because only a group carries a connection cache.
+      # Pooling idle connections avoids that churn.
+      #
+      # netbird-server.nix names its own upstream netbird-mgmt too. The two
+      # never meet, this module runs on the public proxy and that one on the
+      # management host, so the name stays the same on both sides of the tunnel.
+      upstreams = {
+        netbird-mgmt = {
+          servers."${managementWgIp}:${toString services.https.port}" = {};
+          extraConfig = ''
+            keepalive 16;
+          '';
+        };
+        netbird-signal = {
+          servers."127.0.0.1:${toString services.netbird.port.signal}" = {};
+          extraConfig = ''
+            keepalive 16;
+          '';
+        };
+      };
+
       virtualHosts.${apiDomain} = {
         listenAddresses = [cfg.ip];
         forceSSL = true;
@@ -90,7 +112,7 @@ in {
         # gRPC schemes. Use grpc_pass directive directly via extraConfig.
         locations."/management.ManagementService/" = {
           extraConfig = ''
-            grpc_pass grpcs://${managementWgIp};
+            grpc_pass grpcs://netbird-mgmt;
             grpc_read_timeout 1d;
             grpc_send_timeout 1d;
             # The Job RPC is a bidirectional stream where the client stays
@@ -105,7 +127,7 @@ in {
         # Signal gRPC served by local signal instance
         locations."/signalexchange.SignalExchange/" = {
           extraConfig = ''
-            grpc_pass grpc://localhost:${toString services.netbird.port.signal};
+            grpc_pass grpc://netbird-signal;
             grpc_read_timeout 1d;
             grpc_send_timeout 1d;
             # Signal is also a long lived bidirectional stream, so it needs the

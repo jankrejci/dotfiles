@@ -336,6 +336,17 @@ in {
 
     # Management API: accessible from vpsfree via WG backup tunnel.
     # vpsfree's nginx proxies public api.<domain> requests here.
+    #
+    # grpc_pass opens a fresh TCP connection for every RPC unless it targets a
+    # server group, because only a group carries a connection cache. Pooling
+    # idle connections avoids that churn.
+    services.nginx.upstreams.netbird-mgmt = {
+      servers."127.0.0.1:${toString cfg.port.management}" = {};
+      extraConfig = ''
+        keepalive 16;
+      '';
+    };
+
     services.nginx.virtualHosts.${apiDomain} = {
       listenAddresses = [wgIp];
       forceSSL = true;
@@ -352,7 +363,7 @@ in {
       # gRPC schemes. Use grpc_pass directive directly via extraConfig.
       locations."/management.ManagementService/" = {
         extraConfig = ''
-          grpc_pass grpc://127.0.0.1:${toString cfg.port.management};
+          grpc_pass grpc://netbird-mgmt;
           grpc_read_timeout 1d;
           grpc_send_timeout 1d;
           # The Job RPC is a bidirectional stream where the client stays silent
