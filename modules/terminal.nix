@@ -53,7 +53,6 @@
       le = "eza --git-ignore -l -sName --group-directories-first";
       lt = "le -T";
       g = "git";
-      cd = "z";
       sc = "systemctl";
       ssc = "sudo systemctl";
       jc = "journalctl";
