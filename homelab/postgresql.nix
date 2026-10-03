@@ -68,6 +68,48 @@ in {
         };
         timeout = 10;
       }
+      {
+        name = "PostgreSQL collation";
+        script = pkgs.writeShellApplication {
+          name = "health-check-postgresql-collation";
+          runtimeInputs = [
+            pkgs.util-linux
+            config.services.postgresql.package
+            pkgs.gnugrep
+          ];
+          # PostgreSQL records the collation version when a database is created
+          # and stops vouching for text index ordering once the OS moves past
+          # it, which is what a glibc bump does. Grepping the warning postgres
+          # already emits on connect is more reliable than comparing versions
+          # by hand, because pg_collation_actual_version returns null for the
+          # default collation. Recovery is a REINDEX followed by
+          # ALTER DATABASE <name> REFRESH COLLATION VERSION.
+          text = ''
+            databases=$(runuser -u postgres -- \
+              psql -At -c "select datname from pg_database where datallowconn") || {
+              echo "cannot list databases"
+              exit 1
+            }
+
+            mismatched=$(printf '%s\n' "$databases" | while read -r db; do
+              test -n "$db" || continue
+              # Capture the output instead of piping into grep -q, which exits
+              # on first match and SIGPIPEs psql under pipefail, dropping the
+              # database exactly when the warning fires.
+              connect_output=$(runuser -u postgres -- \
+                psql -d "$db" -c "select 1" 2>&1 || true)
+              grep -q "collation version mismatch" <<< "$connect_output" || continue
+              printf ' %s' "$db"
+            done)
+
+            test -z "$mismatched" || {
+              echo "collation version mismatch:$mismatched"
+              exit 1
+            }
+          '';
+        };
+        timeout = 30;
+      }
     ];
   };
 }
