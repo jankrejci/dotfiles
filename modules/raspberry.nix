@@ -171,6 +171,44 @@ in {
     SyncIntervalSec=30s
   '';
 
+  # Even a synced journal starts too late to explain a boot that dies before
+  # userspace. Nothing writes to the card until systemd mounts the root
+  # read-write, so a failure in the firmware, u-boot or the kernel leaves the
+  # filesystem untouched and there is nothing to read afterwards. prusa failed
+  # that way twice and left only a stale random-seed as evidence.
+  #
+  # Dumping the ring buffer at the end of the initrd turns the next failure
+  # into a verdict either way. A file means the kernel and initrd both ran and
+  # the log says what they were doing; no file means it died earlier than that.
+  # Nothing truncates the file on a failed boot, so it keeps the last boot that
+  # got this far. Grep it for "Linux version" to tell which kernel wrote it,
+  # since the clock has no battery to be right about and the mtime cannot be
+  # trusted to separate one boot from another.
+  # From the minimal build the initrd already carries for mount and umount,
+  # so this costs no extra closure. The full util-linux is not in the initrd.
+  boot.initrd.systemd.extraBin.dmesg = "${pkgs.util-linuxMinimal}/bin/dmesg";
+
+  boot.initrd.systemd.services.capture-boot-log = {
+    description = "Save the kernel ring buffer where a failed boot can be read";
+    wantedBy = ["initrd.target"];
+    # Needs the root filesystem mounted to write to, and has to beat the
+    # switch out of the initrd.
+    after = ["initrd-fs.target"];
+    before = ["initrd-switch-root.target"];
+    unitConfig.DefaultDependencies = false;
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    # Deliberately not swallowing errors. Nothing requires this unit, so a
+    # failure cannot hold up the boot, and letting it fail leaves it in
+    # systemctl --failed rather than quietly writing nothing.
+    script = ''
+      dmesg > /sysroot/var/log/initrd-dmesg.txt
+      sync
+    '';
+  };
+
   # Disable Bluetooth to free ttyAMA0 for serial devices like GPS, 3D printers.
   # On RPi4 this restores PL011 UART to GPIO 14/15 and creates /dev/ttyAMA0.
   hardware.bluetooth.enable = false;
