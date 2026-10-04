@@ -234,6 +234,8 @@
       };
       extraModules = [
         inputs.nixos-hardware.nixosModules.lenovo-thinkpad-e470
+        ../users/agent.nix
+
         ../users/jkr.nix
         ../users/paja.nix
         ../modules/netbird-user.nix
@@ -248,6 +250,8 @@
       device = "/dev/sda";
       swapSize = "8G";
       extraModules = [
+        ../users/agent.nix
+
         ../users/jkr.nix
         ../users/paja.nix
         ../modules/netbird-user.nix
@@ -266,6 +270,8 @@
       };
       extraModules = [
         inputs.nixos-hardware.nixosModules.framework-13-7040-amd
+        ../users/agent.nix
+
         ../users/jkr.nix
         ../users/paja.nix
         ../modules/netbird-user.nix
@@ -286,6 +292,8 @@
       };
       extraModules = [
         inputs.nixos-hardware.nixosModules.lenovo-thinkpad-t14-amd-gen1
+        ../users/agent.nix
+
         ../users/jkr.nix
         ../users/paja.nix
         ../modules/netbird-user.nix
