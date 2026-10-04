@@ -79,6 +79,14 @@ in {
       serviceConfig = {
         # OV5647 native 4:3 binned mode to avoid cropping.
         # Saturation=0 produces grayscale output for better IR night vision.
+        #
+        # The H264 path is off because the VideoCore encoder refuses to start
+        # on this board. bcm2835-codec reports "Failed enabling i/p port, ret
+        # -3" on every attempt, camera-streamer then tears the pipeline down,
+        # and libcamera aborts in that teardown, which is what crashed the
+        # service. The JPEG path starts fine on the same run, and OctoPrint
+        # only ever reads /webcam/stream and /webcam/snapshot, so nothing
+        # consumes H264 anyway.
         ExecStart = builtins.concatStringsSep " " [
           "${camera-streamer}/bin/camera-streamer"
           "--camera-type=libcamera"
@@ -86,6 +94,7 @@ in {
           "--camera-height=1440"
           "--camera-fps=5"
           "--camera-options=Saturation=0"
+          "--camera-video.disabled=1"
           "--http-port=${toString port}"
           "--http-listen=127.0.0.1"
         ];
