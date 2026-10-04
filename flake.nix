@@ -61,10 +61,17 @@
       url = "github:oddlama/agenix-rekey";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # The nixos-26.05 branch tracks the same nixpkgs release as our main input.
-    # The previously pinned PR#131 branch was deleted after merge, which broke
-    # nix flake update entirely.
-    nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi/nixos-26.05";
+    # Pinned to an exact rev, not to a branch name. A branch can move or vanish
+    # under the lock, which is what broke nix flake update outright when PR#131
+    # was pinned by branch name and then deleted after merge.
+    # RPi hosts take their whole nixpkgs from this input, so the rev also fixes
+    # which nixpkgs they evaluate against, whatever upstream's default branch
+    # points at today. Going further back than this rev breaks evaluation, since
+    # options the rest of the repo relies on did not exist yet.
+    # This rev carries kernel 6.18.52-unstable, which is what every Pi host now
+    # boots. The Pi Zero 2 W needs an sdhci quirk to read its own SD card, so
+    # move the rev with a Pi on hand to test, not as part of a lock bump.
+    nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi/bfaaa8fe3ef3cbeecc90cfaacc996ce5ebfe884a";
   };
 
   outputs = inputs:
