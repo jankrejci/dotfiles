@@ -11,9 +11,13 @@
 }: let
   cfg = config.homelab.webcam;
   # Take the package from unstable since stable does not carry it yet, but
-  # build it against this host's libcamera and ffmpeg. On RPi hosts the
-  # nixos-raspberrypi overlay replaces libcamera with the raspberrypi fork,
-  # which the camera stack requires.
+  # build it against this host's libcamera and ffmpeg so the streamer and the
+  # camera stack agree on one copy.
+  #
+  # This resolves to upstream libcamera from git.libcamera.org, not the
+  # raspberrypi fork. The vc4 pipeline handler the Pi camera needs is
+  # upstream, so the fork is not required here, and an earlier comment
+  # claiming the overlay substitutes it was wrong.
   camera-streamer = pkgs.unstable.camera-streamer.override {
     inherit (pkgs) libcamera ffmpeg;
   };
