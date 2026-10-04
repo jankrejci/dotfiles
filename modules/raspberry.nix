@@ -157,9 +157,19 @@ in {
   # only misbehaves on startup still leaves a trail once someone looks. A
   # volatile journal is kinder to the SD card but discards exactly the boot
   # that needs explaining, and the cap bounds write volume instead.
+  #
+  # Set through the option rather than extraConfig, which restated a key the
+  # default already carries and wrote Storage twice into journald.conf.
+  services.journald.storage = "persistent";
+
+  # Persistence alone still loses the interesting part. journald flushes on
+  # its own five minute timer, so a board that locks up or browns out takes
+  # that whole window with it, which is how prusa died twice leaving nothing
+  # but coredumps. These boards fail that way often enough that the log tail
+  # is worth more than the spared SD card writes.
   services.journald.extraConfig = ''
-    Storage=persistent
     SystemMaxUse=256M
+    SyncIntervalSec=30s
   '';
 
   # Disable Bluetooth to free ttyAMA0 for serial devices like GPS, 3D printers.
