@@ -63,8 +63,19 @@ in {
       description = "Camera Streamer";
       after = ["network.target"];
       wantedBy = ["multi-user.target"];
-      # Only start if a camera is actually connected
-      unitConfig.ConditionPathExists = "/dev/video0";
+      # Only start if a camera is actually connected.
+      #
+      # Give up after a handful of failures instead of retrying forever. When
+      # libcamera aborts on every start the retry loop is worse than the dead
+      # camera: each abort dumps a core the size of the process, which on the
+      # Zero 2 W is a third of total memory, and systemd-coredump then reads
+      # and compresses all of it every ten seconds. A failed unit is visible
+      # and cheap, where the loop took the whole host down twice.
+      unitConfig = {
+        ConditionPathExists = "/dev/video0";
+        StartLimitIntervalSec = "5min";
+        StartLimitBurst = 5;
+      };
       serviceConfig = {
         # OV5647 native 4:3 binned mode to avoid cropping.
         # Saturation=0 produces grayscale output for better IR night vision.
