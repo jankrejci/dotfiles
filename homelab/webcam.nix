@@ -63,8 +63,19 @@ in {
       description = "Camera Streamer";
       after = ["network.target"];
       wantedBy = ["multi-user.target"];
-      # Only start if a camera is actually connected
-      unitConfig.ConditionPathExists = "/dev/video0";
+      # Only start if a camera is actually connected.
+      #
+      # Give up after a handful of failures instead of retrying forever. A
+      # camera that aborts on every start is worse than a dead camera, because
+      # each abort writes a core several times the process peak, which
+      # systemd-coredump then reads back and compresses. On a board with
+      # little RAM to spare that loop took the whole host down twice,
+      # where a failed unit is visible and costs nothing.
+      unitConfig = {
+        ConditionPathExists = "/dev/video0";
+        StartLimitIntervalSec = "5min";
+        StartLimitBurst = 5;
+      };
       serviceConfig = {
         # OV5647 native 4:3 binned mode to avoid cropping.
         # Saturation=0 produces grayscale output for better IR night vision.
