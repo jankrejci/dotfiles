@@ -2,6 +2,7 @@
 #
 # - system account, so it stays off the GDM user list
 # - no home directory and no login shell
+# - dialout and plugdev for serial ports and debug probes
 # - jkr shares the agent group and may run commands as agent without a password
 {pkgs, ...}: {
   users.users = {
@@ -20,6 +21,12 @@
       # sshd rejects a nologin shell regardless of what keys it is offered,
       # which closes ssh without depending on the key server omitting the user.
       shell = "${pkgs.shadow}/bin/nologin";
+
+      # Hardware work runs under this account too. The udev uaccess tag only
+      # grants the active seat user, which a process entered through sudo is
+      # not, so serial ports and debug probes are reached through the group
+      # fallback in the same rules.
+      extraGroups = ["dialout" "plugdev"];
     };
   };
 
