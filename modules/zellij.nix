@@ -37,6 +37,8 @@
 
   # Generate a Zellij component-based theme file from a base16 palette.
   # Component format gives per-element control over frame and tab colors.
+  # Selected items use the base02 selection color because base00 is darker
+  # than the base01 unselected background, which hid the session manager cursor.
   mkZellijTheme = name: p: ''
     themes {
       ${name} {
@@ -50,7 +52,7 @@
         }
         text_selected {
           base "#${p.base06}"
-          background "#${p.base00}"
+          background "#${p.base02}"
           emphasis_0 "#${p.base09}"
           emphasis_1 "#${p.base0C}"
           emphasis_2 "#${p.base0B}"
@@ -90,7 +92,7 @@
         }
         table_cell_selected {
           base "#${p.base06}"
-          background "#${p.base00}"
+          background "#${p.base02}"
           emphasis_0 "#${p.base09}"
           emphasis_1 "#${p.base0C}"
           emphasis_2 "#${p.base0B}"
@@ -106,7 +108,7 @@
         }
         list_selected {
           base "#${p.base06}"
-          background "#${p.base00}"
+          background "#${p.base02}"
           emphasis_0 "#${p.base09}"
           emphasis_1 "#${p.base0C}"
           emphasis_2 "#${p.base0B}"
