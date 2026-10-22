@@ -167,6 +167,13 @@ in {
           # Faster connection establishment
           dhcp = "dhclient";
         };
+        # Without a check URI NetworkManager never enters the portal state,
+        # so nothing on the desktop knows a captive portal blocks the network.
+        connectivity = {
+          uri = "http://nmcheck.gnome.org/check_network_status.txt";
+          response = "NetworkManager is online";
+          interval = 300;
+        };
       };
     };
 
