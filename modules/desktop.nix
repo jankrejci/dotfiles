@@ -115,6 +115,19 @@ in {
     }
   ];
 
+  # Let GNOME set the timezone from geolocation when travelling. A declarative
+  # timezone makes /etc/localtime read-only, so timedated would reject changes.
+  # GNOME ships location services off, and gsd-datetime needs them to resolve.
+  time.timeZone = null;
+  programs.dconf.profiles.user.databases = [
+    {
+      settings = {
+        "org/gnome/system/location".enabled = true;
+        "org/gnome/desktop/datetime".automatic-timezone = true;
+      };
+    }
+  ];
+
   programs.appimage = {
     enable = true;
     binfmt = true;

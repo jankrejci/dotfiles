@@ -82,7 +82,7 @@
     "3.nixos.pool.ntp.org"
   ];
 
-  time.timeZone = "Europe/Prague";
+  time.timeZone = lib.mkDefault "Europe/Prague";
   console.keyMap = "us";
 
   # NixOS 26.05 changed the default system-bus implementation to dbus-broker.
