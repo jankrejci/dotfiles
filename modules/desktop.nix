@@ -277,6 +277,7 @@ in {
     unstable.helix
     unstable.nushell
     unstable.broot
+    unstable.tuicr # diff review TUI, not in stable yet
     alacritty
     home-manager
     starship
