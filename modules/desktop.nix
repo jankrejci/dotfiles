@@ -278,6 +278,7 @@ in {
     unstable.nushell
     unstable.broot
     unstable.tuicr # diff review TUI, not in stable yet
+    glab # GitLab CLI
     alacritty
     home-manager
     starship
