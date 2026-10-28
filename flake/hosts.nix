@@ -222,6 +222,24 @@
       ];
     };
 
+    # Standby twin of thinkcenter. It runs no homelab services yet; it is the
+    # first btrfs host so service state can later be replicated with btrfs send.
+    m75q = {
+      # Filled in from /etc/ssh/ssh_host_ed25519_key.pub after the first boot,
+      # since the host key only exists once nixos-anywhere has installed it.
+      hostPubkey = null;
+      # The system disk sits in the 2.5" SATA bay like on thinkcenter. Confirm
+      # with lsblk on the installer before running nixos-install.
+      device = "/dev/sda";
+      swapSize = "8G";
+      filesystem = "btrfs";
+      extraModules = [
+        ../modules/headless.nix
+        ../modules/netbird-homelab.nix
+        ../modules/disk-tpm-encryption.nix
+      ];
+    };
+
     ### Desktops ###
 
     e470 = {
