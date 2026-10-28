@@ -43,6 +43,12 @@
         description = "Root disk device path";
       };
 
+      filesystem = mkOption {
+        type = types.enum ["ext4" "btrfs"];
+        default = "ext4";
+        description = "Root filesystem created by the disko disk modules";
+      };
+
       swapSize = mkOption {
         type = types.str;
         default = "1G";
