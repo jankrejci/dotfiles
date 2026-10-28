@@ -53,14 +53,7 @@ in {
         lvs = {
           root = {
             size = "100%";
-            content = {
-              type = "filesystem";
-              format = "ext4";
-              mountpoint = "/";
-              mountOptions = [
-                "defaults"
-              ];
-            };
+            content = import ./disk-root-filesystem.nix {inherit config;};
           };
           swap = {
             size = config.homelab.host.swapSize;
