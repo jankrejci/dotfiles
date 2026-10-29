@@ -1,6 +1,7 @@
 # Raspberry Pi base configuration
 #
 # - cachix binary cache for nixos-raspberrypi
+# - firmware boots the kernel directly on btrfs hosts, u-boot on ext4 ones
 # - board-specific u-boot from cache with custom env
 # - uboot.env to disable autoboot prompt without recompiling u-boot
 # - disables bluetooth for serial UART access
@@ -13,6 +14,7 @@
   ...
 }: let
   envSize = "0x4000";
+  inherit (config.homelab.host) filesystem;
 
   ubootPkg =
     {
@@ -67,18 +69,29 @@ in {
   # nixpkgs bump, so take the cached variant and the locales that come with it.
   i18n.supportedLocales = ["all"];
 
+  # The cached u-boot reads only ext4 and FAT, so it cannot load the kernel
+  # from a btrfs root. A btrfs Pi lets the firmware load the kernel and initrd
+  # straight from the FAT partition instead, which nixos-raspberrypi supports
+  # as its generational "kernel" bootloader and uses by default on the Pi 5.
+  boot.loader.raspberry-pi.bootloader =
+    if filesystem == "btrfs"
+    then "kernel"
+    else "uboot";
+
   # Use stock board-specific u-boot from nixpkgs binary cache.
   # Autoboot prompt is disabled via uboot.env, not u-boot recompilation.
-  boot.loader.raspberry-pi.ubootPackage = ubootPkg;
+  boot.loader.raspberry-pi.ubootPackage = lib.mkIf (config.boot.loader.raspberry-pi.bootloader == "uboot") ubootPkg;
 
   # Install uboot.env to firmware partition on activation.
   # u-boot reads this from the FAT partition, replacing the compiled-in
   # default environment with our bootdelay=-2 version.
-  system.activationScripts.ubootEnv.text = ''
-    if [ -d /boot/firmware ]; then
-      install -m 644 ${ubootEnv} /boot/firmware/uboot.env
-    fi
-  '';
+  system.activationScripts.ubootEnv = lib.mkIf (config.boot.loader.raspberry-pi.bootloader == "uboot") {
+    text = ''
+      if [ -d /boot/firmware ]; then
+        install -m 644 ${ubootEnv} /boot/firmware/uboot.env
+      fi
+    '';
+  };
 
   # Skip boot menu on headless systems. Default 5 second timeout is unnecessary
   # when there's only one generation and no keyboard attached.
@@ -101,13 +114,13 @@ in {
   '';
 
   # Disable unnecessary filesystems.
-  # RPi only needs ext4 for root and vfat for boot firmware.
+  # RPi only needs its root filesystem and vfat for boot firmware.
   boot.supportedFilesystems = lib.mkForce {
-    ext4 = true;
+    ${filesystem} = true;
     vfat = true;
   };
   boot.initrd.supportedFilesystems = lib.mkForce {
-    ext4 = true;
+    ${filesystem} = true;
     vfat = true;
   };
 
@@ -115,9 +128,12 @@ in {
   networking.wireless.enable = lib.mkForce false;
 
   # Root filesystem on SD card
+  # The image builder creates a btrfs root without subvolumes, so btrfs only
+  # adds compression and skips access time writes to spare the SD card.
   fileSystems."/" = {
     device = "/dev/disk/by-label/NIXOS_SD";
-    fsType = "ext4";
+    fsType = filesystem;
+    options = lib.mkIf (filesystem == "btrfs") ["compress=zstd" "noatime"];
   };
 
   # Firmware partition for config.txt and bootloader. Uses automount to avoid
