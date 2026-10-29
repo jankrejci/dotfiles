@@ -2,7 +2,7 @@
 #
 # - deployment scripts: deploy-config, nixos-install
 # - image builders: build-sdcard, build-installer
-# - utilities: add-ssh-key, reenroll-netbird, reenroll-tpm
+# - utilities: add-ssh-key, reenroll-netbird, reenroll-tpm, wifi-push
 # - validation checks for nix flake check
 {
   pkgs,
@@ -25,6 +25,7 @@ in {
   reenroll-netbird = callScript ./reenroll-netbird.nix;
   reenroll-tpm = callScript ./reenroll-tpm.nix;
   inject-borg-passphrase = callScript ./inject-borg-passphrase.nix;
+  wifi-push = callScript ./wifi-push.nix;
 
   # Validate ssh-authorized-keys.conf is parseable
   validate-ssh-keys = pkgs.runCommand "validate-ssh-keys" {} ''
