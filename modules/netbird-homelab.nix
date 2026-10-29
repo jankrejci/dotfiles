@@ -57,18 +57,24 @@ in {
     systemd.services.netbird-homelab-enroll = {
       description = "Enroll Netbird homelab client with setup key";
       wantedBy = ["multi-user.target"];
-      after = ["netbird-homelab.service"];
+      after = ["netbird-homelab.service" "network-online.target"];
+      wants = ["network-online.target"];
       requires = ["netbird-homelab.service"];
 
-      # Only run if setup key file exists, meaning we need to enroll
-      unitConfig.ConditionPathExists = "${setupKeyFile}";
+      unitConfig = {
+        # Only run if setup key file exists, meaning we need to enroll
+        ConditionPathExists = "${setupKeyFile}";
+        # Keep retrying until the network is really up. A wifi link that
+        # associates late, on the installer or a Pi, used to exhaust a short
+        # retry budget at boot and leave the host off the mesh for good.
+        StartLimitIntervalSec = 0;
+      };
 
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
         Restart = "on-failure";
-        RestartSec = 5;
-        StartLimitBurst = 3;
+        RestartSec = 15;
         ExecStart = pkgs.writeShellScript "netbird-enroll" ''
           set -euo pipefail
 
