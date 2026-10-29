@@ -53,30 +53,21 @@ in {
     in
       installerSystem.config.system.build.isoImage);
 
-    # SD card images for Raspberry Pi
-    sdcard = lib.genAttrs (builtins.attrNames rpiHosts) (hostName: let
-      host = hosts.${hostName};
-    in
-      (lib.nixosSystem {
-        specialArgs = {
-          inherit inputs;
-          inherit (inputs) nixos-raspberrypi;
-        };
-        modules =
-          shared.baseModules
-          ++ shared.mkModulesList {inherit hostName host;}
-          ++ [
-            inputs.nixos-raspberrypi.lib.inject-overlays
-            inputs.nixos-raspberrypi.nixosModules.nixpkgs-rpi
-            inputs.nixos-raspberrypi.nixosModules.sd-image
-            ../modules/load-keys.nix
-            ../modules/load-wifi.nix
-            ({lib, ...}: {
-              nixpkgs.hostPlatform = "aarch64-linux";
-              sdImage.compressImage = false;
-              sdImage.firmwareSize = lib.mkForce 256;
-            })
-          ];
+    # SD card images for Raspberry Pi. The image extends the host's deployed
+    # configuration instead of assembling its own module list, which had
+    # drifted from mkRpiSystem and lost the unstable overlay, raspberry.nix
+    # and the nixpkgs pinned by nixos-raspberrypi.
+    sdcard = lib.genAttrs (builtins.attrNames rpiHosts) (hostName:
+      (inputs.self.nixosConfigurations.${hostName}.extendModules {
+        modules = [
+          inputs.nixos-raspberrypi.nixosModules.sd-image
+          ../modules/load-keys.nix
+          ../modules/load-wifi.nix
+          ({lib, ...}: {
+            sdImage.compressImage = false;
+            sdImage.firmwareSize = lib.mkForce 256;
+          })
+        ];
       })
       .config
       .system
