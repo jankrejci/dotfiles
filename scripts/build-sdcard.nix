@@ -13,6 +13,7 @@ pkgs.writeShellApplication {
     curl
     jq
     nix
+    util-linux
   ];
   text = ''
     # shellcheck source=/dev/null
@@ -38,6 +39,8 @@ pkgs.writeShellApplication {
 
       unset NETBIRD_SETUP_KEY WIFI_NETWORKS
       info "Secrets cleared, build complete"
+
+      print_flash_instructions "$(realpath "$image_name"/sd-image/*.img)" "SD card"
     }
 
     main "$@"

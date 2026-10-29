@@ -12,6 +12,7 @@ pkgs.writeShellApplication {
     curl
     jq
     nix
+    util-linux
   ];
   text = ''
     # shellcheck source=/dev/null
@@ -40,6 +41,8 @@ pkgs.writeShellApplication {
 
       unset NETBIRD_SETUP_KEY ISO_HOST_KEY
       info "Secrets securely deleted, build complete"
+
+      print_flash_instructions "$(realpath iso-image/iso/*.iso)" "USB stick"
     }
 
     main "$@"
