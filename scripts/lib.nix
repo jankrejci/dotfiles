@@ -89,12 +89,13 @@ pkgs.writeShellScript "script-lib" ''
     echo "$modules" | jq -e 'any(. | tostring; contains("netbird-homelab"))' >/dev/null
   }
 
-  # Get the Netbird management URL for a host from nix config.
+  # Get the Netbird management URL from nix config.
+  # The domain is global rather than per host, so it is read from the flake
+  # output. The installer has no nixosConfiguration to read it from.
   function get_management_url() {
-    local -r hostname="$1"
     local url
-    url=$(nix eval --raw ".#nixosConfigurations.$hostname.config.homelab.global.domain" 2>/dev/null) || {
-      error "Failed to evaluate domain for $hostname"
+    url=$(nix eval --raw ".#global.domain" 2>/dev/null) || {
+      error "Failed to evaluate the global domain"
       exit 1
     }
     echo "https://api.$url"
@@ -304,7 +305,10 @@ pkgs.writeShellScript "script-lib" ''
       exit 1
     }
 
-    local -r api_base=$(get_management_url "$hostname")
+    # Declared apart from the assignment so a failed lookup stops here instead
+    # of being masked by local and reaching the API with an empty URL.
+    local api_base
+    api_base=$(get_management_url) || exit 1
 
     require_netbird_token
 
