@@ -364,4 +364,33 @@ pkgs.writeShellScript "script-lib" ''
     info "Netbird setup key generated for $hostname"
     echo -n "$setup_key"
   }
+
+  # Print where a built image is and how to write it to removable media.
+  # nix build says nothing on success, and dd to the wrong device destroys
+  # it, so the candidate devices are listed for the user to pick from rather
+  # than written to by the script.
+  # Usage: print_flash_instructions <image path> <media name>
+  function print_flash_instructions() {
+    local -r image="$1"
+    local -r media="$2"
+
+    [ -f "$image" ] || {
+      error "Built image not found at $image"
+      exit 1
+    }
+
+    info "Image: $image"
+    echo >&2
+    echo "Removable and USB disks currently attached:" >&2
+    # The fields are read from the end of the line because MODEL can contain
+    # spaces. An empty TRAN only shifts the columns for a non-removable disk,
+    # which this display-only list can tolerate.
+    lsblk -d -o NAME,SIZE,MODEL,TRAN,RM | awk 'NR == 1 || $NF == 1 || $(NF-1) == "usb"' >&2
+    echo >&2
+    echo "Insert the $media, find its device in the list above, then write it with:" >&2
+    echo >&2
+    echo "  sudo dd if=$image of=/dev/sdX bs=4M status=progress conv=fsync" >&2
+    echo >&2
+    echo "Replace /dev/sdX with the whole device, not a partition like /dev/sdX1." >&2
+  }
 ''
