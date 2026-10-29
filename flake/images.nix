@@ -63,10 +63,44 @@ in {
           inputs.nixos-raspberrypi.nixosModules.sd-image
           ../modules/load-keys.nix
           ../modules/load-wifi.nix
-          ({lib, ...}: {
+          ({
+            config,
+            lib,
+            ...
+          }: {
             sdImage.compressImage = false;
-            sdImage.firmwareSize = lib.mkForce 256;
+            # Under U-Boot the kernels live on the root partition, so the
+            # firmware partition only holds the firmware itself. The kernel
+            # bootloader keeps every generation's kernel and initrd there, so
+            # it keeps the upstream size.
+            sdImage.firmwareSize =
+              lib.mkIf (config.boot.loader.raspberry-pi.bootloader == "uboot")
+              (lib.mkForce 256);
           })
+          ({
+            config,
+            lib,
+            pkgs,
+            modulesPath,
+            ...
+          }:
+            lib.mkIf (config.homelab.host.filesystem == "btrfs") {
+              sdImage.rootFilesystemCreator = modulesPath + "/../lib/make-btrfs-fs.nix";
+              # The sd-image module hardcodes ext4 for the root it builds.
+              fileSystems."/".fsType = lib.mkForce "btrfs";
+              # Upstream grows the root with resize2fs, which only handles
+              # ext4. The partition step is kept and the mounted filesystem is
+              # grown with btrfs instead.
+              systemd.services.expand-root-partition.script = lib.mkForce ''
+                rootPart=$(${lib.getExe' pkgs.util-linux "findmnt"} -nvo SOURCE /)
+                bootDevice=$(${lib.getExe' pkgs.util-linux "lsblk"} -npo PKNAME $rootPart)
+                partNum=$(${lib.getExe' pkgs.util-linux "lsblk"} -npo MAJ:MIN $rootPart | ${lib.getExe pkgs.gawk} -F: '{print $2}')
+
+                echo ",+," | ${lib.getExe' pkgs.util-linux "sfdisk"} -N$partNum --no-reread $bootDevice
+                ${lib.getExe' pkgs.parted "partprobe"}
+                ${lib.getExe' pkgs.btrfs-progs "btrfs"} filesystem resize max /
+              '';
+            })
         ];
       })
       .config
