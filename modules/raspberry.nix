@@ -144,15 +144,21 @@ in {
     options = ["noatime" "noauto" "x-systemd.automount" "x-systemd.idle-timeout=1min"];
   };
 
-  # Use file-based swap. Zram compresses RAM into itself which doesn't help
-  # when actually out of memory. File swap on SD is slower but provides real
-  # additional memory capacity.
+  # Use file-based swap so a real memory shortage slows the Pi down instead of
+  # killing the Pi's main service mid-job, which a RAM-only zram device would
+  # do.
   swapDevices = [
     {
       device = "/swapfile";
       size = 1024;
     }
   ];
+
+  # zswap keeps recently swapped pages compressed in RAM and writes only the
+  # oldest ones to the swapfile, which spares the SD card most swap writes.
+  # The rpi kernel builds zswap in with zstd as its default compressor but
+  # leaves it disabled, so enabling it is the only change needed.
+  boot.kernelParams = ["zswap.enabled=1"];
 
   # Fix tmpfiles config that references non-existent 'sudo' group.
   # Use 'wheel' instead for debug filesystem access.
