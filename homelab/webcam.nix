@@ -10,13 +10,13 @@
   ...
 }: let
   cfg = config.homelab.webcam;
-  # Take the package from unstable since stable does not carry it yet, but
-  # build it against this host's libcamera and ffmpeg. On RPi hosts the
-  # nixos-raspberrypi overlay replaces libcamera with the raspberrypi fork,
-  # which the camera stack requires.
-  camera-streamer = pkgs.unstable.camera-streamer.override {
-    inherit (pkgs) libcamera ffmpeg;
-  };
+  # Taken from unstable since stable does not carry it yet, and used as
+  # unstable builds it so the whole camera stack comes from cache.nixos.org.
+  # Swapping in the host libcamera and ffmpeg forced a local build of the
+  # raspberrypi ffmpeg fork under emulation. Nothing else on the host uses
+  # either library, and the vc4 pipeline handler the Pi camera needs is in
+  # upstream libcamera.
+  camera-streamer = pkgs.unstable.camera-streamer;
   port = 8080;
 in {
   options.homelab.webcam = {
@@ -35,14 +35,6 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-    # Use RPi-optimized headless ffmpeg from nixos-raspberrypi cache.
-    # camera-streamer and libcamera depend on ffmpeg.
-    nixpkgs.overlays = [
-      (final: prev: {
-        ffmpeg = final.rpi.ffmpeg-headless;
-      })
-    ];
-
     # Expose nginx location config for other modules
     homelab.webcam.nginxLocation = {
       proxyPass = "http://127.0.0.1:${toString port}/";
@@ -52,9 +44,11 @@ in {
       '';
     };
 
-    # Camera tools for testing and streaming
+    # Camera tools for testing and streaming. The libcamera tools come from
+    # the same set as camera-streamer, so a test with `cam` exercises the
+    # library version the streamer runs.
     environment.systemPackages = [
-      pkgs.libcamera
+      pkgs.unstable.libcamera
       camera-streamer
     ];
 
