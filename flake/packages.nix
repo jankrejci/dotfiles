@@ -72,6 +72,7 @@ in {
       else {};
 
     # agenix-rekey configuration
-    agenix-rekey.nixosConfigurations = inputs.self.nixosConfigurations;
+    agenix-rekey.nixosConfigurations =
+      inputs.self.nixosConfigurations // {iso = inputs.self.installerSystem;};
   };
 }
