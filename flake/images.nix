@@ -32,20 +32,34 @@
             ../modules/netbird-homelab.nix
             ../modules/load-keys.nix
             ../modules/iso-wifi.nix
-            ({...}: let
+            ({
+              config,
+              lib,
+              ...
+            }: let
               # ISO_HOST_KEY is set by build-installer script after decrypting
               # secrets/iso-host-key.age with the master key
               isoHostKey = builtins.getEnv "ISO_HOST_KEY";
+              hostKey = config.environment.etc."ssh/ssh_host_ed25519_key";
             in {
               isoImage.makeEfiBootable = true;
               isoImage.makeUsbBootable = true;
               isoImage.compressImage = false;
 
-              # Embed host key for agenix secret decryption at runtime
+              # Embed host key for agenix secret decryption at runtime. The
+              # shell command substitution that reads the key drops its final
+              # newline, and OpenSSH rejects a private key without one, so it
+              # is put back here.
               environment.etc."ssh/ssh_host_ed25519_key" = {
-                text = isoHostKey;
+                text = isoHostKey + "\n";
                 mode = "0600";
               };
+
+              # agenix decrypts during initrd activation, before /etc is
+              # populated, so on the installer the key under /etc does not
+              # exist yet. The key's store copy does, and it is in the store
+              # either way since the ISO is built from it.
+              age.identityPaths = lib.mkForce ["${hostKey.source}"];
             })
           ];
         }
