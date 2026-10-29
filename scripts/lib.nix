@@ -232,17 +232,12 @@ pkgs.writeShellScript "script-lib" ''
     export NETBIRD_API_TOKEN
   }
 
-  # Load WiFi credentials from agenix secret
-  # Usage: load_wifi_credentials <ssid>
-  # Expects secrets/wifi-credentials.age to contain JSON: {"SSID": "password", ...}
-  function load_wifi_credentials() {
-    local -r ssid="$1"
-
-    [ -n "$ssid" ] || {
-      error "load_wifi_credentials: SSID required"
-      exit 1
-    }
-
+  # Load every stored WiFi network from agenix secret
+  # Usage: load_wifi_networks
+  # Expects secrets/wifi-credentials.age to contain a JSON object of
+  # SSID to passphrase. Exports the whole decrypted object verbatim as
+  # WIFI_NETWORKS so no caller here ever handles a passphrase on its own.
+  function load_wifi_networks() {
     local -r master_key="$HOME/.age/master.txt"
     local -r secret_file="secrets/wifi-credentials.age"
 
@@ -256,32 +251,34 @@ pkgs.writeShellScript "script-lib" ''
       exit 1
     }
 
-    local credentials
-    local age_output
-    age_output=$(age -d -i "$master_key" "$secret_file" 2>&1) || {
+    local networks
+    networks=$(age -d -i "$master_key" "$secret_file" 2>&1) || {
       error "Failed to decrypt WiFi credentials from $secret_file"
-      error "$age_output"
-      exit 1
-    }
-    credentials="$age_output"
-
-    local password
-    password=$(echo "$credentials" | jq -r --arg ssid "$ssid" '.[$ssid] // empty') || {
-      error "Failed to parse WiFi credentials JSON"
+      error "$networks"
+      error "The file must be encrypted to the master key at $master_key"
       exit 1
     }
 
-    [ -n "$password" ] || {
-      error "No credentials found for SSID '$ssid'"
-      info "Available SSIDs:"
-      echo "$credentials" | jq -r 'keys[]' | sed 's/^/  - /' >&2
+    echo "$networks" | jq -e 'type == "object"' >/dev/null 2>&1 || {
+      error "WiFi credentials in $secret_file must be a JSON object of SSID to passphrase"
       exit 1
     }
 
-    WIFI_SSID="$ssid"
-    WIFI_PASSWORD="$password"
-    export WIFI_SSID WIFI_PASSWORD
-    info "WiFi credentials loaded for $ssid"
+    # This check exists to fail early with a readable error before the build.
+    # modules/iwd-profile.nix holds the rule the build enforces, so both must
+    # change together.
+    local invalid_ssids
+    invalid_ssids=$(echo "$networks" | jq -r 'keys[] | select(test("^[A-Za-z0-9_-]+$") | not)')
+    [ -z "$invalid_ssids" ] || {
+      error "WiFi credentials have SSID(s) iwd cannot store as a plain filename:"
+      echo "$invalid_ssids" | sed 's/^/  - /' >&2
+      error "iwd only accepts [A-Za-z0-9_-] verbatim; rename the network"
+      exit 1
+    }
+
+    WIFI_NETWORKS="$networks"
+    export WIFI_NETWORKS
+    info "WiFi networks loaded: $(echo "$networks" | jq -r 'keys | join(", ")')"
   }
 
   # Generate Netbird setup key via API
