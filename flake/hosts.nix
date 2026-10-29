@@ -380,7 +380,7 @@
     # is compromised, rotate it and rebuild the ISO with the new hash.
     iso = {
       kind = "installer";
-      hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGm0+8CuZ8AV3EsZ5I4T4kPeQGBG7Z7pcEg4fhnVr9ri";
+      hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKPBt7tV9FZ7vuwPPRgsfv4J/o2RbT1CXZ+n5Su3A0N7";
     };
   };
 
