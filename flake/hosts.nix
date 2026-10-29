@@ -327,6 +327,7 @@
       hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAbaTQOMDT3HYGiFVucqr4r1VbrwtMgltvnOeUNYbHMh";
       system = "aarch64-linux";
       isRpi = true;
+      filesystem = "btrfs";
       extraModules = [
         ../modules/netbird-homelab.nix
       ];
@@ -336,6 +337,7 @@
       hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHyOwwhHylbrE+HztW0BaCOHypV73ESOIUgUJl/K/OvF";
       system = "aarch64-linux";
       isRpi = true;
+      filesystem = "btrfs";
       homelab = {
         acme.enable = true;
         octoprint = {
@@ -354,6 +356,7 @@
       hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOBKrxal9ON2M+bbKwBrDNQLi8jgadibM7WN51fYO6Ng";
       system = "aarch64-linux";
       isRpi = true;
+      filesystem = "btrfs";
       homelab = {
         lorawan-gateway = {
           enable = true;
