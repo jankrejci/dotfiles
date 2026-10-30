@@ -6,6 +6,7 @@
 # - bluetooth and fingerprint reader
 # - widened bluetooth LE supervision window for pointer devices
 # - disables USB autosuspend for HID devices
+# - loose reverse path filtering so wired and wifi work side by side
 {
   config,
   pkgs,
@@ -140,4 +141,11 @@ in {
     # Re-assert power save off on interface add and every state change.
     ACTION=="add|change", SUBSYSTEM=="net", KERNEL=="wlan*", RUN+="${pkgs.iw}/bin/iw dev $name set power_save off"
   '';
+
+  # A docked laptop sits on wired and wifi in the same subnet at once. Strict
+  # reverse path filtering drops every reply arriving on the link that is not
+  # the preferred route, so NetworkManager rates that link limited, penalizes
+  # its metric and never fails over to it. Loose mode still drops sources with
+  # no route back at all.
+  networking.firewall.checkReversePath = "loose";
 }
