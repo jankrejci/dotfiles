@@ -342,12 +342,6 @@
       isRpi = true;
       filesystem = "btrfs";
       homelab = {
-        acme.enable = true;
-        octoprint = {
-          enable = true;
-          ip = "192.168.93.1";
-          port = 5000;
-        };
         serial-bridge.enable = true;
         webcam.enable = true;
       };

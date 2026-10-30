@@ -37,7 +37,6 @@
     ./memos.nix
     ./network-monitor.nix
     ./ntfy.nix
-    ./octoprint.nix
     ./printer.nix
     ./prometheus.nix
     ./serial-bridge.nix

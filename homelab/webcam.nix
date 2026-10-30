@@ -2,7 +2,6 @@
 #
 # - hardware H.264 over WebRTC and MJPEG on port 8080
 # - libcamera backend for RPi camera
-# - used by OctoPrint for print monitoring
 {
   config,
   lib,
@@ -25,25 +24,9 @@ in {
       default = false;
       description = "Enable webcam streaming via camera-streamer";
     };
-
-    # Nginx location config for other modules to include in their vhosts
-    nginxLocation = lib.mkOption {
-      type = lib.types.attrs;
-      readOnly = true;
-      description = "Nginx location config for proxying to camera-streamer";
-    };
   };
 
   config = lib.mkIf cfg.enable {
-    # Expose nginx location config for other modules
-    homelab.webcam.nginxLocation = {
-      proxyPass = "http://127.0.0.1:${toString port}/";
-      extraConfig = ''
-        proxy_buffering off;
-        proxy_request_buffering off;
-      '';
-    };
-
     # Camera tools for testing and streaming. The libcamera tools come from
     # the same set as camera-streamer, so a test with `cam` exercises the
     # library version the streamer runs.
@@ -119,21 +102,6 @@ in {
         # Run as root to access camera devices
         User = "root";
         Group = "video";
-      };
-    };
-
-    # Localhost proxy for services that need webcam via relative URLs.
-    # Used by Obico plugin to access webcam at http://localhost/webcam/
-    services.nginx = {
-      enable = true;
-      virtualHosts."localhost" = {
-        listen = [
-          {
-            addr = "127.0.0.1";
-            port = 80;
-          }
-        ];
-        locations."/webcam/" = config.homelab.webcam.nginxLocation;
       };
     };
   };
