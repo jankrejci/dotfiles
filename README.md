@@ -100,6 +100,7 @@ health checks, and backup jobs.
 | immich-public-proxy | Public share links via tunnel proxy |
 | jellyfin | Media server with Dex SSO |
 | memos | Note-taking app |
+| prusa-obico | Prusa MK3S printer bridge to Obico |
 | serial-bridge | Serial device exposed to the VPN via ser2net |
 | webcam | Camera streaming via camera-streamer |
 | printer | Brother DCP-T730DW via CUPS |

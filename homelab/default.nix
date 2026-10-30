@@ -39,6 +39,7 @@
     ./ntfy.nix
     ./printer.nix
     ./prometheus.nix
+    ./prusa-obico.nix
     ./serial-bridge.nix
     ./sso-proxy.nix
     ./tunnel.nix

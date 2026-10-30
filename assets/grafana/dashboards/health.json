@@ -122,7 +122,7 @@
       "title": "", "type": "state-timeline"
     },
 
-    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 9}, "id": 90, "panels": [], "title": "Octoprint", "type": "row"},
+    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 9}, "id": 90, "panels": [], "title": "Prusa Obico", "type": "row"},
     {
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "fieldConfig": {
@@ -137,8 +137,8 @@
       },
       "gridPos": {"h": 2, "w": 3, "x": 0, "y": 10}, "id": 14,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "up{job=\"octoprint\"}", "refId": "A"}],
-      "title": "Octoprint", "type": "stat"
+      "targets": [{"expr": "up{job=\"prusa-obico\"}", "refId": "A"}],
+      "title": "Prusa Obico", "type": "stat"
     },
     {
       "datasource": {"type": "prometheus", "uid": "prometheus"},
@@ -156,7 +156,7 @@
       },
       "gridPos": {"h": 2, "w": 21, "x": 3, "y": 10}, "id": 91,
       "options": {"showValue": "never", "alignValue": "center", "mergeValues": true, "rowHeight": 0.9, "legend": {"showLegend": false}},
-      "targets": [{"expr": "up{job=\"octoprint\"}", "legendFormat": " ", "refId": "A"}],
+      "targets": [{"expr": "up{job=\"prusa-obico\"}", "legendFormat": " ", "refId": "A"}],
       "title": "", "type": "state-timeline"
     },
 

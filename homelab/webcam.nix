@@ -87,9 +87,9 @@ in {
         # mode and as a white frame in this one. Daylight frames are clean, so
         # the fix is on the LED power side, not here.
         #
-        # Snapshots and MJPEG from the JPEG encoder are broken; the WebRTC
-        # page at /webrtc is the working view until snapshots come from the
-        # H.264 stream instead.
+        # Snapshots and MJPEG from the JPEG encoder are broken. The WebRTC page
+        # at /webrtc is the view for people, and prusa-obico cuts the Obico
+        # snapshots from the H.264 stream at /video.mkv instead.
         # Saturation=0 produces grayscale output for better IR night vision.
         # AeFlickerPeriod matches exposure to 50Hz mains lighting.
         ExecStart = builtins.concatStringsSep " " [
