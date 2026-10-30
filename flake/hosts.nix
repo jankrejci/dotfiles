@@ -336,7 +336,7 @@
     };
 
     prusa = {
-      hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHyOwwhHylbrE+HztW0BaCOHypV73ESOIUgUJl/K/OvF";
+      hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAtdFFl+RnqKnA27BFGrs479mcWcp9+yVxRUX4YUY6Mw";
       system = "aarch64-linux";
       isRpi = true;
       filesystem = "btrfs";
