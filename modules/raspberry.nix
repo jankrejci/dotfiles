@@ -54,6 +54,25 @@ in {
   # It adds recovery tools like w3m, testdisk, ddrescue that aren't needed on deployed RPi.
   disabledModules = ["${modulesPath}/profiles/base.nix"];
 
+  # nixos-raspberrypi puts the kernel console on serial0, the GPIO UART that
+  # disabling bluetooth below frees for serial devices. The kernel log and the
+  # login prompt it spawns end up in the printer or GPS on the other end, and
+  # the getty holds the port so nothing else can use it. The module
+  # modules/raspberrypi.nix of nixos-raspberrypi hardcodes
+  # console=serial0,115200n8 with no option to drop it, and the list has no
+  # priority to override per entry, so the entry is filtered out of the final
+  # value instead. The filter matches any serial0 console so a changed baud
+  # rate upstream cannot slip past it. The redeclaration fails evaluation
+  # loudly if upstream ever declares its own apply, so it cannot break
+  # silently. HDMI keeps tty1.
+  imports = [
+    {
+      options.boot.kernelParams = lib.mkOption {
+        apply = lib.filter (p: !lib.hasPrefix "console=serial0" p);
+      };
+    }
+  ];
+
   # Board-specific base module (raspberry-pi-02, raspberry-pi-4, etc.)
   # is imported in each host's config file (hosts/prusa.nix, hosts/rpi4.nix)
 
