@@ -225,7 +225,10 @@ in {
     # Deliberately not swallowing errors. Nothing requires this unit, so a
     # failure cannot hold up the boot, and letting it fail leaves it in
     # systemctl --failed rather than quietly writing nothing.
+    # A freshly flashed root has no /var/log until the first boot creates it,
+    # which is exactly the boot most worth capturing.
     script = ''
+      mkdir -p /sysroot/var/log
       dmesg > /sysroot/var/log/initrd-dmesg.txt
       sync
     '';
