@@ -246,11 +246,21 @@ in {
   # per RPi docs, but bcm2711 firmware mishandles this. bcm2837 works fine.
   # Workaround: disable dt-overlays mechanism and use extra-config directly.
   # See: vclog shows overlay not loaded despite correct config.txt syntax.
+  #
+  # The KMS display driver that nixos-raspberrypi enables by default is left
+  # out entirely. Every Pi here is headless, and the overlay grows the CMA pool
+  # to 256MB, which its README says needs a 1GB board. On the 512MB Zero 2 W
+  # that hung the firmware-loaded kernel before it mounted root, while the
+  # firmware framebuffer still gives a console on HDMI without it. A camera
+  # needs the CMA pool but not the display driver; a host whose camera
+  # outgrows the 64MB default can size it with the standalone cma overlay. The
+  # disable_fw_kms_setup option only tunes the handover to that driver, so it
+  # goes too, matching the config that was booted to confirm this.
   hardware.raspberry-pi.config.all.dt-overlays.vc4-kms-v3d.enable = lib.mkForce false;
+  hardware.raspberry-pi.config.all.options.disable_fw_kms_setup.enable = lib.mkForce false;
   hardware.raspberry-pi.extra-config = ''
     [all]
     dtoverlay=disable-bt
-    dtoverlay=vc4-kms-v3d
     dtparam=i2c_arm=on
   '';
 
