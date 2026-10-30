@@ -1,9 +1,9 @@
 # The iwd profile for one network, as the file iwd reads from
-# /var/lib/iwd. Both writers of that file take the format from here:
-# modules/load-wifi.nix writes it into the SD card image at build time, and
-# `nix run .#wifi-push` sends it to a running host. A format spelled out in
-# each of them drifts, and the drift is invisible until a profile iwd
-# rejects reaches the card.
+# /var/lib/iwd. Every writer of that file takes the format from here:
+# modules/load-wifi.nix writes it into SD card images, modules/iso-wifi.nix
+# into the installer, and `nix run .#wifi-push` sends it to a running host. A
+# format spelled out in each of them drifts, and the drift is invisible until
+# a profile iwd rejects reaches the card.
 let
   # iwd only accepts an SSID verbatim as a filename when it is made up of
   # these characters; any other SSID needs an "=" prefix and the SSID

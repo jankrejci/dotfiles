@@ -26,6 +26,8 @@ pkgs.writeShellApplication {
       NETBIRD_SETUP_KEY=$(generate_netbird_key "$hostname" --reusable)
       export NETBIRD_SETUP_KEY
 
+      load_wifi_networks
+
       # Decrypt ISO host key for agenix secret decryption
       ISO_HOST_KEY=$(age -d -i "$master_key" "$iso_key_encrypted")
       export ISO_HOST_KEY
@@ -39,7 +41,7 @@ pkgs.writeShellApplication {
 
       info "ISO image built successfully: iso-image"
 
-      unset NETBIRD_SETUP_KEY ISO_HOST_KEY
+      unset NETBIRD_SETUP_KEY ISO_HOST_KEY WIFI_NETWORKS
       info "Secrets securely deleted, build complete"
 
       print_flash_instructions "$(realpath iso-image/iso/*.iso)" "USB stick"
