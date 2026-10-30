@@ -241,6 +241,19 @@ in {
   hardware.bluetooth.enable = false;
   boot.blacklistedKernelModules = ["hci_uart"];
 
+  # nixos-raspberrypi puts the kernel console on serial0, which is that same
+  # UART. The kernel log and the login prompt it spawns end up in the printer
+  # or GPS on the other end, and the getty holds the port so nothing else can
+  # use it. The upstream list has no priority to override per entry, so the
+  # entry is filtered out of the final value instead. HDMI keeps tty1.
+  imports = [
+    {
+      options.boot.kernelParams = lib.mkOption {
+        apply = lib.filter (p: p != "console=serial0,115200n8");
+      };
+    }
+  ];
+
   # BCM2711 firmware bug: empty dtoverlay= lines cause preceding overlay to be
   # skipped. nixos-raspberrypi's dt-overlays adds dtoverlay= after each overlay
   # per RPi docs, but bcm2711 firmware mishandles this. bcm2837 works fine.
