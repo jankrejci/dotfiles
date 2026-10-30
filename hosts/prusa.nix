@@ -1,9 +1,9 @@
-# Raspberry Pi Zero 2 W with OctoPrint and camera
+# Raspberry Pi Zero 2 W bridging the printer serial port and camera
 #
 # - WiFi stability fixes for BCM43430
 # - WiFi ingress bandwidth limit to prevent crashes during deploys
 # - over_voltage for SDIO stability
-# - OctoPrint serial port and camera access
+# - camera access for testing
 {
   config,
   inputs,
@@ -25,7 +25,7 @@
     }
   ];
 
-  # RPi Zero 2 W with OctoPrint and camera streaming.
+  # RPi Zero 2 W with the printer serial bridge and camera streaming.
   # Note: deploy-rs may fail due to nix daemon crashes on this device.
   # Manual workaround: nix copy + ssh activate directly.
   imports = [inputs.nixos-raspberrypi.nixosModules.raspberry-pi-02.base];
@@ -65,9 +65,6 @@
       ExecStop = "${pkgs.iproute2}/bin/tc qdisc del dev %i handle ffff: ingress";
     };
   };
-
-  # Allow OctoPrint to access serial port ttyAMA0, vcgencmd for throttling, and camera
-  users.users.octoprint.extraGroups = ["dialout" "video"];
 
   # Allow admin to access camera devices for testing
   users.users.admin.extraGroups = ["video"];
