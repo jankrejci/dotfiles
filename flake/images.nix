@@ -100,11 +100,10 @@ in {
             config,
             lib,
             pkgs,
-            modulesPath,
             ...
           }:
             lib.mkIf (config.homelab.host.filesystem == "btrfs") {
-              sdImage.rootFilesystemCreator = modulesPath + "/../lib/make-btrfs-fs.nix";
+              sdImage.rootFilesystemCreator = ./make-btrfs-fs.nix;
               # The sd-image module hardcodes ext4 for the root it builds.
               fileSystems."/".fsType = lib.mkForce "btrfs";
               # Upstream grows the root with resize2fs, which only handles
