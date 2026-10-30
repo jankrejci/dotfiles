@@ -1,6 +1,6 @@
 # Webcam streaming via camera-streamer
 #
-# - MJPEG streaming on port 8080
+# - hardware H.264 over WebRTC and MJPEG on port 8080
 # - libcamera backend for RPi camera
 # - used by OctoPrint for print monitoring
 {
@@ -71,29 +71,51 @@ in {
         StartLimitBurst = 5;
       };
       serviceConfig = {
-        # OV5647 native 4:3 binned mode to avoid cropping.
-        # Saturation=0 produces grayscale output for better IR night vision.
+        # The OV5647 binned 1296x972 mode keeps the full 4:3 field of view at
+        # 25 fps and stays under the 1080p limit of the VideoCore H.264
+        # encoder, which failed with "Failed enabling i/p port, ret -3" on
+        # larger frames. The full-sensor mode only reaches 15 fps and the
+        # 1920x1080 mode is a center crop.
         #
-        # The H264 path is off because the VideoCore encoder refuses to start
-        # on this board. bcm2835-codec reports "Failed enabling i/p port, ret
-        # -3" on every attempt, camera-streamer then tears the pipeline down,
-        # and libcamera aborts in that teardown, which is what crashed the
-        # service. The JPEG path starts fine on the same run, and OctoPrint
-        # only ever reads /webcam/stream and /webcam/snapshot, so nothing
-        # consumes H264 anyway.
+        # The ISP scales the H.264 output to 1024x768, which keeps that full
+        # view while lowering the bitrate the Obico stream relays. The
+        # rescaler aligns its output, so 960x720 came out as 992x736 and
+        # stretched the picture, while 1024x768 is exact 4:3.
+        #
+        # The infrared LED boards on the Waveshare RPi Camera (F) disturb the
+        # sensor while they are lit, which shows as rows of stripes in every
+        # mode and as a white frame in this one. Daylight frames are clean, so
+        # the fix is on the LED power side, not here.
+        #
+        # Snapshots and MJPEG from the JPEG encoder are broken; the WebRTC
+        # page at /webrtc is the working view until snapshots come from the
+        # H.264 stream instead.
+        # Saturation=0 produces grayscale output for better IR night vision.
+        # AeFlickerPeriod matches exposure to 50Hz mains lighting.
         ExecStart = builtins.concatStringsSep " " [
           "${camera-streamer}/bin/camera-streamer"
           "--camera-type=libcamera"
-          "--camera-width=1920"
-          "--camera-height=1440"
-          "--camera-fps=5"
+          "--camera-width=1296"
+          "--camera-height=972"
+          "--camera-fps=25"
+          "--camera-video.height=768"
+          "--camera-video.options=video_bitrate=2000000"
           "--camera-options=Saturation=0"
-          "--camera-video.disabled=1"
+          "--camera-options=AeFlickerMode=1"
+          "--camera-options=AeFlickerPeriod=10000"
           "--http-port=${toString port}"
           "--http-listen=127.0.0.1"
         ];
+        # The camera has no infrared filter, so the default ov5647 tuning
+        # misjudges its colour and exposure. The NoIR tuning ships with the
+        # same libcamera camera-streamer is built against.
+        Environment = "LIBCAMERA_RPI_TUNING_FILE=${pkgs.unstable.libcamera}/share/libcamera/ipa/rpi/vc4/ov5647_noir.json";
         Restart = "on-failure";
         RestartSec = "10s";
+        # With video on, camera-streamer hangs in libcamera teardown and
+        # ignores SIGTERM, so give it a few seconds before SIGKILL instead of
+        # holding up every restart for the default 90.
+        TimeoutStopSec = "5s";
         # Run as root to access camera devices
         User = "root";
         Group = "video";
