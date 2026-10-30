@@ -10,9 +10,9 @@ was first run on framework on 2026-10-29.
 
 | Host | State |
 |------|-------|
-| framework | converted and cleaned up |
+| framework, t14 | converted and cleaned up |
 | m75q | installed fresh as btrfs, no conversion needed |
-| thinkcenter, t14, e470, optiplex | ext4 |
+| thinkcenter, e470, optiplex | ext4 |
 | prusa, rpi4, rak2245 | set to btrfs, but the firmware boot path did not boot prusa's Zero 2 W; do not deploy until that is solved |
 
 ## Before you start
@@ -170,7 +170,8 @@ sudo nix shell nixpkgs#e2fsprogs -c chattr -i /mnt/var/empty
 cd /mnt && sudo find . -mindepth 1 -maxdepth 1 ! -name '@*' -exec rm -rf {} +
 ls /mnt    # only the five @ subvolumes
 cd / && sudo umount /mnt
-sudo btrfs balance start -mconvert=dup /
+for u in 30 60 80; do sudo btrfs balance start -dusage=$u /; done
+sudo btrfs balance start -f -mconvert=dup,soft -sconvert=dup,soft /
 sudo btrfs scrub start -B /
 ```
 
@@ -178,9 +179,16 @@ The old top-level directories share their data with the subvolumes, so
 removing them deletes nothing in use; check the `ls` first anyway. NixOS
 marks `/var/empty` immutable, and `chattr` comes from nixpkgs because
 e2fsprogs is no longer on the PATH of a btrfs host. The `rm` still walks the
-whole old tree and took several minutes on framework. The conversion leaves
-metadata `single`, and the balance gives it the two copies a freshly made
-btrfs has.
+whole old tree and took several minutes on framework.
+
+Removing the old tree leaves the data chunks partly empty while nearly the
+whole device stays allocated. On t14 the metadata conversion then stopped with
+`No space left on device`, because DUP metadata needs new chunks from
+unallocated space. The `-dusage` passes compact the data chunks first and hand
+the emptied ones back. The conversion leaves metadata and system `single`, and
+the last balance gives them the two copies a freshly made btrfs has. Changing
+the system profile needs `-f`, and `soft` skips chunks already converted, so
+the step can be rerun after an interruption.
 
 ## Pitfalls met on the first run
 
