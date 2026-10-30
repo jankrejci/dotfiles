@@ -246,6 +246,7 @@
       hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBuVvVmSeaoUPKqiPqxwJEWDgdClxQpp6KjttCy/kFIq";
       device = "/dev/sda";
       swapSize = "8G";
+      filesystem = "btrfs";
       homelab.network-monitor = {
         enable = true;
         wifi.enable = true;
