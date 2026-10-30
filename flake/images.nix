@@ -31,6 +31,7 @@
             "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
             ../modules/netbird-homelab.nix
             ../modules/load-keys.nix
+            ../modules/iso-wifi.nix
             ({...}: let
               # ISO_HOST_KEY is set by build-installer script after decrypting
               # secrets/iso-host-key.age with the master key
