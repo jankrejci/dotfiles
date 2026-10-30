@@ -13,7 +13,8 @@ was first run on framework on 2026-10-29.
 | framework, t14 | converted and cleaned up |
 | m75q | installed fresh as btrfs, no conversion needed |
 | thinkcenter, e470, optiplex | ext4 |
-| prusa, rpi4, rak2245 | set to btrfs, but the firmware boot path did not boot prusa's Zero 2 W; do not deploy until that is solved |
+| prusa | converted and deployed |
+| rpi4, rak2245 | set to btrfs, not yet deployed |
 
 ## Before you start
 

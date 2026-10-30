@@ -93,10 +93,12 @@
 
             # Overlays must be present
             echo "$config" | grep -q 'dtoverlay=disable-bt' || { echo "FAIL: disable-bt missing"; exit 1; }
-            echo "$config" | grep -q 'dtoverlay=vc4-kms-v3d' || { echo "FAIL: vc4-kms-v3d missing"; exit 1; }
+
+            # The KMS overlay's 256MB CMA pool hangs the 512MB Zero 2 W at boot
+            ! echo "$config" | grep -q 'vc4-kms-v3d' || { echo "FAIL: vc4-kms-v3d is back"; exit 1; }
 
             # Must NOT have pattern: dtoverlay=<name> followed by dtoverlay= (empty)
-            if echo "$config" | grep -Pzo 'dtoverlay=(disable-bt|vc4-kms-v3d)\n(dtparam=[^\n]*\n)*dtoverlay=\n' >/dev/null; then
+            if echo "$config" | grep -Pzo 'dtoverlay=disable-bt\n(dtparam=[^\n]*\n)*dtoverlay=\n' >/dev/null; then
               echo "FAIL: overlay followed by empty dtoverlay= line"
               echo "Config:"
               echo "$config"
