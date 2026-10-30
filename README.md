@@ -59,7 +59,7 @@ the netbird user VPN client, and flatpak with Flathub for desktop apps
 | Host | Role |
 |------|------|
 | rpi4 | Base RPi 4 system |
-| prusa | 3D printer controller (Octoprint + webcam) |
+| prusa | 3D printer serial bridge and webcam |
 | rak2245 | LoRaWAN gateway (ChirpStack + GPS time sync) |
 
 All RPi hosts are aarch64-linux, boot from SD card, use WiFi via iwd.
@@ -100,7 +100,7 @@ health checks, and backup jobs.
 | immich-public-proxy | Public share links via tunnel proxy |
 | jellyfin | Media server with Dex SSO |
 | memos | Note-taking app |
-| octoprint | 3D printer controller with Obico monitoring |
+| serial-bridge | Serial device exposed to the VPN via ser2net |
 | webcam | Camera streaming via camera-streamer |
 | printer | Brother DCP-T730DW via CUPS |
 
@@ -176,9 +176,6 @@ thinkcenter (192.168.91.x):
 
 vpsfree (192.168.92.x):
   .2 watchdog
-
-prusa (192.168.93.x):
-  .1 octoprint
 ```
 
 ### Defense in Depth
@@ -208,8 +205,6 @@ definition for automatic encryption.
 |---------|---------|
 | import-keep | Import Google Keep notes to Memos |
 | soft-uart-tx | Software UART TX for GPS on broken RPi GPIO14 |
-| octoprint-obico | Remote 3D printer monitoring plugin |
-| octoprint-prometheus-exporter | Metrics exporter plugin |
 | netbird-ui-icons | Tray icon overlay tinted with the palette foreground color |
 
 ## Usage
