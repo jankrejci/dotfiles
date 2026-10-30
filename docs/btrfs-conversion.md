@@ -10,9 +10,9 @@ was first run on framework on 2026-10-29.
 
 | Host | State |
 |------|-------|
-| framework, t14 | converted and cleaned up |
+| framework, t14, e470 | converted and cleaned up |
 | m75q | installed fresh as btrfs, no conversion needed |
-| thinkcenter, e470, optiplex | ext4 |
+| thinkcenter, optiplex | ext4 |
 | prusa | converted and deployed |
 | rpi4, rak2245 | set to btrfs, not yet deployed |
 
