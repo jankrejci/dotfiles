@@ -214,9 +214,11 @@ in {
     description = "Save the kernel ring buffer where a failed boot can be read";
     wantedBy = ["initrd.target"];
     # Needs the root filesystem mounted to write to, and has to beat the
-    # switch out of the initrd.
+    # switch out of the initrd. Ordering before initrd.target matters too,
+    # because initrd-cleanup isolates to the switch-root target once
+    # initrd.target is reached and kills the unit if its sync is still running.
     after = ["initrd-fs.target"];
-    before = ["initrd-switch-root.target"];
+    before = ["initrd.target" "initrd-switch-root.target"];
     unitConfig.DefaultDependencies = false;
     serviceConfig = {
       Type = "oneshot";
