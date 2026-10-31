@@ -1,7 +1,8 @@
 # Webcam streaming via camera-streamer
 #
-# - hardware H.264 over WebRTC on port 8080
+# - hardware H.264 over WebRTC
 # - libcamera backend for RPi camera
+# - served to the VPN over HTTPS on the host's peer name for viewing
 {
   config,
   lib,
@@ -16,7 +17,8 @@
   # either library, and the vc4 pipeline handler the Pi camera needs is in
   # upstream libcamera.
   camera-streamer = pkgs.unstable.camera-streamer;
-  port = 8080;
+  services = config.homelab.services;
+  peerName = config.homelab.host.peerName;
 in {
   options.homelab.webcam = {
     enable = lib.mkOption {
@@ -24,9 +26,47 @@ in {
       default = false;
       description = "Enable webcam streaming via camera-streamer";
     };
+
+    port.streamer = lib.mkOption {
+      type = lib.types.port;
+      default = 8080;
+      description = "Port camera-streamer listens on at localhost";
+    };
+
+    # A tile needs both a name and an icon, so they are set together or not
+    # at all.
+    dashboard = lib.mkOption {
+      type = lib.types.nullOr (lib.types.submodule {
+        options = {
+          name = lib.mkOption {
+            type = lib.types.str;
+            description = "Dashboard tile name for the camera";
+          };
+
+          icon = lib.mkOption {
+            type = lib.types.path;
+            description = "Dashboard tile icon";
+          };
+        };
+      });
+      default = null;
+      description = "Dashboard tile for the camera, no tile when null";
+    };
+
+    # The stream paths belong to camera-streamer, so consumers on other hosts
+    # read the URL here instead of knowing them.
+    url.video = lib.mkOption {
+      type = lib.types.str;
+      default = "https://${peerName}/video.mkv";
+      readOnly = true;
+      description = "URL of the H.264 stream in Matroska served to the VPN";
+    };
   };
 
   config = lib.mkIf cfg.enable {
+    # The vhost takes the host certificate, so the host has to issue it.
+    homelab.acme.hostCert = true;
+
     # Camera tools for testing and streaming. The libcamera tools come from
     # the same set as camera-streamer, so a test with `cam` exercises the
     # library version the streamer runs.
@@ -96,7 +136,7 @@ in {
           "--camera-options=Saturation=0"
           "--camera-options=AeFlickerMode=1"
           "--camera-options=AeFlickerPeriod=10000"
-          "--http-port=${toString port}"
+          "--http-port=${toString cfg.port.streamer}"
           "--http-listen=127.0.0.1"
         ];
         # The camera has no infrared filter, so the default ov5647 tuning
@@ -113,6 +153,44 @@ in {
         User = "root";
         Group = "video";
       };
+    };
+
+    services.nginx = {
+      enable = true;
+      # The camera is served to the VPN without SSO, the same way the metrics
+      # vhost is, because the VPN is the access boundary for both. The
+      # Obico bridge on another host takes its snapshots and live stream from
+      # here and people watch the WebRTC page at /webrtc. The peer name
+      # resolves for every VPN client and has its own certificate, so HTTPS
+      # needs no service IP or DNS record, and onlySSL keeps port 80 closed.
+      #
+      # The vhost sets no listenAddresses, so blackbox-exporter, which probes
+      # only vhosts that have them, does not probe this certificate. Renewal
+      # failures are covered by the AcmeFailed alert.
+      virtualHosts.${peerName} = {
+        onlySSL = true;
+        useACMEHost = peerName;
+        extraConfig = ''
+          allow ${services.netbird.subnet};
+          deny all;
+        '';
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:${toString cfg.port.streamer}/";
+          extraConfig = ''
+            proxy_buffering off;
+            proxy_request_buffering off;
+          '';
+        };
+      };
+    };
+
+    networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [services.https.port];
+
+    # The tile opens the WebRTC page because the camera JPEG snapshots and
+    # MJPEG are broken. Hosts that set no tile get none.
+    homelab.dashboardEntries = lib.optional (cfg.dashboard != null) {
+      inherit (cfg.dashboard) name icon;
+      url = "https://${peerName}/webrtc";
     };
   };
 }
