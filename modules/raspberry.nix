@@ -8,6 +8,7 @@
 # - minimal packages and disabled services
 {
   config,
+  inputs,
   lib,
   pkgs,
   modulesPath,
@@ -259,6 +260,14 @@ in {
   # On RPi4 this restores PL011 UART to GPIO 14/15 and creates /dev/ttyAMA0.
   hardware.bluetooth.enable = false;
   boot.blacklistedKernelModules = ["hci_uart"];
+
+  # The Pis build from the nixpkgs pinned by nixos-raspberrypi, which lags our
+  # own pin and missed the nginx 1.30.6 security release. nginx is served to
+  # the VPN, so it comes from our nixpkgs until the Pis build userland from it
+  # in general. It is a cache.nixos.org hit, so nothing builds under emulation.
+  # The override switches itself off once the pinned nixpkgs carries the fix,
+  # so it cannot later hold the Pis back on an older nginx.
+  services.nginx.package = lib.mkIf (lib.versionOlder pkgs.nginxStable.version "1.30.6") inputs.nixpkgs.legacyPackages.${pkgs.stdenv.hostPlatform.system}.nginxStable;
 
   # BCM2711 firmware bug: empty dtoverlay= lines cause preceding overlay to be
   # skipped. nixos-raspberrypi's dt-overlays adds dtoverlay= after each overlay
