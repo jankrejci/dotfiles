@@ -343,7 +343,13 @@
       filesystem = "btrfs";
       homelab = {
         serial-bridge.enable = true;
-        webcam.enable = true;
+        webcam = {
+          enable = true;
+          dashboard = {
+            name = "Prusa";
+            icon = ../assets/dashboard-icons/prusa.svg;
+          };
+        };
       };
       extraModules = [
         ../modules/netbird-homelab.nix
