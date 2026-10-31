@@ -36,12 +36,17 @@ without validating any of the change under review.
 
 ```bash
 git diff --name-only "$BASE"...HEAD |
-  grep -qvE '^\.claude/|(^|/)[^/]*\.md$|^\.gitlint' \
+  command grep -qvE '^\.claude/|(^|/)[^/]*\.md$|^\.gitlint' \
   && FLAKE_RELEVANT=1 || FLAKE_RELEVANT=0
 ```
 
 `grep -qv` succeeds when any changed file falls outside the inert set, so
 any unexpected path forces the check on; only an all-inert diff skips it.
+
+`command grep` bypasses a shell function named `grep`. The Claude Code
+harness defines one that wraps ugrep, and it does not filter stdin the same
+way, so the plain call reports an all-inert diff even when Nix files changed.
+
 When `FLAKE_RELEVANT=0`, skip the check and record
 `nix flake check: SKIPPED (only harness/docs changed)` in the output,
 then move to Phase 3.
