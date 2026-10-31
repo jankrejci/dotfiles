@@ -25,6 +25,16 @@
     }
   ];
 
+  # The tile opens the WebRTC page because the camera JPEG snapshots and
+  # MJPEG are broken.
+  homelab.dashboardEntries = [
+    {
+      name = "Prusa";
+      url = "https://${config.homelab.acme.hostDomain}/webrtc";
+      icon = ../assets/dashboard-icons/prusa.svg;
+    }
+  ];
+
   # RPi Zero 2 W with the printer serial bridge and camera streaming.
   # Note: deploy-rs may fail due to nix daemon crashes on this device.
   # Manual workaround: nix copy + ssh activate directly.

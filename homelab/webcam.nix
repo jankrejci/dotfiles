@@ -1,7 +1,8 @@
 # Webcam streaming via camera-streamer
 #
-# - hardware H.264 over WebRTC and MJPEG on port 8080
+# - hardware H.264 over WebRTC and MJPEG
 # - libcamera backend for RPi camera
+# - served to the VPN over HTTPS on the host's peer name for viewing and Obico
 {
   config,
   lib,
@@ -16,7 +17,8 @@
   # either library, and the vc4 pipeline handler the Pi camera needs is in
   # upstream libcamera.
   camera-streamer = pkgs.unstable.camera-streamer;
-  port = 8080;
+  services = config.homelab.services;
+  hostDomain = config.homelab.acme.hostDomain;
 in {
   options.homelab.webcam = {
     enable = lib.mkOption {
@@ -24,9 +26,24 @@ in {
       default = false;
       description = "Enable webcam streaming via camera-streamer";
     };
+
+    port.streamer = lib.mkOption {
+      type = lib.types.port;
+      default = 8080;
+      description = "Port camera-streamer listens on at localhost";
+    };
   };
 
   config = lib.mkIf cfg.enable {
+    # The vhost takes the host certificate, which nginx otherwise only misses
+    # at start on the target.
+    assertions = [
+      {
+        assertion = config.homelab.acme.enable && config.homelab.acme.hostCert;
+        message = "homelab.webcam requires homelab.acme.enable and homelab.acme.hostCert = true";
+      }
+    ];
+
     # Camera tools for testing and streaming. The libcamera tools come from
     # the same set as camera-streamer, so a test with `cam` exercises the
     # library version the streamer runs.
@@ -86,7 +103,7 @@ in {
           "--camera-options=Saturation=0"
           "--camera-options=AeFlickerMode=1"
           "--camera-options=AeFlickerPeriod=10000"
-          "--http-port=${toString port}"
+          "--http-port=${toString cfg.port.streamer}"
           "--http-listen=127.0.0.1"
         ];
         # The camera has no infrared filter, so the default ov5647 tuning
@@ -104,5 +121,32 @@ in {
         Group = "video";
       };
     };
+
+    services.nginx = {
+      enable = true;
+      # The camera is served to the VPN without SSO, the same way the metrics
+      # vhost is, because the VPN is the access boundary for both. The
+      # Obico bridge on another host takes its snapshots and live stream from
+      # here and people watch the WebRTC page at /webrtc. The peer name
+      # resolves for every VPN client and has its own certificate, so HTTPS
+      # needs no service IP or DNS record, and onlySSL keeps port 80 closed.
+      virtualHosts.${hostDomain} = {
+        onlySSL = true;
+        useACMEHost = hostDomain;
+        extraConfig = ''
+          allow ${services.netbird.subnet};
+          deny all;
+        '';
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:${toString cfg.port.streamer}/";
+          extraConfig = ''
+            proxy_buffering off;
+            proxy_request_buffering off;
+          '';
+        };
+      };
+    };
+
+    networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [services.https.port];
   };
 }
