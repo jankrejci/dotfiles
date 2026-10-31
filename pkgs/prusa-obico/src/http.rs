@@ -13,6 +13,8 @@ pub fn status_json(s: &Inner, uptime_secs: u64) -> Value {
     json!({
         "printer": {"connected": s.printer_connected, "firmware": s.firmware},
         "obico": {"connected": s.obico_connected},
+        "janus": {"connected": s.janus_connected},
+        "stream": {"active": s.stream_active},
         "state": s.print_state.as_str(),
         "temperatures": s.temps.map(|t| json!({
             "tool0": {"actual": t.tool_actual, "target": t.tool_target},
@@ -49,6 +51,18 @@ pub fn metrics_text(s: &Inner) -> String {
         "WebSocket to Obico is up.",
         "gauge",
         flag(s.obico_connected),
+    );
+    metric(
+        "janus_connected",
+        "WebSocket to the local Janus gateway is up.",
+        "gauge",
+        flag(s.janus_connected),
+    );
+    metric(
+        "stream_active",
+        "The ffmpeg feeder for the live stream is running.",
+        "gauge",
+        flag(s.stream_active),
     );
     metric(
         "printing",

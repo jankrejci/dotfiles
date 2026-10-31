@@ -1,9 +1,11 @@
 mod backoff;
 mod http;
+mod janus;
 mod obico;
 mod printer;
 mod snapshot;
 mod state;
+mod stream;
 
 use clap::Parser;
 use state::AppState;
@@ -40,6 +42,18 @@ struct Args {
     /// Address for the /status and /metrics HTTP endpoints.
     #[arg(long, env = "PRUSA_OBICO_LISTEN", default_value = "127.0.0.1:9188")]
     listen: String,
+
+    /// Websocket of the local Janus gateway that relays the live stream.
+    #[arg(
+        long,
+        env = "PRUSA_OBICO_JANUS_WS",
+        default_value = "ws://127.0.0.1:17730/"
+    )]
+    janus_ws: String,
+
+    /// Local UDP port where Janus expects the RTP feed.
+    #[arg(long, env = "PRUSA_OBICO_RTP_PORT", default_value_t = 17732)]
+    rtp_port: u16,
 }
 
 #[tokio::main]
@@ -70,6 +84,8 @@ async fn main() -> ExitCode {
 
     let state = AppState::new();
     let (tx, rx) = mpsc::channel(16);
+    let (to_janus, from_obico) = mpsc::channel(64);
+    let (to_obico, from_janus) = mpsc::channel(64);
     let mut tasks = JoinSet::new();
     tasks.spawn({
         let state = state.clone();
@@ -91,9 +107,10 @@ async fn main() -> ExitCode {
         let cfg = obico::Config {
             url: args.obico_url.clone(),
             token_file: args.token_file.clone(),
+            has_video: args.video_url.is_some(),
         };
         async move {
-            obico::run(cfg, state, tx).await;
+            obico::run(cfg, state, tx, to_janus, from_janus).await;
             Ok(())
         }
     });
@@ -107,6 +124,26 @@ async fn main() -> ExitCode {
         };
         async move {
             snapshot::run(cfg, state).await;
+            Ok(())
+        }
+    });
+
+    tasks.spawn({
+        let (state, url) = (state.clone(), args.janus_ws.clone());
+        async move {
+            janus::run(url, state, from_obico, to_obico).await;
+            Ok(())
+        }
+    });
+    tasks.spawn({
+        let state = state.clone();
+        let cfg = stream::Config {
+            video_url: args.video_url.clone(),
+            ffmpeg: args.ffmpeg.clone(),
+            rtp_port: args.rtp_port,
+        };
+        async move {
+            stream::run(cfg, state).await;
             Ok(())
         }
     });

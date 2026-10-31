@@ -137,6 +137,8 @@ in {
         PRUSA_OBICO_VIDEO_URL = "https://${printerAddress}/video.mkv";
         PRUSA_OBICO_FFMPEG = lib.getExe pkgs.ffmpeg-headless;
         PRUSA_OBICO_LISTEN = "127.0.0.1:${toString cfg.port.http}";
+        PRUSA_OBICO_JANUS_WS = "ws://127.0.0.1:${toString cfg.port.janus}/";
+        PRUSA_OBICO_RTP_PORT = toString cfg.port.rtp;
       };
       serviceConfig = {
         Type = "notify";

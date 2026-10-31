@@ -29,6 +29,8 @@ const IO_TIMEOUT: Duration = Duration::from_secs(10);
 pub struct Config {
     pub url: String,
     pub token_file: PathBuf,
+    /// Whether a video stream exists, since Obico must not be told about a webcam that is missing.
+    pub has_video: bool,
 }
 
 pub fn read_token(path: &PathBuf) -> Result<String, String> {
@@ -53,20 +55,47 @@ fn ws_url(base: &str) -> String {
     format!("{swapped}/ws/dev/")
 }
 
-fn settings() -> Value {
+fn settings(has_video: bool) -> Value {
     let host = std::fs::read_to_string("/proc/sys/kernel/hostname")
         .map(|h| h.trim().to_string())
         .unwrap_or_else(|_| "prusa-obico".into());
+    let webcams = if has_video {
+        json!([{
+            "name": "prusa",
+            "is_primary_camera": true,
+            "is_nozzle_camera": false,
+            "stream_mode": "h264_copy",
+            "stream_id": 1,
+            "data_channel_available": false,
+            "flipV": false,
+            "flipH": false,
+            "rotation": 0,
+            "streamRatio": "4:3"
+        }])
+    } else {
+        json!([])
+    };
     json!({
         "agent": {"name": "octoprint_obico", "version": "2.7.0"},
         "octoprint_version": "1.11.7",
         "platform_uname": ["Linux", host, "", "", std::env::consts::ARCH, "", "prusa-obico"],
         "installed_plugins": ["obico"],
-        "temperature": {}
+        "temperature": {},
+        "webcams": webcams
     })
 }
 
-pub fn build_status(s: &Inner, with_settings: bool) -> Value {
+/// Obico wraps the raw Janus request in a string field of its agent message.
+fn janus_payload(msg: &Value) -> Option<&str> {
+    msg.get("janus").and_then(Value::as_str)
+}
+
+/// Obico expects every Janus reply as a string field, not as nested JSON.
+fn janus_frame(raw: &str) -> Value {
+    json!({"janus": raw})
+}
+
+pub fn build_status(s: &Inner, with_settings: bool, has_video: bool) -> Value {
     let (text, operational, printing, paused) = match s.print_state {
         PrintState::Offline => ("Offline", false, false, false),
         PrintState::Idle => ("Operational", true, false, false),
@@ -125,7 +154,7 @@ pub fn build_status(s: &Inner, with_settings: bool) -> Value {
         }
     });
     if with_settings {
-        msg["settings"] = settings();
+        msg["settings"] = settings(has_video);
     }
     msg
 }
@@ -159,6 +188,7 @@ fn jog_from(value: &Value) -> Vec<(char, f64)> {
 pub struct Session {
     state: Arc<AppState>,
     commands: mpsc::Sender<Command>,
+    janus: mpsc::Sender<String>,
     boost: u32,
     seen_refs: VecDeque<String>,
 }
@@ -273,6 +303,12 @@ impl Session {
                 self.state.update(|s| s.viewing = viewing);
             }
         }
+        if let Some(raw) = janus_payload(&msg) {
+            // Signaling is only useful fresh, so a full queue drops the newest message.
+            if self.janus.try_send(raw.to_string()).is_err() {
+                debug!("dropping Janus signaling, queue full or Janus down");
+            }
+        }
         if let Some(list) = msg.get("commands") {
             self.handle_commands(list).await;
         }
@@ -302,6 +338,8 @@ async fn connection(
     cfg: &Config,
     state: &Arc<AppState>,
     commands: &mpsc::Sender<Command>,
+    janus_tx: &mpsc::Sender<String>,
+    janus_rx: &mut mpsc::Receiver<String>,
     on_connected: impl FnOnce(),
 ) -> Result<String, String> {
     let token = read_token(&cfg.token_file)?;
@@ -317,10 +355,13 @@ async fn connection(
         .map_err(|e| e.to_string())?;
     on_connected();
     state.update(|s| s.obico_connected = true);
+    // Janus replies from before this connection belong to sessions Obico has forgotten.
+    while janus_rx.try_recv().is_ok() {}
 
     let mut session = Session {
         state: state.clone(),
         commands: commands.clone(),
+        janus: janus_tx.clone(),
         boost: 0,
         seen_refs: VecDeque::new(),
     };
@@ -329,6 +370,7 @@ async fn connection(
     let mut last_rx = Instant::now();
     let mut last_status: Option<Instant> = None;
     let mut last_settings: Option<Instant> = None;
+    let mut janus_was_up = false;
     let result = loop {
         let mut send_now = false;
         tokio::select! {
@@ -367,6 +409,12 @@ async fn connection(
                     break Err(e);
                 }
             }
+            raw = janus_rx.recv() => {
+                let Some(raw) = raw else { break Err("Janus channel closed".to_string()) };
+                if let Err(e) = send_json(&mut ws, &janus_frame(&raw)).await {
+                    break Err(e);
+                }
+            }
             _ = state.changed.notified() => send_now = true,
             _ = tick.tick() => {
                 if session.boost > 0 {
@@ -380,8 +428,14 @@ async fn connection(
         if !send_now {
             continue;
         }
+        let snapshot = state.snapshot();
+        // Obico only learns about the webcam from settings, so resend them once Janus is up.
+        if snapshot.janus_connected && !janus_was_up {
+            last_settings = None;
+        }
+        janus_was_up = snapshot.janus_connected;
         let with_settings = last_settings.map_or(true, |t| t.elapsed() >= SETTINGS_INTERVAL);
-        let status = build_status(&state.snapshot(), with_settings);
+        let status = build_status(&snapshot, with_settings, cfg.has_video);
         if let Err(e) = send_json(&mut ws, &status).await {
             break Err(e);
         }
@@ -399,7 +453,13 @@ async fn connection(
     result
 }
 
-pub async fn run(cfg: Config, state: Arc<AppState>, commands: mpsc::Sender<Command>) {
+pub async fn run(
+    cfg: Config,
+    state: Arc<AppState>,
+    commands: mpsc::Sender<Command>,
+    janus_tx: mpsc::Sender<String>,
+    mut janus_rx: mpsc::Receiver<String>,
+) {
     let mut backoff = Backoff::new();
     // Each outage logs one line: the failure at startup, the disconnect after
     // that. The flag never resets because every later outage begins with a
@@ -407,7 +467,7 @@ pub async fn run(cfg: Config, state: Arc<AppState>, commands: mpsc::Sender<Comma
     let mut failure_logged = false;
     loop {
         let mut connected_at = None;
-        let outcome = connection(&cfg, &state, &commands, || {
+        let outcome = connection(&cfg, &state, &commands, &janus_tx, &mut janus_rx, || {
             connected_at = Some(Instant::now());
             info!("Obico connected");
         })
@@ -437,9 +497,38 @@ mod tests {
     use super::*;
 
     #[test]
+    fn settings_advertise_h264_webcam() {
+        let cam = &settings(true)["webcams"][0];
+        assert_eq!(cam["stream_mode"], "h264_copy");
+        assert_eq!(cam["stream_id"], 1);
+        assert_eq!(cam["streamRatio"], "4:3");
+    }
+
+    #[test]
+    fn settings_without_video_have_no_webcam() {
+        assert_eq!(settings(false)["webcams"], json!([]));
+    }
+
+    #[test]
     fn jog_distance_is_clamped() {
         let mut moves = jog_from(&json!({"x": 500.0, "y": -500.0, "z": 1.5, "e": 5.0}));
         moves.sort_by_key(|m| m.0);
         assert_eq!(moves, [('X', 50.0), ('Y', -50.0), ('Z', 1.5)]);
+    }
+
+    #[test]
+    fn janus_frame_keeps_raw_string() {
+        let raw = r#"{"janus":"ack","transaction":"abc"}"#;
+        let wrapped = janus_frame(raw);
+        assert_eq!(wrapped, json!({"janus": raw}));
+        assert_eq!(wrapped["janus"].as_str(), Some(raw));
+    }
+
+    #[test]
+    fn janus_payload_needs_a_string() {
+        let raw = r#"{"janus":"create","transaction":"abc"}"#;
+        assert_eq!(janus_payload(&json!({"janus": raw})), Some(raw));
+        assert_eq!(janus_payload(&json!({"janus": {"janus": "create"}})), None);
+        assert_eq!(janus_payload(&json!({"commands": []})), None);
     }
 }
