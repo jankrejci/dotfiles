@@ -168,6 +168,10 @@
           enable = true;
           ip = "192.168.91.5";
         };
+        prusa-obico = {
+          enable = true;
+          printerHost = "prusa";
+        };
         immich-public-proxy = {
           enable = true;
           ip = "192.168.91.10";
