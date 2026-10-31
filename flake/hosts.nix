@@ -342,6 +342,11 @@
       isRpi = true;
       filesystem = "btrfs";
       homelab = {
+        acme = {
+          enable = true;
+          wildcard = false;
+          hostCert = true;
+        };
         serial-bridge.enable = true;
         webcam.enable = true;
       };
