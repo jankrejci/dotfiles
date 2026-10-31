@@ -10,6 +10,7 @@ mod feeder;
 mod ffmpeg;
 mod http;
 mod janus;
+mod janus_handles;
 mod marlin;
 mod obico;
 mod printer;

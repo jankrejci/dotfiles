@@ -1,16 +1,16 @@
+use crate::janus_handles::HandleRewriter;
 use crate::reconnect::{self, Ended, Link};
 use crate::state::AppState;
-use crate::ws::Ws;
+use crate::ws::{Keepalive, Ws};
 use anyhow::{Context, Result};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::mpsc;
-use tokio::time::interval;
 use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 use tokio_tungstenite::tungstenite::handshake::client::Request;
 use tokio_tungstenite::tungstenite::http::HeaderValue;
 use tokio_tungstenite::tungstenite::Message;
-use tracing::info;
+use tracing::{info, warn};
 
 /// Janus refuses websocket clients that do not announce its protocol.
 const SUBPROTOCOL: &str = "janus-protocol";
@@ -78,9 +78,10 @@ impl Link for Janus {
         while self.from_obico.try_recv().is_ok() {}
         // Obico learns about the webcam from the settings that go out on this wakeup.
         self.state.set_janus_connected(true);
-        let mut ping = interval(PING_INTERVAL);
-        let mut last_rx = Instant::now();
-        let reason = loop {
+        let mut keepalive = Keepalive::new(PING_INTERVAL, SILENCE_LIMIT);
+        // Handle ids belong to the Janus session, so the table starts empty with every connection.
+        let mut handles = HandleRewriter::new();
+        let reason = 'session: loop {
             tokio::select! {
                 frame = ws.next() => {
                     let frame = match frame {
@@ -88,11 +89,21 @@ impl Link for Janus {
                         Some(Err(e)) => break e.to_string(),
                         Some(Ok(f)) => f,
                     };
-                    last_rx = Instant::now();
+                    keepalive.received();
                     match frame {
                         Message::Text(text) => {
+                            let outcome = handles.on_janus(text.as_str());
+                            for frame in outcome.to_janus {
+                                if let Err(e) = ws.send(Message::Text(frame.into())).await {
+                                    break 'session format!("{e:#}");
+                                }
+                            }
                             // A full channel means Obico is gone or slow, stale signaling is useless.
-                            let _ = self.to_obico.try_send(text.as_str().to_string());
+                            if let Some(frame) = outcome.to_client {
+                                if let Err(e) = self.to_obico.try_send(frame) {
+                                    warn!("dropping Janus signaling for Obico: {e}");
+                                }
+                            }
                         }
                         Message::Close(frame) => break format!("closed by server: {frame:?}"),
                         _ => {}
@@ -100,16 +111,15 @@ impl Link for Janus {
                 }
                 raw = self.from_obico.recv() => {
                     let Some(raw) = raw else { break "signaling channel closed".to_string() };
-                    if let Err(e) = ws.send(Message::Text(raw.into())).await {
-                        break format!("{e:#}");
+                    for frame in handles.on_client(&raw) {
+                        if let Err(e) = ws.send(Message::Text(frame.into())).await {
+                            break 'session format!("{e:#}");
+                        }
                     }
                 }
-                _ = ping.tick() => {
-                    if last_rx.elapsed() > SILENCE_LIMIT {
-                        break format!("no data for {} s", SILENCE_LIMIT.as_secs());
-                    }
-                    if let Err(e) = ws.ping().await {
-                        break format!("{e:#}");
+                _ = keepalive.tick() => {
+                    if let Err(reason) = keepalive.ping(&mut ws).await {
+                        break reason;
                     }
                 }
             }
