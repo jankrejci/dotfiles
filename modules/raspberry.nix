@@ -8,6 +8,7 @@
 # - minimal packages and disabled services
 {
   config,
+  inputs,
   lib,
   pkgs,
   modulesPath,
@@ -253,6 +254,12 @@ in {
       };
     }
   ];
+
+  # The Pis build from the nixpkgs pinned by nixos-raspberrypi, which lags our
+  # own pin and missed the nginx 1.30.6 security release. nginx is served to
+  # the VPN, so it comes from our nixpkgs until the Pis build userland from it
+  # in general. It is a cache.nixos.org hit, so nothing builds under emulation.
+  services.nginx.package = inputs.nixpkgs.legacyPackages.${pkgs.stdenv.hostPlatform.system}.nginxStable;
 
   # BCM2711 firmware bug: empty dtoverlay= lines cause preceding overlay to be
   # skipped. nixos-raspberrypi's dt-overlays adds dtoverlay= after each overlay
