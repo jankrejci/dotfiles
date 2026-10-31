@@ -204,6 +204,7 @@ definition for automatic encryption.
 | Package | Purpose |
 |---------|---------|
 | import-keep | Import Google Keep notes to Memos |
+| prusa-obico | Bridge between the Prusa MK3S serial link and the Obico cloud |
 | soft-uart-tx | Software UART TX for GPS on broken RPi GPIO14 |
 | netbird-ui-icons | Tray icon overlay tinted with the palette foreground color |
 
