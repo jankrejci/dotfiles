@@ -177,6 +177,14 @@ in {
       };
     };
 
+    # Set the wifi regulatory domain at boot instead of waiting for an access
+    # point to advertise one. Under kernel 7.3 the MT7922 on framework starts
+    # in the world domain with every 5GHz channel disabled, so it never sees a
+    # 5GHz network to join.
+    boot.extraModprobeConfig = ''
+      options cfg80211 ieee80211_regdom=CZ
+    '';
+
     # iwd for wifi, used by both NetworkManager and standalone systemd-networkd
     networking.wireless.iwd = {
       enable = true;
