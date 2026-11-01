@@ -343,5 +343,15 @@ in {
   # Host configs can override with lib.mkForce if needed.
   services.logind.settings.Login.HandlePowerKey = "suspend";
 
+  # The 6.18 LTS line since 6.18.57 carries only part of the platform rework
+  # of the ACPI button driver, so the fixed power button binds to nothing but
+  # tiny_power_button, which powers off without asking logind. Mainline has
+  # the full rework and hands the button to logind again.
+  boot.kernelPackages = pkgs.linuxPackages_latest;
+
+  # The tiny driver is meant for VMs and signals init to power off directly,
+  # bypassing logind and the suspend setting above.
+  boot.blacklistedKernelModules = ["tiny_power_button"];
+
   services.xserver.videoDrivers = ["modesetting"];
 }
