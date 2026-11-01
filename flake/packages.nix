@@ -93,6 +93,14 @@ in {
             runHook postInstall
           '';
         });
+        # Cargo is not needed to format, and rustfmt follows the mod declarations from main.rs.
+        prusa-obico-fmt =
+          pkgsWithOverlays.runCommand "prusa-obico-fmt" {
+            nativeBuildInputs = [pkgsWithOverlays.rustfmt];
+          } ''
+            rustfmt --edition 2021 --check ${../pkgs/prusa-obico/src}/main.rs
+            touch $out
+          '';
       }
       else {};
 
