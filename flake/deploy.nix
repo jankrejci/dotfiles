@@ -7,7 +7,6 @@
 }: let
   lib = inputs.nixpkgs.lib;
   hosts = config.flake.hosts;
-  global = config.flake.global;
   nixosHosts = lib.filterAttrs (_: h: (h.kind or "nixos") == "nixos") hosts;
 
   # Overlay that provides deploy-rs lib using cached nixpkgs binaries.
@@ -32,7 +31,7 @@
 
   # Create a deploy node entry
   mkNode = hostName: host: {
-    hostname = "${hostName}.${global.peerDomain}";
+    hostname = self.nixosConfigurations.${hostName}.config.homelab.host.peerName;
     sshUser = "admin";
     # VPN-based deploys need extra time for nftables reload and SSH reconnection.
     # When the activation restarts netbird itself, the client must re-login and

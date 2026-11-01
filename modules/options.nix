@@ -5,16 +5,34 @@
 # - global: domain, peerDomain, adminEmails
 # - services: shared service configuration
 # - scrapeTargets, alerts, healthChecks: monitoring
-{lib, ...}: let
+{
+  config,
+  lib,
+  ...
+}: let
+  rootConfig = config;
   inherit (lib) mkOption types;
 
   # Host configuration submodule
-  hostModule = types.submodule ({name, ...}: {
+  hostModule = types.submodule ({
+    name,
+    config,
+    ...
+  }: {
     options = {
       hostName = mkOption {
         type = types.str;
         default = name;
         description = "Hostname";
+      };
+
+      # Derived here so every module that needs the host's address on the VPN
+      # builds it the same way.
+      peerName = mkOption {
+        type = types.str;
+        default = "${config.hostName}.${rootConfig.homelab.global.peerDomain}";
+        readOnly = true;
+        description = "Netbird peer name of the host";
       };
 
       system = mkOption {

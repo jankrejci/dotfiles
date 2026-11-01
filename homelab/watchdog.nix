@@ -20,7 +20,6 @@
   global = config.homelab.global;
   services = config.homelab.services;
   domain = global.domain;
-  peerDomain = global.peerDomain;
   watchdogDomain = "${cfg.subdomain}.${domain}";
   metricsPort = toString services.metrics.port;
   promPort = toString cfg.port.watchdog;
@@ -110,7 +109,7 @@ in {
     watchedHosts = lib.unique (map (t: t.hostName) allTargets);
 
     # All targets scraped via VPN domain and metrics proxy port
-    mkTarget = host: "${host}.${peerDomain}:${metricsPort}";
+    mkTarget = host: "${allConfigs.${host}.config.homelab.host.peerName}:${metricsPort}";
 
     # Scrape configs: node exporter for each watched host + each enrolled job
     scrapeConfigs = let
