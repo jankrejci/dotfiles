@@ -31,7 +31,6 @@
   global = config.homelab.global;
   services = config.homelab.services;
   domain = global.domain;
-  peerDomain = global.peerDomain;
   metricsPort = toString services.metrics.port;
   promDomain = "${cfg.subdomain}.${domain}";
 in {
@@ -139,7 +138,7 @@ in {
         targetsByJob = lib.groupBy (t: t.job) allTargets;
 
         # All targets scraped via VPN domain and metrics proxy port
-        mkTarget = t: "${t.hostName}.${peerDomain}:${metricsPort}";
+        mkTarget = t: "${allConfigs.${t.hostName}.config.homelab.host.peerName}:${metricsPort}";
 
         # Blackbox TLS probe targets from the host running blackbox-exporter.
         # Uses multi-target pattern: prometheus sends target as a parameter,
