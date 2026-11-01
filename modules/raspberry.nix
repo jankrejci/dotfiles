@@ -128,11 +128,6 @@ in {
     KERNEL=="vcio", GROUP="video", MODE="0660"
   '';
 
-  # Define proper wifi channels
-  boot.extraModprobeConfig = ''
-    options cfg80211 ieee80211_regdom=CZ
-  '';
-
   # Disable unnecessary filesystems.
   # RPi only needs its root filesystem and vfat for boot firmware.
   boot.supportedFilesystems = lib.mkForce {
