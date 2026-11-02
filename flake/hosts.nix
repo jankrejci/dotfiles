@@ -331,7 +331,7 @@
     ### Raspberry Pi ###
 
     rpi4 = {
-      hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAbaTQOMDT3HYGiFVucqr4r1VbrwtMgltvnOeUNYbHMh";
+      hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII78FI3H6wf2BdbwurQtp7JnxOr+IVhb2WAlh3euQERT";
       system = "aarch64-linux";
       isRpi = true;
       filesystem = "btrfs";
