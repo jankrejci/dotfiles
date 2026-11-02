@@ -54,6 +54,17 @@ in {
       #     '"name"') WHERE name = 'Dex';
       #
       # Revisit once the Dex preferred_username issue is fixed upstream.
+      #
+      # Since memos 0.31 SSO sign-in finds an account only through a row in
+      # the user_identity table and no longer by matching the username. An
+      # account created before that has no row, so its SSO login is treated
+      # as a new registration and refused. The supported fix is to sign in
+      # with the local password and link Dex under Settings, My Account,
+      # Linked identities. Without a known password, insert the row directly,
+      # where provider is the idp uid and extern_uid the Dex username:
+      #
+      #   INSERT INTO user_identity (user_id, provider, extern_uid)
+      #     VALUES (<user id>, '<idp uid>', '<dex username>');
       homelab.dex.clients = [
         {
           id = "memos";
