@@ -150,9 +150,11 @@ in {
         # Systemd boot instead of GRUB is needed for secure boot,
         # to use secure boot with GRUB, you need to use Lanzaboote project
         enable = true;
-        # Avoid too many bootloader generations
-        # that can consume all the /boot partition space
-        configurationLimit = 10;
+        # Every generation copies its own initrd to the ESP, and with the AMD GPU
+        # firmware loaded early ten of them overflow the partition. The installer
+        # also copies the new initrd before pruning old ones, so the limit must
+        # leave room for one more.
+        configurationLimit = 4;
         # Disable boot menu editing
         editor = false;
       };
