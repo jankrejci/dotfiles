@@ -95,6 +95,14 @@ in {
             sdImage.firmwareSize =
               lib.mkIf (config.boot.loader.raspberry-pi.bootloader == "uboot")
               (lib.mkForce 256);
+            # The image root is sized to its contents, so a swapfile created
+            # before the first boot grows it fails with ENOSPC and leaves an
+            # empty file that swapon rejects. Ordering the swap units after the
+            # grow closes a cycle through local-fs.target and tmp.mount, which
+            # systemd breaks by dropping the swap, so the swap is started again
+            # once the root has grown. The start is queued without blocking
+            # because the grow runs before sysinit.target.
+            systemd.services.expand-root-partition.serviceConfig.ExecStartPost = "${config.systemd.package}/bin/systemctl --no-block start swapfile.swap";
           })
           ({
             config,
