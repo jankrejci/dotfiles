@@ -361,7 +361,7 @@
     };
 
     rak2245 = {
-      hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOBKrxal9ON2M+bbKwBrDNQLi8jgadibM7WN51fYO6Ng";
+      hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA24sImOKVXOKTrI3SERb59G6jLKrkTG0HyQSY678y8x";
       system = "aarch64-linux";
       isRpi = true;
       filesystem = "btrfs";
