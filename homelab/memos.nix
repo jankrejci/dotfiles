@@ -97,6 +97,8 @@ in {
       # Memos service with PostgreSQL backend
       services.memos = {
         enable = true;
+        # Stable 26.05 ships 0.25.3, while the database already carries the
+        # schema migrations up to 0.31, so stable would mean a downgrade.
         package = pkgs.unstable.memos;
         settings = {
           MEMOS_ADDR = "127.0.0.1";
