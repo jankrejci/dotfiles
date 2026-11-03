@@ -96,6 +96,9 @@ in {
       (name: json: "f %h/${netbirdDir}/%u/${name}.json 0600 - - - ${json}")
       cfg.profiles;
 
+    # The client and its tray UI come from unstable to match the server
+    # release, see homelab/netbird-server.nix.
+    #
     # Grant capabilities to netbird binary for user service
     # Needs NET_ADMIN for interface creation, NET_RAW for raw sockets,
     # BPF for eBPF firewall, NET_BIND_SERVICE for DNS on port 53
