@@ -48,7 +48,6 @@ top level and service configuration under `homelab`, which maps directly to
 | framework | x86_64 | Framework 13 AMD 7040 |
 | t14 | x86_64 | Lenovo ThinkPad T14 AMD Gen1 |
 | e470 | x86_64 | Lenovo ThinkPad E470 |
-| optiplex | x86_64 | Dell OptiPlex |
 
 All desktops run GNOME + Hyprland, Plymouth, TPM or password encryption,
 the netbird user VPN client, and flatpak with Flathub for desktop apps

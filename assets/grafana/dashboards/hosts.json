@@ -833,8 +833,7 @@
             "rak2245",
             "framework",
             "t14",
-            "e470",
-            "optiplex"
+            "e470"
           ],
           "value": [
             "thinkcenter",
@@ -844,8 +843,7 @@
             "rak2245",
             "framework",
             "t14",
-            "e470",
-            "optiplex"
+            "e470"
           ]
         },
         "description": "",
@@ -892,14 +890,9 @@
             "selected": true,
             "text": "e470",
             "value": "e470"
-          },
-          {
-            "selected": true,
-            "text": "optiplex",
-            "value": "optiplex"
           }
         ],
-        "query": "thinkcenter, vpsfree, prusa, rpi4, rak2245, framework, t14, e470, optiplex",
+        "query": "thinkcenter, vpsfree, prusa, rpi4, rak2245, framework, t14, e470",
         "type": "custom"
       },
       {

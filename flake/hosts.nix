@@ -268,21 +268,6 @@
       ];
     };
 
-    optiplex = {
-      hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBmzspcGU4YVye6UtIB0fRPoonamNPrdGqEvyXm9Gbg5";
-      device = "/dev/sda";
-      swapSize = "8G";
-      extraModules = [
-        ../users/agent.nix
-
-        ../users/jkr.nix
-        ../users/paja.nix
-        ../modules/netbird-user.nix
-        ../modules/disk-password-encryption.nix
-        ../modules/desktop.nix
-      ];
-    };
-
     framework = {
       hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGmfq9F+krusOKm33U/uLgCfspYeno4sGYkGQQsb9VG1";
       device = "/dev/nvme0n1";
