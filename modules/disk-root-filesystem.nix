@@ -1,7 +1,6 @@
-# Root LV content shared by disk-tpm-encryption.nix and
-# disk-password-encryption.nix. Both lay out the same ESP + LUKS + LVM disko
-# skeleton and only differ in how the root logical volume is formatted, so
-# that one piece is factored out and selected by homelab.host.filesystem.
+# Root LV content for the ESP + LUKS + LVM disko layout in
+# disk-tpm-encryption.nix. The format of the root logical volume is selected
+# by homelab.host.filesystem.
 {config}: let
   mountOptions = ["compress=zstd" "noatime"];
 

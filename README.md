@@ -49,7 +49,7 @@ top level and service configuration under `homelab`, which maps directly to
 | t14 | x86_64 | Lenovo ThinkPad T14 AMD Gen1 |
 | e470 | x86_64 | Lenovo ThinkPad E470 |
 
-All desktops run GNOME + Hyprland, Plymouth, TPM or password encryption,
+All desktops run GNOME + Hyprland, Plymouth, TPM encryption,
 the netbird user VPN client, and flatpak with Flathub for desktop apps
 (browsers, CAD tools, slicers) that auto-update on activation.
 
@@ -141,7 +141,6 @@ Located in `modules/`. Imported by all hosts via `modules/default.nix`.
 | Module | Purpose |
 |--------|---------|
 | disk-tpm-encryption | Disko + TPM2 + Secure Boot |
-| disk-password-encryption | Password-only LUKS |
 
 ### Hardware
 | Module | Purpose |
