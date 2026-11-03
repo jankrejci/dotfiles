@@ -1,8 +1,7 @@
 # Converting a host's root from ext4 to btrfs in place
 
-Hosts using `modules/disk-tpm-encryption.nix` or
-`modules/disk-password-encryption.nix` keep LUKS, LVM, swap and the ESP as
-they are. Only the `pool/root` logical volume changes from ext4 to the btrfs
+Hosts using `modules/disk-tpm-encryption.nix` keep LUKS, LVM, swap and the
+ESP as they are. Only the `pool/root` logical volume changes from ext4 to the btrfs
 subvolume layout in `modules/disk-root-filesystem.nix`. The procedure below
 was first run on framework on 2026-10-29.
 
