@@ -198,6 +198,11 @@ in {
     # Management server: the Netbird control plane
     services.netbird.server.management = {
       enable = true;
+      # Netbird comes from unstable on every host. Stable 26.05 ships 0.71.4,
+      # ten minor releases older than the version that already migrated the
+      # management store, so stable would mean a downgrade of the control
+      # plane. Clients and servers all take the same set so peers and the
+      # control plane move to a new release together.
       package = pkgs.unstable.netbird-management;
       domain = apiDomain;
       port = cfg.port.management;
