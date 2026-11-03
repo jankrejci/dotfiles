@@ -31,7 +31,6 @@ jobs:
           - framework
           - e470
           - vpsfree
-          - optiplex
           - thinkcenter
           - t14
           - rpi4
