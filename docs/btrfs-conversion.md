@@ -12,7 +12,7 @@ was first run on framework on 2026-10-29.
 |------|-------|
 | framework, t14, e470 | converted and cleaned up |
 | m75q | installed fresh as btrfs, no conversion needed |
-| thinkcenter, optiplex | ext4 |
+| thinkcenter | ext4 |
 | prusa, rpi4, rak2245 | reflashed from a btrfs SD image and deployed |
 
 ## Before you start
