@@ -15,6 +15,7 @@
   managementUrl = "https://api.${global.domain}";
 in {
   config = {
+    # Unstable to match the server release, see homelab/netbird-server.nix.
     services.netbird.package = pkgs.unstable.netbird;
     services.netbird.clients.${clientName} = {
       port = services.netbird.port.wireguard;
