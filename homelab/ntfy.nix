@@ -56,7 +56,11 @@ in {
       services.https.port
     ];
 
-    # Use unstable ntfy-sh for template support (requires >= 2.14.0)
+    # Unstable for the template hardening. Stable 26.05 ships 2.26.0, which
+    # predates the fixes in 2.26.3 and 2.27.0 against templates exhausting CPU
+    # and memory, and the topics here render messages through templates.
+    # Stable would also mean a downgrade: 2.26.0 refuses to open the newer
+    # user and cache schemas without resetting their version numbers by hand.
     services.ntfy-sh = {
       enable = true;
       package = pkgs.unstable.ntfy-sh;
