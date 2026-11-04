@@ -3,9 +3,29 @@
 # Mutually exclusive with netbird-homelab (system client for servers).
 #
 # Profiles allow switching between Netbird instances without re-enrollment.
-# The daemon stores profiles in $NB_STATE_DIR/{username}/{profile}.json and
-# enriches the JSON after connecting. We seed minimal JSON via tmpfiles type
-# "f" which only creates the file if missing.
+# The daemon stores profiles in $NB_STATE_DIR/{username}/{profile}.json, except
+# the default profile which lives at $NB_STATE_DIR/default.json, and enriches
+# the JSON after connecting. We seed minimal JSON via tmpfiles type "f" which
+# only creates the file if missing, so a host that already has a default.json
+# keeps it until it is moved aside by hand.
+#
+# Migrating a host enrolled when the self-hosted instance was the "selfhosted"
+# profile, which keeps its peer key and so avoids a new SSO enrollment:
+#
+#   cd ~/.local/netbird-user
+#   jq -r '.ManagementURL.Host' default.json jkr/selfhosted.json
+#
+# Move only if selfhosted.json holds the self-hosted instance and default.json
+# holds another server. Neither profile may be active during the move. Without
+# another profile to select, run "netbird-user down" first and "netbird-user up"
+# afterwards, from the machine itself because that drops VPN access.
+#
+#   mv -n default.json default.json.netbird-cloud.bak
+#   mv -n jkr/selfhosted.json default.json
+#   mv -n jkr/selfhosted.state.json selfhosted.state.json.bak
+#
+# The backups can be deleted once "netbird-user profile select default" followed
+# by "netbird-user up" connects, unless the old enrollment is still wanted.
 #
 # NOTE: Netbird 0.64.5 creates the per-user profile directory with 0600
 # permissions, missing the execute bit. This causes all profile operations to
@@ -45,6 +65,12 @@
     Host = "${host}:443";
   };
 
+  # The daemon keeps the default profile outside the per-user directory.
+  profilePath = name:
+    if name == "default"
+    then "${netbirdDir}/default.json"
+    else "${netbirdDir}/%u/${name}.json";
+
   # CLI wrapper that uses the setcap binary and user daemon socket.
   # No --config flag needed: the daemon derives it from NB_STATE_DIR.
   netbirdUser = pkgs.writeShellScriptBin "netbird-user" ''
@@ -66,16 +92,16 @@ in {
       default = {};
       description = "Named profiles for netbird-user. Keys are profile names, values are JSON config strings using Go url.URL struct format for ManagementURL.";
       example = {
-        selfhosted = ''{"ManagementURL":{"Scheme":"https","Host":"api.example.com:443"},"WgIface":"nb0"}'';
+        default = ''{"ManagementURL":{"Scheme":"https","Host":"api.example.com:443"},"WgIface":"nb0"}'';
       };
     };
   };
 
   config = {
-    # Default profile for self-hosted Netbird instance.
+    # The self-hosted Netbird instance is the default profile.
     # Sets WgIface to match NB_INTERFACE_NAME so stored config is consistent.
     homelab.netbird-user.profiles = lib.mkDefault {
-      selfhosted = mkProfile {
+      default = mkProfile {
         ManagementURL = mkManagementUrl "api.${global.domain}";
       };
     };
@@ -93,7 +119,7 @@ in {
         "d %t/netbird-user 0755 - - -"
       ]
       ++ lib.mapAttrsToList
-      (name: json: "f %h/${netbirdDir}/%u/${name}.json 0600 - - - ${json}")
+      (name: json: "f %h/${profilePath name} 0600 - - - ${json}")
       cfg.profiles;
 
     # The client and its tray UI come from unstable to match the server
@@ -186,7 +212,7 @@ in {
     networking.firewall.allowedUDPPorts = [services.netbird.port.wireguard];
 
     # Exclude netbird interfaces from NetworkManager and DHCP.
-    # services.netbird.interface, which is nb0, belongs to the self-hosted
+    # services.netbird.interface, which is nb0, belongs to the default self-hosted
     # profile; wt0 is netbird's built-in default used by the braiins cloud
     # profile.
     networking.networkmanager.unmanaged = lib.mkAfter [services.netbird.interface "wt0"];
