@@ -221,7 +221,7 @@
     text = ''
       log() { echo "$*" | systemd-cat -t waybar-power-menu -p info; }
 
-      choice=$(printf "  Lock\n  Suspend\n  Reboot\n  Shutdown\n󰍃  Log Out" \
+      choice=$(printf "󰌾  Lock\n󰤄  Suspend\n󰜉  Reboot\n󰐥  Shutdown\n󰍃  Log Out" \
         | rofi -dmenu -p "Power" -theme-str 'listview { lines: 5; }') || exit 0
       log "selected: $choice"
       case "$choice" in
