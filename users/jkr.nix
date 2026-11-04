@@ -71,7 +71,6 @@
         home.packages = with pkgs; [
           rustup
           unstable.espflash # flasher utility for Espressif SoCs
-          unstable.trezor-suite
           unstable.claude-code
           codex
           rshell # remote shell for MicroPython
