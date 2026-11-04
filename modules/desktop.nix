@@ -133,6 +133,28 @@ in {
     binfmt = true;
   };
 
+  # Run prebuilt binaries for generic Linux that have no nixpkgs package. The
+  # libraries cover GTK3 and Flutter desktop apps, on top of the base set that
+  # the nix-ld module always includes.
+  programs.nix-ld = {
+    enable = true;
+    libraries = with pkgs; [
+      atk
+      cairo
+      fontconfig
+      gdk-pixbuf
+      glib
+      gtk3
+      harfbuzz
+      libayatana-appindicator
+      libdbusmenu
+      libepoxy
+      libGL
+      pango
+      sqlite
+    ];
+  };
+
   services.flatpak = {
     enable = true;
     remotes = [
