@@ -178,9 +178,14 @@ in {
       "org.ghidra_sre.Ghidra"
       "com.prusa3d.PrusaSlicer"
       "com.google.Chrome"
+      "io.trezor.suite"
     ];
     update.onActivation = true;
   };
+
+  # Flatpak apps cannot install udev rules, so the host must grant the Trezor
+  # Suite Flatpak access to the device. This also provides the bridge daemon.
+  services.trezord.enable = true;
 
   # Enable CUPS to print documents.
   services.printing = {
