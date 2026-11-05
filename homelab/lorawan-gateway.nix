@@ -221,6 +221,12 @@ in {
         RestartSec = "5s";
         User = "root";
         Group = "root";
+        # Concentratord 4.7 logs this about once a second on SX1301 and it says
+        # nothing about the GPS. gpsd sends several time messages per second while
+        # the check assumes one, and nothing uses the calculated correction. Only
+        # this message is dropped, because a lower log level would also hide real
+        # warnings.
+        LogFilterPatterns = "~xtal error out of expected range";
       };
     };
 
