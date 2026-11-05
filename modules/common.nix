@@ -73,8 +73,9 @@
   # Enable periodic SSD trim for performance and longevity
   services.fstrim.enable = true;
 
-  # Override DHCP-advertised NTP with public servers.
-  # networking.timeServers only sets FallbackNTP which DHCP overrides.
+  # Public servers keep every host on the same correct time. This only holds
+  # because networking.nix also ignores NTP servers from DHCP, since timesyncd
+  # prefers servers learned on a link over this list.
   services.timesyncd.servers = [
     "0.nixos.pool.ntp.org"
     "1.nixos.pool.ntp.org"

@@ -138,14 +138,25 @@ in {
           DHCP = "yes";
           # Prefer ethernet over WiFi for default route.
           # IPv6 route metric comes from Router Advertisements, not DHCPv6.
-          dhcpV4Config.RouteMetric = 100;
+          dhcpV4Config = {
+            RouteMetric = 100;
+            # timesyncd prefers servers learned on a link over its own list, so a
+            # router with a wrong clock would silently set the time of the host.
+            UseNTP = false;
+          };
+          dhcpV6Config.UseNTP = false;
           ipv6AcceptRAConfig.RouteMetric = 100;
         };
         "99-all-wifi" = {
           matchConfig.Type = "wlan";
           DHCP = "yes";
           # Lower priority than ethernet
-          dhcpV4Config.RouteMetric = 600;
+          dhcpV4Config = {
+            RouteMetric = 600;
+            # See the ethernet network above for why DHCP must not supply NTP.
+            UseNTP = false;
+          };
+          dhcpV6Config.UseNTP = false;
           ipv6AcceptRAConfig.RouteMetric = 600;
         };
       };
