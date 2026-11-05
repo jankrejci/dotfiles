@@ -245,6 +245,9 @@ in {
         RestartSec = "5s";
         User = "root";
         Group = "root";
+        # The panic message in the journal already explains a failure, while a
+        # dump on every restart would keep writing to the SD card during a loop.
+        LimitCORE = 0;
       };
     };
 
