@@ -231,6 +231,14 @@ in {
       after = ["chirpstack-concentratord.service" "network-online.target"];
       requires = ["chirpstack-concentratord.service"];
       wants = ["network-online.target"];
+      # Each failed start takes about 6 seconds, so this limit is reached after
+      # about 2 minutes. The concentrator usually needs about 1 minute of retries
+      # after a start, during which the forwarder fails too, and that must not
+      # count as stuck. Its retries have also taken 3.5 minutes, which only costs
+      # one extra restart from the recovery below.
+      startLimitIntervalSec = 180;
+      startLimitBurst = 20;
+      onFailure = ["chirpstack-gateway-recover.service"];
       serviceConfig = {
         ExecStart = "${pkgs.chirpstack-udp-forwarder}/bin/chirpstack-udp-forwarder -c ${udpForwarderConfig}";
         Restart = "on-failure";
@@ -238,6 +246,32 @@ in {
         User = "root";
         Group = "root";
       };
+    };
+
+    # A DNS failure during a router restart once made the forwarder panic, and
+    # every restart then failed to read the gateway id from a concentrator that
+    # was still running but no longer answered. Only restarting the concentrator
+    # as well ends that. Doing this on every forwarder failure through PartOf
+    # would loop, because the forwarder gives up before the concentrator is up.
+    # Restarting the concentrator alone would skip the forwarder, because a
+    # restart only propagates to dependents that are active. The failed state
+    # also has to be reset first, or the start limit refuses the new start.
+    #
+    # OnFailure fires on every failed attempt, even with a retry scheduled, so
+    # the script has to check that the forwarder really gave up. Without the
+    # check, a deploy made the forwarder fail while the concentrator was starting,
+    # and each recovery restarted the concentrator until its own start limit
+    # left the gateway down.
+    systemd.services.chirpstack-gateway-recover = {
+      description = "Restart the LoRaWAN gateway after the forwarder gave up";
+      path = [config.systemd.package];
+      script = ''
+        result=$(systemctl show chirpstack-udp-forwarder.service -p Result --value)
+        [ "$result" = "start-limit-hit" ] || exit 0
+        systemctl reset-failed chirpstack-udp-forwarder.service
+        systemctl restart chirpstack-concentratord.service chirpstack-udp-forwarder.service
+      '';
+      serviceConfig.Type = "oneshot";
     };
 
     # Required packages for GPIO control
