@@ -36,6 +36,7 @@ jobs:
           - rpi4
           - rak2245
           - prusa
+          - m75q
         include:
           - host: rpi4
             eval-only: true
