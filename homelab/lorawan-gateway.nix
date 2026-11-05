@@ -277,6 +277,22 @@ in {
       serviceConfig.Type = "oneshot";
     };
 
+    # The forwarder counts as active for a moment on every restart, so a check of
+    # the current state can miss a loop. The share of time spent active cannot.
+    homelab.alerts.lorawan-gateway = [
+      {
+        alert = "LorawanForwarderNotRunning";
+        expr = ''avg_over_time(node_systemd_unit_state{name="chirpstack-udp-forwarder.service",state="active",host="${config.homelab.host.hostName}"}[10m]) < 0.5'';
+        for = "5m";
+        labels = {
+          severity = "warning";
+          host = config.homelab.host.hostName;
+          type = "service";
+        };
+        annotations.summary = "LoRaWAN gateway is not forwarding, the UDP forwarder keeps failing";
+      }
+    ];
+
     # Required packages for GPIO control
     environment.systemPackages = [pkgs.libgpiod];
   };
