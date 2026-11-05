@@ -110,7 +110,10 @@ in {
     systemd.network = {
       enable = true;
 
+      # NetworkManager has its own wait-online service. This one would have no
+      # link left to wait for on a host where NetworkManager owns the adapters.
       wait-online = {
+        enable = !config.networking.networkmanager.enable;
         anyInterface = true;
         timeout = 10;
       };
@@ -133,7 +136,11 @@ in {
 
         # Enable dhcp via systemd-network
         # This can be overriden for servers with fixed ip
-        "98-all-ethernet" = lib.mkDefault {
+        # NetworkManager owns the adapters on desktops, where its routes use the
+        # same metrics by default. With both managers on one adapter, each holds
+        # its own lease and default route, and the constant route changes make
+        # Netbird restart its engine and drop every peer.
+        "98-all-ethernet" = lib.mkIf (!config.networking.networkmanager.enable) (lib.mkDefault {
           matchConfig.Type = "ether";
           DHCP = "yes";
           # Prefer ethernet over WiFi for default route.
@@ -146,8 +153,8 @@ in {
           };
           dhcpV6Config.UseNTP = false;
           ipv6AcceptRAConfig.RouteMetric = 100;
-        };
-        "99-all-wifi" = {
+        });
+        "99-all-wifi" = lib.mkIf (!config.networking.networkmanager.enable) {
           matchConfig.Type = "wlan";
           DHCP = "yes";
           # Lower priority than ethernet
