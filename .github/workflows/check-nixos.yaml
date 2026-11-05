@@ -36,12 +36,16 @@ jobs:
           - rpi4
           - rak2245
           - prusa
+          - m75q
         include:
           - host: rpi4
             eval-only: true
           - host: rak2245
             eval-only: true
           - host: prusa
+            eval-only: true
+          # The host key only exists after the first install, so a full build is not attempted yet.
+          - host: m75q
             eval-only: true
     steps:
       - uses: actions/checkout@v4
