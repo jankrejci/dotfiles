@@ -320,7 +320,7 @@ are defined in the `services` attrset in `flake/hosts.nix` and referenced by
 modules via `config.homelab.services`.
 
 **IP patterns:**
-- `listenAddresses` on nginx vhosts use dummy service IPs from the 192.168.91-93 ranges
+- `listenAddresses` on nginx vhosts use dummy service IPs from the 192.168.91-92 ranges
 - `proxyPass` always uses `127.0.0.1` since the backend service runs on localhost
 - These are intentionally different: the service IP is for external routing, localhost is for internal forwarding
 
