@@ -133,6 +133,7 @@ Remote machines via VPN only:
 | `/nix-dev` | Develop and debug Nix expressions |
 | `/review-branch` | Review all branch changes against origin/main |
 | `/fix-review` | Apply review findings as fixup commits |
+| `/skill-from-sessions` | Draft skills or rules from repeated instructions |
 
 ### Iterative Workflow
 
