@@ -29,10 +29,10 @@ Deep, exhaustive review of all commits on the current branch compared to its rev
 
 ### Phase 2: Run all checks
 
-First decide whether the flake check applies. A diff that touches only
+First decide whether the full flake check applies. A diff that touches only
 harness or documentation config (`.claude/`, `*.md`, `.gitlint*`) feeds
-into no Nix evaluation, so running the check would rebuild everything
-without validating any of the change under review.
+into no NixOS configuration, so the full check would rebuild everything
+while only the instruction checks can judge the change under review.
 
 ```bash
 git diff --name-only "$BASE"...HEAD |
@@ -47,9 +47,13 @@ any unexpected path forces the check on; only an all-inert diff skips it.
 harness defines one that wraps ugrep, and it does not filter stdin the same
 way, so the plain call reports an all-inert diff even when Nix files changed.
 
-When `FLAKE_RELEVANT=0`, skip the check and record
-`nix flake check: SKIPPED (only harness/docs changed)` in the output,
-then move to Phase 3.
+When `FLAKE_RELEVANT=0`, skip the full check, run only the instruction checks
+below, and record `nix flake check: SKIPPED (only harness/docs changed)` plus
+their result in the output, then move to Phase 3:
+
+```bash
+nix build --no-link .#checks.x86_64-linux.instruction-paths .#checks.x86_64-linux.claude-md-limit
+```
 
 When `FLAKE_RELEVANT=1`, run every check CI would run:
 
