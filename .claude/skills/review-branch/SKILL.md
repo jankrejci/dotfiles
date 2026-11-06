@@ -29,7 +29,14 @@ Deep, exhaustive review of all commits on the current branch compared to its rev
 
 ### Phase 2: Run all checks
 
-First decide whether the full flake check applies. A diff that touches only
+Always run gitlint, whatever the diff touches, because it judges the commit
+messages and not the tree. It skips fixup commits, so it stays usable mid-branch:
+
+```bash
+nix run nixpkgs#gitlint -- --commits "$BASE"..HEAD
+```
+
+Then decide whether the full flake check applies. A diff that touches only
 harness or documentation config (`.claude/`, `*.md`, `.gitlint*`) feeds
 into no NixOS configuration, so the full check would rebuild everything
 while only the instruction checks can judge the change under review.
@@ -149,6 +156,7 @@ Review the full diff (`git diff "$BASE"...HEAD`) for:
 Before producing output, verify every category was checked. For each item below, confirm it was evaluated for every commit and every changed file. If any item was skipped or only partially checked, go back and complete the relevant phase before continuing.
 
 - [ ] Flake check exit line (`FLAKE_CHECK_EXIT=`) in hand, or was skipped with reason (Phase 2)
+- [ ] gitlint result in hand (Phase 2)
 - [ ] Every commit message verified against its diff (Phase 3)
 - [ ] Every commit is a single logical change (Phase 3)
 - [ ] No bundled unrelated changes (Phase 3)
@@ -185,6 +193,7 @@ The per-worktree git directory keeps one report per branch checkout, and
 
 nix flake check: PASS/FAIL/SKIPPED
 nix fmt --check: PASS/FAIL
+gitlint: PASS/<its lines>
 
 ### Findings
 
@@ -216,7 +225,7 @@ Close with `Merge-ready.` when the checks pass and there is no Important finding
 
 - Review ALL commits on the branch, not just the latest
 - A claim about behaviour needs a `file:line` that you read and that shows it, not an inference from a name. When a subagent reports a finding, open the cited line before repeating it, or say that you did not
-- Do not report what a check already enforces: formatting, a stale path in an instruction file, the length of `CLAUDE.md`
+- Do not report what a check already enforces: formatting, commit message format, a stale path in an instruction file, the length of `CLAUDE.md`
 - Run `nix flake check` as one background `Bash` call whenever the diff has non-inert files; never delegate it to a `Task` subagent or poll a sentinel. Skip only when Phase 2 detection shows an all-inert diff, and record the skip in the output. If a check cannot run for any other reason, report why.
 - Every finding MUST include a file:line reference (or commit hash for commit message issues)
 - Important findings must be exhaustive: if this review reports none, the branch is ready to merge
