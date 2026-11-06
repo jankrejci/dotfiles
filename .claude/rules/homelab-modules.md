@@ -24,7 +24,7 @@ when working under `homelab/`.
   `allow` of the Netbird subnet and `deny all` in nginx
 - Use `lib.mkIf cfg.enable` for all config
 - Every port is a `lib.types.port` option named `port` or `port.<name>`; see
-  the Port and IP Patterns section in `CLAUDE.md` for the collision-check rules
+  `.claude/rules/ports-and-ips.md` for the collision-check rules
 
 **Common integration patterns used across modules:**
 - `homelab.healthChecks` -- `systemctl is-active` or HTTP check with timeout

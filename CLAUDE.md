@@ -81,35 +81,16 @@ compacted before merge anyway, but reviewability during development matters.
 **NEVER push to remote.** User will push when ready.
 
 ## Git Branch Cleanup
-Before merging, consolidate the branch into clean logical commits:
+`/branch-cleanup` consolidates a branch into clean logical commits before merge.
+Preserve struggle documentation in code comments, not commit history.
 
 The base defaults to `origin/main`. A branch stacked on other in-flight work
 sets its own base once with `git config branch.<name>.reviewBase <base-ref>`;
 the cleanup and review skills read that config.
 
-**Cleanup Process:**
-1. Create backup: `git branch backup-branch`
-2. Soft reset: `git reset --soft origin/main`
-3. Unstage all: `git reset HEAD -- .`
-4. Commit in logical groups by file/feature
-5. Verify: `nix flake check`
-
-**Principles:**
-- One logical change per commit
-- Squash duplicate/related changes
-- Drop commits that are immediately superseded
-- Preserve struggle documentation in code comments, not commit history
-- When commits are interleaved across files, soft reset is cleaner than rebase
-- Always separate CLAUDE.md changes from code commits
-
 Interactive rebase is allowed in this repo, overriding the harness default
 prohibition on `-i`. Always drive it non-interactively via `GIT_SEQUENCE_EDITOR`;
 never set `GIT_EDITOR`.
-
-**For scripted rebase** when commits are not interleaved:
-```bash
-GIT_SEQUENCE_EDITOR='script.sh' git rebase -i origin/main
-```
 
 ## Shell Script Style
 - Use `|| { }` pattern for guard clauses instead of nested if-else
@@ -139,53 +120,6 @@ Remote machines via VPN only:
 - Update ALL hardcoded references before deploying
 - Firewall rules, systemd units, and nginx configs often have hardcoded names
 
-## Netbird Architecture
-Two-tier VPN setup for different access patterns:
-
-**System client** (`netbird-homelab`, port 51820):
-- Setup key enrollment, always running as system service
-- For infrastructure: SSH, monitoring, node scraping
-- Machine-based policies, no expiration
-- Module: `modules/netbird-homelab.nix`
-- Used by: servers via headless.nix, RPi via raspberry.nix
-
-**User client** (`netbird-user`, port 51821):
-- Runs as systemd user service on desktops
-- SSO login via tray UI, user-based policies
-- Module: `modules/netbird-user.nix`
-- Used by: desktops via desktop.nix
-- User must authenticate via tray UI before VPN works
-
-**Server components** (all on thinkcenter):
-- Management: control plane with PostgreSQL, port 8011
-- Signal: peer connection handshake broker, port 8012
-- Relay: fallback traffic path with own TLS, port 33080
-- Dashboard: static admin UI, VPN-only access
-- Module: `homelab/netbird-server.nix`
-
-**Public proxy** (vpsfree, stateless):
-- nginx http: proxies management API, signal gRPC, Dex OIDC on port 443
-- nginx stream: relay TLS passthrough on port 33080, STUN UDP on 3478
-- All traffic forwarded to thinkcenter via WG backup tunnel
-- Module: `homelab/netbird-signal.nix`
-
-**Module structure:**
-- `networking.nix` - general networking, no netbird config
-- `netbird-homelab.nix` - system client for servers/RPi
-- `netbird-user.nix` - user client for desktops
-
-**Limitation:** Cannot run both clients simultaneously due to routing table conflict.
-See: https://github.com/netbirdio/netbird/issues/2023
-
-### Declarative Configuration
-
-Declarative Netbird API management was prototyped but abandoned for now. The approach
-worked but had a fundamental limitation: peer IDs change on re-enrollment, making
-automatic group membership sync impractical. Manual dashboard management is simpler
-until Netbird supports stable peer identifiers or setup-key-based group assignment.
-
-Future work: revisit when Netbird adds stable identifiers or setup key groups feature.
-
 ## Development Workflow
 
 ### Skills
@@ -202,55 +136,16 @@ Future work: revisit when Netbird adds stable identifiers or setup key groups fe
 
 ### Iterative Workflow
 
-```
-[1] Clarify → [2] Plan → [3] Implement → [4] Commit → [5] Review → [6] Deploy
-                 ↑                           ↓            |
-                 └─────────── fixup ────────┴────────────┘
-```
+1. **Clarify**: ask if requirements are ambiguous; trivial tasks skip to implement
+2. **Plan** (approval required): use plan mode for non-trivial tasks, wait for approval
+3. **Implement**: make ONE logical change, run `nix flake check`
+4. **Commit**: create ONE commit, with `/commit` or directly, then STOP for user review
+5. **Review**: user reviews with tuicr or similar; changes needed means a fixup and
+   another review, approval means the next change or deploy
+6. **Deploy** (approval required): only if user requests, with `/deploy <hostname>`
 
-**Stage 1: Clarify**
-- Ask questions if requirements are ambiguous
-- For trivial tasks, skip to implement
-
-**Stage 2: Plan** (approval required)
-- Use plan mode for non-trivial tasks
-- Present plan to user, wait for approval
-
-**Stage 3: Implement**
-- Make ONE logical change
-- Run `nix flake check`
-
-**Stage 4: Commit**
-- Use `/commit` skill or commit directly
-- Create ONE commit for the logical change
-- STOP for user review
-
-**Stage 5: Review**
-- User reviews with tuicr or similar tool
-- If changes needed → create fixup commit → return to review
-- If approved → continue to next change or deploy
-
-**Stage 6: Deploy** (approval required)
-- Only if user requests
-- Use `/deploy <hostname>`
-
-### Fixup Workflow
-
-**Prefer git-absorb** for automatic fixup creation. See
-`.claude/skills/branch-cleanup/SKILL.md` for detailed usage.
-
-```bash
-git absorb --base origin/main            # auto-create fixups
-git absorb --base origin/main --dry-run  # preview first
-git absorb --base origin/main --and-rebase  # create and squash
-```
-
-**Manual fixups when absorb cannot determine the target commit:**
-```bash
-git commit --fixup=<target-sha>
-
-# Before merge, user runs /branch-cleanup to squash
-```
+Prefer `git absorb --base origin/main` for fixups, and `git commit --fixup=<target-sha>`
+when it cannot determine the target. Details: `.claude/skills/branch-cleanup/SKILL.md`.
 
 ### Rules
 
@@ -289,30 +184,9 @@ scripts/               # Deployment and utility scripts
 - `flake.*` options in `options.nix` for cross-module data sharing
 - Host config in `hosts.nix` injects `homelab.*` options into NixOS modules
 
-Service module authoring conventions (adding a service, bind/mkIf rules,
-`homelab.healthChecks`/`scrapeTargets`/`backup.jobs` and nginx patterns) load
-automatically from `.claude/rules/homelab-modules.md` when working under
-`homelab/`.
+Path-scoped conventions load automatically from `.claude/rules/` with the files
+they govern: `homelab-modules.md` for service authoring, `ports-and-ips.md` for
+port options and listen addresses, `netbird.md` for the VPN architecture, and
+`lorawan.md` for the gateway. Detail goes there rather than here, because this
+file loads on every session.
 
-## Port and IP Patterns
-
-**Port declaration:** Every port must be a `lib.types.port` option named `port`
-or `port.<name>`. Defaults are allowed. Host-specific overrides go in
-`flake/hosts.nix`. This naming convention enables a build-time collision check
-that enumerates all `port` options across modules.
-
-**Shared service ports** like `services.https.port` and `services.netbird.port.*`
-are defined in the `services` attrset in `flake/hosts.nix` and referenced by
-modules via `config.homelab.services`.
-
-**IP patterns:**
-- `listenAddresses` on nginx vhosts use dummy service IPs from the 192.168.91-92 ranges
-- `proxyPass` always uses `127.0.0.1` since the backend service runs on localhost
-- These are intentionally different: the service IP is for external routing, localhost is for internal forwarding
-
-## LoRaWAN Gateway
-
-See `homelab/lorawan-gateway.nix` for full GNSS architecture documentation.
-
-Key finding: GPS time sync requires working GPIO14 for UART TX to send UBX
-commands. Some RPi boards have dead GPIO14. Use RPi 3B, not 3B+.
