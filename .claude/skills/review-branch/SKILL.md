@@ -6,7 +6,7 @@ disable-model-invocation: true
 allowed-tools: Bash, Read, Grep, Glob, Skill, Task, WebSearch, WebFetch
 ---
 
-Deep, exhaustive review of all commits on the current branch compared to its review base (`origin/main` by default, or a stacked base configured via `branch.<name>.reviewBase`; see Phase 1). The goal is that after all findings are fixed, the branch is merge-ready and all pipeline checks will pass. Do not leave anything for a second pass — find everything in one review.
+Deep, exhaustive review of all commits on the current branch compared to its review base (`origin/main` by default, or a stacked base configured via `branch.<name>.reviewBase`; see Phase 1). The goal is that after all Important findings are fixed, the branch is merge-ready and all pipeline checks will pass. Do not leave an Important finding for a second pass.
 
 ## Process
 
@@ -173,24 +173,38 @@ nix fmt --check: PASS/FAIL
 
 ### Findings
 
-BLOCKING file.nix:42 -- Description of the issue
-BLOCKING file.nix:58 -- Description of the issue
+2 important, 1 nit, 1 pre-existing
 
-NIT file.nix:100 -- Description of the issue
+#### Important
+1. CODE file.nix:42 -- Description of the issue
+2. COMMITS abc1234 -- Description of the issue
+
+#### Nit
+1. DESIGN file.nix:100 -- Description of the issue
+
+#### Pre-existing
+1. CODE file.nix:7 -- Description of the issue
 ```
 
-Severity levels:
-- `BLOCKING` — Must fix before merge: bugs, build failures, lint errors, format violations, rule violations, incorrect commit messages
-- `NIT` — Optional improvement, style preference, take it or leave it
+Number findings from 1 under each heading, so a reply can cite one by number. Omit a heading with nothing under it.
 
-If no issues are found, output: `No issues found. Branch is merge-ready.`
+Severity levels:
+- **Important**: breaks behaviour, leaks data, or fails a check, or a commit message claim that the diff contradicts. Must be fixed before merge
+- **Nit**: anything else. Report at most five; past that, give a count and one line on what the rest were about
+- **Pre-existing**: a bug this branch did not introduce. It does not count against the branch and gets its own branch
+
+Labels say where to look: `CODE` for logic and runtime behaviour, `DESIGN` for structure, `BUILD` for what a check would fail, `DOCS` for prose and comments, `COMMITS` for history.
+
+Close with `Merge-ready.` when the checks pass and there is no Important finding. The bar is the severity and not zero findings, because a review re-reading settled code always has something to say.
 
 ## Rules
 
 - Review ALL commits on the branch, not just the latest
+- A claim about behaviour needs a `file:line` that you read and that shows it, not an inference from a name. When a subagent reports a finding, open the cited line before repeating it, or say that you did not
+- Do not report what a check already enforces: formatting, a stale path in an instruction file, the length of `CLAUDE.md`
 - Run `nix flake check` as one background `Bash` call whenever the diff has non-inert files; never delegate it to a `Task` subagent or poll a sentinel. Skip only when Phase 2 detection shows an all-inert diff, and record the skip in the output. If a check cannot run for any other reason, report why.
 - Every finding MUST include a file:line reference (or commit hash for commit message issues)
-- Findings must be exhaustive: if this review passes, the branch is ready to merge
+- Important findings must be exhaustive: if this review reports none, the branch is ready to merge
 - No praise, no "looks good" summaries, no filler text
 - No suggestions without file:line references
 - Report only concrete issues found in the actual code or checks

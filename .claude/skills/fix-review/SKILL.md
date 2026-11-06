@@ -9,17 +9,18 @@ Apply fixes from `/review-branch` findings passed in `$ARGUMENTS`.
 
 ## Process
 
-1. Parse findings from arguments (BLOCKING and NIT items with file:line references)
-2. Classify each finding: code fix, structural fix, documentation-hardening,
-   or documented-no-change (with rationale). Every finding must be
-   addressed — nothing is skipped. A finding that turns out to be a false
+1. Parse findings from arguments (Important, Nit and Pre-existing items with file:line references)
+2. Classify each Important finding and each Nit: code fix, structural fix,
+   documentation-hardening, or documented-no-change (with rationale). Every
+   Important finding must be addressed. A Pre-existing finding is listed
+   but not fixed here, because it belongs on its own branch. A finding that turns out to be a false
    positive or a reviewer misunderstanding is NOT dismissed: the code's own
    comments or docs were unclear enough to mislead the review, so harden
    that documentation instead, so the next review round does not re-raise
    it. "The reviewer was wrong" is itself a finding against the docs.
 3. Present the full list to user with proposed action for each item
-4. Wait for user approval
-5. Apply all approved fixes (BLOCKING and NIT together)
+4. Wait for user approval, which also says which Nits to fix
+5. Apply all approved fixes together
 
 ### Fix classification
 
@@ -171,10 +172,10 @@ documented: <description> -- <rationale, no change made>
 
 ## Rules
 
-- Every finding must be addressed — never silently skip. Fix it, harden
-  the documentation that allowed the misread (for false positives), or
-  explicitly document why the existing state is acceptable and could not
-  be made clearer.
+- Never silently skip a finding. Fix it, harden the documentation that
+  allowed the misread (for false positives), explicitly document why the
+  existing state is acceptable and could not be made clearer, or for a Nit
+  or Pre-existing finding, record in the summary that it was left alone.
 - One logical fix per fixup commit
 - Never batch unrelated fixes into a single commit
 - Never introduce changes beyond what the finding requires
