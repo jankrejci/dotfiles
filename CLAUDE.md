@@ -31,10 +31,7 @@ Senior software engineer with 10+ years NixOS/functional programming experience.
 - **Comments**: Write proper sentences, NEVER use parentheses for asides!!!
 - **No size claims**: NEVER write MB/GB savings in comments
 
-**Safe commands:** Run these without user confirmation:
-- `nix build*`, `nix eval*`, `nix flake check`, `nix flake show`
-- `nix-store --query*`, `nix path-info*`, `nix why-depends*`
-- `git status`, `git diff`, `git log`, `git show`
+**Safe commands** run without confirmation; the list is `.claude/settings.json`.
 
 **Nix debugging:**
 - Always use `--show-trace` when debugging evaluation errors

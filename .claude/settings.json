@@ -1,5 +1,18 @@
 {
   "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(nix build:*)",
+      "Bash(nix eval:*)",
+      "Bash(nix flake check:*)",
+      "Bash(nix flake show:*)",
+      "Bash(nix-store --query:*)",
+      "Bash(nix path-info:*)",
+      "Bash(nix why-depends:*)"
+    ],
     "deny": [
       "Bash(git push:*)",
       "Bash(netbird down:*)",
