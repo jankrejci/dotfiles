@@ -101,6 +101,14 @@ in {
             rustfmt --edition 2021 --check ${../pkgs/prusa-obico/src}/main.rs
             touch $out
           '';
+        inherit
+          (import ./harness-checks.nix {
+            inherit pkgs;
+            root = inputs.self;
+          })
+          claude-md-limit
+          instruction-paths
+          ;
       }
       else {};
 
