@@ -5,7 +5,7 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash
 ---
 
 Create a new NixOS service module in the homelab pattern.
-Follow service rules and integration patterns from CLAUDE.md.
+Follow service rules and integration patterns from `.claude/rules/homelab-modules.md`.
 
 ## Arguments
 
@@ -19,7 +19,7 @@ The service name should be lowercase, e.g., "myservice".
 ## Process
 
 1. Verify service does not exist: `ls homelab/$SERVICE.nix`
-2. Read reference modules listed in CLAUDE.md "Adding a new service" section
+2. Read reference modules listed in the "Adding a new service" section of that rule
 3. Create module at `homelab/$SERVICE.nix` following the `homelab.X.enable` pattern
 4. Add import to `homelab/default.nix` in alphabetical order
 5. Run `nix flake check`
