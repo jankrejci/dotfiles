@@ -18,7 +18,10 @@
   # The wildcard covers only one label below the domain, so a peer name like
   # prusa.nb.krejci.io needs a certificate of its own.
   certNames = lib.optional cfg.wildcard domain ++ lib.optional cfg.hostCert peerName;
-  acmeServices = map (name: "acme-${name}.service") certNames;
+  # The renew timer runs the order-renew unit, while the base unit only ensures
+  # a placeholder certificate and stays up, so a failed renewal shows only on
+  # the former.
+  acmeServices = lib.concatMap (name: ["acme-${name}.service" "acme-order-renew-${name}.service"]) certNames;
 in {
   options.homelab.acme = {
     email = lib.mkOption {
