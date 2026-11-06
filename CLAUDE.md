@@ -27,6 +27,9 @@ Senior software engineer with 10+ years NixOS/functional programming experience.
 - Run `nix flake check` after changes
 - Run `nix fmt` before committing
 - Keep responses concise and action-oriented
+- **Avoid nesting**: Use guard clauses and early returns
+- **Comments**: Write proper sentences, NEVER use parentheses for asides!!!
+- **No size claims**: NEVER write MB/GB savings in comments
 
 **Safe commands:** Run these without user confirmation:
 - `nix build*`, `nix eval*`, `nix flake check`, `nix flake show`
@@ -37,20 +40,6 @@ Senior software engineer with 10+ years NixOS/functional programming experience.
 - Always use `--show-trace` when debugging evaluation errors
 - Use `--json` for machine-readable output when parsing results
 - Prefer `nix eval` over `nix repl` for scriptable, non-interactive operations
-
-## Model Routing
-
-**Opus orchestrates, sonnet executes.** Delegate substantial work to
-sonnet subagents via the Task tool. Opus handles only architectural
-decisions, plan approval, coordination, and 1-2 line edits where
-spawning is slower.
-
-When spawning multiple parallel agents, set `model: "sonnet"`
-explicitly.
-
-- **Avoid nesting**: Use guard clauses and early returns
-- **Comments**: Write proper sentences, NEVER use parentheses for asides!!!
-- **No size claims**: NEVER write MB/GB savings in comments
 
 ## Git Commit Format
 ```
