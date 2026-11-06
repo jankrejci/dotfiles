@@ -188,5 +188,5 @@ Path-scoped conventions load automatically from `.claude/rules/` with the files
 they govern: `homelab-modules.md` for service authoring, `ports-and-ips.md` for
 port options and listen addresses, `netbird.md` for the VPN architecture, and
 `lorawan.md` for the gateway. Detail goes there rather than here, because this
-file loads on every session.
+file loads on every session and the `claude-md-limit` check caps its length.
 
