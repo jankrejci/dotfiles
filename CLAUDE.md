@@ -263,7 +263,7 @@ git commit --fixup=<target-sha>
 - NEVER push to remote
 
 ## Scripts
-See `scripts.nix` for available commands. Key ones:
+See `scripts/default.nix` for available commands. Key ones:
 - `nix run .#deploy-config <hostname>` - Deploy config remotely
 - `nix run .#build-sdcard <hostname>` - Build RPi SD card image
 
@@ -283,7 +283,7 @@ modules/               # Base NixOS modules (common, ssh, networking)
 hosts/                 # Host-specific configuration overrides
 users/                 # User configurations
 pkgs/                  # Custom packages
-scripts.nix            # Deployment and utility scripts
+scripts/               # Deployment and utility scripts
 ```
 
 **Flake-parts pattern:**
