@@ -161,6 +161,21 @@ Before producing output, verify every category was checked. For each item below,
 
 Only produce the final output after all items are confirmed.
 
+### Phase 7: Save the report
+
+Save the final report, with the base and the reviewed commit above it, for
+`/fix-review` to read:
+
+```bash
+{ echo "base: $BASE"; echo "head: $(git rev-parse HEAD)"; cat <<'REPORT'; } > "$(git rev-parse --absolute-git-dir)/review-branch.md"
+<the report>
+REPORT
+```
+
+A report held only in context is gone after compaction or in a new session.
+The per-worktree git directory keeps one report per branch checkout, and
+`git status` does not see it, so it cannot dirty the tree.
+
 ## Output Format
 
 ```

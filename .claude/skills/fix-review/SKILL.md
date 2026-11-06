@@ -5,11 +5,20 @@ disable-model-invocation: true
 allowed-tools: Bash, Read, Edit, Write, Grep, Glob
 ---
 
-Apply fixes from `/review-branch` findings passed in `$ARGUMENTS`.
+Apply fixes from `/review-branch` findings passed in `$ARGUMENTS`. With no
+arguments, read the report that `/review-branch` saved:
+
+```bash
+cat "$(git rev-parse --absolute-git-dir)/review-branch.md"
+```
+
+Its `head:` line names the reviewed commit. If `HEAD` has moved since, line
+references may be off, so read each cited line before trusting it. If the
+file is missing, ask for the findings or suggest running `/review-branch`.
 
 ## Process
 
-1. Parse findings from arguments (Important, Nit and Pre-existing items with file:line references)
+1. Parse the findings (Important, Nit and Pre-existing items with file:line references)
 2. Classify each Important finding and each Nit: code fix, structural fix,
    documentation-hardening, or documented-no-change (with rationale). Every
    Important finding must be addressed. A Pre-existing finding is listed
