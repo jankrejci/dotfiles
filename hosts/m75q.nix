@@ -3,9 +3,9 @@
 # - AMD microcode and KVM module
 # - NVMe data disk mirroring thinkcenter's /mnt/immich-data
 {...}: let
-  # The installer stages the disk password here for both disks. It is shredded
-  # once the root disk is sealed to the TPM, so the data disk must be enrolled
-  # before the next reboot or it will ask for a passphrase.
+  # The installer stages the disk password here for both disks.
+  # modules/disk-tpm-encryption.nix seals both to the TPM with it before
+  # shredding it, so the data disk unlocks without a prompt too.
   diskPasswordFile = "/var/lib/disk-password";
 
   # These options are for the immich data disk. The root disk gets its own
