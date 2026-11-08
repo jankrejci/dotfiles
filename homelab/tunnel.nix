@@ -141,6 +141,22 @@ in {
           listenAddresses = ["127.0.0.1"];
         })
       ))
+
+      # Browsers coalesce HTTP/2 connections across hosts that share an IP
+      # and the wildcard cert. A request for a tunneled domain can then
+      # arrive here over a connection whose SNI named a local domain, so the
+      # stream map never saw it. Answering 421 makes the browser retry on a
+      # new connection with the right SNI. Without it the Netbird dashboard
+      # got a 404 for the Dex discovery document after calling the API.
+      (lib.mkIf cfg.proxy.enable {
+        "misdirected" = {
+          default = true;
+          listenAddresses = ["127.0.0.1"];
+          onlySSL = true;
+          useACMEHost = global.domain;
+          locations."/".return = "421";
+        };
+      })
     ];
 
     # Scrape target for prometheus
