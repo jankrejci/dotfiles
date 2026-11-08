@@ -6,13 +6,22 @@
 # - password slot kept for recovery
 {
   config,
+  lib,
   pkgs,
+  utils,
   ...
 }: let
   host = config.homelab.host;
   metricsDir = config.homelab.metricsDir;
   luksDevice = "/dev/disk/by-partlabel/disk-main-luks";
   diskPasswordFile = "/var/lib/disk-password";
+
+  # Every LUKS device the initrd unlocks gets a TPM slot, not only the system
+  # disk. A data disk declared through disko on the host would otherwise stop
+  # a headless boot at its passphrase prompt. All disks share the passphrase
+  # the installer stages in diskPasswordFile.
+  luksDevices = config.boot.initrd.luks.devices;
+  luksPaths = lib.escapeShellArgs (lib.mapAttrsToList (_: d: d.device) luksDevices);
 
   # Sign the systemd-boot binaries and every kernel image on the ESP.
   # Shared by the bootloader install step and the boot-time safety-net service
@@ -198,7 +207,8 @@ in {
   boot.initrd.systemd.services."tpm-delay" = {
     description = "Delay before TPM decryption";
     wantedBy = ["cryptsetup.target"];
-    before = ["systemd-cryptsetup@crypted.service"];
+    # Every unlock waits, since a data disk unsealing early races the TPM too.
+    before = lib.mapAttrsToList (name: _: "systemd-cryptsetup@${utils.escapeSystemdPath name}.service") luksDevices;
     after = ["systemd-modules-load.service"];
     unitConfig.DefaultDependencies = false;
     serviceConfig = {
@@ -305,21 +315,23 @@ in {
       exit 0
     fi
 
-    # Check if TPM slot already exists. Capture the output to avoid the
-    # grep -q SIGPIPE hazard under pipefail.
-    enroll_output=$(${pkgs.systemd}/bin/systemd-cryptenroll "${luksDevice}")
-    if grep -q tpm2 <<< "$enroll_output"; then
-      echo "TPM slot already exists, skipping provisional enrollment"
-      exit 0
-    fi
+    for device in ${luksPaths}; do
+      # Check if TPM slot already exists. Capture the output to avoid the
+      # grep -q SIGPIPE hazard under pipefail.
+      enroll_output=$(${pkgs.systemd}/bin/systemd-cryptenroll "$device")
+      if grep -q tpm2 <<< "$enroll_output"; then
+        echo "TPM slot already exists on $device, skipping provisional enrollment"
+        continue
+      fi
 
-    # Temporarily enroll TPM key sealed with PCR0 only for the first boot
-    echo "Enrolling provisional TPM key (PCR0 only) for first boot..."
-    ${pkgs.systemd}/bin/systemd-cryptenroll \
-      --tpm2-device=auto \
-      --tpm2-pcrs=0 \
-      "${luksDevice}" \
-      --unlock-key-file="${diskPasswordFile}"
+      # Temporarily enroll TPM key sealed with PCR0 only for the first boot
+      echo "Enrolling provisional TPM key (PCR0 only) on $device for first boot..."
+      ${pkgs.systemd}/bin/systemd-cryptenroll \
+        --tpm2-device=auto \
+        --tpm2-pcrs=0 \
+        "$device" \
+        --unlock-key-file="${diskPasswordFile}"
+    done
   '';
 
   # Boot-time safety net that signs the ESP after key enrollment. On a normal
@@ -391,29 +403,33 @@ in {
       fi
       echo "Secure boot is enabled"
 
-      # Check if the TPM password slot is enrolled
-      enroll_output=$(systemd-cryptenroll "${luksDevice}")
-      if ! grep -q "password" <<< "$enroll_output"; then
-        echo "ERROR: No password slots found in LUKS device"
-        exit 1
-      fi
-      echo "Password slot found on LUKS device"
+      # Every device is sealed before the password file is shredded, since
+      # the file is the only unattended way to authorize a new slot.
+      for device in ${luksPaths}; do
+        # Check if the TPM password slot is enrolled
+        enroll_output=$(systemd-cryptenroll "$device")
+        if ! grep -q "password" <<< "$enroll_output"; then
+          echo "ERROR: No password slots found on $device"
+          exit 1
+        fi
+        echo "Password slot found on $device"
 
-      if ! systemd-cryptenroll --wipe-slot=tpm2 "${luksDevice}"; then
-        echo "WARNING: Failed to wipe TPM slot, may not exist."
-      fi
+        if ! systemd-cryptenroll --wipe-slot=tpm2 "$device"; then
+          echo "WARNING: Failed to wipe TPM slot on $device, may not exist."
+        fi
 
-      # Enroll final TPM key sealed with PCR0 and PCR7
-      if ! systemd-cryptenroll \
-        --tpm2-device=auto \
-        --tpm2-pcrs=0,7 \
-        "${luksDevice}" \
-        --unlock-key-file="${diskPasswordFile}"; then
+        # Enroll final TPM key sealed with PCR0 and PCR7
+        if ! systemd-cryptenroll \
+          --tpm2-device=auto \
+          --tpm2-pcrs=0,7 \
+          "$device" \
+          --unlock-key-file="${diskPasswordFile}"; then
 
-        echo "ERROR: Failed to enroll TPM key"
-        exit 1
-      fi
-      echo "TPM key enrolled with PCR0+PCR7"
+          echo "ERROR: Failed to enroll TPM key on $device"
+          exit 1
+        fi
+        echo "TPM key enrolled on $device with PCR0+PCR7"
+      done
 
       if ! shred -u "${diskPasswordFile}"; then
         echo "ERROR: Failed to delete password file"
@@ -500,36 +516,37 @@ in {
         ERRORS=$((ERRORS + 1))
       fi
 
-      # Check TPM slot is enrolled
-      echo -n "Checking TPM slot is enrolled... "
-      luks_dump=$(cryptsetup luksDump "${luksDevice}")
-      if grep -qE "systemd-tpm2" <<< "$luks_dump"; then
-        echo "OK"
-      else
-        echo "FAILED: No TPM slot found"
-        ERRORS=$((ERRORS + 1))
-      fi
+      # Every LUKS device is sealed to the TPM, so each one must carry the TPM
+      # slot, the PCR7 binding and the recovery password, not only the main disk.
+      for device in ${luksPaths}; do
+        echo -n "Checking TPM slot is enrolled on $device... "
+        luks_dump=$(cryptsetup luksDump "$device")
+        if grep -qE "systemd-tpm2" <<< "$luks_dump"; then
+          echo "OK"
+        else
+          echo "FAILED: No TPM slot found"
+          ERRORS=$((ERRORS + 1))
+        fi
 
-      # Check TPM is using PCR7 (secure boot)
-      echo -n "Checking TPM uses PCR7 (secure boot)... "
-      TOKEN_ID=$(grep -B1 "systemd-tpm2" <<< "$luks_dump" | grep -oP '^\s*\K[0-9]+' | head -n1)
-      TOKEN_DATA=$(cryptsetup token export "${luksDevice}" --token-id "$TOKEN_ID")
-      if echo "$TOKEN_DATA" | jq -e '.["tpm2-pcrs"] | contains([7])' > /dev/null 2>&1; then
-        echo "OK"
-      else
-        echo "FAILED: TPM not sealed with PCR7"
-        ERRORS=$((ERRORS + 1))
-      fi
+        echo -n "Checking TPM uses PCR7 (secure boot) on $device... "
+        TOKEN_ID=$(grep -B1 "systemd-tpm2" <<< "$luks_dump" | grep -oP '^\s*\K[0-9]+' | head -n1)
+        TOKEN_DATA=$(cryptsetup token export "$device" --token-id "$TOKEN_ID")
+        if echo "$TOKEN_DATA" | jq -e '.["tpm2-pcrs"] | contains([7])' > /dev/null 2>&1; then
+          echo "OK"
+        else
+          echo "FAILED: TPM not sealed with PCR7"
+          ERRORS=$((ERRORS + 1))
+        fi
 
-      # Check password slot exists for recovery
-      echo -n "Checking password recovery slot exists... "
-      enroll_output=$(systemd-cryptenroll "${luksDevice}")
-      if grep -q "password" <<< "$enroll_output"; then
-        echo "OK"
-      else
-        echo "FAILED: No password slots found"
-        ERRORS=$((ERRORS + 1))
-      fi
+        echo -n "Checking password recovery slot exists on $device... "
+        enroll_output=$(systemd-cryptenroll "$device")
+        if grep -q "password" <<< "$enroll_output"; then
+          echo "OK"
+        else
+          echo "FAILED: No password slots found"
+          ERRORS=$((ERRORS + 1))
+        fi
+      done
 
       # Unsealing happens in the initrd, hours before this unit runs, so the
       # journal is the only record of whether the sealed policy still matched.
