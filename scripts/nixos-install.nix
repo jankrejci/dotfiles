@@ -111,7 +111,12 @@ pkgs.writeShellApplication {
       host_needs_netbird_key "$hostname" && install_netbird_key "$hostname"
 
       # Install NixOS to the host system with our secrets
+      # nixos-anywhere points ssh at a throwaway known_hosts, so every
+      # connection announces the installer key again, and it requests a tty
+      # with no terminal on stdin. LogLevel=ERROR drops both notices while
+      # real connection failures still print.
       nixos-anywhere \
+        --ssh-option LogLevel=ERROR \
         --disk-encryption-keys "$REMOTE_DISK_PASSWORD_PATH" "$LOCAL_DISK_PASSWORD_PATH" \
         --extra-files "$TEMP" \
         --flake ".#$hostname" \
