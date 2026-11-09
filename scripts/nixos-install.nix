@@ -1,6 +1,11 @@
 # Install nixos remotely. It is expected that the host
 # is booted via USB stick and accesible on iso.nb.krejci.io
 # `nix run .#nixos-install`
+#
+# Before booting the stick, switch Secure Boot on and reset it to Setup Mode in
+# the firmware setup. Setup Mode enforces nothing whatever the switch says, and
+# the switch decides whether the firmware enforces the keys the first boot
+# enrolls. Everything after the install runs without a hand on the target.
 {
   pkgs,
   lib,
@@ -91,9 +96,16 @@ pkgs.writeShellApplication {
       setup_mode=$(ssh "$TARGET" \
         "od -An -tu1 -j4 -N1 /sys/firmware/efi/efivars/$SETUP_MODE_VAR" 2>/dev/null |
         tr -d ' ') || true
-      [ "$setup_mode" = 1 ] && return
+      [ "$setup_mode" = 1 ] && {
+        info "Setup Mode is on, Secure Boot must be switched on in the firmware too"
+        return
+      }
 
+      # The first boot creates fresh keys and only enrolls them in Setup Mode.
+      # Keys from an earlier install stay in charge otherwise, and they reject
+      # the bootloader signed with the fresh ones.
       warn "Target secure boot not in Setup Mode"
+      warn "The installed system will not pass secure boot with keys from an earlier install"
       read -r -p "Continue anyway? [y/N] " response
 
       case "$response" in
@@ -133,16 +145,13 @@ pkgs.writeShellApplication {
       print_secure_boot_steps
     }
 
-    # The rest of the secure boot setup happens on the target over two boots
-    # and needs a hand in the firmware setup, which nothing here can do.
+    # The rest of the secure boot setup runs on the target by itself over two
+    # boots. The first enrolls the keys, signs the bootloader and reboots, and
+    # the second seals the TPM key to PCR0+7 and shreds the password file.
     function print_secure_boot_steps() {
-      info "Installation finished, secure boot setup continues on the target"
-      info "1. Remove the USB stick and boot. The first boot enrolls the secure"
-      info "   boot keys, signs the bootloader and reboots by itself."
-      info "2. Enable Secure Boot in the firmware setup if the firmware did not."
-      info "3. Boot again. The TPM key is then sealed to PCR0+7 and the disk"
-      info "   password file is shredded."
-      info "   Check with: systemctl status verify-security-setup"
+      info "Installation finished, the target now reboots twice by itself to"
+      info "enroll the secure boot keys and seal the TPM key"
+      info "Check afterwards with: systemctl status verify-security-setup"
     }
 
     main "$@"
