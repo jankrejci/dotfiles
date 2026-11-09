@@ -229,7 +229,7 @@
     # Standby twin of thinkcenter. It runs no homelab services yet; it is the
     # first btrfs host so service state can later be replicated with btrfs send.
     m75q = {
-      hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAlgEp4bQjREwonf8Yzi3klcP3oWMvM9vEvQHMytogbg";
+      hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM3avgDb3lHjuewN20pcBf03y9ZF1e+T+lmIs+ChXaCb";
       # The system disk sits in the 2.5" SATA bay like on thinkcenter. Confirm
       # with lsblk on the installer before running nixos-install.
       device = "/dev/sda";
