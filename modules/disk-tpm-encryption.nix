@@ -15,6 +15,8 @@
   metricsDir = config.homelab.metricsDir;
   luksDevice = "/dev/disk/by-partlabel/disk-main-luks";
   diskPasswordFile = "/var/lib/disk-password";
+  # Where sbctl create-keys writes the keys by default.
+  sbctlKeysDir = "/var/lib/sbctl/keys";
 
   # Every LUKS device the initrd unlocks gets a TPM slot, not only the system
   # disk. A data disk declared through disko on the host would otherwise stop
@@ -24,8 +26,8 @@
   luksPaths = lib.escapeShellArgs (lib.mapAttrsToList (_: d: d.device) luksDevices);
 
   # Sign the systemd-boot binaries and every kernel image on the ESP.
-  # Shared by the bootloader install step and the boot-time safety-net service
-  # so both paths sign identically. No-ops while still in Setup Mode.
+  # Shared by the bootloader install step, the key enrollment and the boot-time
+  # safety-net service so all paths sign identically. No-ops until the keys exist.
   signBootloader = pkgs.writeShellScript "sign-bootloader" ''
     set -euo pipefail
     # The bootloader install step runs with a PATH the systemd-boot builder
@@ -34,12 +36,12 @@
     # whatever it is handed.
     export PATH="${pkgs.lib.makeBinPath [pkgs.sbctl pkgs.gnugrep]}:$PATH"
 
-    # Skip if secure boot keys not enrolled yet. Capture the output instead of
-    # piping into grep -q, which exits on first match and SIGPIPEs sbctl under
-    # pipefail, flipping the check exactly when the pattern matches.
-    status_output=$(sbctl status)
-    if grep -qE "Setup Mode:.*Enabled" <<< "$status_output"; then
-      echo "Setup Mode enabled, skipping bootloader signing"
+    # Sign as soon as the keys exist, even while the firmware still reports
+    # Setup Mode. Some firmware, like the AMI on m75q, applies keys written from
+    # the OS only at the next reset, so gating on Setup Mode left the ESP
+    # unsigned exactly when the firmware started enforcing the new keys.
+    if [ ! -f "${sbctlKeysDir}/db/db.key" ]; then
+      echo "No secure boot keys yet, skipping bootloader signing"
       exit 0
     fi
 
@@ -223,6 +225,9 @@ in {
     description = "Enroll secure boot keys to UEFI";
     wantedBy = ["multi-user.target"];
     before = ["enroll-tpm-key.service"];
+    # The script ends in a reboot, which must never fire in the middle of a
+    # deploy switch. It runs at boot only.
+    restartIfChanged = false;
 
     path = with pkgs; [
       sbctl
@@ -278,14 +283,19 @@ in {
       fi
       set_efi_vars --immutable
 
-      echo "Verifying enrollment..."
+      # Some firmware, like the AMI on m75q, keeps reporting Setup Mode until
+      # the next reset applies the keys, so a still enabled Setup Mode is not
+      # an error here. A failed write already ended the script above.
       status_output=$(sbctl status)
-      if ! grep -qE "Setup Mode:.*Disabled" <<< "$status_output"; then
-        echo "ERROR: Key enrollment verification failed"
-        sbctl status
-        exit 1
+      if grep -qE "Setup Mode:.*Enabled" <<< "$status_output"; then
+        echo "Firmware still reports Setup Mode, the keys take effect at the next reset"
       fi
       echo "Secure boot keys enrolled successfully"
+
+      # The ESP must be signed before the reset, because the firmware enforces
+      # the new keys from then on. The reboot below would also cancel the
+      # sign-bootloader service ordered after this one.
+      ${signBootloader}
 
       # Reboot to activate secure boot. The firmware should auto-enable it after
       # keys are enrolled, or user needs to enable it manually in UEFI.
