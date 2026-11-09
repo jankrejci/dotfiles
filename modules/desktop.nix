@@ -286,6 +286,9 @@ in {
   programs.hyprland = {
     enable = true;
     xwayland.enable = true;
+    # The Lua config in modules/hyprland/core.nix needs 0.57, stable ships 0.55.
+    package = pkgs.unstable.hyprland;
+    portalPackage = pkgs.unstable.xdg-desktop-portal-hyprland;
   };
 
   # The Hyprland portal only provides Screenshot, ScreenCast, and

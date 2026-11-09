@@ -217,7 +217,7 @@
 
   powerMenu = pkgs.writeShellApplication {
     name = "waybar-power-menu";
-    runtimeInputs = with pkgs; [rofi systemd hyprland];
+    runtimeInputs = [config.wayland.windowManager.hyprland.package] ++ (with pkgs; [rofi systemd]);
     text = ''
       log() { echo "$*" | systemd-cat -t waybar-power-menu -p info; }
 
@@ -229,7 +229,7 @@
         *Suspend) systemctl suspend ;;
         *Reboot) systemctl reboot ;;
         *Shutdown) systemctl poweroff ;;
-        *"Log Out") hyprctl dispatch exit ;;
+        *"Log Out") hyprctl dispatch 'hl.dsp.exit()' ;;
       esac
     '';
   };
@@ -634,6 +634,15 @@ in {
   # [workspace dots | window]  [clock  mpris]  [privacy dnd tray cpu mem net+vpn bt vol lang bat power]
   programs.waybar = {
     enable = true;
+    # Waybar 0.15 still sends the string form "dispatch workspace N" on a
+    # workspace click, which Hyprland 0.57 evaluates as invalid Lua. The patch
+    # sends the Lua dispatch form instead. Drop it once Waybar speaks that form.
+    # Only numbered and named workspaces are patched. A click on a special workspace
+    # still sends togglespecialworkspace as a string, which 0.57 rejects, but no
+    # special workspaces are configured.
+    package = pkgs.waybar.overrideAttrs (old: {
+      patches = (old.patches or []) ++ [./waybar-lua-dispatch.patch];
+    });
     systemd = {
       enable = true;
       targets = ["hyprland-session.target"];
@@ -667,9 +676,8 @@ in {
             "class<kicad>" = "󰻫";
             "class<FreeCAD>" = "󰻫";
           };
-          on-click = "activate";
-          on-scroll-up = "hyprctl dispatch workspace e-1";
-          on-scroll-down = "hyprctl dispatch workspace e+1";
+          on-scroll-up = "hyprctl dispatch 'hl.dsp.focus({ workspace = \"e-1\" })'";
+          on-scroll-down = "hyprctl dispatch 'hl.dsp.focus({ workspace = \"e+1\" })'";
           persistent-workspaces."*" = 3;
         };
         "hyprland/window" = {
