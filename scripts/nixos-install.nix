@@ -93,6 +93,9 @@ pkgs.writeShellApplication {
       # as a target outside Setup Mode. The fifth byte holds the mode, after
       # four bytes of attributes.
       local setup_mode
+      # The variable name is a constant of this script and must expand here,
+      # because the remote shell does not know it.
+      # shellcheck disable=SC2029
       setup_mode=$(ssh "$TARGET" \
         "od -An -tu1 -j4 -N1 /sys/firmware/efi/efivars/$SETUP_MODE_VAR" 2>/dev/null |
         tr -d ' ') || true
