@@ -34,6 +34,9 @@ pkgs.writeShellApplication {
     readonly NETBIRD_KEY_FOLDER="/var/lib/netbird-homelab"
     readonly NETBIRD_KEY_PATH="$NETBIRD_KEY_FOLDER/setup-key"
 
+    # The UEFI global variable that reads 1 while the firmware is in Setup Mode
+    readonly SETUP_MODE_VAR="SetupMode-8be4df61-93ca-11d2-aa0d-00e098032b8c"
+
     # Create a temporary directory for extra files
     TEMP=$(mktemp -d)
     readonly TEMP
@@ -80,10 +83,15 @@ pkgs.writeShellApplication {
     function check_secure_boot_setup_mode() {
       info "Checking secure boot setup mode"
 
-      if ssh "$TARGET" \
-        'nix-shell -p sbctl --run "sbctl status" | grep -qE "Setup Mode:.*Enabled"' 2>/dev/null; then
-        return
-      fi
+      # The firmware variable answers directly, where sbctl through nix-shell
+      # needed a nixpkgs download on the installer and read any failure of it
+      # as a target outside Setup Mode. The fifth byte holds the mode, after
+      # four bytes of attributes.
+      local setup_mode
+      setup_mode=$(ssh "$TARGET" \
+        "od -An -tu1 -j4 -N1 /sys/firmware/efi/efivars/$SETUP_MODE_VAR" 2>/dev/null |
+        tr -d ' ') || true
+      [ "$setup_mode" = 1 ] && return
 
       warn "Target secure boot not in Setup Mode"
       read -r -p "Continue anyway? [y/N] " response
@@ -121,6 +129,20 @@ pkgs.writeShellApplication {
         --extra-files "$TEMP" \
         --flake ".#$hostname" \
         --target-host "$TARGET"
+
+      print_secure_boot_steps
+    }
+
+    # The rest of the secure boot setup happens on the target over two boots
+    # and needs a hand in the firmware setup, which nothing here can do.
+    function print_secure_boot_steps() {
+      info "Installation finished, secure boot setup continues on the target"
+      info "1. Remove the USB stick and boot. The first boot enrolls the secure"
+      info "   boot keys, signs the bootloader and reboots by itself."
+      info "2. Enable Secure Boot in the firmware setup if the firmware did not."
+      info "3. Boot again. The TPM key is then sealed to PCR0+7 and the disk"
+      info "   password file is shredded."
+      info "   Check with: systemctl status verify-security-setup"
     }
 
     main "$@"
