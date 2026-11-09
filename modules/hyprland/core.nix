@@ -25,9 +25,9 @@
         hyprctl binds -j | jq -r '.[] |
           ((.modmask // 0) as $m |
             (if ($m % 2 >= 1) then "Shift+" else "" end) +
-            (if ($m % 4 >= 2) then "Ctrl+" else "" end) +
-            (if ($m % 8 >= 4) then "Alt+" else "" end) +
-            (if ($m % 16 >= 8) then "Super+" else "" end)
+            (if (($m / 4 | floor) % 2 == 1) then "Ctrl+" else "" end) +
+            (if (($m / 8 | floor) % 2 == 1) then "Alt+" else "" end) +
+            (if (($m / 64 | floor) % 2 == 1) then "Super+" else "" end)
           ) + .key + "  →  " + .dispatcher + " " + .arg' \
           | sort \
           | rofi -dmenu -i -p "All Keybindings" \
