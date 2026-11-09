@@ -65,11 +65,14 @@ pkgs.writeShellApplication {
       # Create temporary password file to be passed to nixos-anywhere
       local -r tmp_folder=$(mktemp -d)
       readonly LOCAL_DISK_PASSWORD_PATH="$tmp_folder/disk-password"
-      echo -n "$disk_password" >"$LOCAL_DISK_PASSWORD_PATH"
+      # The file is created private, because the default umask made it world
+      # readable here and, carried over by the extra files, on the target too
+      # until the TPM enrollment shreds it.
+      (umask 077 && echo -n "$disk_password" >"$LOCAL_DISK_PASSWORD_PATH")
       # Create the directory where TPM expects disk password during
       # the key enrollment, it will be removed after the fisrt boot
       install -d -m755 "$TEMP/$REMOTE_DISK_PASSWORD_FOLDER"
-      cp "$LOCAL_DISK_PASSWORD_PATH" "$TEMP/$REMOTE_DISK_PASSWORD_FOLDER"
+      install -m600 "$LOCAL_DISK_PASSWORD_PATH" "$TEMP/$REMOTE_DISK_PASSWORD_FOLDER/"
 
       info "Disk password successfully installed"
     }
