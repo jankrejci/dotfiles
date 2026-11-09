@@ -50,8 +50,9 @@ pkgs.writeShellApplication {
     function cleanup() {
       rm -rf "$TEMP"
 
-      # Cleanup temporary password file
-      if [ -f "$LOCAL_DISK_PASSWORD_PATH" ]; then
+      # Cleanup temporary password file. An exit before the password prompt
+      # leaves the path unset, which nounset would turn into a second error.
+      if [ -f "''${LOCAL_DISK_PASSWORD_PATH:-}" ]; then
         shred -u "$LOCAL_DISK_PASSWORD_PATH"
       fi
     }
