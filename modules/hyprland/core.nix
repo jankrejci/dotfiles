@@ -13,11 +13,32 @@
 }: let
   colorsDark = config.colorScheme.darkPalette;
 
+  # Single source of truth so hyprctl in helper scripts always matches the
+  # running compositor.
+  hyprlandPackage = config.wayland.windowManager.hyprland.package;
+
+  inherit (lib.generators) mkLuaInline;
+
+  mod = "SUPER";
+  terminal = "alacritty";
+  fileManager = "nautilus";
+  menu = "rofi -show drun";
+
+  # Bind helpers rendering to hl.bind(keys, dispatcher, opts).
+  # The Lua dispatcher text doubles as the description because hyprctl binds
+  # no longer exposes dispatcher arguments, only an opaque function reference.
+  bindWith = opts: keys: dispatcher: {
+    _args = [keys (mkLuaInline dispatcher) (opts // {description = dispatcher;})];
+  };
+  bind = bindWith {};
+  exec = keys: cmd: bind keys "hl.dsp.exec_cmd(${builtins.toJSON cmd})";
+  workspaces = lib.range 1 9;
+
   # Curated help menu with common keybindings and an option to view all raw
   # bindings from hyprctl. Static content for reliability and readability.
   keybindingsHelp = pkgs.writeShellApplication {
     name = "hypr-keybindings-help";
-    runtimeInputs = with pkgs; [hyprland jq rofi systemd coreutils];
+    runtimeInputs = [hyprlandPackage] ++ (with pkgs; [jq rofi systemd coreutils]);
     text = ''
       log() { echo "$*" | systemd-cat -t hypr-keybindings-help -p info; }
 
@@ -28,7 +49,7 @@
             (if (($m / 4 | floor) % 2 == 1) then "Ctrl+" else "" end) +
             (if (($m / 8 | floor) % 2 == 1) then "Alt+" else "" end) +
             (if (($m / 64 | floor) % 2 == 1) then "Super+" else "" end)
-          ) + .key + "  →  " + .dispatcher + " " + .arg' \
+          ) + .key + "  →  " + .description' \
           | sort \
           | rofi -dmenu -i -p "All Keybindings" \
               -theme-str 'listview { lines: 20; }' \
@@ -93,7 +114,7 @@
   # region, or window. Saves to ~/Pictures/Screenshots and copies to clipboard.
   screenshot = pkgs.writeShellApplication {
     name = "hypr-screenshot";
-    runtimeInputs = with pkgs; [grim slurp satty wl-clipboard hyprland jq systemd];
+    runtimeInputs = [hyprlandPackage] ++ (with pkgs; [grim slurp satty wl-clipboard jq systemd]);
     text = ''
       log() { echo "$*" | systemd-cat -t hypr-screenshot -p info; }
 
@@ -118,167 +139,216 @@
 in {
   wayland.windowManager.hyprland = {
     enable = true;
-    # Our config is expressed as hyprlang settings, so keep the pre-26.05
-    # default now that home-manager switched the default to lua.
-    configType = "hyprlang";
+    package = pkgs.unstable.hyprland;
+    # The NixOS module installs the portal. Home Manager would call .override
+    # { hyprland = ...; } on it, which the unstable portal no longer accepts.
+    portalPackage = null;
+    # Hyprland 0.57 dropped hyprlang, so the config is rendered as Lua.
+    configType = "lua";
     settings = {
-      "$mod" = "SUPER";
-      "$terminal" = "alacritty";
-      "$fileManager" = "nautilus";
-      "$menu" = "rofi -show drun";
-
-      exec-once = [
-        "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"
-      ];
-      # Default fallback for unconfigured monitors. Per-monitor settings are
-      # managed via nwg-displays and sourced from monitors.conf.
-      monitor = ", preferred, auto, 1";
-      source = ["~/.config/hypr/monitors.conf"];
-
-      env = [
-        "XCURSOR_THEME,capitaine-cursors"
-        "XCURSOR_SIZE,24"
-        "HYPRCURSOR_SIZE,24"
-      ];
-      general = {
-        gaps_in = 3;
-        gaps_out = 8;
-        "col.active_border" = "rgba(${colorsDark.base0D}30)";
-        "col.inactive_border" = "rgba(${colorsDark.base0D}15)";
-        border_size = 1;
-        allow_tearing = true;
-        resize_on_border = true;
-      };
-      decoration = {
-        rounding = 4;
-        rounding_power = 2.5;
-        blur = {
-          enabled = true;
-          brightness = 1.0;
-          contrast = 1.0;
-          noise = 0.01;
-          vibrancy = 0.2;
-          vibrancy_darkness = 0.5;
-          passes = 2;
-          size = 5;
-          popups = true;
-          popups_ignorealpha = 0.2;
-        };
-        shadow = {
-          enabled = false;
-        };
-      };
-      animations = {
-        enabled = true;
-        animation = [
-          "border, 1, 2, default"
-          "fade, 1, 4, default"
-          "windows, 1, 3, default, popin 80%"
-          "workspaces, 1, 2, default, slide"
+      on = {
+        _args = [
+          "hyprland.start"
+          (mkLuaInline ''
+            function()
+              hl.exec_cmd("${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1")
+            end'')
         ];
       };
-      cursor = {
-        inactive_timeout = 60;
+      # Default fallback for unconfigured monitors. Per-monitor settings are
+      # managed via nwg-displays and loaded from monitors.lua in extraConfig.
+      monitor = {
+        output = "";
+        mode = "preferred";
+        position = "auto";
+        scale = 1;
       };
-      misc = {
-        force_default_wallpaper = 0;
-        animate_mouse_windowdragging = false;
-        vrr = 1;
-      };
-      dwindle = {
-        pseudotile = true;
-        preserve_split = true;
-      };
-      # Create workspaces 1-3 at startup so Alt+Tab cycling always works.
-      workspace = [
-        "1, persistent:true"
-        "2, persistent:true"
-        "3, persistent:true"
+
+      env = [
+        {_args = ["XCURSOR_THEME" "capitaine-cursors"];}
+        {_args = ["XCURSOR_SIZE" "24"];}
+        {_args = ["HYPRCURSOR_SIZE" "24"];}
       ];
-      layerrule = [
-        "noanim, waybar"
-      ];
-      xwayland.force_zero_scaling = true;
-      input = {
-        kb_layout = "us,cz";
-        kb_variant = ",qwerty";
-        touchpad = {
-          natural_scroll = "true";
+      config = {
+        general = {
+          gaps_in = 3;
+          gaps_out = 8;
+          col = {
+            active_border = "rgba(${colorsDark.base0D}30)";
+            inactive_border = "rgba(${colorsDark.base0D}15)";
+          };
+          border_size = 1;
+          allow_tearing = true;
+          resize_on_border = true;
+        };
+        decoration = {
+          rounding = 4;
+          rounding_power = 2.5;
+          blur = {
+            enabled = true;
+            brightness = 1.0;
+            contrast = 1.0;
+            noise = 0.01;
+            vibrancy = 0.2;
+            vibrancy_darkness = 0.5;
+            passes = 2;
+            size = 5;
+            popups = true;
+            popups_ignorealpha = 0.2;
+          };
+          shadow = {
+            enabled = false;
+          };
+        };
+        animations = {
+          enabled = true;
+        };
+        cursor = {
+          # Lua config rejects values above 20, the former 60 was out of range.
+          inactive_timeout = 20;
+        };
+        misc = {
+          force_default_wallpaper = 0;
+          animate_mouse_windowdragging = false;
+          vrr = 1;
+        };
+        dwindle = {
+          preserve_split = true;
+        };
+        xwayland = {
+          force_zero_scaling = true;
+        };
+        input = {
+          kb_layout = "us,cz";
+          kb_variant = ",qwerty";
+          touchpad = {
+            natural_scroll = true;
+          };
         };
       };
+      animation = [
+        {
+          leaf = "border";
+          enabled = true;
+          speed = 2;
+          bezier = "default";
+        }
+        {
+          leaf = "fade";
+          enabled = true;
+          speed = 4;
+          bezier = "default";
+        }
+        {
+          leaf = "windows";
+          enabled = true;
+          speed = 3;
+          bezier = "default";
+          style = "popin 80%";
+        }
+        {
+          leaf = "workspaces";
+          enabled = true;
+          speed = 2;
+          bezier = "default";
+          style = "slide";
+        }
+      ];
+      # Create workspaces 1-3 at startup so Alt+Tab cycling always works.
+      workspace_rule = map (n: {
+        workspace = toString n;
+        persistent = true;
+      }) (lib.range 1 3);
+      layer_rule = {
+        name = "waybar-no-anim";
+        match.namespace = "waybar";
+        no_anim = true;
+      };
       # Keybinding conventions:
-      #   $mod          = everyday actions: launch apps, switch workspaces, focus
-      #   $mod+Shift    = destructive or sensitive: exit, move windows, restart, screenshot region
+      #   mod           = everyday actions: launch apps, switch workspaces, focus
+      #   mod+Shift     = destructive or sensitive: exit, move windows, restart, screenshot region
       #   ALT+Tab       = workspace cycling
-      #   bindl         = media keys that work even when locked
-      bind = [
-        "$mod, Q, exec, $terminal"
-        # Kill the entire Hyprland session
-        "$mod SHIFT, M, exit,"
-        "$mod, C, killactive,"
-        "$mod, E, exec, $fileManager"
-        "$mod, V, togglefloating,"
-        "$mod, R, exec, $menu"
-        # Dwindle layout controls
-        "$mod, P, pseudo,"
-        "$mod, J, togglesplit,"
-        # Vim-style focus right. The hjk keys conflict with other bindings
-        # so arrow keys cover all directions.
-        "$mod, L, movefocus, r"
-        # Cycle keyboard layout across all keyboards
-        "$mod, space, exec, hyprctl switchxkblayout all next"
-        # Lock screen
-        "$mod, backspace, exec, loginctl lock-session"
-        # Restart session services when waybar or hypridle gets stuck
-        "$mod SHIFT, R, exec, ${lib.getExe sessionRestart}"
-        # Show all keybindings in a searchable rofi list
-        "$mod, F1, exec, ${lib.getExe keybindingsHelp}"
-        # Screenshots via satty for annotation
-        ", Print, exec, ${lib.getExe screenshot} fullscreen"
-        "$mod SHIFT, S, exec, ${lib.getExe screenshot} region"
-        "$mod, Print, exec, ${lib.getExe screenshot} window"
-        # Cycle through workspaces on current monitor, wrapping around.
-        "ALT, Tab, workspace, m+1"
-        "ALT SHIFT, Tab, workspace, m-1"
-        # Cycle workspaces on current monitor with mainMod + arrow/vim keys.
-        "$mod, left, workspace, m-1"
-        "$mod, right, workspace, m+1"
-        "$mod, h, workspace, m-1"
-        "$mod, l, workspace, m+1"
-        # Move focus between tiled windows
-        "$mod, up, movefocus, u"
-        "$mod, down, movefocus, d"
-        # Switch workspaces with mainMod + [1-9]
-        "$mod, 1, workspace, 1"
-        "$mod, 2, workspace, 2"
-        "$mod, 3, workspace, 3"
-        "$mod, 4, workspace, 4"
-        "$mod, 5, workspace, 5"
-        "$mod, 6, workspace, 6"
-        "$mod, 7, workspace, 7"
-        "$mod, 8, workspace, 8"
-        "$mod, 9, workspace, 9"
-        # Move active window to workspace with mainMod + SHIFT + [1-9]
-        "$mod SHIFT, 1, movetoworkspace, 1"
-        "$mod SHIFT, 2, movetoworkspace, 2"
-        "$mod SHIFT, 3, movetoworkspace, 3"
-        "$mod SHIFT, 4, movetoworkspace, 4"
-        "$mod SHIFT, 5, movetoworkspace, 5"
-        "$mod SHIFT, 6, movetoworkspace, 6"
-        "$mod SHIFT, 7, movetoworkspace, 7"
-        "$mod SHIFT, 8, movetoworkspace, 8"
-        "$mod SHIFT, 9, movetoworkspace, 9"
-      ];
-      # Fire on key release so Super+Q still works without triggering rofi
-      bindr = ["SUPER, Super_L, exec, $menu"];
-      bindl = [
-        ",XF86AudioRaiseVolume, exec, swayosd-client --output-volume raise --max-volume 150"
-        ",XF86AudioLowerVolume, exec, swayosd-client --output-volume lower --max-volume 150"
-        ",XF86AudioMute, exec, swayosd-client --output-volume mute-toggle"
-        ",XF86AudioMicMute, exec, swayosd-client --input-volume mute-toggle"
-        ",XF86MonBrightnessUp, exec, swayosd-client --brightness raise"
-        ",XF86MonBrightnessDown, exec, swayosd-client --brightness lower"
-      ];
+      #   locked        = media keys that work even when locked
+      bind =
+        [
+          (exec "${mod} + Q" terminal)
+          # Kill the entire Hyprland session
+          (bind "${mod} + SHIFT + M" "hl.dsp.exit()")
+          (bind "${mod} + C" "hl.dsp.window.close()")
+          (exec "${mod} + E" fileManager)
+          (bind "${mod} + V" ''hl.dsp.window.float({ action = "toggle" })'')
+          (exec "${mod} + R" menu)
+          # Dwindle layout controls
+          (bind "${mod} + P" "hl.dsp.window.pseudo()")
+          (bind "${mod} + J" ''hl.dsp.layout("togglesplit")'')
+          # Cycle keyboard layout across all keyboards
+          (exec "${mod} + space" "hyprctl switchxkblayout all next")
+          # Lock screen
+          (exec "${mod} + backspace" "loginctl lock-session")
+          # Restart session services when waybar or hypridle gets stuck
+          (exec "${mod} + SHIFT + R" (lib.getExe sessionRestart))
+          # Show all keybindings in a searchable rofi list
+          (exec "${mod} + F1" (lib.getExe keybindingsHelp))
+          # Screenshots via satty for annotation
+          (exec "Print" "${lib.getExe screenshot} fullscreen")
+          (exec "${mod} + SHIFT + S" "${lib.getExe screenshot} region")
+          (exec "${mod} + Print" "${lib.getExe screenshot} window")
+          # Cycle through workspaces on current monitor, wrapping around.
+          (bind "ALT + Tab" ''hl.dsp.focus({ workspace = "m+1" })'')
+          (bind "ALT + SHIFT + Tab" ''hl.dsp.focus({ workspace = "m-1" })'')
+          # Cycle workspaces on current monitor with mod + arrow/vim keys.
+          # The j and k keys conflict with other bindings, so arrow keys
+          # cover focus movement in all directions.
+          (bind "${mod} + left" ''hl.dsp.focus({ workspace = "m-1" })'')
+          (bind "${mod} + right" ''hl.dsp.focus({ workspace = "m+1" })'')
+          (bind "${mod} + h" ''hl.dsp.focus({ workspace = "m-1" })'')
+          (bind "${mod} + l" ''hl.dsp.focus({ workspace = "m+1" })'')
+          # Move focus between tiled windows
+          (bind "${mod} + up" ''hl.dsp.focus({ direction = "up" })'')
+          (bind "${mod} + down" ''hl.dsp.focus({ direction = "down" })'')
+        ]
+        # Switch workspaces with mod + [1-9]
+        ++ map (n: bind "${mod} + ${toString n}" "hl.dsp.focus({ workspace = ${toString n} })") workspaces
+        # Move active window to workspace with mod + SHIFT + [1-9]
+        ++ map (n: bind "${mod} + SHIFT + ${toString n}" "hl.dsp.window.move({ workspace = ${toString n} })") workspaces
+        # Fire on key release so Super+Q still works without triggering rofi
+        ++ [(bindWith {release = true;} "SUPER + Super_L" "hl.dsp.exec_cmd(${builtins.toJSON menu})")]
+        ++ map (m: bindWith {locked = true;} m.key "hl.dsp.exec_cmd(${builtins.toJSON m.cmd})") [
+          {
+            key = "XF86AudioRaiseVolume";
+            cmd = "swayosd-client --output-volume raise --max-volume 150";
+          }
+          {
+            key = "XF86AudioLowerVolume";
+            cmd = "swayosd-client --output-volume lower --max-volume 150";
+          }
+          {
+            key = "XF86AudioMute";
+            cmd = "swayosd-client --output-volume mute-toggle";
+          }
+          {
+            key = "XF86AudioMicMute";
+            cmd = "swayosd-client --input-volume mute-toggle";
+          }
+          {
+            key = "XF86MonBrightnessUp";
+            cmd = "swayosd-client --brightness raise";
+          }
+          {
+            key = "XF86MonBrightnessDown";
+            cmd = "swayosd-client --brightness lower";
+          }
+        ];
     };
+    # nwg-displays writes monitors.lua. Load it only when it exists so a host
+    # without a saved layout still starts with the fallback rule above.
+    extraConfig = ''
+      local monitors = os.getenv("HOME") .. "/.config/hypr/monitors.lua"
+      local file = io.open(monitors, "r")
+      if file then
+        file:close()
+        dofile(monitors)
+      end
+    '';
   };
 }
