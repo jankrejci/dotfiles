@@ -1,24 +1,24 @@
 # Lenovo M75q server hardware overrides
 #
 # - AMD microcode and KVM module
-# - NVMe data disk mirroring thinkcenter's /mnt/immich-data
+# - NVMe data disk with the bulk service data at /mnt/data
 {...}: let
   # The installer stages the disk password here for both disks.
   # modules/disk-tpm-encryption.nix seals both to the TPM with it before
   # shredding it, so the data disk unlocks without a prompt too.
   diskPasswordFile = "/var/lib/disk-password";
 
-  # These options are for the immich data disk. The root disk gets its own
+  # These options are for the data disk. The root disk gets its own
   # through btrfsSubvolume in modules/disk-root-filesystem.nix.
   mountOptions = ["compress=zstd" "noatime"];
 in {
   hardware.cpu.amd.updateMicrocode = true;
   boot.kernelModules = ["kvm-amd"];
 
-  # The disk is named "immich" with a "luks" partition so disko labels it
-  # disk-immich-luks and maps it to immich-data, the same names that
-  # homelab/immich.nix expects on thinkcenter.
-  disko.devices.disk.immich = {
+  # The disk is named "data" with a "luks" partition so disko labels it
+  # disk-data-luks and maps it to data. It holds more than immich, so it no
+  # longer takes the immich-data names that thinkcenter keeps until its reinstall.
+  disko.devices.disk.data = {
     type = "disk";
     # Confirm with lsblk on the installer before running nixos-install.
     device = "/dev/nvme0n1";
@@ -28,7 +28,7 @@ in {
         size = "100%";
         content = {
           type = "luks";
-          name = "immich-data";
+          name = "data";
           passwordFile = diskPasswordFile;
           settings.allowDiscards = true;
           content = {
@@ -38,15 +38,15 @@ in {
             # be snapshotted and sent to the twin without the borg repositories.
             subvolumes = {
               "@immich" = {
-                mountpoint = "/mnt/immich-data/immich";
+                mountpoint = "/mnt/data/immich";
                 inherit mountOptions;
               };
               "@jellyfin" = {
-                mountpoint = "/mnt/immich-data/jellyfin";
+                mountpoint = "/mnt/data/jellyfin";
                 inherit mountOptions;
               };
               "@borg-repos" = {
-                mountpoint = "/mnt/immich-data/borg-repos";
+                mountpoint = "/mnt/data/borg-repos";
                 inherit mountOptions;
               };
             };
