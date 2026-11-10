@@ -1,7 +1,7 @@
 # Jellyfin media server
 #
 # Server accessible at https://jellyfin.<peerDomain> (VPN only)
-# Media stored on secondary NVMe disk at /mnt/immich-data/jellyfin
+# Media stored on the data disk under homelab.dataDisk.dir, state in /var/lib
 #
 # Setup:
 # 1. After deployment, complete initial setup wizard at https://jellyfin.<peerDomain>
@@ -26,6 +26,7 @@
   domain = global.domain;
   jellyfinDomain = "${cfg.subdomain}.${domain}";
   dexDomain = "${config.homelab.dex.subdomain}.${domain}";
+  dataDisk = config.homelab.dataDisk;
 
   # SSO configuration paths
   ssoConfigPath = "/var/lib/jellyfin/plugins/configurations/SSO-Auth.xml";
@@ -64,164 +65,191 @@ in {
     };
   };
 
-  config = lib.mkIf cfg.enable {
-    # Register OIDC client with Dex for SSO
-    homelab.dex.clients = [
-      {
-        id = "jellyfin";
-        name = "Jellyfin";
-        redirectURIs = ["https://${jellyfinDomain}/sso/OID/redirect/Dex"];
-        secretRekeyFile = ../secrets/dex-jellyfin-secret.age;
-      }
-    ];
-
-    # Dex client secret for SSO authentication
-    age.secrets.jellyfin-dex-secret = {
-      rekeyFile = ../secrets/dex-jellyfin-secret.age;
-      owner = "jellyfin";
-    };
-
-    # Register IP for services dummy interface
-    homelab.serviceIPs = [cfg.ip];
-    networking.hosts.${cfg.ip} = [jellyfinDomain];
-
-    # Allow HTTPS on VPN interface
-    networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [services.https.port];
-
-    # Bind mount jellyfin data from NVMe disk
-    fileSystems."/var/lib/jellyfin" = {
-      device = "/mnt/immich-data/jellyfin";
-      fsType = "none";
-      options = ["bind" "x-systemd.requires=mnt-immich\\x2ddata.mount"];
-    };
-
-    services.jellyfin = {
-      enable = true;
-      openFirewall = false;
-    };
-
-    # Add jellyfin user to render and video groups for hardware transcoding
-    users.users.jellyfin.extraGroups = ["render" "video"];
-
-    # Set published server URL for public sharing and configure SSO
-    systemd.services.jellyfin = {
-      environment.JELLYFIN_PublishedServerUrl = "https://${jellyfinDomain}";
-
-      # Configure SSO plugin and branding before Jellyfin starts
-      preStart = ''
-        # Write branding config with SSO login button
-        cp "${brandingConfig}" "${brandingConfigPath}"
-
-        # Substitute secret into SSO config template
-        secret=$(cat "${config.age.secrets.jellyfin-dex-secret.path}")
-        sed "s|@JELLYFIN_SSO_SECRET@|$secret|g" "${ssoConfigTemplate}" > "${ssoConfigPath}"
-
-        echo "Jellyfin SSO configuration updated"
-      '';
-    };
-
-    # Allow admin user to upload files directly
-    users.users.admin.extraGroups = ["jellyfin"];
-
-    # Ensure required directory structure exists
-    systemd.tmpfiles.rules = [
-      # Root data directory on NVMe disk
-      "d /mnt/immich-data/jellyfin 0755 jellyfin jellyfin -"
-      # Main state directory for bind mount target
-      "d /var/lib/jellyfin 0750 jellyfin jellyfin -"
-      # Media directories with setgid bit so uploaded files inherit jellyfin group
-      "d /var/lib/jellyfin/media 2775 jellyfin jellyfin -"
-      "d /var/lib/jellyfin/media/movies 2775 jellyfin jellyfin -"
-      # Config directory for branding.xml
-      "d /var/lib/jellyfin/config 0750 jellyfin jellyfin -"
-      # Plugin config directory for SSO-Auth.xml
-      "d /var/lib/jellyfin/plugins/configurations 0750 jellyfin jellyfin -"
-    ];
-
-    # Nginx reverse proxy
-    #
-    # SSO Button Injection:
-    # Jellyfin 10.9+ uses DOMPurify to sanitize the branding LoginDisclaimer field,
-    # which strips all HTML including forms and buttons. The official SSO plugin
-    # does not provide a built-in login button UI.
-    #
-    # Workaround: nginx sub_filter injects JavaScript that creates the SSO button
-    # dynamically. Uses setInterval to handle Jellyfin's SPA routing.
-    #
-    # If Jellyfin updates break this, check:
-    # - Selector ".loginDisclaimer, #loginPage" may need updating
-    # - https://github.com/9p4/jellyfin-plugin-sso for plugin compatibility
-    services.nginx.virtualHosts.${jellyfinDomain} = {
-      listenAddresses = [cfg.ip];
-      forceSSL = true;
-      useACMEHost = "${global.domain}";
-      extraConfig = ''
-        client_max_body_size 10G;
-        sub_filter '</body>' '<script>
-          (function() {
-            const SSO_URL = "https://${jellyfinDomain}/sso/OID/start/Dex";
-            function addSsoButton() {
-              const container = document.querySelector(".loginDisclaimer, #loginPage");
-              if (container && !document.getElementById("ssoBtn")) {
-                const btn = document.createElement("a");
-                btn.id = "ssoBtn";
-                btn.href = SSO_URL;
-                btn.className = "raised block emby-button";
-                btn.style.cssText = "margin:1em auto;padding:1em 2em;display:block;text-align:center;max-width:25em;";
-                btn.textContent = "Sign in with SSO";
-                container.prepend(btn);
-                clearInterval(intervalId);
-              }
-            }
-            const intervalId = setInterval(addSsoButton, 500);
-          })();
-        </script></body>';
-        sub_filter_once on;
-        sub_filter_types text/html;
-      '';
-      locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString cfg.port}";
-        proxyWebsockets = true;
-        recommendedProxySettings = true;
-        # Disable compression so sub_filter can modify response
-        extraConfig = "proxy_set_header Accept-Encoding '';";
+  config = lib.mkIf cfg.enable (lib.mkMerge [
+    # The storage blocks come first so their tmpfiles rules keep preceding the
+    # shared ones, which leaves thinkcenter's generated rules unchanged.
+    (lib.mkIf dataDisk.legacyLayout {
+      # Bind mount jellyfin data from NVMe disk
+      fileSystems."/var/lib/jellyfin" = {
+        device = "/mnt/immich-data/jellyfin";
+        fsType = "none";
+        options = ["bind" "x-systemd.requires=mnt-immich\\x2ddata.mount"];
       };
-    };
 
-    # Alert rules for jellyfin
-    homelab.alerts.jellyfin = [
-      {
-        alert = "JellyfinDown";
-        expr = ''node_systemd_unit_state{name="jellyfin.service",state="active",host="${config.homelab.host.hostName}"} == 0'';
-        labels = {
-          severity = "critical";
-          host = config.homelab.host.hostName;
-          type = "service";
+      systemd.tmpfiles.rules = [
+        # Root data directory on NVMe disk
+        "d /mnt/immich-data/jellyfin 0755 jellyfin jellyfin -"
+      ];
+    })
+
+    # Only the media sits on the data disk. The database, metadata and
+    # configuration stay in /var/lib/jellyfin on the system disk.
+    (lib.mkIf (!dataDisk.legacyLayout) {
+      fileSystems."/var/lib/jellyfin/media" = {
+        device = "${dataDisk.dir}/jellyfin/media";
+        fsType = "none";
+        options = ["bind" "x-systemd.requires-mounts-for=${dataDisk.dir}/jellyfin/media"];
+      };
+
+      # Without the data disk, uploads would land in the empty mount point.
+      systemd.services.jellyfin.unitConfig.RequiresMountsFor = ["/var/lib/jellyfin/media"];
+
+      systemd.tmpfiles.rules = [
+        "d ${dataDisk.dir}/jellyfin 0755 jellyfin jellyfin -"
+        "d ${dataDisk.dir}/jellyfin/media 2775 jellyfin jellyfin -"
+      ];
+    })
+
+    {
+      # Register OIDC client with Dex for SSO
+      homelab.dex.clients = [
+        {
+          id = "jellyfin";
+          name = "Jellyfin";
+          redirectURIs = ["https://${jellyfinDomain}/sso/OID/redirect/Dex"];
+          secretRekeyFile = ../secrets/dex-jellyfin-secret.age;
+        }
+      ];
+
+      # Dex client secret for SSO authentication
+      age.secrets.jellyfin-dex-secret = {
+        rekeyFile = ../secrets/dex-jellyfin-secret.age;
+        owner = "jellyfin";
+      };
+
+      # Register IP for services dummy interface
+      homelab.serviceIPs = [cfg.ip];
+      networking.hosts.${cfg.ip} = [jellyfinDomain];
+
+      # Allow HTTPS on VPN interface
+      networking.firewall.interfaces."${services.netbird.interface}".allowedTCPPorts = [services.https.port];
+
+      services.jellyfin = {
+        enable = true;
+        openFirewall = false;
+      };
+
+      # Add jellyfin user to render and video groups for hardware transcoding
+      users.users.jellyfin.extraGroups = ["render" "video"];
+
+      # Set published server URL for public sharing and configure SSO
+      systemd.services.jellyfin = {
+        environment.JELLYFIN_PublishedServerUrl = "https://${jellyfinDomain}";
+
+        # Configure SSO plugin and branding before Jellyfin starts
+        preStart = ''
+          # Write branding config with SSO login button
+          cp "${brandingConfig}" "${brandingConfigPath}"
+
+          # Substitute secret into SSO config template
+          secret=$(cat "${config.age.secrets.jellyfin-dex-secret.path}")
+          sed "s|@JELLYFIN_SSO_SECRET@|$secret|g" "${ssoConfigTemplate}" > "${ssoConfigPath}"
+
+          echo "Jellyfin SSO configuration updated"
+        '';
+      };
+
+      # Allow admin user to upload files directly
+      users.users.admin.extraGroups = ["jellyfin"];
+
+      # Ensure required directory structure exists
+      systemd.tmpfiles.rules = [
+        # Main state directory for bind mount target
+        "d /var/lib/jellyfin 0750 jellyfin jellyfin -"
+        # Media directories with setgid bit so uploaded files inherit jellyfin group
+        "d /var/lib/jellyfin/media 2775 jellyfin jellyfin -"
+        "d /var/lib/jellyfin/media/movies 2775 jellyfin jellyfin -"
+        # Config directory for branding.xml
+        "d /var/lib/jellyfin/config 0750 jellyfin jellyfin -"
+        # Plugin config directory for SSO-Auth.xml
+        "d /var/lib/jellyfin/plugins/configurations 0750 jellyfin jellyfin -"
+      ];
+
+      # Nginx reverse proxy
+      #
+      # SSO Button Injection:
+      # Jellyfin 10.9+ uses DOMPurify to sanitize the branding LoginDisclaimer field,
+      # which strips all HTML including forms and buttons. The official SSO plugin
+      # does not provide a built-in login button UI.
+      #
+      # Workaround: nginx sub_filter injects JavaScript that creates the SSO button
+      # dynamically. Uses setInterval to handle Jellyfin's SPA routing.
+      #
+      # If Jellyfin updates break this, check:
+      # - Selector ".loginDisclaimer, #loginPage" may need updating
+      # - https://github.com/9p4/jellyfin-plugin-sso for plugin compatibility
+      services.nginx.virtualHosts.${jellyfinDomain} = {
+        listenAddresses = [cfg.ip];
+        forceSSL = true;
+        useACMEHost = "${global.domain}";
+        extraConfig = ''
+          client_max_body_size 10G;
+          sub_filter '</body>' '<script>
+            (function() {
+              const SSO_URL = "https://${jellyfinDomain}/sso/OID/start/Dex";
+              function addSsoButton() {
+                const container = document.querySelector(".loginDisclaimer, #loginPage");
+                if (container && !document.getElementById("ssoBtn")) {
+                  const btn = document.createElement("a");
+                  btn.id = "ssoBtn";
+                  btn.href = SSO_URL;
+                  btn.className = "raised block emby-button";
+                  btn.style.cssText = "margin:1em auto;padding:1em 2em;display:block;text-align:center;max-width:25em;";
+                  btn.textContent = "Sign in with SSO";
+                  container.prepend(btn);
+                  clearInterval(intervalId);
+                }
+              }
+              const intervalId = setInterval(addSsoButton, 500);
+            })();
+          </script></body>';
+          sub_filter_once on;
+          sub_filter_types text/html;
+        '';
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:${toString cfg.port}";
+          proxyWebsockets = true;
+          recommendedProxySettings = true;
+          # Disable compression so sub_filter can modify response
+          extraConfig = "proxy_set_header Accept-Encoding '';";
         };
-        annotations.summary = "Jellyfin service is not active";
-      }
-    ];
+      };
 
-    homelab.dashboardEntries = [
-      {
-        name = "Jellyfin";
-        url = "https://${jellyfinDomain}";
-        icon = ../assets/dashboard-icons/jellyfin.svg;
-      }
-    ];
+      # Alert rules for jellyfin
+      homelab.alerts.jellyfin = [
+        {
+          alert = "JellyfinDown";
+          expr = ''node_systemd_unit_state{name="jellyfin.service",state="active",host="${config.homelab.host.hostName}"} == 0'';
+          labels = {
+            severity = "critical";
+            host = config.homelab.host.hostName;
+            type = "service";
+          };
+          annotations.summary = "Jellyfin service is not active";
+        }
+      ];
 
-    homelab.healthChecks = [
-      {
-        name = "Jellyfin";
-        script = pkgs.writeShellApplication {
-          name = "health-check-jellyfin";
-          runtimeInputs = [pkgs.systemd];
-          text = ''
-            systemctl is-active --quiet jellyfin.service
-          '';
-        };
-        timeout = 10;
-      }
-    ];
-  };
+      homelab.dashboardEntries = [
+        {
+          name = "Jellyfin";
+          url = "https://${jellyfinDomain}";
+          icon = ../assets/dashboard-icons/jellyfin.svg;
+        }
+      ];
+
+      homelab.healthChecks = [
+        {
+          name = "Jellyfin";
+          script = pkgs.writeShellApplication {
+            name = "health-check-jellyfin";
+            runtimeInputs = [pkgs.systemd];
+            text = ''
+              systemctl is-active --quiet jellyfin.service
+            '';
+          };
+          timeout = 10;
+        }
+      ];
+    }
+  ]);
 }

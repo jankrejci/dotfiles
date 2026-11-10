@@ -330,6 +330,28 @@ in {
       description = "Path to the node_exporter textfile collector directory";
     };
 
+    # The disk for bulk service data, like photos and media. Service state
+    # such as databases stays in /var/lib on the system disk, and only the
+    # bulk subfolders are bind mounted in from here.
+    dataDisk = {
+      dir = mkOption {
+        type = types.str;
+        default = "/mnt/data";
+        description = "Mount point under which the data disk holds one folder per service";
+      };
+
+      # Removed once thinkcenter is reinstalled with the data disk layout.
+      legacyLayout = mkOption {
+        type = types.bool;
+        default = false;
+        description = ''
+          Keep thinkcenter's original layout: an ext4 data disk at
+          /mnt/immich-data that the immich module unlocks and mounts, with the
+          whole service state directories bind mounted from it.
+        '';
+      };
+    };
+
     # Service IPs for the services dummy interface.
     # Each service module registers its IPs here.
     # networking.nix collects all IPs and configures the interface.

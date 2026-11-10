@@ -22,9 +22,21 @@
   immichApiMetricsPort = 8081;
   immichMicroservicesMetricsPort = 8082;
 
-  # Second disk for Immich data (NVMe)
+  dataDisk = config.homelab.dataDisk;
+
   # Assumes partition is already created with label "disk-immich-luks"
   luksDevice = "/dev/disk/by-partlabel/disk-immich-luks";
+
+  # The bulk folders that go to the data disk. Everything else in
+  # /var/lib/immich, the database dumps in backups and the generated config,
+  # stays on the system disk.
+  mediaDirs = ["upload" "library" "thumbs" "profile" "encoded-video"];
+
+  bindFrom = source: {
+    device = source;
+    fsType = "none";
+    options = ["bind" "x-systemd.requires-mounts-for=${source}"];
+  };
 
   # OAuth configuration for Dex SSO integration.
   # Immich only supports OAuth config via JSON file or web UI, not environment
@@ -73,6 +85,65 @@ in {
   };
 
   config = lib.mkIf cfg.enable (lib.mkMerge [
+    # The storage blocks come first so their tmpfiles rules keep preceding the
+    # shared ones, which leaves thinkcenter's generated rules unchanged.
+    (lib.mkIf dataDisk.legacyLayout {
+      # NVMe data disk - TPM encrypted, not touched during deployment
+      boot.initrd.luks.devices."immich-data" = {
+        device = luksDevice;
+        allowDiscards = true;
+      };
+
+      # Mount NVMe to /mnt/immich-data
+      fileSystems."/mnt/immich-data" = {
+        device = "/dev/mapper/immich-data";
+        fsType = "ext4";
+        options = ["defaults"];
+      };
+
+      # Bind mount immich data
+      fileSystems."/var/lib/immich" = {
+        device = "/mnt/immich-data/immich";
+        fsType = "none";
+        options = ["bind" "x-systemd.requires=mnt-immich\\x2ddata.mount"];
+      };
+
+      # Bind mount borg repos
+      fileSystems."/var/lib/borg-repos" = {
+        device = "/mnt/immich-data/borg-repos";
+        fsType = "none";
+        options = ["bind" "x-systemd.requires=mnt-immich\\x2ddata.mount"];
+      };
+
+      systemd.tmpfiles.rules = [
+        # Base directories on mount point
+        "d /mnt/immich-data/immich 0755 immich immich -"
+        "d /mnt/immich-data/borg-repos 0755 root root -"
+        "d /mnt/immich-data/borg-repos/immich 0700 root root -"
+      ];
+    })
+
+    # The host declares the data disk itself, as m75q does through disko.
+    (lib.mkIf (!dataDisk.legacyLayout) {
+      fileSystems =
+        lib.listToAttrs (map (dir:
+          lib.nameValuePair "/var/lib/immich/${dir}" (bindFrom "${dataDisk.dir}/immich/${dir}"))
+        mediaDirs)
+        // {"/var/lib/borg-repos" = bindFrom "${dataDisk.dir}/borg-repos";};
+
+      # Without the data disk immich would write uploads into the empty
+      # mount points on the system disk, so it waits for every bulk folder.
+      systemd.services.immich-server.unitConfig.RequiresMountsFor =
+        map (dir: "/var/lib/immich/${dir}") mediaDirs;
+
+      systemd.tmpfiles.rules =
+        map (dir: "d ${dataDisk.dir}/immich/${dir} 0755 immich immich -") mediaDirs
+        ++ [
+          "d ${dataDisk.dir}/borg-repos 0755 root root -"
+          "d ${dataDisk.dir}/borg-repos/immich 0700 root root -"
+        ];
+    })
+
     {
       # Register OIDC client with Dex for SSO
       homelab.dex.clients = [
@@ -110,33 +181,6 @@ in {
         port = 6379;
       };
 
-      # NVMe data disk - TPM encrypted, not touched during deployment
-      boot.initrd.luks.devices."immich-data" = {
-        device = luksDevice;
-        allowDiscards = true;
-      };
-
-      # Mount NVMe to /mnt/immich-data
-      fileSystems."/mnt/immich-data" = {
-        device = "/dev/mapper/immich-data";
-        fsType = "ext4";
-        options = ["defaults"];
-      };
-
-      # Bind mount immich data
-      fileSystems."/var/lib/immich" = {
-        device = "/mnt/immich-data/immich";
-        fsType = "none";
-        options = ["bind" "x-systemd.requires=mnt-immich\\x2ddata.mount"];
-      };
-
-      # Bind mount borg repos
-      fileSystems."/var/lib/borg-repos" = {
-        device = "/mnt/immich-data/borg-repos";
-        fsType = "none";
-        options = ["bind" "x-systemd.requires=mnt-immich\\x2ddata.mount"];
-      };
-
       services.immich = {
         enable = true;
         package = pkgs.immich-pinned.immich;
@@ -164,10 +208,6 @@ in {
 
       # Ensure required directory structure exists on the data disk
       systemd.tmpfiles.rules = [
-        # Base directories on mount point
-        "d /mnt/immich-data/immich 0755 immich immich -"
-        "d /mnt/immich-data/borg-repos 0755 root root -"
-        "d /mnt/immich-data/borg-repos/immich 0700 root root -"
         # Immich subdirectories
         "d /var/lib/immich/upload 0755 immich immich -"
         "d /var/lib/immich/library 0755 immich immich -"
