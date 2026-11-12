@@ -68,7 +68,9 @@
             exporter = 9586;
           };
           server = true;
-          peers = ["thinkcenter"];
+          # The proxy forwards to the first peer, so thinkcenter stays first
+          # until the upstreams list both hosts.
+          peers = ["thinkcenter" "m75q"];
           proxy = {
             enable = true;
             domains = ["share.krejci.io" "auth.krejci.io"];
@@ -228,6 +230,7 @@
 
     # Standby twin of thinkcenter. It runs no homelab services yet; it is the
     # first btrfs host so service state can later be replicated with btrfs send.
+    # See docs/server-failover.md.
     m75q = {
       hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM3avgDb3lHjuewN20pcBf03y9ZF1e+T+lmIs+ChXaCb";
       # The system disk sits in the 2.5" SATA bay like on thinkcenter. Confirm
@@ -235,6 +238,20 @@
       device = "/dev/sda";
       swapSize = "8G";
       filesystem = "btrfs";
+      homelab = {
+        # Its own tunnel to vpsfree, so vpsfree can fall back to m75q when
+        # thinkcenter is down and still reach it over SSH.
+        tunnel = {
+          enable = true;
+          ip = "192.168.99.3";
+          port = {
+            wireguard = 51821;
+            https = 8443;
+            exporter = 9586;
+          };
+          peers = ["vpsfree"];
+        };
+      };
       extraModules = [
         ../modules/headless.nix
         ../modules/netbird-homelab.nix
