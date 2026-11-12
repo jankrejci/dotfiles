@@ -13,7 +13,7 @@ plan for getting there and the record of how far it got.
 | m75q data disk named `data`, mounted at `/mnt/data` | done |
 | Service state in `/var/lib`, only bulk data on the data disk | done in the modules, thinkcenter pinned to its legacy layout |
 | Bulk data copied from thinkcenter to m75q once | done, by hand |
-| 1. m75q joins the vpsfree tunnel | open |
+| 1. m75q joins the vpsfree tunnel | done |
 | 2. Netbird relay moves to vpsfree | open |
 | 3. Shared server configuration and `homelab-active.target` | open |
 | 4. vpsfree upstreams list both hosts | open |
