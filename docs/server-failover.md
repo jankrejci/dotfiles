@@ -14,7 +14,13 @@ plan for getting there and the record of how far it got.
 | Service state in `/var/lib`, only bulk data on the data disk | done in the modules, thinkcenter pinned to its legacy layout |
 | Bulk data copied from thinkcenter to m75q once | done, by hand |
 | 1. m75q joins the vpsfree tunnel | done |
-| 2. Shared server configuration and `homelab-active.target` | open |
+| 2.1 `homelab.failover.enable` and an empty `homelab-active.target` | open |
+| 2.2 `homelab_active` metric and the standby page | open |
+| 2.3 Pinned service user and group IDs | open |
+| 2.4 memos on m75q, with alerts and health checks gated on the active host | open |
+| 2.5 Remaining group 2 services on m75q, one group per commit | open |
+| 2.6 Group 1 monitoring on m75q, its alertmanager silent | open |
+| 2.7 One shared server definition for both hosts | open |
 | 3. vpsfree upstreams list both hosts | open |
 | 4. PostgreSQL streaming replication | open |
 | 5. File and bulk data sync | open |
@@ -304,27 +310,55 @@ Each step deploys without touching thinkcenter's services, except step 7.
    the public key, give it its own tunnel address and add it to vpsfree's
    peers. vpsfree's tunnel health check pings every peer, so it reports
    m75q whenever m75q is off.
-2. **Shared configuration.** thinkcenter's `homelab` block in
-   `flake/hosts.nix` becomes one server definition that both hosts use. Group
-   2 services move under `homelab-active.target`, and the `wg0` reject unit
-   conflicts with it. Service user IDs are pinned. Alertmanager clusters and
-   fluent-bit ships to both lokis. thinkcenter's generated system stays as it
-   is, compared with the git revision pinned.
+2. **Shared configuration.** Done in small commits, each deployable on its
+   own. thinkcenter's generated system stays as it is, compared with
+   `system.configurationRevision` held fixed, apart from new monitoring rules.
+   1. `homelab.failover.enable` follows the `homelab.dataDisk.legacyLayout`
+      pattern: off on thinkcenter, which keeps starting everything at boot,
+      and on for m75q. With it on, group 2 units are wanted by
+      `homelab-active.target` instead of `multi-user.target`. Modules list
+      their units in an option, the way they register scrape targets. The
+      target starts empty, and for now it is started by hand.
+   2. The active host exports `homelab_active` for prometheus, and the
+      standby answers group 2 vhosts with the standby page.
+   3. Service users get thinkcenter's user and group IDs pinned. This comes
+      before any service lands on m75q, because NixOS fixes an ID when it
+      first creates the user.
+   4. memos is the first group 2 service on m75q, chosen because it is small.
+      Its alert only fires where `homelab_active` is 1, and its health check
+      skips the standby. The later services copy this pattern.
+   5. The other group 2 services follow, one dependent group per commit: dex
+      with sso-proxy, vaultwarden, ntfy, jellyfin, immich with redis, machine
+      learning and the public proxy, home-assistant with mosquitto and
+      zigbee2mqtt, prusa-obico with the printer, Netbird management with the
+      relay, grafana, and the borg backups. Each needs its secrets rekeyed
+      for m75q.
+   6. Group 1 monitoring runs on m75q. Its alertmanager stays silent until
+      step 8 clusters the two, because clustering changes thinkcenter's
+      alertmanager. fluent-bit shipping to both lokis waits for the same
+      reason.
+   7. Both hosts' `homelab` blocks merge into one server definition. Both
+      generated systems stay identical, which proves the refactor.
 3. **vpsfree upstreams.** Management API and gRPC, the relay, and the SNI
    passthrough in `tunnel.nix` each go to an upstream with both hosts, instead
-   of only the first peer. The dead STUN stream proxy goes. This comes after
-   step 2, because before the reject unit exists m75q drops these ports
-   instead of rejecting them.
+   of only the first peer. The standby rejects these ports on `wg0` through a
+   unit that conflicts with `homelab-active.target`. m75q needs it before
+   vpsfree lists m75q, because otherwise m75q drops these ports instead of
+   rejecting them. The dead STUN stream proxy goes.
 4. **PostgreSQL replication.** m75q becomes a hot standby of thinkcenter.
 5. **File and bulk sync.** The restricted pull channel, a timer on the
    standby, and snapshots on the receiving side.
 6. **Promote command.** The steps above as one script, with the metric swap.
 7. **First switchover.** At night: promote m75q, move the zigbee dongle and
-   the printer, check every service.
+   the printer, check every service. thinkcenter must not boot its old
+   configuration afterwards, because with `homelab.failover.enable` off it
+   starts all of group 2. Either it is deployed with the option on, or it
+   stays off until its reinstall.
 8. **thinkcenter reinstall.** Reinstall it with the automatic secure boot and
    TPM flow, a btrfs root and a disko data disk named `data`. Remove
    `homelab.dataDisk.legacyLayout`. It rejoins as the standby, and the sync
-   runs in both directions from then on.
+   runs in both directions from then on. The two alertmanagers cluster and
+   fluent-bit ships to both lokis.
 9. **One relay per host.** Each host's relay announces its own address,
    management lists both, and the relay moves from group 2 to group 1. The
    relay's port drops out of the reject unit.
