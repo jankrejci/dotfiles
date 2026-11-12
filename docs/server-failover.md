@@ -14,14 +14,14 @@ plan for getting there and the record of how far it got.
 | Service state in `/var/lib`, only bulk data on the data disk | done in the modules, thinkcenter pinned to its legacy layout |
 | Bulk data copied from thinkcenter to m75q once | done, by hand |
 | 1. m75q joins the vpsfree tunnel | done |
-| 2. Netbird relay moves to vpsfree | open |
-| 3. Shared server configuration and `homelab-active.target` | open |
-| 4. vpsfree upstreams list both hosts | open |
-| 5. PostgreSQL streaming replication | open |
-| 6. File and bulk data sync | open |
-| 7. Promote command | open |
-| 8. First switchover to m75q | open |
-| 9. thinkcenter reinstalled as the btrfs standby | open |
+| 2. Shared server configuration and `homelab-active.target` | open |
+| 3. vpsfree upstreams list both hosts | open |
+| 4. PostgreSQL streaming replication | open |
+| 5. File and bulk data sync | open |
+| 6. Promote command | open |
+| 7. First switchover to m75q | open |
+| 8. thinkcenter reinstalled as the btrfs standby | open |
+| 9. One Netbird relay per host | open |
 
 ## Goal
 
@@ -31,9 +31,11 @@ plan for getting there and the record of how far it got.
 - Traffic switches on its own. Data that can be lost or diverge only changes
   hands through one deliberate command.
 - thinkcenter stays untouched until m75q has taken over. Every change before
-  the switchover has to leave thinkcenter's generated system unchanged. Step 2
-  is the one deliberate exception, because it takes the relay out of the
-  failover problem altogether.
+  the switchover has to leave thinkcenter's generated system unchanged.
+  Monitoring of new targets in its prometheus is the accepted exception.
+- vpsfree stays a dumb entry point. It is a VPS and therefore not trusted, so
+  everything on it is considered public. It forwards traffic and runs nothing
+  that holds a secret or data, which is why no failover piece moves there.
 
 Both machines sit in the same home, so this covers the loss of a machine, not
 of the site. The borg backups on vpsfree stay the answer to that.
@@ -106,22 +108,64 @@ belongs to group 2.
 
 ### Off both hosts
 
-- **Netbird signal** already runs on vpsfree.
-- **Netbird relay** moves there in step 2. It is stateless, needs only the
-  wildcard certificate that vpsfree already renews and the relay secret, and
-  only ever sees WireGuard ciphertext. Relayed traffic today goes from
-  vpsfree over the tunnel to thinkcenter and back again, so moving it also
-  removes that hairpin.
+- **Netbird signal** already runs on vpsfree. It is a stateless broker that
+  holds no secret.
 - **STUN** comes from Google's public server, which management advertises.
   The STUN stream proxy on vpsfree forwards to a port nothing listens on and
-  can be removed.
+  is removed in step 3.
+
+### Netbird relay
+
+The relay is stateless but needs the relay secret, so it stays on the home
+hosts behind the vpsfree stream proxy. The client code in Netbird 0.82.0,
+`shared/relay/client`, decides how it can fail over:
+
+- Management hands every client a list of relay addresses. The client connects
+  to all of them at once and keeps the first that answers as its home relay.
+- Two peers on different home relays still meet. Each learns the other's relay
+  through signal and opens an extra connection to it.
+- A client tells relays apart by the address each relay announces. Two relays
+  behind one address therefore break relaying, because peers on different
+  instances believe they share one and never meet.
+- When its home relay drops, the client reconnects with a backoff of at most
+  60 seconds and races over the whole list again.
+- Relay tokens are signed with the shared secret and stay valid for 12 hours,
+  so any relay accepts tokens from either management server.
+
+Two relays can therefore never share `api.krejci.io:33080`, neither round
+robin nor as primary and `backup`. A failback would leave old connections on
+one relay and new ones on the other.
+
+**Until step 9 the relay follows the active host.** It is part of group 2,
+and the standby rejects its port on `wg0` like the others. Nothing changes on
+thinkcenter. Between a failure and the promote nothing relays, so peers that
+need the relay, such as phones behind carrier NAT, lose each other. Direct
+connections keep working through signal.
+
+**From step 9 each host runs its own relay.** Each announces its own address,
+either a separate port per host on vpsfree or a separate name per host routed
+by SNI, and management lists both. The relay then joins group 1, and relayed
+peers move to the surviving relay within about a minute without a promote.
+The costs:
+
+- The relay address is the one value that differs between the two hosts.
+- The standby carries about half the relayed connections, so rebooting or
+  deploying it drops those for up to a minute.
+- Each relay is monitored and alerted on its own.
+- After 12 hours without management the tokens expire and relaying stops on
+  both, exactly as with one relay.
+
+It waits for step 9 because management's relay list is a thinkcenter change,
+and because both hosts run the shared configuration only once thinkcenter is
+reinstalled.
 
 ### Groups
 
 - **Group 1** runs on both hosts: the services under "Independent on both
   hosts".
 - **Group 2** runs only on the active host, under `homelab-active.target`:
-  Netbird management, Dex, sso-proxy, vaultwarden, immich with redis,
+  Netbird management, the Netbird relay until step 9, Dex, sso-proxy,
+  vaultwarden, immich with redis,
   immich-public-proxy, memos, jellyfin, ntfy, home-assistant, mosquitto,
   zigbee2mqtt, prusa-obico, printer, grafana, and the borg backups, so two
   hosts never write to the same repositories and the standby never archives a
@@ -171,15 +215,16 @@ of the data to a manual promote.
   fail over at once when it goes offline. Needs client v0.82.0 or later. See
   https://docs.netbird.io/manage/networks/how-routing-peers-work
 - **Public entry on vpsfree.** m75q gets its own WireGuard tunnel to vpsfree.
-  What still goes through the tunnel is TCP: the management API and gRPC, and
-  the SNI passthrough for `share.` and `auth.`. vpsfree lists both hosts as
-  equal upstream servers. The standby rejects these ports on `wg0` with a TCP
-  reset through a unit that conflicts with `homelab-active.target`, so nginx
-  fails over to the active host at once. A dead host does not answer at all,
+  Everything that goes through the tunnel is TCP: the management API and gRPC,
+  the relay, and the SNI passthrough for `share.` and `auth.`. vpsfree lists
+  both hosts as equal upstream servers. The standby rejects these ports on
+  `wg0` with a TCP reset through a unit that conflicts with
+  `homelab-active.target`, so nginx always reaches the active host and never
+  splits clients between two relays. A dead host does not answer at all,
   so nginx needs a connect timeout of a few seconds and `max_fails=1` to skip
   it quickly. The promote never has to touch vpsfree.
-- **Netbird signal and relay** run on vpsfree, so peers that know each other
-  can still connect while the management server is down.
+- **Netbird signal** runs on vpsfree, so peers that know each other can still
+  connect directly while the management server is down.
 
 The standby keeps SSH open on `wg0`, so it stays reachable through vpsfree.
 
@@ -218,9 +263,11 @@ means the same on both hosts. No new IDs are introduced.
 ### Unplanned failure of the active host
 
 1. Netbird and vpsfree move traffic to the standby on their own.
-2. Group 1 keeps working. Group 2 shows the standby page.
+2. Group 1 keeps working. Group 2 shows the standby page. Until step 9 the
+   relay is down too, so only directly connected peers reach each other.
 3. Reach the standby over Netbird, which signal on vpsfree keeps working, or
-   over the LAN, or through vpsfree and its WireGuard tunnel.
+   over the LAN, or through vpsfree and its WireGuard tunnel. A phone behind
+   carrier NAT needs the relay until step 9, so it may have to use the LAN.
 4. Run the promote command on the standby.
 5. Move the zigbee dongle and the printer to it.
 
@@ -251,36 +298,36 @@ could resolve that, and the reasons against one are above.
 
 ## Implementation steps
 
-Each step deploys without touching thinkcenter's services, except steps 2
-and 8.
+Each step deploys without touching thinkcenter's services, except step 7.
 
 1. **m75q joins the tunnel.** Generate its WireGuard key on the host, commit
    the public key, give it its own tunnel address and add it to vpsfree's
    peers. vpsfree's tunnel health check pings every peer, so it reports
    m75q whenever m75q is off.
-2. **Relay to vpsfree.** Run netbird-relay on vpsfree with the relay secret,
-   point management's relay address at it, drop the relay from thinkcenter
-   and the relay and STUN stream proxies from vpsfree.
-3. **Shared configuration.** thinkcenter's `homelab` block in
+2. **Shared configuration.** thinkcenter's `homelab` block in
    `flake/hosts.nix` becomes one server definition that both hosts use. Group
    2 services move under `homelab-active.target`, and the `wg0` reject unit
    conflicts with it. Service user IDs are pinned. Alertmanager clusters and
    fluent-bit ships to both lokis. thinkcenter's generated system stays as it
    is, compared with the git revision pinned.
-4. **vpsfree upstreams.** Management API and gRPC go through one upstream
-   with both hosts, and the SNI passthrough in `tunnel.nix` stops taking only
-   the first peer. This comes after step 3, because before the reject unit
-   exists m75q drops these ports instead of rejecting them.
-5. **PostgreSQL replication.** m75q becomes a hot standby of thinkcenter.
-6. **File and bulk sync.** The restricted pull channel, a timer on the
+3. **vpsfree upstreams.** Management API and gRPC, the relay, and the SNI
+   passthrough in `tunnel.nix` each go to an upstream with both hosts, instead
+   of only the first peer. The dead STUN stream proxy goes. This comes after
+   step 2, because before the reject unit exists m75q drops these ports
+   instead of rejecting them.
+4. **PostgreSQL replication.** m75q becomes a hot standby of thinkcenter.
+5. **File and bulk sync.** The restricted pull channel, a timer on the
    standby, and snapshots on the receiving side.
-7. **Promote command.** The steps above as one script, with the metric swap.
-8. **First switchover.** At night: promote m75q, move the zigbee dongle and
+6. **Promote command.** The steps above as one script, with the metric swap.
+7. **First switchover.** At night: promote m75q, move the zigbee dongle and
    the printer, check every service.
-9. **thinkcenter reinstall.** Reinstall it with the automatic secure boot and
+8. **thinkcenter reinstall.** Reinstall it with the automatic secure boot and
    TPM flow, a btrfs root and a disko data disk named `data`. Remove
    `homelab.dataDisk.legacyLayout`. It rejoins as the standby, and the sync
    runs in both directions from then on.
+9. **One relay per host.** Each host's relay announces its own address,
+   management lists both, and the relay moves from group 2 to group 1. The
+   relay's port drops out of the reject unit.
 
 ## Open questions
 
