@@ -1,9 +1,22 @@
 # Server failover between thinkcenter and m75q
 
 thinkcenter runs every homelab service, the Netbird control plane included.
-m75q is its twin. Each of the two can take over everything when the other one
-is completely down, and both run the same configuration. This document is the
-plan for getting there and the record of how far it got.
+m75q is its twin. In the end each of the two can take over everything when
+the other one is completely down, and both run the same configuration. This
+document is the plan for getting there and the record of how far it got.
+
+The work runs in three phases, so that high availability is built between two
+identical hosts instead of around thinkcenter's legacy layout:
+
+1. **Migration.** Everything moves from thinkcenter to m75q once, on a planned
+   night. thinkcenter stays untouched and switched off as the rollback.
+2. **Reinstall.** thinkcenter is reinstalled with the same btrfs root and data
+   disk layout as m75q, and joins as an idle twin.
+3. **High availability.** A warm standby with a manual promote between the two
+   identical hosts.
+
+Periodic btrfs snapshots on every btrfs host are a separate track. It does not
+depend on the phases, and phase 3 reuses its tool for replication.
 
 ## Status
 
@@ -13,21 +26,25 @@ plan for getting there and the record of how far it got.
 | m75q data disk named `data`, mounted at `/mnt/data` | done |
 | Service state in `/var/lib`, only bulk data on the data disk | done in the modules, thinkcenter pinned to its legacy layout |
 | Bulk data copied from thinkcenter to m75q once | done, by hand |
-| 1. m75q joins the vpsfree tunnel | done |
-| 2.1 `homelab.failover.enable` and an empty `homelab-active.target` | open |
-| 2.2 `homelab_active` metric and the standby page | open |
-| 2.3 Pinned service user and group IDs | open |
-| 2.4 memos on m75q, with alerts and health checks gated on the active host | open |
-| 2.5 Remaining group 2 services on m75q, one group per commit | open |
-| 2.6 Group 1 monitoring on m75q, its alertmanager silent | open |
-| 2.7 One shared server definition for both hosts | open |
-| 3. vpsfree upstreams list both hosts | open |
-| 4. PostgreSQL streaming replication | open |
-| 5. File and bulk data sync | open |
-| 6. Promote command | open |
-| 7. First switchover to m75q | open |
-| 8. thinkcenter reinstalled as the btrfs standby | open |
-| 9. One Netbird relay per host | open |
+| 1.1 m75q joins the vpsfree tunnel | done |
+| 1.2 Pinned service user and group IDs | open |
+| 1.3 Host-specific names made host-independent | open |
+| 1.4 Service secrets rekeyed for m75q | open |
+| 1.5 Pre-sync of `/var/lib` and bulk data | open |
+| 1.6 Migration night | open |
+| 1.7 thinkcenter's services removed from the configuration | open |
+| 2.1 Rollback window with thinkcenter switched off | open |
+| 2.2 thinkcenter reinstalled as an idle twin | open |
+| 3.1 `homelab-active.target`, `/32` service IPs, `homelab_active` metric, standby page, gated alerts | open |
+| 3.2 Group 1 on both hosts, clustered alertmanager, logs to both lokis | open |
+| 3.3 vpsfree upstreams list both hosts | open |
+| 3.4 PostgreSQL streaming replication | open |
+| 3.5 File and bulk data sync | open |
+| 3.6 Promote command | open |
+| 3.7 One Netbird relay per host | open |
+| S.1 btrbk snapshots of `@home` and `@var-lib` | open |
+| S.2 btrbk snapshots on m75q's data disk | open |
+| S.3 Raspberry Pi hosts | open |
 
 ## Goal
 
@@ -36,15 +53,72 @@ plan for getting there and the record of how far it got.
   runtime state, not configuration.
 - Traffic switches on its own. Data that can be lost or diverge only changes
   hands through one deliberate command.
-- thinkcenter stays untouched until m75q has taken over. Every change before
-  the switchover has to leave thinkcenter's generated system unchanged.
-  Monitoring of new targets in its prometheus is the accepted exception.
+- thinkcenter stays untouched until the migration, so that switching it back
+  on is a complete rollback.
 - vpsfree stays a dumb entry point. It is a VPS and therefore not trusted, so
   everything on it is considered public. It forwards traffic and runs nothing
   that holds a secret or data, which is why no failover piece moves there.
 
 Both machines sit in the same home, so this covers the loss of a machine, not
 of the site. The borg backups on vpsfree stay the answer to that.
+
+## Phase 1: migration to m75q
+
+A one-time move, not a failover. Nothing is replicated: the services stop on
+thinkcenter, their state is copied once, and m75q starts them.
+
+1. **m75q joins the tunnel.** Done. m75q has its own WireGuard key and tunnel
+   address, and vpsfree lists it as a second peer.
+2. **Pinned service IDs.** The service users and groups get thinkcenter's
+   numeric IDs, so the copied files keep meaning the same owner. NixOS fixes
+   an ID when it first creates a user, so this lands before any service runs
+   on m75q. Phase 3 needs the same IDs on both hosts anyway.
+3. **Host-specific names.** These name thinkcenter directly and are decided
+   once, either renamed or replaced for m75q: the borg secrets
+   `borg-passphrase-*-thinkcenter` and the borg key `borg-thinkcenter-vpsfree`
+   with its repositories on vpsfree, `oauth2-proxy-thinkcenter-env`, the
+   `host="thinkcenter"` queries in `assets/grafana/dashboards/health.json`, the
+   default host in `hosts.json`, and `inject-borg-passphrase`.
+4. **Secrets.** Every service secret is rekeyed for m75q's host key.
+5. **Pre-sync.** While thinkcenter keeps running, `/var/lib` and the bulk data
+   are copied again, so the night only moves what changed since. thinkcenter's
+   legacy layout keeps whole state directories on its data disk, so the copy
+   maps them to m75q's layout of state in `/var/lib` and bulk data on
+   `/mnt/data`.
+6. **Migration night.**
+   1. Stop the homelab services on thinkcenter, PostgreSQL included.
+   2. Copy the remaining changes. The PostgreSQL data directory is copied cold
+      while it is stopped, which is consistent and keeps every role and
+      setting. It needs the same major version and the same glibc collation on
+      both hosts, which a deploy from the same revision gives. `pg_dumpall` is
+      the fallback if they differ.
+   3. Deploy m75q with thinkcenter's full service configuration.
+   4. Move the Netbird control plane: vpsfree's `managementHost` and the
+      first tunnel peer become m75q, and the routing peer for
+      `192.168.91.0/24` moves to m75q. These change the access path, so per
+      the connectivity rules in CLAUDE.md you run them yourself with LAN
+      access. Running clients keep their tunnels meanwhile, but a device that
+      restarts while management is down does not connect until it is back.
+   5. Move the zigbee dongle and the printer.
+   6. Check every service, then switch thinkcenter off.
+   The rollback until the end of phase 2.1 is to switch thinkcenter back on
+   and point the routes and vpsfree back at it. Anything written on m75q in
+   the meantime is lost then.
+7. **Cleanup.** thinkcenter's `homelab` block goes from `flake/hosts.nix`, once
+   the rollback is no longer wanted.
+
+## Phase 2: thinkcenter reinstall
+
+1. **Rollback window.** thinkcenter stays switched off and untouched for a few
+   weeks of normal use on m75q.
+2. **Reinstall.** The automatic secure boot and TPM flow, a btrfs root and a
+   disko data disk named `data`. `homelab.dataDisk.legacyLayout` is removed.
+   thinkcenter joins as an idle twin with no services.
+
+## Phase 3: high availability
+
+Everything below describes the design between two identical hosts. The host
+running the services after the migration is the active one, at first m75q.
 
 ## What can run on both hosts at once
 
@@ -125,7 +199,7 @@ no clustering in its open-source version, only bridges.
   holds no secret.
 - **STUN** comes from Google's public server, which management advertises.
   The STUN stream proxy on vpsfree forwards to a port nothing listens on and
-  is removed in step 3.
+  is removed in step 3.3.
 
 ### Netbird relay
 
@@ -155,13 +229,13 @@ Two relays can therefore never share `api.krejci.io:33080`, neither round
 robin nor as primary and `backup`. A failback would leave old connections on
 one relay and new ones on the other.
 
-**Until step 9 the relay follows the active host.** It is part of group 2,
+**Until step 3.7 the relay follows the active host.** It is part of group 2,
 and the standby rejects its port on `wg0` like the others. Nothing changes on
 thinkcenter. Between a failure and the promote nothing relays, so peers that
 need the relay, such as phones behind carrier NAT, lose each other. Direct
 connections keep working through signal.
 
-**From step 9 each host runs its own relay.** Each announces its own address,
+**From step 3.7 each host runs its own relay.** Each announces its own address,
 either a separate port per host on vpsfree or a separate name per host routed
 by SNI, and management lists both. The relay then joins group 1, and relayed
 peers move to the surviving relay within about a minute without a promote.
@@ -174,16 +248,15 @@ The costs:
 - After 12 hours without management the tokens expire and relaying stops on
   both, exactly as with one relay.
 
-It waits for step 9 because management's relay list is a thinkcenter change,
-and because both hosts run the shared configuration only once thinkcenter is
-reinstalled.
+It comes last because one relay following the active host already works with
+the promote, so the second relay only shortens outages before a promote.
 
 ### Groups
 
 - **Group 1** runs on both hosts: the services under "Independent on both
   hosts".
 - **Group 2** runs only on the active host, under `homelab-active.target`:
-  Netbird management, the Netbird relay until step 9, Dex, sso-proxy,
+  Netbird management, the Netbird relay until step 3.7, Dex, sso-proxy,
   vaultwarden, immich with redis,
   immich-public-proxy, memos, jellyfin, ntfy, home-assistant, mosquitto,
   zigbee2mqtt, prusa-obico, printer, grafana, and the borg backups, so two
@@ -304,17 +377,15 @@ masquerade is on. Planned switchovers therefore run at night.
 | Bulk data under `/mnt/data`: immich media, jellyfin media, borg repositories | periodic sync | up to the sync interval |
 | Secrets | the same agenix secrets, rekeyed for both hosts | none |
 
-The standby pulls. The source accepts the sync key only through a forced
-read-only command such as `rrsync -ro`, with root logins limited to forced
-commands, so a compromised standby can read but not change the active host.
-The receiving side snapshots after every sync, so a deletion on the source can
-be rolled back.
+Both hosts are on btrfs by phase 3, so files move as btrbk snapshots with
+`btrfs send`. Every copy is a point in time, consistent across all services in
+one subvolume, which rsync of running services could not give. btrbk is the
+same tool that takes the periodic snapshots, see "Snapshots" below.
 
-File state copied while services run is not guaranteed consistent. SQLite
-databases are copied through `sqlite3 .backup` until then. Once both hosts are
-on btrfs, snapshots on the source and `btrfs send` replace rsync and make
-every copy a point in time. Until thinkcenter is reinstalled, its side stays
-rsync.
+The standby pulls. The source accepts the sync key only through btrbk's
+`ssh_filter_btrbk.sh` as a forced command, restricted to sending, so a
+compromised standby can read but not change the active host. The received
+snapshots stay on the standby, so a deletion on the source can be rolled back.
 
 ### PostgreSQL replication
 
@@ -325,8 +396,8 @@ exists. What the setup needs besides:
 
 - **`wal_log_hints = on`.** Without it or data checksums, a returning old
   primary cannot be rewound with `pg_rewind` and needs a full new base backup.
-  thinkcenter's PostgreSQL 16 has neither, and turning it on restarts
-  PostgreSQL on thinkcenter.
+  The PostgreSQL 16 cluster has neither today, and turning it on needs one
+  restart of the primary.
 - **A pinned major version.** Both hosts must run the same major version and
   collation, and today they match only by default.
 - **Network and access.** PostgreSQL listens on localhost only. Replication
@@ -345,20 +416,20 @@ exists. What the setup needs besides:
 
 ### Service users
 
-Copied files keep their numeric owners. The service users get thinkcenter's
-existing user and group IDs pinned in the shared configuration, so a file
-means the same on both hosts. No new IDs are introduced.
+Copied files keep their numeric owners. The service users carry thinkcenter's
+user and group IDs, pinned in phase 1, so a file means the same on both
+hosts. No new IDs are introduced.
 
 ## Procedures
 
 ### Unplanned failure of the active host
 
 1. Netbird and vpsfree move traffic to the standby on their own.
-2. Group 1 keeps working. Group 2 shows the standby page. Until step 9 the
+2. Group 1 keeps working. Group 2 shows the standby page. Until step 3.7 the
    relay is down too, so only directly connected peers reach each other.
 3. Reach the standby over Netbird, which signal on vpsfree keeps working, or
    over the LAN, or through vpsfree and its WireGuard tunnel. A phone behind
-   carrier NAT needs the relay until step 9, so it may have to use the LAN. A
+   carrier NAT needs the relay until step 3.7, so it may have to use the LAN. A
    device that restarted after management went down has no Netbird tunnels,
    so it needs the LAN too.
 4. Run the promote command on the standby.
@@ -399,68 +470,95 @@ This protects against a host coming back after an outage. It does not protect
 against both hosts running while unable to see each other. Only a quorum
 could resolve that, and the reasons against one are above.
 
-## Implementation steps
+### Phase 3 steps
 
-Each step deploys without touching thinkcenter's services, except step 7.
+Each step is a small commit, deployable and checkable on its own.
 
-1. **m75q joins the tunnel.** Generate its WireGuard key on the host, commit
-   the public key, give it its own tunnel address and add it to vpsfree's
-   peers. vpsfree's tunnel health check pings every peer, so it reports
-   m75q whenever m75q is off.
-2. **Shared configuration.** Done in small commits, each deployable on its
-   own. thinkcenter's generated system stays as it is, compared with
-   `system.configurationRevision` held fixed, apart from new monitoring rules.
-   1. `homelab.failover.enable` follows the `homelab.dataDisk.legacyLayout`
-      pattern: off on thinkcenter, which keeps starting everything at boot,
-      and on for m75q. With it on, group 2 units are wanted by
-      `homelab-active.target` instead of `multi-user.target`. Modules list
-      their units in an option, the way they register scrape targets. The
-      target starts empty, and for now it is started by hand.
-   2. The active host exports `homelab_active` for prometheus, and the
-      standby answers group 2 vhosts with the standby page.
-   3. Service users get thinkcenter's user and group IDs pinned. This comes
-      before any service lands on m75q, because NixOS fixes an ID when it
-      first creates the user.
-   4. memos is the first group 2 service on m75q, chosen because it is small.
-      Its alert only fires where `homelab_active` is 1, and its health check
-      skips the standby. The later services copy this pattern.
-   5. The other group 2 services follow, one dependent group per commit: dex
-      with sso-proxy, vaultwarden, ntfy, jellyfin, immich with redis, machine
-      learning and the public proxy, home-assistant with mosquitto and
-      zigbee2mqtt, prusa-obico with the printer, Netbird management with the
-      relay, grafana, and the borg backups. Each needs its secrets rekeyed
-      for m75q.
-   6. Group 1 monitoring runs on m75q. Its alertmanager stays silent until
-      step 8 clusters the two, because clustering changes thinkcenter's
-      alertmanager. fluent-bit shipping to both lokis waits for the same
-      reason.
-   7. Both hosts' `homelab` blocks merge into one server definition. Both
-      generated systems stay identical, which proves the refactor.
+1. **Active and standby roles.** Group 2 units are wanted by
+   `homelab-active.target` instead of `multi-user.target`. Modules list their
+   units in an option, the way they register scrape targets. In the same
+   step: service IPs on the dummy interface become `/32`, because a `/24`
+   makes a host treat the whole range as local and cannot reach a service
+   running only on the other host. The active host exports `homelab_active`,
+   group 2 alerts fire only where it is 1, health checks skip the standby,
+   and the standby answers group 2 vhosts with the standby page.
+2. **Group 1 on both hosts.** Monitoring runs on thinkcenter too, the two
+   alertmanagers cluster, and fluent-bit ships to both lokis.
 3. **vpsfree upstreams.** Management API and gRPC, the relay, and the SNI
-   passthrough in `tunnel.nix` each go to an upstream with both hosts, instead
-   of only the first peer. The standby rejects these ports on `wg0` through a
-   unit that conflicts with `homelab-active.target`. m75q needs it before
-   vpsfree lists m75q, because otherwise m75q drops these ports instead of
-   rejecting them. The dead STUN stream proxy goes.
-4. **PostgreSQL replication.** m75q becomes a hot standby of thinkcenter,
-   with everything listed under "PostgreSQL replication". `wal_log_hints`
-   restarts PostgreSQL on thinkcenter.
-5. **File and bulk sync.** The restricted pull channel, a timer on the
-   standby, and snapshots on the receiving side.
-6. **Promote command.** The steps above as one script, with the metric swap.
-7. **First switchover.** At night: promote m75q, move the zigbee dongle and
-   the printer, check every service. thinkcenter must not boot its old
-   configuration afterwards, because with `homelab.failover.enable` off it
-   starts all of group 2. Either it is deployed with the option on, or it
-   stays off until its reinstall.
-8. **thinkcenter reinstall.** Reinstall it with the automatic secure boot and
-   TPM flow, a btrfs root and a disko data disk named `data`. Remove
-   `homelab.dataDisk.legacyLayout`. It rejoins as the standby, and the sync
-   runs in both directions from then on. The two alertmanagers cluster and
-   fluent-bit ships to both lokis.
-9. **One relay per host.** Each host's relay announces its own address,
+   passthrough in `tunnel.nix` each go to an upstream with both hosts, tuned
+   as described under "vpsfree upstreams". The standby rejects these ports on
+   `wg0` through a unit that conflicts with `homelab-active.target`, and it
+   needs that unit before vpsfree lists it, because otherwise it drops these
+   ports instead of rejecting them. The dead STUN stream proxy goes.
+4. **PostgreSQL replication.** thinkcenter becomes a hot standby of m75q, with
+   everything listed under "PostgreSQL replication".
+5. **File and bulk sync.** btrbk on the standby pulls the snapshots of
+   `@var-lib` and the data disk subvolumes through the restricted channel.
+6. **Promote command.** The steps under "Promote" as one script, with the
+   metric swap. Its first run is a switchover at night.
+7. **One relay per host.** Each host's relay announces its own address,
    management lists both, and the relay moves from group 2 to group 1. The
    relay's port drops out of the reject unit.
+
+## Snapshots
+
+Periodic read-only btrfs snapshots on every btrfs host, servers and desktops
+alike, for rolling back a deleted or damaged file. They live on the same disk,
+so they are not a backup. The borg backups stay that.
+
+### Tool
+
+btrbk, through the NixOS module `services.btrbk`. snapper's timeline does the
+same retention, but btrbk fits this repository better:
+
+- It writes snapshots into one directory per filesystem, which matches the
+  flat `@snapshots` subvolume at `/.snapshots` that the root layout already
+  has. snapper wants a nested `.snapshots` inside every subvolume.
+- It sends and receives snapshots, with an SSH filter for a restricted forced
+  command. Phase 3 reuses it for the file sync instead of a second tool.
+
+### Subvolumes
+
+| Subvolume | Hosts | Why |
+|-----------|-------|-----|
+| `@home` | desktops, and servers for completeness | user files |
+| `@var-lib` | servers | service state. A snapshot of a running PostgreSQL is crash consistent, and PostgreSQL recovers from it like from a power loss, because its whole data directory sits in this one subvolume |
+| `@immich`, `@jellyfin` on the data disk | m75q, later thinkcenter | bulk data. The data disk is its own filesystem and needs its own snapshot directory, an `@snapshots` subvolume there |
+| `@root`, `@nix` | none | rebuilt from the flake |
+| `@borg-repos` | none | borg keeps its own archive history |
+
+### Retention
+
+btrbk keeps snapshots by age with `snapshot_preserve`, in the form
+`<hourly>h <daily>d <weekly>w <monthly>m <yearly>y`, and takes them hourly. A
+first proposal:
+
+| Data | Preserve |
+|------|----------|
+| `@home`, `@var-lib` | `48h 14d 8w 12m 5y` |
+| `@immich`, `@jellyfin` | `48h 14d 8w 12m` |
+
+A snapshot keeps every block it references, so a deleted file only frees
+space once the last snapshot holding it expires. For media that can mean
+months of space, which is why the bulk data keeps no yearly snapshots.
+
+### Caveats
+
+- Hourly snapshots of `@home` hold browser caches and build output. A nested
+  subvolume for `~/.cache` keeps it out, because a snapshot skips nested
+  subvolumes.
+- The Raspberry Pi hosts have a btrfs root without subvolumes, so a snapshot
+  would cover the whole root, `/nix` included. They need their own decision.
+- A failed btrbk run already shows up through the `SystemdUnitFailed` alert.
+
+### Steps
+
+1. **`@home` and `@var-lib`** on the hosts with the root layout: m75q, e470,
+   framework and t14.
+2. **m75q's data disk.** An `@snapshots` subvolume is created by hand on the
+   existing filesystem, since disko only formats new disks, and is declared in
+   `hosts/m75q.nix` for the next install.
+3. **Raspberry Pi hosts.** Whether they get root snapshots or none.
 
 ## Open questions
 
@@ -468,9 +566,9 @@ Each step deploys without touching thinkcenter's services, except step 7.
   or waits for the peer or the operator, like corosync's `wait_for_all`.
 - A network-attached zigbee coordinator would remove the manual dongle move.
 - Whether grafana moves to a local SQLite database to join group 1.
-- Service IPs sit on the dummy interface as `/24`. A host with any service IP
-  then treats the whole range as local and cannot reach a service that runs
-  only on the other host. Group 1 on m75q needs `/32` first.
+- Whether the borg repositories of thinkcenter are renamed for m75q or m75q
+  starts new ones.
+- The snapshot retention values.
 
 ## Sources
 
@@ -494,5 +592,6 @@ Checked against the deployed versions in November 2026.
 - vaultwarden backup: https://github.com/dani-garcia/vaultwarden/wiki/Backing-up-your-vault
 - Dex storage: https://dexidp.io/docs/configuration/storage/
 - ntfy clustering: https://docs.ntfy.sh/config/
+- btrbk: https://digint.ch/btrbk/doc/btrbk.conf.5.html
 - zigbee2mqtt FAQ: https://www.zigbee2mqtt.io/guide/faq/
 - votequorum: https://manpages.debian.org/testing/corosync/votequorum.5.en.html
