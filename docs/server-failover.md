@@ -30,9 +30,10 @@ depend on the phases, and phase 3 reuses its tool for replication.
 | 1.2 Pinned service user and group IDs | open |
 | 1.3 Host-specific names made host-independent | open |
 | 1.4 Service secrets rekeyed for m75q | open |
-| 1.5 Pre-sync of `/var/lib` and bulk data | open |
-| 1.6 Migration night | open |
-| 1.7 thinkcenter's services removed from the configuration | open |
+| 1.5 Local borg replaced by btrbk on m75q | open |
+| 1.6 Pre-sync of `/var/lib` and bulk data | open |
+| 1.7 Migration night | open |
+| 1.8 thinkcenter's services removed from the configuration | open |
 | 2.1 Rollback window with thinkcenter switched off | open |
 | 2.2 thinkcenter reinstalled as an idle twin | open |
 | 3.1 `homelab-active.target`, `/32` service IPs, `homelab_active` metric, standby page, gated alerts | open |
@@ -74,18 +75,41 @@ thinkcenter, their state is copied once, and m75q starts them.
    an ID when it first creates a user, so this lands before any service runs
    on m75q. Phase 3 needs the same IDs on both hosts anyway.
 3. **Host-specific names.** These name thinkcenter directly and are decided
-   once, either renamed or replaced for m75q: the borg secrets
-   `borg-passphrase-*-thinkcenter` and the borg key `borg-thinkcenter-vpsfree`
-   with its repositories on vpsfree, `oauth2-proxy-thinkcenter-env`, the
+   once, either renamed or replaced for m75q: the borg secret
+   `borg-passphrase-remote-thinkcenter` and the borg key
+   `borg-thinkcenter-vpsfree` with its repositories on vpsfree,
+   `oauth2-proxy-thinkcenter-env`, the
    `host="thinkcenter"` queries in `assets/grafana/dashboards/health.json`, the
    default host in `hosts.json`, and `inject-borg-passphrase`.
 4. **Secrets.** Every service secret is rekeyed for m75q's host key.
-5. **Pre-sync.** While thinkcenter keeps running, `/var/lib` and the bulk data
+5. **Local borg replaced by btrbk.** m75q leaves `homelab.backup.local` off.
+   The local repositories gave daily archives kept for six months on the data
+   disk, and their only protection beyond what snapshots give was against the
+   loss of the system disk:
+
+   | Protects against | Local borg | btrbk |
+   |------------------|------------|-------|
+   | deleted or damaged files | daily, kept 7d 4w 6m | hourly, kept up to yearly |
+   | loss of the system disk with `/var/lib` | yes, the repository is on the data disk | yes, once `@var-lib` snapshots are also sent to the data disk |
+   | loss of the data disk with the media | no, the repository is on the same disk | no |
+   | restoring a single database | yes, from `pg_dump` | through the remote borg, which keeps its dumps |
+
+   So before the migration night m75q gets the snapshots of S.1 and S.2, and
+   btrbk sends the `@var-lib` snapshots to the data disk, a second
+   filesystem. In phase 3 the snapshots received by the standby take over
+   that role. The remote borg on vpsfree with its database dumps stays as it
+   is and remains the only copy outside the home and the only one that root
+   on the host cannot delete. Nothing local needs to move: no local
+   passphrase secret, and no local repositories. The `@borg-repos` subvolume
+   on m75q's data disk and the `/var/lib/borg-repos` bind mount in
+   `homelab/immich.nix` go. thinkcenter keeps its local borg untouched as part
+   of the rollback, and its reinstall drops it.
+6. **Pre-sync.** While thinkcenter keeps running, `/var/lib` and the bulk data
    are copied again, so the night only moves what changed since. thinkcenter's
    legacy layout keeps whole state directories on its data disk, so the copy
    maps them to m75q's layout of state in `/var/lib` and bulk data on
    `/mnt/data`.
-6. **Migration night.**
+7. **Migration night.**
    1. Stop the homelab services on thinkcenter, PostgreSQL included.
    2. Copy the remaining changes. The PostgreSQL data directory is copied cold
       while it is stopped, which is consistent and keeps every role and
@@ -104,7 +128,7 @@ thinkcenter, their state is copied once, and m75q starts them.
    The rollback until the end of phase 2.1 is to switch thinkcenter back on
    and point the routes and vpsfree back at it. Anything written on m75q in
    the meantime is lost then.
-7. **Cleanup.** thinkcenter's `homelab` block goes from `flake/hosts.nix`, once
+8. **Cleanup.** thinkcenter's `homelab` block goes from `flake/hosts.nix`, once
    the rollback is no longer wanted.
 
 ## Phase 2: thinkcenter reinstall
@@ -374,7 +398,7 @@ masquerade is on. Planned switchovers therefore run at night.
 |-------|-----------|------------------|
 | PostgreSQL: vaultwarden, immich, Netbird management, Dex, memos, home-assistant, grafana | asynchronous streaming replication of the whole cluster, the standby is a read-only hot standby | the replication lag, typically under a second, unbounded while the link is down |
 | Files in `/var/lib`: home-assistant `.storage`, zigbee2mqtt database, vaultwarden keys and attachments, jellyfin SQLite, ntfy users, prusa-obico, mosquitto | periodic sync | up to the sync interval |
-| Bulk data under `/mnt/data`: immich media, jellyfin media, borg repositories | periodic sync | up to the sync interval |
+| Bulk data under `/mnt/data`: immich media, jellyfin media | periodic sync | up to the sync interval |
 | Secrets | the same agenix secrets, rekeyed for both hosts | none |
 
 Both hosts are on btrfs by phase 3, so files move as btrbk snapshots with
@@ -525,7 +549,6 @@ same retention, but btrbk fits this repository better:
 | `@var-lib` | servers | service state. A snapshot of a running PostgreSQL is crash consistent, and PostgreSQL recovers from it like from a power loss, because its whole data directory sits in this one subvolume |
 | `@immich`, `@jellyfin` on the data disk | m75q, later thinkcenter | bulk data. The data disk is its own filesystem and needs its own snapshot directory, an `@snapshots` subvolume there |
 | `@root`, `@nix` | none | rebuilt from the flake |
-| `@borg-repos` | none | borg keeps its own archive history |
 
 ### Retention
 
@@ -554,10 +577,14 @@ months of space, which is why the bulk data keeps no yearly snapshots.
 ### Steps
 
 1. **`@home` and `@var-lib`** on the hosts with the root layout: m75q, e470,
-   framework and t14.
+   framework and t14. Before enabling it, `findmnt /var/lib` on each desktop
+   confirms it was installed with this layout. On m75q, btrbk also sends the
+   `@var-lib` snapshots to the data disk, which replaces local borg until the
+   standby of phase 3 receives them.
 2. **m75q's data disk.** An `@snapshots` subvolume is created by hand on the
    existing filesystem, since disko only formats new disks, and is declared in
-   `hosts/m75q.nix` for the next install.
+   `hosts/m75q.nix` for the next install. The `@borg-repos` subvolume goes
+   with local borg.
 3. **Raspberry Pi hosts.** Whether they get root snapshots or none.
 
 ## Open questions
@@ -566,8 +593,8 @@ months of space, which is why the bulk data keeps no yearly snapshots.
   or waits for the peer or the operator, like corosync's `wait_for_all`.
 - A network-attached zigbee coordinator would remove the manual dongle move.
 - Whether grafana moves to a local SQLite database to join group 1.
-- Whether the borg repositories of thinkcenter are renamed for m75q or m75q
-  starts new ones.
+- Whether thinkcenter's remote borg repositories on vpsfree are renamed for
+  m75q or m75q starts new ones.
 - The snapshot retention values.
 
 ## Sources
