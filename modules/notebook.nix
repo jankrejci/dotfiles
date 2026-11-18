@@ -27,6 +27,11 @@ in {
 
   # Allow applications to update firmware
   services.fwupd.enable = true;
+  # Only the daemon gets the signed helper. Clients such as gnome-software
+  # talk to it over D-Bus and keep the cached fwupd.
+  services.fwupd.package = pkgs.fwupd.override {
+    fwupd-efi = import ../pkgs/fwupd-efi-signed.nix pkgs.fwupd-efi;
+  };
 
   # Secure boot here runs on locally enrolled sbctl keys, so there is no shim
   # to chainload the capsule helper with. fwupd still sources that helper from
