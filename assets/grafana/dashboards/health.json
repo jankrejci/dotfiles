@@ -23,7 +23,7 @@
       },
       "gridPos": {"h": 2, "w": 3, "x": 0, "y": 1}, "id": 12,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"immich-server.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
+      "targets": [{"expr": "max(node_systemd_unit_state{name=\"immich-server.service\",state=\"active\",host=~\"thinkcenter|m75q\"})", "refId": "A"}],
       "title": "Immich", "type": "stat"
     },
     {
@@ -61,7 +61,7 @@
       },
       "gridPos": {"h": 2, "w": 3, "x": 0, "y": 4}, "id": 11,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"jellyfin.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
+      "targets": [{"expr": "max(node_systemd_unit_state{name=\"jellyfin.service\",state=\"active\",host=~\"thinkcenter|m75q\"})", "refId": "A"}],
       "title": "Jellyfin", "type": "stat"
     },
     {
@@ -80,7 +80,7 @@
       },
       "gridPos": {"h": 2, "w": 21, "x": 3, "y": 4}, "id": 61,
       "options": {"showValue": "never", "alignValue": "center", "mergeValues": true, "rowHeight": 0.9, "legend": {"showLegend": false}},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"jellyfin.service\",state=\"active\",host=\"thinkcenter\"}", "legendFormat": " ", "refId": "A"}],
+      "targets": [{"expr": "max(node_systemd_unit_state{name=\"jellyfin.service\",state=\"active\",host=~\"thinkcenter|m75q\"})", "legendFormat": " ", "refId": "A"}],
       "title": "", "type": "state-timeline"
     },
 
@@ -99,7 +99,7 @@
       },
       "gridPos": {"h": 2, "w": 3, "x": 0, "y": 7}, "id": 13,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"memos.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
+      "targets": [{"expr": "max(node_systemd_unit_state{name=\"memos.service\",state=\"active\",host=~\"thinkcenter|m75q\"})", "refId": "A"}],
       "title": "Memos", "type": "stat"
     },
     {
@@ -118,7 +118,7 @@
       },
       "gridPos": {"h": 2, "w": 21, "x": 3, "y": 7}, "id": 81,
       "options": {"showValue": "never", "alignValue": "center", "mergeValues": true, "rowHeight": 0.9, "legend": {"showLegend": false}},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"memos.service\",state=\"active\",host=\"thinkcenter\"}", "legendFormat": " ", "refId": "A"}],
+      "targets": [{"expr": "max(node_systemd_unit_state{name=\"memos.service\",state=\"active\",host=~\"thinkcenter|m75q\"})", "legendFormat": " ", "refId": "A"}],
       "title": "", "type": "state-timeline"
     },
 
@@ -175,7 +175,7 @@
       },
       "gridPos": {"h": 2, "w": 3, "x": 0, "y": 13}, "id": 15,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"vaultwarden.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
+      "targets": [{"expr": "max(node_systemd_unit_state{name=\"vaultwarden.service\",state=\"active\",host=~\"thinkcenter|m75q\"})", "refId": "A"}],
       "title": "Vaultwarden", "type": "stat"
     },
     {
@@ -194,7 +194,7 @@
       },
       "gridPos": {"h": 2, "w": 21, "x": 3, "y": 13}, "id": 101,
       "options": {"showValue": "never", "alignValue": "center", "mergeValues": true, "rowHeight": 0.9, "legend": {"showLegend": false}},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"vaultwarden.service\",state=\"active\",host=\"thinkcenter\"}", "legendFormat": " ", "refId": "A"}],
+      "targets": [{"expr": "max(node_systemd_unit_state{name=\"vaultwarden.service\",state=\"active\",host=~\"thinkcenter|m75q\"})", "legendFormat": " ", "refId": "A"}],
       "title": "", "type": "state-timeline"
     },
 
@@ -300,7 +300,7 @@
       },
       "gridPos": {"h": 3, "w": 5, "x": 0, "y": 20}, "id": 21,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"grafana.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
+      "targets": [{"expr": "max(node_systemd_unit_state{name=\"grafana.service\",state=\"active\",host=~\"thinkcenter|m75q\"})", "refId": "A"}],
       "title": "Grafana", "type": "stat"
     },
     {
@@ -317,7 +317,7 @@
       },
       "gridPos": {"h": 3, "w": 5, "x": 5, "y": 20}, "id": 22,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"prometheus.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
+      "targets": [{"expr": "max(node_systemd_unit_state{name=\"prometheus.service\",state=\"active\",host=~\"thinkcenter|m75q\"})", "refId": "A"}],
       "title": "Prometheus", "type": "stat"
     },
     {
@@ -334,7 +334,7 @@
       },
       "gridPos": {"h": 3, "w": 5, "x": 10, "y": 20}, "id": 23,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"ntfy-sh.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
+      "targets": [{"expr": "max(node_systemd_unit_state{name=\"ntfy-sh.service\",state=\"active\",host=~\"thinkcenter|m75q\"})", "refId": "A"}],
       "title": "Ntfy", "type": "stat"
     },
     {
@@ -351,7 +351,7 @@
       },
       "gridPos": {"h": 3, "w": 5, "x": 15, "y": 20}, "id": 24,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"loki.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
+      "targets": [{"expr": "max(node_systemd_unit_state{name=\"loki.service\",state=\"active\",host=~\"thinkcenter|m75q\"})", "refId": "A"}],
       "title": "Loki", "type": "stat"
     },
     {
@@ -387,7 +387,7 @@
       },
       "gridPos": {"h": 3, "w": 4, "x": 0, "y": 24}, "id": 71,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_network_carrier{device=\"wg0\",host=\"thinkcenter\"}", "refId": "A"}],
+      "targets": [{"expr": "max(node_network_carrier{device=\"wg0\",host=~\"thinkcenter|m75q\"})", "refId": "A"}],
       "title": "Wireguard", "type": "stat"
     },
     {
@@ -404,7 +404,7 @@
       },
       "gridPos": {"h": 3, "w": 4, "x": 4, "y": 24}, "id": 72,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"netbird-management.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
+      "targets": [{"expr": "max(node_systemd_unit_state{name=\"netbird-management.service\",state=\"active\",host=~\"thinkcenter|m75q\"})", "refId": "A"}],
       "title": "NB Management", "type": "stat"
     },
     {
@@ -421,7 +421,7 @@
       },
       "gridPos": {"h": 3, "w": 4, "x": 8, "y": 24}, "id": 73,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"netbird-relay.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
+      "targets": [{"expr": "max(node_systemd_unit_state{name=\"netbird-relay.service\",state=\"active\",host=~\"thinkcenter|m75q\"})", "refId": "A"}],
       "title": "NB Relay", "type": "stat"
     },
     {
@@ -491,7 +491,7 @@
       },
       "gridPos": {"h": 3, "w": 4, "x": 0, "y": 28}, "id": 31,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"nginx.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
+      "targets": [{"expr": "max(node_systemd_unit_state{name=\"nginx.service\",state=\"active\",host=~\"thinkcenter|m75q\"})", "refId": "A"}],
       "title": "Nginx", "type": "stat"
     },
     {
@@ -508,7 +508,7 @@
       },
       "gridPos": {"h": 3, "w": 4, "x": 4, "y": 28}, "id": 32,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"postgresql.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
+      "targets": [{"expr": "max(node_systemd_unit_state{name=\"postgresql.service\",state=\"active\",host=~\"thinkcenter|m75q\"})", "refId": "A"}],
       "title": "Postgres", "type": "stat"
     },
     {
@@ -525,7 +525,7 @@
       },
       "gridPos": {"h": 3, "w": 4, "x": 8, "y": 28}, "id": 33,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"redis.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
+      "targets": [{"expr": "max(node_systemd_unit_state{name=\"redis.service\",state=\"active\",host=~\"thinkcenter|m75q\"})", "refId": "A"}],
       "title": "Redis", "type": "stat"
     },
     {
@@ -576,7 +576,7 @@
       },
       "gridPos": {"h": 3, "w": 4, "x": 20, "y": 28}, "id": 39,
       "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value"},
-      "targets": [{"expr": "node_systemd_unit_state{name=\"ipp-usb.service\",state=\"active\",host=\"thinkcenter\"}", "refId": "A"}],
+      "targets": [{"expr": "max(node_systemd_unit_state{name=\"ipp-usb.service\",state=\"active\",host=~\"thinkcenter|m75q\"})", "refId": "A"}],
       "title": "IPP-USB", "type": "stat"
     },
 
