@@ -50,6 +50,27 @@
 }: let
   cfg = config.homelab.lorawan-gateway;
   tomlFormat = pkgs.formats.toml {};
+
+  # concentratord binds these only once the concentrator has started, so the
+  # forwarder takes their presence as the sign that it can connect. They live
+  # in concentratord's RuntimeDirectory, which systemd removes whenever the
+  # service stops, so a crash leaves no stale socket behind.
+  runtimeDir = "concentratord";
+  eventSocket = "/run/${runtimeDir}/event";
+  commandSocket = "/run/${runtimeDir}/command";
+
+  # A forwarder started before the sockets exist panics at once. During a
+  # deploy that failure made activation report a failed unit, and deploy-rs
+  # rolled the whole generation back.
+  waitForConcentratord = pkgs.writeShellApplication {
+    name = "wait-for-concentratord";
+    text = ''
+      until [ -S ${eventSocket} ] && [ -S ${commandSocket} ]; do
+        sleep 1
+      done
+    '';
+  };
+
   # UDP forwarder configuration
   udpForwarderConfig = tomlFormat.generate "udp-forwarder.toml" {
     udp_forwarder = {
@@ -67,8 +88,8 @@
       ];
     };
     concentratord = {
-      event_url = "ipc:///tmp/concentratord_event";
-      command_url = "ipc:///tmp/concentratord_command";
+      event_url = "ipc://${eventSocket}";
+      command_url = "ipc://${commandSocket}";
     };
   };
 
@@ -90,8 +111,8 @@
       log_to_syslog = false;
       stats_interval = "30s";
       api = {
-        event_bind = "ipc:///tmp/concentratord_event";
-        command_bind = "ipc:///tmp/concentratord_command";
+        event_bind = "ipc://${eventSocket}";
+        command_bind = "ipc://${commandSocket}";
       };
     };
     gateway =
@@ -197,6 +218,7 @@ in {
       after = ["sx1301-reset.service"];
       requires = ["sx1301-reset.service"];
       serviceConfig = {
+        RuntimeDirectory = runtimeDir;
         ExecStart = "${pkgs.chirpstack-concentratord}/bin/chirpstack-concentratord-sx1301 -c ${concentratordConfig}";
         Restart = "on-failure";
         RestartSec = "5s";
@@ -219,14 +241,19 @@ in {
       requires = ["chirpstack-concentratord.service"];
       wants = ["network-online.target"];
       # Each failed start takes about 6 seconds, so this limit is reached after
-      # about 2 minutes. The concentrator usually needs about 1 minute of retries
-      # after a start, during which the forwarder fails too, and that must not
-      # count as stuck. Its retries have also taken 3.5 minutes, which only costs
-      # one extra restart from the recovery below.
+      # about 2 minutes. While the concentrator retries its own start, which
+      # usually takes about 1 minute, the forwarder waits for the sockets
+      # instead of failing, so the limit only counts failures against a running
+      # concentrator that does not answer.
       startLimitIntervalSec = 180;
       startLimitBurst = 20;
       onFailure = ["chirpstack-gateway-recover.service"];
       serviceConfig = {
+        # The wait keeps the unit activating rather than active, so the alert
+        # below still sees a gateway that does not come up. The concentrator's
+        # retries have taken 3.5 minutes.
+        ExecStartPre = lib.getExe waitForConcentratord;
+        TimeoutStartSec = "300s";
         ExecStart = "${pkgs.chirpstack-udp-forwarder}/bin/chirpstack-udp-forwarder -c ${udpForwarderConfig}";
         Restart = "on-failure";
         RestartSec = "5s";
