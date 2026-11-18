@@ -227,6 +227,14 @@ in {
         RestartSec = "5s";
         User = "root";
         Group = "root";
+        # Concentratord compares the counter ticks between two PPS pulses with
+        # the GPS seconds between them and warns outside 10 ppm. On this HAT the
+        # ratio swings by about 0.6 percent every second, gpsd or not, which
+        # looks like the counter is not latched by the PPS pulse. Reception and
+        # forwarding do not depend on it, only Class B timing does, and the
+        # warning wrote a journal line every second. Only this message is
+        # dropped, because a lower log level would also hide real warnings.
+        LogFilterPatterns = "~xtal error out of expected range";
       };
     };
 
