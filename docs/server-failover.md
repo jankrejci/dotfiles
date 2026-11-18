@@ -27,8 +27,8 @@ depend on the phases, and phase 3 reuses its tool for replication.
 | Service state in `/var/lib`, only bulk data on the data disk | done in the modules, thinkcenter pinned to its legacy layout |
 | Bulk data copied from thinkcenter to m75q once | done, by hand |
 | 1.1 m75q joins the vpsfree tunnel | done |
-| 1.2 Pinned service user and group IDs | open |
-| 1.3 Host-specific names made host-independent | open |
+| 1.2 Pinned service user and group IDs | done, collision check on m75q open |
+| 1.3 Host-specific names made host-independent | done except the borg SSH key of m75q |
 | 1.4 Service secrets rekeyed for m75q | open |
 | 1.5 Local borg replaced by btrbk on m75q | open |
 | 1.6 Pre-sync of `/var/lib` and bulk data | open |
@@ -71,16 +71,25 @@ thinkcenter, their state is copied once, and m75q starts them.
 1. **m75q joins the tunnel.** Done. m75q has its own WireGuard key and tunnel
    address, and vpsfree lists it as a second peer.
 2. **Pinned service IDs.** The service users and groups get thinkcenter's
-   numeric IDs, so the copied files keep meaning the same owner. NixOS fixes
-   an ID when it first creates a user, so this lands before any service runs
-   on m75q. Phase 3 needs the same IDs on both hosts anyway.
-3. **Host-specific names.** These name thinkcenter directly and are decided
-   once, either renamed or replaced for m75q: the borg secret
-   `borg-passphrase-remote-thinkcenter` and the borg key
-   `borg-thinkcenter-vpsfree` with its repositories on vpsfree,
-   `oauth2-proxy-thinkcenter-env`, the
-   `host="thinkcenter"` queries in `assets/grafana/dashboards/health.json`, the
-   default host in `hosts.json`, and `inject-borg-passphrase`.
+   numeric IDs from `homelab/service-ids.nix`, so the copied files keep
+   meaning the same owner. NixOS fixes an ID when it first creates a user, so
+   this lands before any service runs on m75q. Phase 3 needs the same IDs on
+   both hosts anyway. A pin only applies while its service is enabled, so it
+   changes nothing on m75q until the services move there. Before that, m75q's
+   `/var/lib/nixos/uid-map` and `gid-map` are compared with the table: m75q's
+   own system users, unbound in particular, were numbered on its install and
+   may already hold one of these IDs.
+3. **Host-specific names.** Decided as follows:
+   - m75q continues the remote borg repositories on vpsfree, since they hold
+     the services' history and their paths carry no host name. The secret is
+     now `borg-passphrase-remote`.
+   - The oauth2-proxy secret is now `oauth2-proxy-env`.
+   - The service panels in `health.json` show a service as up when either
+     twin runs it.
+   - Open: m75q needs its own borg SSH key, generated on the host at
+     `/root/.ssh/borg-backup-key`, with a `borg-m75q-vpsfree` line in
+     `ssh-authorized-keys.conf`.
+   - The default host in `hosts.json` moves to m75q in the cleanup.
 4. **Secrets.** Every service secret is rekeyed for m75q's host key.
 5. **Local borg replaced by btrbk.** m75q leaves `homelab.backup.local` off.
    The local repositories gave daily archives kept for six months on the data
@@ -129,7 +138,9 @@ thinkcenter, their state is copied once, and m75q starts them.
    and point the routes and vpsfree back at it. Anything written on m75q in
    the meantime is lost then.
 8. **Cleanup.** thinkcenter's `homelab` block goes from `flake/hosts.nix`, once
-   the rollback is no longer wanted.
+   the rollback is no longer wanted. The default host in
+   `assets/grafana/dashboards/hosts.json` becomes m75q, and the
+   `borg-thinkcenter-vpsfree` key leaves `ssh-authorized-keys.conf`.
 
 ## Phase 2: thinkcenter reinstall
 
@@ -593,8 +604,6 @@ months of space, which is why the bulk data keeps no yearly snapshots.
   or waits for the peer or the operator, like corosync's `wait_for_all`.
 - A network-attached zigbee coordinator would remove the manual dongle move.
 - Whether grafana moves to a local SQLite database to join group 1.
-- Whether thinkcenter's remote borg repositories on vpsfree are renamed for
-  m75q or m75q starts new ones.
 - The snapshot retention values.
 
 ## Sources
