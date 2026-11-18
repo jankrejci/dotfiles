@@ -65,7 +65,21 @@ pkgs.writeShellApplication {
       local -r target="admin@$hostname.$DOMAIN"
       shift
 
+      # deploy-rs does not know the skip argument, so it is taken out here.
+      local args=()
+      local skip_kernel_check=0
+      local arg
+      for arg in "$@"; do
+        [ "$arg" = "$ALLOW_KERNEL_BUILD" ] && {
+          skip_kernel_check=1
+          continue
+        }
+        args+=("$arg")
+      done
+      set -- "''${args[@]}"
+
       require_ssh_reachable "$target"
+      [ "$skip_kernel_check" -eq 1 ] || require_cached_kernel "$hostname"
 
       # The path depends on the state of the tree, so it is read before the deploy
       # to keep an edit made during a long deploy from failing the verification.
