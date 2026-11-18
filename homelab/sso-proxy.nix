@@ -62,7 +62,7 @@ in {
 
     # oauth2-proxy environment file with client secret and cookie secret
     age.secrets.sso-proxy-env = {
-      rekeyFile = ../secrets/oauth2-proxy-thinkcenter-env.age;
+      rekeyFile = ../secrets/oauth2-proxy-env.age;
       owner = "oauth2-proxy";
     };
 
