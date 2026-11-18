@@ -33,6 +33,9 @@
 # Some RPi boards have dead GPIO14. Tested: RPi 3B works, RPi 3B+ failed.
 # The UART must also be free of the serial console, see modules/raspberry.nix.
 #
+# Verified after a power cycle: the u-blox has no backup battery, so it starts
+# unconfigured, and concentratord alone brings up NAV-TIMEGPS.
+#
 # GPS sync behavior on startup:
 # - First 2-3 NAV-TIMEGPS messages show "lgw_gps_sync failed" while calibrating
 # - After ~2 seconds, sync succeeds and warnings stop
