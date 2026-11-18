@@ -61,17 +61,17 @@
       url = "github:oddlama/agenix-rekey";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # Pinned to an exact rev, not to a branch name. A branch can move or vanish
-    # under the lock, which is what broke nix flake update outright when PR#131
-    # was pinned by branch name and then deleted after merge.
-    # RPi hosts take their whole nixpkgs from this input, so the rev also fixes
-    # which nixpkgs they evaluate against, whatever upstream's default branch
-    # points at today. Going further back than this rev breaks evaluation, since
-    # options the rest of the repo relies on did not exist yet.
-    # This rev carries kernel 6.18.52-unstable, which is what every Pi host now
-    # boots. The Pi Zero 2 W needs an sdhci quirk to read its own SD card, so
-    # move the rev with a Pi on hand to test, not as part of a lock bump.
-    nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi/bfaaa8fe3ef3cbeecc90cfaacc996ce5ebfe884a";
+    # Tracks upstream's default branch, develop, so every lock update moves the
+    # Pis forward. Upstream CI fills the nixos-raspberrypi cachix for every
+    # push to that branch, so the kernel substitutes instead of compiling under
+    # emulation. deploy-config and build-sdcard check that before they start.
+    # A rev pinned by branch name broke nix flake update once, when PR#131's
+    # branch was deleted after merge. develop is the default branch and stays.
+    # RPi hosts take their whole nixpkgs from this input, so a lock update here
+    # also moves the nixpkgs they evaluate against. The Pi Zero 2 W needs an
+    # sdhci quirk to read its own SD card, kept in hosts/prusa.nix, so a kernel
+    # change can still break prusa's boot and wants checking after its deploy.
+    nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi";
   };
 
   outputs = inputs:
