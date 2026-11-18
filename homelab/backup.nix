@@ -302,7 +302,9 @@ in {
     # Agenix secrets for borg passphrases
     age.secrets = lib.mkMerge [
       (lib.mkIf cfg.remote.enable {
-        borg-passphrase-remote.rekeyFile = ../secrets/borg-passphrase-remote-${hostName}.age;
+        # The remote repositories belong to the service, not the host, so the twin
+        # that runs the services continues the same archives with the same key.
+        borg-passphrase-remote.rekeyFile = ../secrets/borg-passphrase-remote.age;
       })
       (lib.mkIf cfg.local.enable {
         borg-passphrase-local.rekeyFile = ../secrets/borg-passphrase-local-${hostName}.age;
