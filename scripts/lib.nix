@@ -130,6 +130,30 @@ pkgs.writeShellScript "script-lib" ''
     info "SSH connection to $target successful"
   }
 
+  # The argument that skips require_cached_kernel, for the run that has to
+  # compile the kernel.
+  readonly ALLOW_KERNEL_BUILD="--allow-kernel-build"
+
+  # Fetch the host's kernel with local builds turned off, so a kernel that no
+  # binary cache holds stops the caller before anything compiles. The RPi
+  # kernel takes hours under emulation, and a deploy or image build compiles
+  # every path it cannot fetch. Upstream nixos-raspberrypi CI caches the
+  # kernel of every revision of its default branch, so moving that input
+  # forward is the normal way out.
+  # Usage: require_cached_kernel hostname
+  function require_cached_kernel() {
+    local -r hostname="$1"
+    local -r kernel=".#nixosConfigurations.$hostname.config.boot.kernelPackages.kernel^out,modules"
+
+    info "Fetching the kernel of $hostname from the binary caches"
+    nix build --max-jobs 0 --builders "" --no-link "$kernel" || {
+      error "Nix cannot get the kernel of $hostname without compiling it"
+      error "No binary cache has it, or nix cannot reach the cache, the nix error above tells which"
+      error "Update nixos-raspberrypi to a revision with a cached kernel, or pass $ALLOW_KERNEL_BUILD to compile it"
+      exit 1
+    }
+  }
+
   # Inject secret file to remote host via SSH
   # Usage: inject_secret --target user@host --path /path --content "data" [--mode 600] [--owner root:root]
   function inject_secret() {
