@@ -41,6 +41,7 @@
     ./prometheus.nix
     ./prusa-obico.nix
     ./serial-bridge.nix
+    ./service-ids.nix
     ./sso-proxy.nix
     ./tunnel.nix
     ./vaultwarden.nix
