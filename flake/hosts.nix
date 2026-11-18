@@ -89,6 +89,8 @@
       device = "/dev/sda";
       swapSize = "8G";
       homelab = {
+        # The pinned numbers are this host's own, so nothing changes here.
+        serviceIds.enable = true;
         # Shared infrastructure
         mosquitto = {
           enable = true;
@@ -239,6 +241,8 @@
       swapSize = "8G";
       filesystem = "btrfs";
       homelab = {
+        # Files copied from thinkcenter keep their owners.
+        serviceIds.enable = true;
         # Its own tunnel to vpsfree, so vpsfree can fall back to m75q when
         # thinkcenter is down and still reach it over SSH.
         tunnel = {
