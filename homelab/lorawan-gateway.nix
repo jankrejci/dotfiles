@@ -20,18 +20,18 @@
 # 2. PPS signal captured by SX1301 internal counter
 # 3. Correlation between GPS time and PPS timestamp in the HAL
 #
-# The gpsd approach is used because:
-# 1. gpsd detects u-blox and switches it to UBX+NMEA protocol automatically
-# 2. gpsd sends UBX CFG commands to enable NAV-TIMEGPS output
-# 3. concentratord reads GPS data from gpsd and correlates with PPS
+# concentratord opens the UART itself. Its HAL call lgw_gps_enable with the
+# ubx7 family sends the UBX CFG command that turns on NAV-TIMEGPS, which is
+# what gpsd used to do here. Dropping gpsd also drops its rebuild: nixpkgs
+# builds gpsd with a GTK GUI, and the stripped build is in no binary cache,
+# so it compiled under emulation on almost every lock update.
 #
-# Without gpsd sending UBX commands, the u-blox outputs NMEA only, and gpsd
-# reports driver "NMEA0183" instead of "u-blox". The concentratord then fails
-# with "No u-blox GNSS device found" because it requires UBX protocol.
+# Without the UBX command the u-blox outputs NMEA only, and concentratord
+# fails with "No u-blox GNSS device found" because it requires UBX.
 #
 # Hardware dependency: GPIO14 must work for UART TX to send UBX commands.
 # Some RPi boards have dead GPIO14. Tested: RPi 3B works, RPi 3B+ failed.
-# Symptom: gpsd shows "driver":"NMEA0183" instead of "driver":"u-blox".
+# The UART must also be free of the serial console, see modules/raspberry.nix.
 #
 # GPS sync behavior on startup:
 # - First 2-3 NAV-TIMEGPS messages show "lgw_gps_sync failed" while calibrating
@@ -118,7 +118,7 @@
       }
       // lib.optionalAttrs cfg.gnss.enable {
         model_flags = ["GNSS"];
-        gnss_dev_path = "gpsd://localhost:2947";
+        gnss_dev_path = cfg.gnss.device;
       };
   };
 
@@ -178,23 +178,6 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-    # Disable xgps and other GUI tools that pull in GTK and X11 dependencies.
-    # This causes gpsd to be recompiled from source since the override changes
-    # the derivation hash, but avoids pulling in the entire GTK/X11 stack.
-    nixpkgs.overlays = [
-      (final: prev: {
-        gpsd = prev.gpsd.override {guiSupport = false;};
-      })
-    ];
-
-    services.gpsd = lib.mkIf cfg.gnss.enable {
-      enable = true;
-      devices = [cfg.gnss.device];
-      nowait = true;
-      readonly = false;
-      extraArgs = ["-s" "9600"];
-    };
-
     # SX1301 reset service - runs once before concentratord
     systemd.services.sx1301-reset = {
       description = "Reset SX1301 concentrator via GPIO";
@@ -211,9 +194,7 @@ in {
     systemd.services.chirpstack-concentratord = {
       description = "ChirpStack Concentratord";
       wantedBy = ["multi-user.target"];
-      after =
-        ["sx1301-reset.service"]
-        ++ lib.optionals cfg.gnss.enable ["gpsd.service"];
+      after = ["sx1301-reset.service"];
       requires = ["sx1301-reset.service"];
       serviceConfig = {
         ExecStart = "${pkgs.chirpstack-concentratord}/bin/chirpstack-concentratord-sx1301 -c ${concentratordConfig}";
