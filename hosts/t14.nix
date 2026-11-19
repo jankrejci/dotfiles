@@ -3,7 +3,6 @@
 # - AMD microcode updates
 # - ThinkPad ACPI and acpi_call modules
 # - mic mute LED sync with Pipewire state
-# - substituter downloads tuned for slow mobile uplinks
 {
   config,
   pkgs,
@@ -15,16 +14,6 @@
   boot.initrd.availableKernelModules = ["thinkpad_acpi" "rtsx_pci_sdmmc"];
   boot.initrd.kernelModules = ["acpi_call"];
   boot.extraModulePackages = with config.boot.kernelPackages; [acpi_call];
-
-  # The laptop often runs on a ~9 Mbit/s phone hotspot. The default 25 parallel
-  # downloads each get a few KB/s, the carrier NAT freezes some of those flows,
-  # and the default 300 s stall timeout then holds each retry for five minutes.
-  # Fewer connections keep each flow alive, and a short timeout retries the
-  # ones that still freeze. Retries resume from the last offset.
-  nix.settings = {
-    http-connections = 6;
-    stalled-download-timeout = 30;
-  };
 
   # Microphone mute LED synchronization
   #
