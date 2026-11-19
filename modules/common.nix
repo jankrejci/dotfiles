@@ -26,6 +26,14 @@
     "deploy-rs.cachix.org-1:xfNobmiwF/vzvK1gpfediPwpdIP0rpDV2rYqx40zdSI="
   ];
 
+  # Hosts sometimes build over a slow phone hotspot. The default 25 parallel
+  # downloads each get a few KB/s, the carrier NAT freezes some of those flows,
+  # and the default 300 s stall timeout then holds each retry for five minutes.
+  # Fewer connections keep each flow alive, and a short timeout retries the
+  # ones that still freeze. Retries resume from the last offset.
+  nix.settings.http-connections = 6;
+  nix.settings.stalled-download-timeout = 30;
+
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
 
   # Consider users with the root access trustfull enough
