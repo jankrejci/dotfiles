@@ -6,5 +6,6 @@
     ./common.nix
     ./ssh.nix
     ./networking.nix
+    ./btrfs.nix
   ];
 }
