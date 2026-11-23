@@ -47,6 +47,56 @@
   jobs = cfg.jobs;
   metricsDir = config.homelab.metricsDir;
 
+  # Borg reads the files one after another while the services keep writing,
+  # so an archive could hold a database that refers to a file it missed. On a
+  # host whose /var/lib is its own btrfs subvolume, each job reads a read-only
+  # snapshot instead, which freezes all files of a service at one instant.
+  snapshotSource =
+    config.fileSystems ? "/.snapshots"
+    && (config.fileSystems."/var/lib".fsType or null) == "btrfs";
+
+  # A snapshot of /var/lib holds only empty mount points where other
+  # filesystems are bind mounted below it, like immich's media folders on the
+  # data disk. Borg reads those live, which is safe for files written once.
+  bindMountsUnder = path:
+    lib.filter (fs: lib.hasPrefix "${path}/" fs.mountPoint && lib.elem "bind" fs.options)
+    (lib.attrValues config.fileSystems);
+
+  # The snapshot takes the place of the job's paths only in the namespace of
+  # its borg unit. Borg keeps reading /var/lib/<service>, so the archive paths,
+  # excludes and restore scripts stay the same as for live files.
+  mkSnapshotServices = jobName: paths: let
+    snapDir = "/.snapshots/borg-${jobName}";
+    snapshotUnit = "borg-snapshot-${jobName}";
+    snapshotPaths = lib.filter (lib.hasPrefix "/var/lib/") paths;
+  in
+    lib.optionalAttrs (snapshotSource && snapshotPaths != []) {
+      ${snapshotUnit} = {
+        description = "Read-only snapshot of /var/lib for borg job ${jobName}";
+        # Stops, and so deletes the snapshot, once the borg job has ended.
+        unitConfig.StopWhenUnneeded = true;
+        path = [pkgs.btrfs-progs];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStop = "${pkgs.btrfs-progs}/bin/btrfs subvolume delete ${snapDir}";
+        };
+        # A snapshot left behind by a crash would block the new one.
+        preStart = "[ ! -e ${snapDir} ] || btrfs subvolume delete ${snapDir}";
+        script = "btrfs subvolume snapshot -r /var/lib ${snapDir}";
+      };
+
+      "borgbackup-job-${jobName}" = {
+        requires = ["${snapshotUnit}.service"];
+        after = ["${snapshotUnit}.service"];
+        # systemd mounts shallower paths first, so the live bind mounts land on
+        # top of the snapshot.
+        serviceConfig.BindReadOnlyPaths =
+          map (p: "${snapDir}${lib.removePrefix "/var/lib" p}:${p}") snapshotPaths
+          ++ map (fs: "${fs.device}:${fs.mountPoint}") (lib.concatMap bindMountsUnder snapshotPaths);
+      };
+    };
+
   # Generate configuration for a single backup job
   mkJobConfig = job: let
     inherit (job) name paths excludes database service hour;
@@ -72,6 +122,10 @@
       };
       # Allow writing metrics to textfile collector directory
       readWritePaths = [metricsDir];
+      # Every snapshot gives the files new inode numbers. Borg's default
+      # change detection includes the inode, so it would read every file
+      # again on each run instead of only the changed ones.
+      extraCreateArgs = lib.optionals snapshotSource ["--files-cache=ctime,size"];
     };
 
     capitalizedName = let
@@ -166,6 +220,10 @@
           preHook = "systemctl start ${name}-db-dump.service";
         };
     };
+
+    snapshotServices =
+      lib.optionalAttrs cfg.remote.enable (mkSnapshotServices "${name}-remote" paths)
+      // lib.optionalAttrs cfg.local.enable (mkSnapshotServices "${name}-local" paths);
 
     # Database dump service
     dbDumpServices = lib.optionalAttrs (database != null) {
@@ -314,7 +372,9 @@ in {
       mergeConfigs (jc: jc.borgJobsRemote)
       // mergeConfigs (jc: jc.borgJobsLocal);
 
-    systemd.services = mergeConfigs (jc: jc.dbDumpServices);
+    systemd.services =
+      mergeConfigs (jc: jc.dbDumpServices)
+      // mergeConfigs (jc: jc.snapshotServices);
 
     systemd.tmpfiles.rules = mergeConfigsLists (jc: jc.tmpfilesRules);
 
